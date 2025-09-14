@@ -1,0 +1,90 @@
+=== Notation JLG - Système de notation pour tests de jeux vidéo ===
+Contributors: jeromelegousse
+Tags: rating, review, games, notation, gaming
+Requires at least: 5.0
+Tested up to: 6.4
+Stable tag: 5.0
+Requires PHP: 7.4
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Système de notation complet et personnalisable pour les tests de jeux vidéo avec multiples shortcodes et widgets.
+
+== Description ==
+
+Le plugin Notation JLG est un système complet de notation spécialement conçu pour les sites de tests de jeux vidéo. Il offre une solution professionnelle pour noter et présenter vos reviews de manière attrayante et structurée.
+
+= Fonctionnalités principales =
+
+* **Système de notation flexible** : 6 catégories personnalisables notées sur 10
+* **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
+* **Notation utilisateurs** : Permettez à vos lecteurs de voter
+* **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
+* **Widget** : Affichez vos derniers tests notés
+* **API RAWG** : Remplissage automatique des informations de jeu
+* **SEO optimisé** : Support schema.org pour les rich snippets Google
+* **Thèmes visuels** : Mode clair et sombre avec personnalisation complète
+* **Responsive** : Parfaitement adapté mobile et tablette
+
+= Shortcodes disponibles =
+
+* `[bloc_notation_jeu]` - Bloc de notation principal
+* `[jlg_fiche_technique]` - Fiche technique du jeu
+* `[tagline_notation_jlg]` - Phrase d'accroche bilingue
+* `[jlg_points_forts_faibles]` - Points positifs et négatifs
+* `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
+* `[jlg_tableau_recap]` - Tableau/grille récapitulatif
+
+== Installation ==
+
+1. Téléchargez le plugin et décompressez l'archive
+2. Uploadez le dossier `plugin-notation-jeux` dans `/wp-content/plugins/`
+3. Activez le plugin depuis le menu 'Extensions' de WordPress
+4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'
+5. Créez votre premier test avec notation !
+
+== Frequently Asked Questions ==
+
+= Comment personnaliser les catégories de notation ? =
+
+Allez dans Notation - JLG > Réglages et modifiez les libellés des 6 catégories selon vos besoins.
+
+= Le plugin est-il compatible avec mon thème ? =
+
+Le plugin est conçu pour être compatible avec tous les thèmes WordPress standards. Des options de personnalisation CSS sont disponibles.
+
+= Puis-je désactiver certains modules ? =
+
+Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, taglines, animations, schema SEO.
+
+= Comment obtenir une clé API RAWG ? =
+
+Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les réglages du plugin.
+
+== Screenshots ==
+
+1. Bloc de notation principal avec barres de progression
+2. Interface d'administration - métabox de notation
+3. Fiche technique et points forts/faibles
+4. Tableau récapitulatif des tests
+5. Réglages et personnalisation
+6. Widget derniers tests
+
+== Changelog ==
+
+= 5.0 =
+* Refactorisation complète du code
+* Architecture modulaire optimisée
+* Performance améliorée
+* Interface admin modernisée
+* Sécurité renforcée
+* Support PHP 7.4+
+
+= 4.0 =
+* Version initiale publique
+
+== Upgrade Notice ==
+
+= 5.0 =
+Mise à jour majeure avec refactorisation complète. Sauvegardez avant mise à jour. Migration automatique des données.
+```

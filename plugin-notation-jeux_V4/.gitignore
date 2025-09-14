@@ -1,0 +1,36 @@
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Logs et debug
+*.log
+error_log
+debug.log
+
+# Fichiers de développement
+test-plugin.php
+tests/
+node_modules/
+vendor/
+
+# Fichiers de build
+*.zip
+*.tar.gz
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*.cache
+
+# Configuration locale
+config.local.php
