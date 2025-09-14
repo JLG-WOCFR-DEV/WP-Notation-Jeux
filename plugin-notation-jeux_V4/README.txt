@@ -10,6 +10,8 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Système de notation complet et personnalisable pour les tests de jeux vidéo avec multiples shortcodes et widgets.
 
+**Note :** Cette documentation est également disponible en version Markdown dans `README.md`. Veillez à maintenir les deux fichiers synchronisés.
+
 == Description ==
 
 Le plugin Notation JLG est un système complet de notation spécialement conçu pour les sites de tests de jeux vidéo. Il offre une solution professionnelle pour noter et présenter vos reviews de manière attrayante et structurée.
@@ -87,4 +89,3 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 
 = 5.0 =
 Mise à jour majeure avec refactorisation complète. Sauvegardez avant mise à jour. Migration automatique des données.
-```
