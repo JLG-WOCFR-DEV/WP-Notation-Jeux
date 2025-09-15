@@ -314,18 +314,53 @@ class JLG_Frontend {
         if (!is_array($args)) {
             $args = [];
         }
-        
-        // Extraire les variables du tableau pour les rendre disponibles dans le template
-        extract($args);
-        
-        // Démarrer la capture de sortie
-        ob_start();
-        
+
         // Construire le chemin du template
         $template_path = JLG_NOTATION_PLUGIN_DIR . 'templates/' . $template_name . '.php';
-        
+
+        // Démarrer la capture de sortie
+        ob_start();
+
         // Inclure le template s'il existe
         if (file_exists($template_path)) {
+            // Valeurs par défaut pour les variables utilisées par les templates existants.
+            $template_defaults = [
+                'options'            => [],
+                'average_score'      => null,
+                'scores'             => [],
+                'categories'         => [],
+                'pros_list'          => [],
+                'cons_list'          => [],
+                'titre'              => '',
+                'champs_a_afficher'  => [],
+                'tagline_fr'         => '',
+                'tagline_en'         => '',
+                'query'              => null,
+                'atts'               => [],
+                'paged'              => 1,
+                'orderby'            => '',
+                'order'              => '',
+                'widget_args'        => [],
+                'title'              => '',
+                'latest_reviews'     => null,
+                'post_id'            => null,
+                'avg_rating'         => null,
+                'count'              => 0,
+                'has_voted'          => false,
+                'user_vote'          => 0,
+            ];
+
+            // Fusionner les arguments fournis avec les valeurs par défaut.
+            $prepared_args = array_merge($template_defaults, $args);
+
+            // Rendre chaque variable explicitement disponible pour le template.
+            foreach ($template_defaults as $var_name => $default_value) {
+                ${$var_name} = $prepared_args[$var_name];
+            }
+
+            // Permettre aux templates d'accéder directement au tableau complet si nécessaire.
+            $args = $prepared_args;
+
             include $template_path;
         } else {
             // Afficher un message d'erreur seulement pour les administrateurs
