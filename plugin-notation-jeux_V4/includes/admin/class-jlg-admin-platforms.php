@@ -569,8 +569,3 @@ class JLG_Admin_Platforms {
         <?php
     }
 }
-
-// Initialiser la classe en mode singleton et s'assurer que le hook admin_init est bien enregistré
-add_action('plugins_loaded', function() {
-    JLG_Admin_Platforms::get_instance();
-});
