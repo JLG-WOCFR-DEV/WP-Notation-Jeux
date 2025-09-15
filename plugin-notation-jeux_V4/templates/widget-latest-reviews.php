@@ -11,11 +11,11 @@ if ($latest_reviews->have_posts()) {
     echo '<ul>';
     while ($latest_reviews->have_posts()) {
         $latest_reviews->the_post();
-        echo '<li><a href="' . get_permalink() . '">' . get_the_title() . '</a></li>';
+        echo '<li><a href="' . esc_url( get_permalink() ) . '">' . esc_html( get_the_title() ) . '</a></li>';
     }
     echo '</ul>';
 } else {
-    echo '<p>Aucun test trouvé.</p>';
+    echo '<p>' . esc_html__('Aucun test trouvé.', 'plugin-notation-jeux') . '</p>';
 }
 wp_reset_postdata();
 
