@@ -141,19 +141,25 @@ class JLG_Frontend {
             wp_send_json_error(['message' => 'Données invalides.']); 
         }
         
-        $user_ip = $_SERVER['REMOTE_ADDR'];
+        $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
+        if (!$user_ip) {
+            wp_send_json_error(['message' => 'Adresse IP invalide.']);
+        }
+
+        $user_ip_hash = wp_hash($user_ip);
+
         $meta_key = '_jlg_user_ratings';
         $ratings = get_post_meta($post_id, $meta_key, true);
-        
-        if (!is_array($ratings)) { 
-            $ratings = []; 
+
+        if (!is_array($ratings)) {
+            $ratings = [];
         }
-        
-        if (isset($ratings[$user_ip])) { 
-            wp_send_json_error(['message' => 'Vous avez déjà voté !']); 
+
+        if (isset($ratings[$user_ip_hash])) {
+            wp_send_json_error(['message' => 'Vous avez déjà voté !']);
         }
-        
-        $ratings[$user_ip] = $rating;
+
+        $ratings[$user_ip_hash] = $rating;
         update_post_meta($post_id, $meta_key, $ratings);
         
         $new_average = round(array_sum($ratings) / count($ratings), 2);
