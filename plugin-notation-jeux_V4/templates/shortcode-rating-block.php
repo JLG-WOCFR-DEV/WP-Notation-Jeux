@@ -19,12 +19,12 @@ $options = JLG_Helpers::get_plugin_options();
         <?php if($options['score_layout'] === 'circle'): ?>
             <div class="score-circle">
                 <div class="score-value"><?php echo esc_html(number_format($average_score, 1, ',', ' ')); ?></div>
-                <div class="score-label">Note Globale</div>
+                <div class="score-label"><?php esc_html_e('Note Globale', 'notation-jlg'); ?></div>
             </div>
         <?php else: ?>
             <div class="global-score-text">
                 <div class="score-value"><?php echo esc_html(number_format($average_score, 1, ',', ' ')); ?></div>
-                <div class="score-label">Note Globale</div>
+                <div class="score-label"><?php esc_html_e('Note Globale', 'notation-jlg'); ?></div>
             </div>
         <?php endif; ?>
     </div>
@@ -38,7 +38,17 @@ $options = JLG_Helpers::get_plugin_options();
             <div class="rating-item">
                 <div class="rating-label">
                     <span><?php echo esc_html($categories[$key]); ?></span>
-                    <span><?php echo esc_html(number_format($score_value, 1, ',', ' ')); ?> / 10</span>
+                    <span>
+                        <?php
+                        $formatted_score_value = esc_html(number_format($score_value, 1, ',', ' '));
+                        printf(
+                            /* translators: 1: Rating value for a specific category. 2: Maximum possible rating. */
+                            esc_html__('%1$s / %2$s', 'notation-jlg'),
+                            $formatted_score_value,
+                            10
+                        );
+                        ?>
+                    </span>
                 </div>
                 <div class="rating-bar-container">
                     <div class="rating-bar" style="--rating-percent:<?php echo esc_attr($score_value * 10); ?>%; --bar-color: <?php echo esc_attr($bar_color); ?>;"></div>

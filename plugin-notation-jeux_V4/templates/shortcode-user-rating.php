@@ -3,15 +3,36 @@ if (!defined('ABSPATH')) exit;
 ?>
 
 <div class="jlg-user-rating-block <?php if ($has_voted) echo 'has-voted'; ?>">
-    <div class="jlg-user-rating-title">Votre avis nous intéresse !</div>
+    <div class="jlg-user-rating-title"><?php esc_html_e('Votre avis nous intéresse !', 'notation-jlg'); ?></div>
     <div class="jlg-user-rating-stars" data-post-id="<?php echo esc_attr($post_id); ?>">
         <?php for ($i = 1; $i <= 5; $i++): ?>
             <span class="jlg-user-star <?php if($has_voted && $i <= $user_vote) echo 'selected'; ?>" data-value="<?php echo $i; ?>">★</span>
         <?php endfor; ?>
     </div>
     <div class="jlg-user-rating-summary">
-        Note moyenne : <strong class="jlg-user-rating-avg-value"><?php echo !empty($avg_rating) ? number_format(floatval($avg_rating), 2) : 'N/A'; ?></strong> 
-        sur 5 (<span class="jlg-user-rating-count-value"><?php echo !empty($count) ? intval($count) : 0; ?></span> votes)
+        <?php
+        /* translators: Abbreviation meaning that the user rating is not available. */
+        $average_display = !empty($avg_rating) ? number_format(floatval($avg_rating), 2) : __('N/A', 'notation-jlg');
+        $votes_display = !empty($count) ? intval($count) : 0;
+        /* translators: 1: Average user rating value. 2: Maximum possible rating. 3: Number of user votes. */
+        $summary_template = __(
+            'Note moyenne : <strong class="jlg-user-rating-avg-value">%1$s</strong> sur %2$s (<span class="jlg-user-rating-count-value">%3$s</span> votes)',
+            'notation-jlg'
+        );
+
+        echo wp_kses(
+            sprintf(
+                $summary_template,
+                esc_html($average_display),
+                esc_html(number_format_i18n(5)),
+                esc_html(number_format_i18n($votes_display))
+            ),
+            [
+                'strong' => ['class' => []],
+                'span' => ['class' => []],
+            ]
+        );
+        ?>
     </div>
-    <div class="jlg-rating-message"><?php if($has_voted) echo 'Merci pour votre vote !'; ?></div>
+    <div class="jlg-rating-message"><?php if($has_voted) esc_html_e('Merci pour votre vote !', 'notation-jlg'); ?></div>
 </div>

@@ -15,7 +15,7 @@ if ($latest_reviews->have_posts()) {
     }
     echo '</ul>';
 } else {
-    echo '<p>' . esc_html__('Aucun test trouvé.', 'plugin-notation-jeux') . '</p>';
+    echo '<p>' . esc_html__('Aucun test trouvé.', 'notation-jlg') . '</p>';
 }
 wp_reset_postdata();
 

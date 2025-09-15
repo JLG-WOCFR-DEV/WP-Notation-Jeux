@@ -28,5 +28,13 @@ $score_color = JLG_Helpers::calculate_color_from_note($average_score, $options);
     z-index: 10;
 ">
     <?php echo esc_html(number_format($average_score, 1)); ?>
-    <span style="font-size: 0.8em; opacity: 0.9;">/10</span>
+    <span style="font-size: 0.8em; opacity: 0.9;">
+        <?php
+        printf(
+            /* translators: %s: Maximum rating value displayed with the thumbnail score. */
+            esc_html__('/%s', 'notation-jlg'),
+            10
+        );
+        ?>
+    </span>
 </div>

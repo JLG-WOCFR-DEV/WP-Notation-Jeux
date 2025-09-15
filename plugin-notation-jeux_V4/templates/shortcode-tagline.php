@@ -9,8 +9,8 @@ $default_lang = $has_fr ? 'fr' : 'en';
 <div class="jlg-tagline-block">
     <?php if ($has_fr && $has_en): ?>
         <div class="jlg-tagline-flags">
-            <img src="<?php echo JLG_NOTATION_PLUGIN_URL . 'assets/flags/fr.svg'; ?>" data-lang="fr" class="jlg-lang-flag <?php if($default_lang == 'fr') echo 'active'; ?>" alt="Français">
-            <img src="<?php echo JLG_NOTATION_PLUGIN_URL . 'assets/flags/gb.svg'; ?>" data-lang="en" class="jlg-lang-flag <?php if($default_lang == 'en') echo 'active'; ?>" alt="English">
+            <img src="<?php echo JLG_NOTATION_PLUGIN_URL . 'assets/flags/fr.svg'; ?>" data-lang="fr" class="jlg-lang-flag <?php if($default_lang == 'fr') echo 'active'; ?>" alt="<?php echo esc_attr__('Français', 'notation-jlg'); ?>">
+            <img src="<?php echo JLG_NOTATION_PLUGIN_URL . 'assets/flags/gb.svg'; ?>" data-lang="en" class="jlg-lang-flag <?php if($default_lang == 'en') echo 'active'; ?>" alt="<?php echo esc_attr__('English', 'notation-jlg'); ?>">
         </div>
     <?php endif; ?>
 

@@ -17,11 +17,29 @@ $colonnes = array_map('trim', explode(',', $atts['colonnes']));
 
 // Définir les colonnes disponibles
 $colonnes_disponibles = [
-    'titre' => ['label' => 'Titre du jeu', 'sortable' => true, 'key' => 'title'],
-    'date' => ['label' => 'Date', 'sortable' => true, 'key' => 'date'],
-    'note' => ['label' => 'Note', 'sortable' => true, 'key' => 'average_score'],
-    'developpeur' => ['label' => 'Développeur', 'sortable' => false],
-    'editeur' => ['label' => 'Éditeur', 'sortable' => false]
+    'titre' => [
+        'label' => __('Titre du jeu', 'notation-jlg'),
+        'sortable' => true,
+        'key' => 'title'
+    ],
+    'date' => [
+        'label' => __('Date', 'notation-jlg'),
+        'sortable' => true,
+        'key' => 'date'
+    ],
+    'note' => [
+        'label' => __('Note', 'notation-jlg'),
+        'sortable' => true,
+        'key' => 'average_score'
+    ],
+    'developpeur' => [
+        'label' => __('Développeur', 'notation-jlg'),
+        'sortable' => false
+    ],
+    'editeur' => [
+        'label' => __('Éditeur', 'notation-jlg'),
+        'sortable' => false
+    ]
 ];
 
 // ID unique pour le tableau
@@ -40,7 +58,9 @@ if (!function_exists('jlg_print_sortable_header')) {
             
             $indicator = '';
             if ($current_orderby === $sort_key || $current_orderby === $col) {
-                $indicator = $current_order === 'ASC' ? ' ▲' : ' ▼';
+                $indicator = $current_order === 'ASC'
+                    ? esc_html__(' ▲', 'notation-jlg')
+                    : esc_html__(' ▼', 'notation-jlg');
             }
             
             $class = 'sortable';
@@ -68,16 +88,16 @@ if (!function_exists('jlg_print_sortable_header')) {
                 if (isset($_GET['orderby'])) echo '<input type="hidden" name="orderby" value="' . esc_attr($_GET['orderby']) . '">';
                 if (isset($_GET['order'])) echo '<input type="hidden" name="order" value="' . esc_attr($_GET['order']) . '">';
                 wp_dropdown_categories([
-                    'show_option_all' => 'Toutes les catégories', 
-                    'orderby' => 'name', 
-                    'hide_empty' => 1, 
-                    'name' => 'cat_filter', 
-                    'id' => 'jlg_cat_filter', 
-                    'selected' => isset($_GET['cat_filter']) ? intval($_GET['cat_filter']) : 0, 
+                    'show_option_all' => __('Toutes les catégories', 'notation-jlg'),
+                    'orderby' => 'name',
+                    'hide_empty' => 1,
+                    'name' => 'cat_filter',
+                    'id' => 'jlg_cat_filter',
+                    'selected' => isset($_GET['cat_filter']) ? intval($_GET['cat_filter']) : 0,
                     'hierarchical' => true
                 ]);
                 ?>
-                <input type="submit" value="Filtrer">
+                <input type="submit" value="<?php echo esc_attr__('Filtrer', 'notation-jlg'); ?>">
             </form>
         </div>
     <?php endif; ?>
@@ -103,9 +123,9 @@ if (!function_exists('jlg_print_sortable_header')) {
                         <span><?php the_title(); ?></span>
                     </div>
                 </a>
-            <?php endwhile; 
+            <?php endwhile;
             else : ?>
-                <p>Aucun article trouvé pour cette sélection.</p>
+                <p><?php esc_html_e('Aucun article trouvé pour cette sélection.', 'notation-jlg'); ?></p>
             <?php endif; ?>
         </div>
     <?php else : ?>
@@ -139,22 +159,31 @@ if (!function_exists('jlg_print_sortable_header')) {
                                         break;
                                     case 'note':
                                         $score = get_post_meta($post_id, '_jlg_average_score', true);
-                                        echo '<strong>' . esc_html($score ?: 'N/A') . '</strong> / 10';
+                                        /* translators: Abbreviation meaning that the average score is not available. */
+                                        $score_display = $score ?: __('N/A', 'notation-jlg');
+                                        echo '<strong>' . esc_html($score_display) . '</strong> ';
+                                        printf(
+                                            /* translators: %s: Maximum possible rating value. */
+                                            esc_html__('/ %s', 'notation-jlg'),
+                                            10
+                                        );
                                         break;
                                     case 'developpeur':
-                                        echo esc_html(get_post_meta($post_id, '_jlg_developpeur', true) ?: '-');
+                                        $developer = get_post_meta($post_id, '_jlg_developpeur', true) ?: __('-', 'notation-jlg');
+                                        echo esc_html($developer);
                                         break;
                                     case 'editeur':
-                                        echo esc_html(get_post_meta($post_id, '_jlg_editeur', true) ?: '-');
+                                        $publisher = get_post_meta($post_id, '_jlg_editeur', true) ?: __('-', 'notation-jlg');
+                                        echo esc_html($publisher);
                                         break;
                                 }
                                 echo '</td>';
                             endforeach; ?>
                         </tr>
-                    <?php endwhile; 
+                    <?php endwhile;
                     else : ?>
                         <tr>
-                            <td colspan="<?php echo count($colonnes); ?>">Aucun article trouvé pour cette sélection.</td>
+                            <td colspan="<?php echo count($colonnes); ?>"><?php esc_html_e('Aucun article trouvé pour cette sélection.', 'notation-jlg'); ?></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -169,8 +198,8 @@ if (!function_exists('jlg_print_sortable_header')) {
         'format' => '?paged=%#%', 
         'current' => max(1, $paged), 
         'total' => $query->max_num_pages, 
-        'prev_text' => '« Précédent', 
-        'next_text' => 'Suivant »'
+        'prev_text' => __('« Précédent', 'notation-jlg'),
+        'next_text' => __('Suivant »', 'notation-jlg')
     ]);
     
     if ($pagination_links) {
