@@ -101,57 +101,253 @@ class JLG_Frontend {
             JLG_NOTATION_VERSION
         );
 
+        $sanitize_color = static function ($value, $allow_transparent = false) {
+            $sanitized = sanitize_hex_color($value);
+
+            if (!empty($sanitized)) {
+                return $sanitized;
+            }
+
+            if ($allow_transparent && is_string($value) && 'transparent' === strtolower(trim($value))) {
+                return 'transparent';
+            }
+
+            return '';
+        };
+
+        $bg_color = $sanitize_color($palette['bg_color'] ?? '');
+        $bg_color_secondary = $sanitize_color($palette['bg_color_secondary'] ?? '');
+        $border_color = $sanitize_color($palette['border_color'] ?? '');
+        $main_text_color = $sanitize_color($palette['main_text_color'] ?? '');
+        $secondary_text_color = $sanitize_color($palette['secondary_text_color'] ?? '');
+        $bar_bg_color = $sanitize_color($palette['bar_bg_color'] ?? '');
+        $tagline_bg_color = $sanitize_color($palette['tagline_bg_color'] ?? '');
+        $tagline_text_color = $sanitize_color($palette['tagline_text_color'] ?? '');
+
+        $score_gradient_1 = $sanitize_color($options['score_gradient_1'] ?? '');
+        $score_gradient_2 = $sanitize_color($options['score_gradient_2'] ?? '');
+        $color_high = $sanitize_color($options['color_high'] ?? '');
+        $color_low = $sanitize_color($options['color_low'] ?? '');
+        $user_rating_text_color = $sanitize_color($options['user_rating_text_color'] ?? '');
+        $user_rating_star_color = $sanitize_color($options['user_rating_star_color'] ?? '');
+        $table_header_bg_color = $sanitize_color($options['table_header_bg_color'] ?? '');
+        $table_header_text_color = $sanitize_color($options['table_header_text_color'] ?? '');
+        $table_row_bg_color = $sanitize_color($options['table_row_bg_color'] ?? '', true);
+        $table_row_text_color = $sanitize_color($options['table_row_text_color'] ?? '');
+        $table_zebra_bg_color = $sanitize_color($options['table_zebra_bg_color'] ?? '', true);
+        $circle_border_color = $sanitize_color($options['circle_border_color'] ?? '');
+
+        $default_settings = JLG_Helpers::get_default_settings();
+        $default_score_gradient_1 = $sanitize_color($default_settings['score_gradient_1'] ?? '#000000');
+        $default_score_gradient_2 = $sanitize_color($default_settings['score_gradient_2'] ?? '#000000');
+        if ($default_score_gradient_1 === '') {
+            $default_score_gradient_1 = '#000000';
+        }
+        if ($default_score_gradient_2 === '') {
+            $default_score_gradient_2 = '#000000';
+        }
+
+        $theme = $options['visual_theme'] ?? 'dark';
+        if ($theme === 'light') {
+            $default_bg_color = $sanitize_color($default_settings['light_bg_color'] ?? '#ffffff');
+            $default_bg_color_secondary = $sanitize_color($default_settings['light_bg_color_secondary'] ?? '#f9fafb');
+            $default_border_color = $sanitize_color($default_settings['light_border_color'] ?? '#e5e7eb');
+            $default_text_color = $sanitize_color($default_settings['light_text_color'] ?? '#111827');
+            $default_secondary_text_color = $sanitize_color($default_settings['light_text_color_secondary'] ?? '#6b7280');
+        } else {
+            $default_bg_color = $sanitize_color($default_settings['dark_bg_color'] ?? '#18181b');
+            $default_bg_color_secondary = $sanitize_color($default_settings['dark_bg_color_secondary'] ?? '#27272a');
+            $default_border_color = $sanitize_color($default_settings['dark_border_color'] ?? '#3f3f46');
+            $default_text_color = $sanitize_color($default_settings['dark_text_color'] ?? '#fafafa');
+            $default_secondary_text_color = $sanitize_color($default_settings['dark_text_color_secondary'] ?? '#a1a1aa');
+        }
+        if ($default_bg_color === '') {
+            $default_bg_color = '#000000';
+        }
+        if ($default_bg_color_secondary === '') {
+            $default_bg_color_secondary = $default_bg_color;
+        }
+        if ($default_border_color === '') {
+            $default_border_color = 'transparent';
+        }
+        if ($default_text_color === '') {
+            $default_text_color = '#000000';
+        }
+        if ($default_secondary_text_color === '') {
+            $default_secondary_text_color = $default_text_color;
+        }
+
+        $default_color_high = $sanitize_color($default_settings['color_high'] ?? '#22c55e');
+        if ($default_color_high === '') {
+            $default_color_high = '#22c55e';
+        }
+        $default_color_low = $sanitize_color($default_settings['color_low'] ?? '#ef4444');
+        if ($default_color_low === '') {
+            $default_color_low = '#ef4444';
+        }
+        $default_user_rating_text_color = $sanitize_color($default_settings['user_rating_text_color'] ?? '#a1a1aa');
+        if ($default_user_rating_text_color === '') {
+            $default_user_rating_text_color = '#a1a1aa';
+        }
+        $default_user_rating_star_color = $sanitize_color($default_settings['user_rating_star_color'] ?? '#f59e0b');
+        if ($default_user_rating_star_color === '') {
+            $default_user_rating_star_color = '#f59e0b';
+        }
+        $default_table_header_bg_color = $sanitize_color($default_settings['table_header_bg_color'] ?? '#3f3f46');
+        if ($default_table_header_bg_color === '') {
+            $default_table_header_bg_color = $default_bg_color_secondary;
+        }
+        $default_table_header_text_color = $sanitize_color($default_settings['table_header_text_color'] ?? '#ffffff');
+        if ($default_table_header_text_color === '') {
+            $default_table_header_text_color = $default_text_color;
+        }
+        $default_table_row_bg_color = $sanitize_color($default_settings['table_row_bg_color'] ?? 'transparent', true);
+        if ($default_table_row_bg_color === '') {
+            $default_table_row_bg_color = 'transparent';
+        }
+        $default_table_row_text_color = $sanitize_color($default_settings['table_row_text_color'] ?? '#a1a1aa');
+        if ($default_table_row_text_color === '') {
+            $default_table_row_text_color = $default_secondary_text_color;
+        }
+        $default_table_zebra_bg_color = $sanitize_color($default_settings['table_zebra_bg_color'] ?? '#27272a', true);
+        if ($default_table_zebra_bg_color === '') {
+            $default_table_zebra_bg_color = 'transparent';
+        }
+        $default_circle_border_color = $sanitize_color($default_settings['circle_border_color'] ?? '#60a5fa');
+        if ($default_circle_border_color === '') {
+            $default_circle_border_color = 'transparent';
+        }
+
+        if ($score_gradient_1 === '') {
+            $score_gradient_1 = $default_score_gradient_1;
+        }
+        if ($score_gradient_2 === '') {
+            $score_gradient_2 = $default_score_gradient_2;
+        }
+        if ($bg_color === '') {
+            $bg_color = $default_bg_color;
+        }
+        if ($bg_color_secondary === '') {
+            $bg_color_secondary = $default_bg_color_secondary;
+        }
+        if ($border_color === '') {
+            $border_color = $default_border_color;
+        }
+        if ($main_text_color === '') {
+            $main_text_color = $default_text_color;
+        }
+        if ($secondary_text_color === '') {
+            $secondary_text_color = $default_secondary_text_color;
+        }
+        if ($bar_bg_color === '') {
+            $bar_bg_color = $bg_color_secondary;
+        }
+        if ($tagline_bg_color === '') {
+            $tagline_bg_color = $bg_color_secondary;
+        }
+        if ($tagline_text_color === '') {
+            $tagline_text_color = $secondary_text_color;
+        }
+        if ($color_high === '') {
+            $color_high = $default_color_high;
+        }
+        if ($color_low === '') {
+            $color_low = $default_color_low;
+        }
+        if ($user_rating_text_color === '') {
+            $user_rating_text_color = $default_user_rating_text_color;
+        }
+        if ($user_rating_star_color === '') {
+            $user_rating_star_color = $default_user_rating_star_color;
+        }
+        if ($table_header_bg_color === '') {
+            $table_header_bg_color = $default_table_header_bg_color;
+        }
+        if ($table_header_text_color === '') {
+            $table_header_text_color = $default_table_header_text_color;
+        }
+        if ($table_row_bg_color === '') {
+            $table_row_bg_color = $default_table_row_bg_color;
+        }
+        if ($table_row_text_color === '') {
+            $table_row_text_color = $default_table_row_text_color;
+        }
+        if ($table_zebra_bg_color === '') {
+            $table_zebra_bg_color = $default_table_zebra_bg_color;
+        }
+        if ($circle_border_color === '') {
+            $circle_border_color = $default_circle_border_color;
+        }
+
+        $table_row_hover_color = $sanitize_color(JLG_Helpers::adjust_hex_brightness($bg_color_secondary, 5));
+        $table_link_color = $sanitize_color(JLG_Helpers::adjust_hex_brightness($table_row_text_color, 20));
+        $score_gradient_1_hover = $sanitize_color(JLG_Helpers::adjust_hex_brightness($score_gradient_1, 20));
+
         $inline_css  = ':root{' .
-            '--jlg-bg-color:' . $palette['bg_color'] . ';' .
-            '--jlg-bg-color-secondary:' . $palette['bg_color_secondary'] . ';' .
-            '--jlg-border-color:' . $palette['border_color'] . ';' .
-            '--jlg-main-text-color:' . $palette['main_text_color'] . ';' .
-            '--jlg-secondary-text-color:' . $palette['secondary_text_color'] . ';' .
-            '--jlg-bar-bg-color:' . $palette['bar_bg_color'] . ';' .
-            '--jlg-score-gradient-1:' . $options['score_gradient_1'] . ';' .
-            '--jlg-score-gradient-2:' . $options['score_gradient_2'] . ';' .
-            '--jlg-color-high:' . $options['color_high'] . ';' .
-            '--jlg-color-low:' . $options['color_low'] . ';' .
-            '--jlg-tagline-bg-color:' . $palette['tagline_bg_color'] . ';' .
-            '--jlg-tagline-text-color:' . $palette['tagline_text_color'] . ';' .
+            '--jlg-bg-color:' . $bg_color . ';' .
+            '--jlg-bg-color-secondary:' . $bg_color_secondary . ';' .
+            '--jlg-border-color:' . $border_color . ';' .
+            '--jlg-main-text-color:' . $main_text_color . ';' .
+            '--jlg-secondary-text-color:' . $secondary_text_color . ';' .
+            '--jlg-bar-bg-color:' . $bar_bg_color . ';' .
+            '--jlg-score-gradient-1:' . $score_gradient_1 . ';' .
+            '--jlg-score-gradient-2:' . $score_gradient_2 . ';' .
+            '--jlg-color-high:' . $color_high . ';' .
+            '--jlg-color-low:' . $color_low . ';' .
+            '--jlg-tagline-bg-color:' . $tagline_bg_color . ';' .
+            '--jlg-tagline-text-color:' . $tagline_text_color . ';' .
             '--jlg-tagline-font-size:' . intval($options['tagline_font_size']) . 'px;' .
-            '--jlg-user-rating-text-color:' . $options['user_rating_text_color'] . ';' .
-            '--jlg-user-rating-star-color:' . $options['user_rating_star_color'] . ';' .
-            '--jlg-table-header-bg-color:' . $options['table_header_bg_color'] . ';' .
-            '--jlg-table-header-text-color:' . $options['table_header_text_color'] . ';' .
-            '--jlg-table-row-bg-color:' . $options['table_row_bg_color'] . ';' .
-            '--jlg-table-row-text-color:' . $options['table_row_text_color'] . ';' .
-            '--jlg-table-row-hover-color:' . JLG_Helpers::adjust_hex_brightness($palette['bg_color_secondary'], 5) . ';' .
-            '--jlg-table-link-color:' . JLG_Helpers::adjust_hex_brightness($options['table_row_text_color'], 20) . ';' .
-            '--jlg-score-gradient-1-hover:' . JLG_Helpers::adjust_hex_brightness($options['score_gradient_1'], 20) . ';' .
-            '--jlg-table-zebra-bg-color:' . $options['table_zebra_bg_color'] . ';' .
+            '--jlg-user-rating-text-color:' . $user_rating_text_color . ';' .
+            '--jlg-user-rating-star-color:' . $user_rating_star_color . ';' .
+            '--jlg-table-header-bg-color:' . $table_header_bg_color . ';' .
+            '--jlg-table-header-text-color:' . $table_header_text_color . ';' .
+            '--jlg-table-row-bg-color:' . $table_row_bg_color . ';' .
+            '--jlg-table-row-text-color:' . $table_row_text_color . ';' .
+            '--jlg-table-row-hover-color:' . $table_row_hover_color . ';' .
+            '--jlg-table-link-color:' . $table_link_color . ';' .
+            '--jlg-score-gradient-1-hover:' . $score_gradient_1_hover . ';' .
+            '--jlg-table-zebra-bg-color:' . $table_zebra_bg_color . ';' .
         '}';
 
         if (!empty($options['table_zebra_striping'])) {
             $inline_css .= '.jlg-summary-table tbody tr:nth-child(even){background-color:var(--jlg-table-zebra-bg-color);}';
-            $inline_css .= '.jlg-summary-table tbody tr:nth-child(even):hover{background-color:' . JLG_Helpers::adjust_hex_brightness($options['table_zebra_bg_color'], 5) . ';}';
+
+            if ($table_zebra_bg_color === 'transparent' || $table_zebra_bg_color === '') {
+                $zebra_hover_color = $table_zebra_bg_color;
+            } else {
+                $zebra_hover_color = $sanitize_color(JLG_Helpers::adjust_hex_brightness($table_zebra_bg_color, 5));
+            }
+
+            $inline_css .= '.jlg-summary-table tbody tr:nth-child(even):hover{background-color:' . $zebra_hover_color . ';}';
         }
 
         switch ($options['table_border_style']) {
             case 'horizontal':
-                $inline_css .= '.jlg-summary-table th,.jlg-summary-table td{border-bottom:' . intval($options['table_border_width']) . 'px solid ' . $palette['border_color'] . ';}';
+                $inline_css .= '.jlg-summary-table th,.jlg-summary-table td{border-bottom:' . intval($options['table_border_width']) . 'px solid ' . $border_color . ';}';
                 break;
             case 'full':
-                $inline_css .= '.jlg-summary-table th,.jlg-summary-table td{border:' . intval($options['table_border_width']) . 'px solid ' . $palette['border_color'] . ';}';
+                $inline_css .= '.jlg-summary-table th,.jlg-summary-table td{border:' . intval($options['table_border_width']) . 'px solid ' . $border_color . ';}';
                 break;
         }
 
         if ($options['score_layout'] === 'circle') {
             if (!empty($options['circle_dynamic_bg_enabled'])) {
-                $dynamic_color = JLG_Helpers::calculate_color_from_note($average_score, $options);
-                $darker_color = JLG_Helpers::adjust_hex_brightness($dynamic_color, -30);
+                $dynamic_color = $sanitize_color(JLG_Helpers::calculate_color_from_note($average_score, $options));
+                $base_for_darker = $dynamic_color ?: $score_gradient_1;
+                $darker_color = $base_for_darker !== '' ? $sanitize_color(JLG_Helpers::adjust_hex_brightness($base_for_darker, -30)) : '';
             } else {
-                $dynamic_color = $options['score_gradient_1'];
-                $darker_color = $options['score_gradient_2'];
+                $dynamic_color = $score_gradient_1;
+                $darker_color = $score_gradient_2;
+            }
+            if ($dynamic_color === '') {
+                $dynamic_color = $default_score_gradient_1;
+            }
+            if ($darker_color === '') {
+                $darker_color = $default_score_gradient_2;
             }
             $inline_css .= '.review-box-jlg .score-circle{background-image:linear-gradient(135deg,' . $dynamic_color . ',' . $darker_color . ');';
             if (!empty($options['circle_border_enabled'])) {
-                $inline_css .= 'border:' . intval($options['circle_border_width']) . 'px solid ' . $options['circle_border_color'] . ';';
+                $inline_css .= 'border:' . intval($options['circle_border_width']) . 'px solid ' . $circle_border_color . ';';
             }
             $inline_css .= '}';
         }

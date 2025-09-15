@@ -45,6 +45,18 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'
 5. Créez votre premier test avec notation !
 
+== Tests manuels de sécurité CSS ==
+
+Pour valider que des options malicieuses ne génèrent pas de CSS invalide :
+
+1. Dans l'administration WordPress, ouvrez **Notation – JLG > Réglages**.
+2. Dans la section *Tableau Récapitulatif*, saisissez `transparent` dans **Fond des lignes** et `#123456; background:red;` dans **Gradient 1**.
+3. Enregistrez les réglages puis affichez un article utilisant les shortcodes du plugin.
+4. Dans le code source de la page, repérez le bloc `<style id="jlg-frontend-inline-css">` :
+   * Vérifiez que `--jlg-table-row-bg-color` reste à `transparent` sans aucune règle supplémentaire.
+   * Vérifiez que `--jlg-score-gradient-1` ne contient pas de fragment `background:red;` et qu'elle revient à la couleur par défaut du plugin (la portion malveillante est supprimée).
+5. Restaurez ensuite des couleurs hexadécimales valides pour confirmer que l'affichage retrouve ses couleurs.
+
 == Frequently Asked Questions ==
 
 = Comment personnaliser les catégories de notation ? =
