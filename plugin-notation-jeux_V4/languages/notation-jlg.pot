@@ -1,0 +1,138 @@
+# Translation template for the Notation JLG plugin.
+# Copyright (C) YEAR Notation JLG
+# This file is distributed under the same license as the Notation JLG package.
+# Translators: Please update the header information with your details.
+msgid ""
+msgstr ""
+"Project-Id-Version: Notation - JLG (Version 5.0)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-15 21:53+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: xgettext\n"
+
+#. translators: Section title for the list of advantages in the pros and cons block.
+#: templates/shortcode-pros-cons.php:10
+msgid "Points Forts"
+msgstr ""
+
+#. translators: Section title for the list of drawbacks in the pros and cons block.
+#: templates/shortcode-pros-cons.php:19
+msgid "Points Faibles"
+msgstr ""
+
+#. translators: %s: Maximum rating value displayed with the thumbnail score.
+#: templates/widget-thumbnail-score.php:35
+#, php-format
+msgid "/%s"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:21
+msgid "Titre du jeu"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:26
+msgid "Date"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:31
+msgid "Note"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:36
+msgid "Développeur"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:40
+msgid "Éditeur"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:62
+msgid " ▲"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:63
+msgid " ▼"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:91
+msgid "Toutes les catégories"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:100
+msgid "Filtrer"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:128
+#: templates/shortcode-summary-display.php:186
+msgid "Aucun article trouvé pour cette sélection."
+msgstr ""
+
+#. translators: Abbreviation meaning that the average score is not available.
+#. translators: Abbreviation meaning that the user rating is not available.
+#: templates/shortcode-summary-display.php:163
+#: templates/shortcode-user-rating.php:15
+msgid "N/A"
+msgstr ""
+
+#. translators: %s: Maximum possible rating value.
+#: templates/shortcode-summary-display.php:167
+#, php-format
+msgid "/ %s"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:172
+#: templates/shortcode-summary-display.php:176
+msgid "-"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:201
+msgid "« Précédent"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:202
+msgid "Suivant »"
+msgstr ""
+
+#: templates/shortcode-tagline.php:12
+msgid "Français"
+msgstr ""
+
+#: templates/shortcode-tagline.php:13
+msgid "English"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:6
+msgid "Votre avis nous intéresse !"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:19
+#, php-format
+msgid ""
+"Note moyenne : <strong class=\"jlg-user-rating-avg-value\">%1$s</strong> sur "
+"%2$s (<span class=\"jlg-user-rating-count-value\">%3$s</span> votes)"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:37
+msgid "Merci pour votre vote !"
+msgstr ""
+
+#: templates/widget-latest-reviews.php:18
+msgid "Aucun test trouvé."
+msgstr ""
+
+#: templates/shortcode-rating-block.php:22
+#: templates/shortcode-rating-block.php:27
+msgid "Note Globale"
+msgstr ""
+
+#. translators: 1: Rating value for a specific category. 2: Maximum possible rating.
+#: templates/shortcode-rating-block.php:46
+#, php-format
+msgid "%1$s / %2$s"
+msgstr ""
