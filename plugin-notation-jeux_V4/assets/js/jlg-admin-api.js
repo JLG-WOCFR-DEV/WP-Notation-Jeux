@@ -25,7 +25,19 @@ jQuery(document).ready(function($) {
                 $('#jlg-api-search-button').text('Rechercher').prop('disabled', false);
 
                 if (response.success) {
-                    var games = response.data;
+                    var games = [];
+
+                    if (Array.isArray(response.data)) {
+                        games = response.data;
+                    } else if (response.data && Array.isArray(response.data.games)) {
+                        games = response.data.games;
+                    }
+
+                    if (!games.length && response.data && response.data.message) {
+                        resultsDiv.html('<p>' + response.data.message + '</p>');
+                        resultsDiv.data('games', []);
+                        return;
+                    }
                     var html = '<ul style="list-style: disc; padding-left: 20px;">';
                     games.forEach(function(game, index) {
                         var year = game.release_date ? new Date(game.release_date).getFullYear() : 'N/A';
