@@ -21,6 +21,7 @@ if ($delete_data) {
     delete_option('notation_jlg_settings');
     delete_option('jlg_notation_version');
     delete_option('jlg_migration_v5_completed');
+    delete_option('jlg_platforms_list');
     delete_option('jlg_notation_delete_data_on_uninstall');
     
     // Supprimer toutes les métadonnées des posts
