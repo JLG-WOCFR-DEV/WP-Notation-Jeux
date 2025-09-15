@@ -349,51 +349,6 @@ class JLG_Shortcode_All_In_One {
                 }
             }
             ?>
-                    
-                    $intensity = isset($options['circle_glow_intensity']) ? intval($options['circle_glow_intensity']) : 15;
-                    $has_pulse = !empty($options['circle_glow_pulse']);
-                    $speed = isset($options['circle_glow_speed']) ? floatval($options['circle_glow_speed']) : 2.5;
-                    
-                    $s1 = round($intensity * 0.5);
-                    $s2 = $intensity;
-                    $s3 = round($intensity * 1.5);
-                    
-                    echo ".jlg-aio-score-circle { ";
-                    echo "box-shadow: ";
-                    echo "0 0 {$s1}px {$glow_color}, ";
-                    echo "0 0 {$s2}px {$glow_color}, ";
-                    echo "0 0 {$s3}px {$glow_color}, ";
-                    echo "inset 0 0 {$s1}px rgba(255,255,255,0.1) !important; ";
-                    echo "} ";
-                    
-                    if ($has_pulse) {
-                        $ps1 = round($intensity * 0.7);
-                        $ps2 = round($intensity * 1.5);
-                        $ps3 = round($intensity * 2.5);
-                        
-                        echo "@keyframes jlg-aio-circle-glow-pulse { ";
-                        echo "0%, 100% { ";
-                        echo "box-shadow: ";
-                        echo "0 0 {$s1}px {$glow_color}, ";
-                        echo "0 0 {$s2}px {$glow_color}, ";
-                        echo "0 0 {$s3}px {$glow_color}, ";
-                        echo "inset 0 0 {$s1}px rgba(255,255,255,0.1); ";
-                        echo "} ";
-                        echo "50% { ";
-                        echo "box-shadow: ";
-                        echo "0 0 {$ps1}px {$glow_color}, ";
-                        echo "0 0 {$ps2}px {$glow_color}, ";
-                        echo "0 0 {$ps3}px {$glow_color}, ";
-                        echo "inset 0 0 {$ps1}px rgba(255,255,255,0.15); ";
-                        echo "} ";
-                        echo "} ";
-                        echo ".jlg-aio-score-circle { ";
-                        echo "animation: jlg-aio-circle-glow-pulse {$speed}s infinite ease-in-out !important; ";
-                        echo "} ";
-                    }
-                }
-            }
-            ?>
 
             .jlg-aio-score-label {
                 font-size: 0.875rem;
