@@ -230,26 +230,45 @@ class JLG_Frontend {
         if (!is_array($args)) {
             $args = [];
         }
-        
-        // Extraire les variables du tableau pour les rendre disponibles dans le template
-        extract($args);
-        
+
+        // Mappage contrôlé des variables pour les rendre disponibles dans le template
+        foreach ($args as $key => $value) {
+            if (is_string($key) && preg_match('/^[a-zA-Z0-9_]+$/', $key)) {
+                ${$key} = $value;
+            }
+        }
+
+        // Liste des templates autorisés
+        $allowed_templates = [
+            'shortcode-game-info',
+            'shortcode-rating-block',
+            'shortcode-tagline',
+            'widget-latest-reviews',
+            'shortcode-pros-cons',
+            'shortcode-summary-display',
+            'shortcode-user-rating',
+            'widget-thumbnail-score',
+        ];
+
+        // Sanitize et validation du nom de template
+        $template_name = sanitize_file_name($template_name);
+        if (!in_array($template_name, $allowed_templates, true)) {
+            return new WP_Error('template_not_allowed', sprintf('Template non autorisé : %s', esc_html($template_name)));
+        }
+
         // Démarrer la capture de sortie
         ob_start();
-        
+
         // Construire le chemin du template
         $template_path = JLG_NOTATION_PLUGIN_DIR . 'templates/' . $template_name . '.php';
-        
+
         // Inclure le template s'il existe
         if (file_exists($template_path)) {
             include $template_path;
         } else {
-            // Afficher un message d'erreur seulement pour les administrateurs
-            if (current_user_can('manage_options')) {
-                echo '<div class="notice notice-error"><p>Template manquant : <code>' . esc_html($template_path) . '</code></p></div>';
-            }
+            return new WP_Error('template_not_found', sprintf('Template manquant : %s', esc_html($template_path)));
         }
-        
+
         // Retourner le contenu capturé
         return ob_get_clean();
     }

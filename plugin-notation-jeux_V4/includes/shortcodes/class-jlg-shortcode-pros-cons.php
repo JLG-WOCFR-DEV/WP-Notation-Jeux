@@ -21,9 +21,10 @@ class JLG_Shortcode_Pros_Cons {
             return '';
         }
         
-        return JLG_Frontend::get_template_html('shortcode-pros-cons', [
+        $html = JLG_Frontend::get_template_html('shortcode-pros-cons', [
             'pros_list' => !empty($pros) ? array_filter(explode("\n", $pros)) : [],
             'cons_list' => !empty($cons) ? array_filter(explode("\n", $cons)) : [],
         ]);
+        return is_wp_error($html) ? '' : $html;
     }
 }

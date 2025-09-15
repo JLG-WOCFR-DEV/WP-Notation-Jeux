@@ -65,12 +65,13 @@ class JLG_Shortcode_Summary_Display {
         $query = new WP_Query($args);
         
         // Utiliser le template pour le rendu
-        return JLG_Frontend::get_template_html('shortcode-summary-display', [
+        $html = JLG_Frontend::get_template_html('shortcode-summary-display', [
             'query' => $query,
             'atts'  => $atts,
             'paged' => $paged,
             'orderby' => $orderby,
             'order' => $order
         ]);
+        return is_wp_error($html) ? '' : $html;
     }
 }

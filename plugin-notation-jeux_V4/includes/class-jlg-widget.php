@@ -39,11 +39,14 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
         $latest_reviews = new WP_Query($query_args);
 
         // Utilisation d'un fichier template pour l'affichage
-        echo JLG_Frontend::get_template_html('widget-latest-reviews', [
+        $html = JLG_Frontend::get_template_html('widget-latest-reviews', [
             'widget_args' => $args,
             'title' => $title,
             'latest_reviews' => $latest_reviews
         ]);
+        if (!is_wp_error($html)) {
+            echo $html;
+        }
     }
 
     public function form($instance) {

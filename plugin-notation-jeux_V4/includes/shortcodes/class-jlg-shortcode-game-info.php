@@ -55,9 +55,10 @@ class JLG_Shortcode_Game_Info {
             return '';
         }
         
-        return JLG_Frontend::get_template_html('shortcode-game-info', [
+        $html = JLG_Frontend::get_template_html('shortcode-game-info', [
             'titre'             => sanitize_text_field($atts['titre']),
             'champs_a_afficher' => $data_to_display,
         ]);
+        return is_wp_error($html) ? '' : $html;
     }
 }

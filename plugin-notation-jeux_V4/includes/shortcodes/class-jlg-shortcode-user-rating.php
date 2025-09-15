@@ -21,7 +21,7 @@ class JLG_Shortcode_User_Rating {
         $ratings = get_post_meta($post_id, '_jlg_user_ratings', true);
         $has_voted = (is_array($ratings) && isset($ratings[$_SERVER['REMOTE_ADDR']]));
         
-        return JLG_Frontend::get_template_html('shortcode-user-rating', [
+        $html = JLG_Frontend::get_template_html('shortcode-user-rating', [
             'options' => $options,
             'post_id' => $post_id,
             'avg_rating' => get_post_meta($post_id, '_jlg_user_rating_avg', true),
@@ -29,5 +29,6 @@ class JLG_Shortcode_User_Rating {
             'has_voted' => $has_voted,
             'user_vote' => $has_voted ? $ratings[$_SERVER['REMOTE_ADDR']] : 0
         ]);
+        return is_wp_error($html) ? '' : $html;
     }
 }

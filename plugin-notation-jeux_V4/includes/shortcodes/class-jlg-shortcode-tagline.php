@@ -24,10 +24,11 @@ class JLG_Shortcode_Tagline {
             return '';
         }
         
-        return JLG_Frontend::get_template_html('shortcode-tagline', [
+        $html = JLG_Frontend::get_template_html('shortcode-tagline', [
             'options' => $options,
             'tagline_fr' => $tagline_fr,
             'tagline_en' => $tagline_en
         ]);
+        return is_wp_error($html) ? '' : $html;
     }
 }
