@@ -28,7 +28,17 @@ class JLG_Shortcode_All_In_One {
             'style' => 'moderne', // moderne, classique, compact
             'couleur_accent' => '', // Permet de surcharger la couleur d'accent
         ], $atts, 'jlg_bloc_complet');
-        
+
+        // Sanitize attributes
+        $atts = array_map('sanitize_text_field', $atts);
+        $atts['couleur_accent'] = sanitize_hex_color($atts['couleur_accent']);
+
+        // Validate style
+        $allowed_styles = ['moderne', 'classique', 'compact'];
+        if (!in_array($atts['style'], $allowed_styles, true)) {
+            $atts['style'] = 'moderne';
+        }
+
         $post_id = intval($atts['post_id']);
 
         // Sécurité : ne s'exécute que sur les articles ('post')
