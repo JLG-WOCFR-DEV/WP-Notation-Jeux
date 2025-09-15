@@ -84,17 +84,95 @@ class JLG_Frontend {
      * Charge les scripts JavaScript nécessaires
      */
     public function enqueue_jlg_scripts() {
-        if (!is_singular('post')) { 
-            return; 
+        if (!is_singular('post')) {
+            return;
         }
 
-        $options = get_option('notation_jlg_settings', JLG_Helpers::get_default_settings());
+        $options = JLG_Helpers::get_plugin_options();
+        $palette = JLG_Helpers::get_color_palette();
+        $post_id = get_queried_object_id();
+        $average_score = JLG_Helpers::get_average_score_for_post($post_id);
+
+        // Feuille de styles principale
+        wp_enqueue_style(
+            'jlg-frontend',
+            JLG_NOTATION_PLUGIN_URL . 'assets/css/jlg-frontend.css',
+            [],
+            JLG_NOTATION_VERSION
+        );
+
+        $inline_css  = ':root{' .
+            '--jlg-bg-color:' . $palette['bg_color'] . ';' .
+            '--jlg-bg-color-secondary:' . $palette['bg_color_secondary'] . ';' .
+            '--jlg-border-color:' . $palette['border_color'] . ';' .
+            '--jlg-main-text-color:' . $palette['main_text_color'] . ';' .
+            '--jlg-secondary-text-color:' . $palette['secondary_text_color'] . ';' .
+            '--jlg-bar-bg-color:' . $palette['bar_bg_color'] . ';' .
+            '--jlg-score-gradient-1:' . $options['score_gradient_1'] . ';' .
+            '--jlg-score-gradient-2:' . $options['score_gradient_2'] . ';' .
+            '--jlg-color-high:' . $options['color_high'] . ';' .
+            '--jlg-color-low:' . $options['color_low'] . ';' .
+            '--jlg-tagline-bg-color:' . $palette['tagline_bg_color'] . ';' .
+            '--jlg-tagline-text-color:' . $palette['tagline_text_color'] . ';' .
+            '--jlg-tagline-font-size:' . intval($options['tagline_font_size']) . 'px;' .
+            '--jlg-user-rating-text-color:' . $options['user_rating_text_color'] . ';' .
+            '--jlg-user-rating-star-color:' . $options['user_rating_star_color'] . ';' .
+            '--jlg-table-header-bg-color:' . $options['table_header_bg_color'] . ';' .
+            '--jlg-table-header-text-color:' . $options['table_header_text_color'] . ';' .
+            '--jlg-table-row-bg-color:' . $options['table_row_bg_color'] . ';' .
+            '--jlg-table-row-text-color:' . $options['table_row_text_color'] . ';' .
+            '--jlg-table-row-hover-color:' . JLG_Helpers::adjust_hex_brightness($palette['bg_color_secondary'], 5) . ';' .
+            '--jlg-table-link-color:' . JLG_Helpers::adjust_hex_brightness($options['table_row_text_color'], 20) . ';' .
+            '--jlg-score-gradient-1-hover:' . JLG_Helpers::adjust_hex_brightness($options['score_gradient_1'], 20) . ';' .
+            '--jlg-table-zebra-bg-color:' . $options['table_zebra_bg_color'] . ';' .
+        '}';
+
+        if (!empty($options['table_zebra_striping'])) {
+            $inline_css .= '.jlg-summary-table tbody tr:nth-child(even){background-color:var(--jlg-table-zebra-bg-color);}';
+            $inline_css .= '.jlg-summary-table tbody tr:nth-child(even):hover{background-color:' . JLG_Helpers::adjust_hex_brightness($options['table_zebra_bg_color'], 5) . ';}';
+        }
+
+        switch ($options['table_border_style']) {
+            case 'horizontal':
+                $inline_css .= '.jlg-summary-table th,.jlg-summary-table td{border-bottom:' . intval($options['table_border_width']) . 'px solid ' . $palette['border_color'] . ';}';
+                break;
+            case 'full':
+                $inline_css .= '.jlg-summary-table th,.jlg-summary-table td{border:' . intval($options['table_border_width']) . 'px solid ' . $palette['border_color'] . ';}';
+                break;
+        }
+
+        if ($options['score_layout'] === 'circle') {
+            if (!empty($options['circle_dynamic_bg_enabled'])) {
+                $dynamic_color = JLG_Helpers::calculate_color_from_note($average_score, $options);
+                $darker_color = JLG_Helpers::adjust_hex_brightness($dynamic_color, -30);
+            } else {
+                $dynamic_color = $options['score_gradient_1'];
+                $darker_color = $options['score_gradient_2'];
+            }
+            $inline_css .= '.review-box-jlg .score-circle{background-image:linear-gradient(135deg,' . $dynamic_color . ',' . $darker_color . ');';
+            if (!empty($options['circle_border_enabled'])) {
+                $inline_css .= 'border:' . intval($options['circle_border_width']) . 'px solid ' . $options['circle_border_color'] . ';';
+            }
+            $inline_css .= '}';
+        }
+
+        if ($options['score_layout'] === 'text') {
+            $inline_css .= JLG_Helpers::get_glow_css('text', $average_score, $options);
+        } elseif ($options['score_layout'] === 'circle') {
+            $inline_css .= JLG_Helpers::get_glow_css('circle', $average_score, $options);
+        }
+
+        if (!empty($options['custom_css'])) {
+            $inline_css .= wp_strip_all_tags($options['custom_css']);
+        }
+
+        wp_add_inline_style('jlg-frontend', $inline_css);
 
         // Script pour la notation utilisateur
         if (!empty($options['user_rating_enabled'])) {
             wp_enqueue_script(
-                'jlg-user-rating', 
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/user-rating.js', 
+                'jlg-user-rating',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/user-rating.js',
                 ['jquery'], 
                 JLG_NOTATION_VERSION, 
                 true
