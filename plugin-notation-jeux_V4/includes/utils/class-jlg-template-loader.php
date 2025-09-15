@@ -14,21 +14,52 @@ class JLG_Template_Loader {
             self::init();
         }
 
-        $template_path = self::get_template_path($template_name);
-        
+        return self::load_template_from_directory(self::$templates_dir, $template_name, $variables);
+    }
+
+    public static function get_admin_template($template_name, $variables = []) {
+        $directory = JLG_NOTATION_PLUGIN_DIR . 'admin/templates/';
+        return self::load_template_from_directory($directory, $template_name, $variables);
+    }
+
+    public static function get_template_from_directory($directory, $template_name, $variables = []) {
+        return self::load_template_from_directory($directory, $template_name, $variables);
+    }
+
+    private static function load_template_from_directory($directory, $template_name, $variables) {
+        $template_path = self::build_template_path($directory, $template_name);
+
         if (!file_exists($template_path)) {
-            return self::handle_missing_template($template_name);
+            $relative_name = self::get_relative_template_name($directory, $template_name);
+            return self::handle_missing_template($relative_name);
         }
 
         return self::load_template_file($template_path, $variables);
     }
 
-    private static function get_template_path($template_name) {
+    private static function build_template_path($directory, $template_name) {
+        $directory = rtrim($directory, '/\\') . '/';
         $template_name = ltrim($template_name, '/');
+
         if (!str_ends_with($template_name, '.php')) {
             $template_name .= '.php';
         }
-        return self::$templates_dir . $template_name;
+
+        return $directory . $template_name;
+    }
+
+    private static function get_relative_template_name($directory, $template_name) {
+        $directory = rtrim($directory, '/\\') . '/';
+        $relative_base = str_replace(JLG_NOTATION_PLUGIN_DIR, '', $directory);
+        $relative_base = trim($relative_base, '/');
+
+        $template_name = ltrim($template_name, '/');
+
+        if (!empty($relative_base)) {
+            return $relative_base . '/' . $template_name;
+        }
+
+        return $template_name;
     }
 
     private static function load_template_file($template_path, $variables) {
@@ -53,5 +84,13 @@ class JLG_Template_Loader {
 
     public static function display_template($template_name, $variables = []) {
         echo self::get_template($template_name, $variables);
+    }
+
+    public static function display_admin_template($template_name, $variables = []) {
+        echo self::get_admin_template($template_name, $variables);
+    }
+
+    public static function display_template_from_directory($directory, $template_name, $variables = []) {
+        echo self::get_template_from_directory($directory, $template_name, $variables);
     }
 }
