@@ -8,41 +8,6 @@ $has_fr = !empty($tagline_fr);
 $has_en = !empty($tagline_en);
 $default_lang = $has_fr ? 'fr' : 'en';
 ?>
-<style>
-    .jlg-tagline-block {
-        /* CORRECTION : On utilise la variable $palette ici */
-        background-color: <?php echo esc_attr($palette['tagline_bg_color']); ?>;
-        color: <?php echo esc_attr($palette['tagline_text_color']); ?>;
-        
-        font-size: <?php echo intval($options['tagline_font_size']); ?>px;
-        padding: 20px 25px;
-        border-radius: 8px;
-        margin: 32px auto;
-        max-width: 650px;
-        text-align: center;
-        position: relative;
-        box-sizing: border-box;
-    }
-    .jlg-tagline-text {
-        font-style: italic;
-    }
-    .jlg-tagline-flags {
-        position: absolute;
-        top: 8px;
-        right: 12px;
-    }
-    .jlg-lang-flag {
-        width: 24px;
-        height: auto;
-        cursor: pointer;
-        opacity: 0.5;
-        transition: opacity 0.2s ease-in-out;
-        margin-left: 5px;
-    }
-    .jlg-lang-flag.active {
-        opacity: 1;
-    }
-</style>
 <div class="jlg-tagline-block">
     <?php if ($has_fr && $has_en): ?>
         <div class="jlg-tagline-flags">

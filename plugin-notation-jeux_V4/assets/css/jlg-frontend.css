@@ -1,0 +1,416 @@
+/* Rating Block */
+.review-box-jlg {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--jlg-bg-color);
+    border: 1px solid var(--jlg-border-color);
+    color: var(--jlg-secondary-text-color);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 32px auto;
+    max-width: 650px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+}
+.review-box-jlg hr {
+    border: 0;
+    height: 1px;
+    background-color: var(--jlg-border-color);
+    margin: 24px 0;
+}
+.review-box-jlg .global-score-wrapper {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.review-box-jlg .score-value {
+    font-size: 4.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--jlg-main-text-color);
+    background: linear-gradient(45deg, var(--jlg-score-gradient-1), var(--jlg-score-gradient-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+}
+.review-box-jlg .score-label {
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+}
+.review-box-jlg .rating-breakdown {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+@media (min-width: 520px) {
+    .review-box-jlg .rating-breakdown {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+.review-box-jlg .rating-item {
+    display: flex;
+    flex-direction: column;
+}
+.review-box-jlg .rating-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-size: .9rem;
+    font-weight: 500;
+}
+.review-box-jlg .rating-label span:first-child {
+    font-weight: 600;
+    color: var(--jlg-main-text-color);
+}
+.review-box-jlg .rating-bar-container {
+    background-color: var(--jlg-bar-bg-color);
+    border-radius: 9999px;
+    height: 10px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.2);
+}
+.review-box-jlg .rating-bar {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width .6s cubic-bezier(.25,1,.5,1), background-color .3s ease;
+    background-color: var(--bar-color, var(--jlg-score-gradient-1));
+}
+.review-box-jlg .score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.review-box-jlg .score-circle .score-value {
+    font-size: 3.5rem;
+    background: var(--jlg-main-text-color);
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: none !important;
+}
+.review-box-jlg .score-circle .score-label {
+    font-size: 0.8rem;
+    color: var(--jlg-secondary-text-color);
+}
+
+/* Tagline */
+.jlg-tagline-block {
+    background-color: var(--jlg-tagline-bg-color);
+    color: var(--jlg-tagline-text-color);
+    font-size: var(--jlg-tagline-font-size);
+    padding: 20px 25px;
+    border-radius: 8px;
+    margin: 32px auto;
+    max-width: 650px;
+    text-align: center;
+    position: relative;
+    box-sizing: border-box;
+}
+.jlg-tagline-text {
+    font-style: italic;
+}
+.jlg-tagline-flags {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+}
+.jlg-lang-flag {
+    width: 24px;
+    height: auto;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s ease-in-out;
+    margin-left: 5px;
+}
+.jlg-lang-flag.active {
+    opacity: 1;
+}
+
+/* Pros & Cons */
+.jlg-pros-cons-wrapper {
+    display: flex;
+    gap: 30px;
+    margin: 32px auto;
+    max-width: 650px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    flex-wrap: wrap;
+    background-color: var(--jlg-bar-bg-color);
+    padding: 20px;
+    border-radius: 8px;
+}
+.jlg-pros-cons-col {
+    flex: 1;
+    min-width: 250px;
+}
+.jlg-pros-cons-col h3 {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid var(--jlg-border-color);
+    padding-bottom: 8px;
+    margin-top: 0;
+    color: var(--jlg-main-text-color);
+}
+.jlg-pros-cons-col .icon {
+    margin-right: 10px;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+.jlg-pros-cons-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0 0 0;
+}
+.jlg-pros-cons-col li {
+    color: var(--jlg-secondary-text-color);
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+.icon-pros {
+    color: var(--jlg-color-high);
+}
+.icon-cons {
+    color: var(--jlg-color-low);
+}
+
+/* Game Info */
+.jlg-game-info-box {
+    background-color: var(--jlg-bar-bg-color);
+    border-left: 4px solid var(--jlg-score-gradient-1);
+    padding: 20px;
+    margin: 32px auto;
+    max-width: 650px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    border-radius: 8px;
+}
+.jlg-game-info-box h3 {
+    margin-top: 0;
+    color: var(--jlg-main-text-color);
+}
+.jlg-game-info-box dl {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 10px 20px;
+}
+.jlg-game-info-box dt {
+    font-weight: 600;
+    color: var(--jlg-main-text-color);
+}
+.jlg-game-info-box dd {
+    margin: 0;
+    color: var(--jlg-secondary-text-color);
+}
+.jlg-game-info-box .platforms-list span {
+    display: inline-block;
+    background: var(--jlg-border-color);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin: 2px;
+}
+
+/* User Rating */
+.jlg-user-rating-block {
+    max-width: 650px;
+    margin: 32px auto;
+    text-align: center;
+    color: var(--jlg-user-rating-text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.jlg-user-rating-block.is-loading {
+    opacity: 0.6;
+    cursor: wait;
+    pointer-events: none;
+}
+.jlg-user-rating-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--jlg-main-text-color);
+    margin-bottom: 12px;
+}
+.jlg-user-rating-stars {
+    display: inline-flex;
+    gap: 5px;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+.jlg-user-rating-block.has-voted .jlg-user-rating-stars {
+    cursor: default;
+}
+.jlg-user-star {
+    font-size: 28px;
+    color: #52525b;
+    transition: color 0.2s, transform 0.2s;
+}
+.jlg-user-rating-block.has-voted .jlg-user-star:hover,
+.jlg-user-rating-block.has-voted .jlg-user-star.hover {
+    color: #52525b;
+    transform: none;
+}
+.jlg-user-star:hover,
+.jlg-user-star.hover {
+    color: var(--jlg-user-rating-star-color);
+    transform: scale(1.15);
+}
+.jlg-user-star.selected {
+    color: var(--jlg-user-rating-star-color);
+}
+.jlg-user-rating-summary {
+    font-size: 0.9rem;
+}
+.jlg-rating-message {
+    margin-top: 10px;
+    color: var(--jlg-color-high);
+    font-weight: 500;
+    min-height: 20px;
+}
+
+/* Summary Display */
+.jlg-summary-filters {
+    margin-bottom: 20px;
+    text-align: right;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.jlg-summary-filters select,
+.jlg-summary-filters input[type="submit"] {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--jlg-border-color);
+    background-color: var(--jlg-bg-color);
+    color: var(--jlg-main-text-color);
+    vertical-align: middle;
+    transition: all 0.2s ease;
+}
+.jlg-summary-filters input[type="submit"] {
+    background-color: var(--jlg-score-gradient-1);
+    color: #fff;
+    border-color: var(--jlg-score-gradient-1);
+    cursor: pointer;
+}
+.jlg-summary-filters input[type="submit"]:hover {
+    background-color: var(--jlg-score-gradient-1-hover);
+    border-color: var(--jlg-score-gradient-1-hover);
+}
+.jlg-summary-table-wrapper {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.jlg-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2em 0;
+    font-size: 0.9em;
+    color: var(--jlg-table-row-text-color);
+    background-color: var(--jlg-table-row-bg-color);
+}
+.jlg-summary-table th, .jlg-summary-table td {
+    padding: 12px 15px;
+    text-align: left;
+}
+.jlg-summary-table thead th {
+    background-color: var(--jlg-table-header-bg-color);
+    color: var(--jlg-table-header-text-color);
+    font-weight: 600;
+}
+.jlg-summary-table th.sortable a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+}
+.jlg-summary-table th.sorted a {
+    color: var(--jlg-score-gradient-1);
+}
+.jlg-summary-table tbody tr:hover {
+    background-color: var(--jlg-row-hover-bg-color);
+}
+.jlg-summary-table td a {
+    color: var(--jlg-table-row-text-color-hover);
+    font-weight: 500;
+    text-decoration: none;
+}
+.jlg-summary-table tbody tr:nth-child(even) {
+    background-color: var(--jlg-table-zebra-bg-color);
+}
+.jlg-summary-table tbody tr:nth-child(even):hover {
+    background-color: var(--jlg-table-zebra-bg-color-hover);
+}
+.jlg-summary-grid-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.jlg-game-card {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,.3);
+    transition: all 0.2s ease;
+}
+.jlg-game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0,0,0,.4);
+}
+.jlg-game-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+.jlg-game-card:hover img {
+    transform: scale(1.05);
+}
+.jlg-game-card-score {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    background: rgba(0,0,0,.8);
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 5px 10px;
+    border-radius: 6px;
+    backdrop-filter: blur(5px);
+}
+.jlg-game-card-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    background: linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,0) 100%);
+    padding: 30px 15px 15px;
+}
+.jlg-game-card-title span {
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1.1rem;
+}
+.jlg-pagination {
+    text-align: center;
+    margin-top: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.jlg-pagination .page-numbers {
+    padding: 8px 12px;
+    margin: 0 2px;
+    border: 1px solid var(--jlg-border-color);
+    background-color: var(--jlg-bg-color-secondary);
+    color: var(--jlg-secondary-text-color);
+    text-decoration: none;
+    border-radius: 4px;
+}
+.jlg-pagination .page-numbers:hover,
+.jlg-pagination .page-numbers.current {
+    background-color: var(--jlg-score-gradient-1);
+    border-color: var(--jlg-score-gradient-1);
+    color: #fff;
+}

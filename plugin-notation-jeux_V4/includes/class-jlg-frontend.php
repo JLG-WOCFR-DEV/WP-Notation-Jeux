@@ -81,14 +81,94 @@ class JLG_Frontend {
     }
 
     /**
-     * Charge les scripts JavaScript nécessaires
+     * Charge les scripts et styles nécessaires
      */
     public function enqueue_jlg_scripts() {
-        if (!is_singular('post')) { 
-            return; 
+        if (!is_singular('post')) {
+            return;
         }
 
         $options = get_option('notation_jlg_settings', JLG_Helpers::get_default_settings());
+        $palette = JLG_Helpers::get_color_palette();
+
+        wp_enqueue_style(
+            'jlg-frontend',
+            JLG_NOTATION_PLUGIN_URL . 'assets/css/jlg-frontend.css',
+            [],
+            JLG_NOTATION_VERSION
+        );
+
+        $dynamic_css = ':root{' .
+            '--jlg-bg-color:' . esc_attr($palette['bg_color']) . ';' .
+            '--jlg-border-color:' . esc_attr($palette['border_color']) . ';' .
+            '--jlg-secondary-text-color:' . esc_attr($palette['secondary_text_color']) . ';' .
+            '--jlg-main-text-color:' . esc_attr($palette['main_text_color']) . ';' .
+            '--jlg-score-gradient-1:' . esc_attr($options['score_gradient_1']) . ';' .
+            '--jlg-score-gradient-2:' . esc_attr($options['score_gradient_2']) . ';' .
+            '--jlg-bar-bg-color:' . esc_attr($palette['bar_bg_color']) . ';' .
+            '--jlg-tagline-bg-color:' . esc_attr($palette['tagline_bg_color']) . ';' .
+            '--jlg-tagline-text-color:' . esc_attr($palette['tagline_text_color']) . ';' .
+            '--jlg-tagline-font-size:' . intval($options['tagline_font_size']) . 'px;' .
+            '--jlg-user-rating-text-color:' . esc_attr($options['user_rating_text_color']) . ';' .
+            '--jlg-user-rating-star-color:' . esc_attr($options['user_rating_star_color']) . ';' .
+            '--jlg-color-high:' . esc_attr($options['color_high']) . ';' .
+            '--jlg-color-low:' . esc_attr($options['color_low']) . ';' .
+            '--jlg-table-row-text-color:' . esc_attr($options['table_row_text_color']) . ';' .
+            '--jlg-table-row-bg-color:' . esc_attr($options['table_row_bg_color']) . ';' .
+            '--jlg-table-header-bg-color:' . esc_attr($options['table_header_bg_color']) . ';' .
+            '--jlg-table-header-text-color:' . esc_attr($options['table_header_text_color']) . ';' .
+            '--jlg-bg-color-secondary:' . esc_attr($palette['bg_color_secondary']) . ';' .
+            '--jlg-table-zebra-bg-color:' . esc_attr($options['table_zebra_bg_color']) . ';' .
+            '--jlg-row-hover-bg-color:' . esc_attr(JLG_Helpers::adjust_hex_brightness($palette['bg_color_secondary'], 5)) . ';' .
+            '--jlg-table-row-text-color-hover:' . esc_attr(JLG_Helpers::adjust_hex_brightness($options['table_row_text_color'], 20)) . ';' .
+            '--jlg-table-zebra-bg-color-hover:' . esc_attr(JLG_Helpers::adjust_hex_brightness($options['table_zebra_bg_color'], 5)) . ';' .
+            '--jlg-score-gradient-1-hover:' . esc_attr(JLG_Helpers::adjust_hex_brightness($options['score_gradient_1'], 20)) . ';' .
+        "}";
+
+        $post_id = get_the_ID();
+        $average_score = JLG_Helpers::get_average_score_for_post($post_id);
+
+        if ($options['score_layout'] === 'circle') {
+            if (!empty($options['circle_dynamic_bg_enabled'])) {
+                $dynamic_color = JLG_Helpers::calculate_color_from_note($average_score, $options);
+                $darker_color = JLG_Helpers::adjust_hex_brightness($dynamic_color, -30);
+                $dynamic_css .= '.review-box-jlg .score-circle{background-image:linear-gradient(135deg,' . esc_attr($dynamic_color) . ',' . esc_attr($darker_color) . ');}';
+            } else {
+                $dynamic_css .= '.review-box-jlg .score-circle{background-image:linear-gradient(135deg,' . esc_attr($options['score_gradient_1']) . ',' . esc_attr($options['score_gradient_2']) . ');}';
+            }
+            if (!empty($options['circle_border_enabled'])) {
+                $dynamic_css .= '.review-box-jlg .score-circle{border:' . intval($options['circle_border_width']) . 'px solid ' . esc_attr($options['circle_border_color']) . ';}';
+            }
+        }
+
+        if ($options['score_layout'] === 'text') {
+            $dynamic_css .= JLG_Helpers::get_glow_css('text', $average_score, $options);
+        } elseif ($options['score_layout'] === 'circle') {
+            $dynamic_css .= JLG_Helpers::get_glow_css('circle', $average_score, $options);
+        }
+
+        if (!empty($options['custom_css'])) {
+            $dynamic_css .= wp_strip_all_tags($options['custom_css']);
+        }
+
+        if (!empty($options['enable_animations'])) {
+            $dynamic_css .= '.review-box-jlg.jlg-animate .rating-bar{width:0;}';
+            $dynamic_css .= '.review-box-jlg.jlg-animate.is-in-view .rating-bar{width:var(--rating-percent,0%);}';
+            $dynamic_css .= '.review-box-jlg.jlg-animate .score-circle,.review-box-jlg.jlg-animate .global-score-text{opacity:0;transition:transform 0.6s ease,opacity 0.6s ease;transform:scale(0.9);}';
+            $dynamic_css .= '.review-box-jlg.jlg-animate.is-in-view .score-circle,.review-box-jlg.jlg-animate.is-in-view .global-score-text{transform:scale(1);opacity:1;}';
+        }
+
+        $border_color_for_table = $palette['border_color'];
+        switch ($options['table_border_style']) {
+            case 'horizontal':
+                $dynamic_css .= '.jlg-summary-table th, .jlg-summary-table td{border-bottom:' . intval($options['table_border_width']) . 'px solid ' . esc_attr($border_color_for_table) . ';}';
+                break;
+            case 'full':
+                $dynamic_css .= '.jlg-summary-table th, .jlg-summary-table td{border:' . intval($options['table_border_width']) . 'px solid ' . esc_attr($border_color_for_table) . ';}';
+                break;
+        }
+
+        wp_add_inline_style('jlg-frontend', $dynamic_css);
 
         // Script pour la notation utilisateur
         if (!empty($options['user_rating_enabled'])) {
@@ -119,10 +199,10 @@ class JLG_Frontend {
         // Script pour les animations
         if (!empty($options['enable_animations'])) {
             wp_enqueue_script(
-                'jlg-animations', 
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-animations.js', 
-                [], 
-                JLG_NOTATION_VERSION, 
+                'jlg-animations',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-animations.js',
+                [],
+                JLG_NOTATION_VERSION,
                 true
             );
         }
