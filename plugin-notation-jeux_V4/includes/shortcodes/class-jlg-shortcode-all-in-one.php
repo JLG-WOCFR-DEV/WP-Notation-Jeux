@@ -28,8 +28,20 @@ class JLG_Shortcode_All_In_One {
             'style' => 'moderne', // moderne, classique, compact
             'couleur_accent' => '', // Permet de surcharger la couleur d'accent
         ], $atts, 'jlg_bloc_complet');
-        
+
         $post_id = intval($atts['post_id']);
+        $atts['afficher_notation'] = sanitize_text_field($atts['afficher_notation']);
+        $atts['afficher_points'] = sanitize_text_field($atts['afficher_points']);
+        $atts['afficher_tagline'] = sanitize_text_field($atts['afficher_tagline']);
+        $atts['titre_points_forts'] = sanitize_text_field($atts['titre_points_forts']);
+        $atts['titre_points_faibles'] = sanitize_text_field($atts['titre_points_faibles']);
+        $atts['style'] = sanitize_text_field($atts['style']);
+        $atts['couleur_accent'] = sanitize_hex_color($atts['couleur_accent']);
+
+        $allowed_styles = ['moderne', 'classique', 'compact'];
+        if (!in_array($atts['style'], $allowed_styles, true)) {
+            $atts['style'] = 'moderne';
+        }
 
         // Sécurité : ne s'exécute que sur les articles ('post')
         if (!$post_id || 'post' !== get_post_type($post_id)) {
@@ -54,7 +66,7 @@ class JLG_Shortcode_All_In_One {
         $categories = JLG_Helpers::get_rating_categories();
         
         // Couleur d'accent (utilise la couleur définie ou celle des options)
-        $accent_color = !empty($atts['couleur_accent']) ? $atts['couleur_accent'] : $options['score_gradient_1'];
+        $accent_color = $atts['couleur_accent'] ?: $options['score_gradient_1'];
         
         // Récupérer les scores détaillés
         $scores = [];
