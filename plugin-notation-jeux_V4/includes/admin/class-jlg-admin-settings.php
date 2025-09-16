@@ -72,7 +72,22 @@ class JLG_Admin_Settings {
     private function sanitize_option_value($key, $value) {
         // Couleurs
         if (strpos($key, 'color') !== false && strpos($key, 'color_mode') === false) {
-            return sanitize_hex_color($value) ?: '#000000';
+            $allow_transparent_fields = [
+                'table_row_bg_color',
+                'table_zebra_bg_color',
+            ];
+
+            if (is_string($value) && in_array($key, $allow_transparent_fields, true)) {
+                $trimmed_value = strtolower(trim($value));
+
+                if ($trimmed_value === 'transparent') {
+                    return 'transparent';
+                }
+            }
+
+            $sanitized_color = sanitize_hex_color($value);
+
+            return !empty($sanitized_color) ? $sanitized_color : '#000000';
         }
         
         // Nombres

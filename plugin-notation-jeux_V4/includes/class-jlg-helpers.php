@@ -99,7 +99,7 @@ class JLG_Helpers {
             'table_border_width'   => 1,
             'table_header_bg_color'   => '#3f3f46',
             'table_header_text_color' => '#ffffff',
-            'table_row_bg_color'      => 'transparent',
+            'table_row_bg_color'      => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
             'table_row_text_color'    => '#a1a1aa',
             'table_zebra_bg_color'    => '#27272a',
             'thumb_text_color'      => '#ffffff',
