@@ -4,25 +4,50 @@ jQuery(document).ready(function($) {
         var searchInput = $('#jlg-api-search-input');
         var resultsDiv = $('#jlg-api-search-results');
         var searchTerm = searchInput.val();
+        var button = $(this);
+
+        var ajaxEndpoint = '';
+        if (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.ajax_url) {
+            ajaxEndpoint = jlg_admin_ajax.ajax_url;
+        } else if (typeof ajaxurl !== 'undefined') {
+            ajaxEndpoint = ajaxurl;
+        }
+
+        if (!ajaxEndpoint) {
+            resultsDiv.html('<p style="color:red;">Configuration AJAX invalide.</p>');
+            return;
+        }
+
+        var nonce = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.nonce) ? jlg_admin_ajax.nonce : '';
+
+        if (!nonce) {
+            resultsDiv.html('<p style="color:red;">Nonce de sécurité manquant. Actualisez la page.</p>');
+            return;
+        }
 
         if (searchTerm.length < 3) {
             resultsDiv.html('<p style="color:red;">Veuillez entrer au moins 3 caractères.</p>');
             return;
         }
 
-        $(this).text('Recherche...').prop('disabled', true);
+        button.text('Recherche...').prop('disabled', true);
         resultsDiv.html('Chargement...');
 
         $.ajax({
-            url: ajaxurl, // variable globale de WordPress
+            url: ajaxEndpoint,
             type: 'POST',
             data: {
                 action: 'jlg_search_rawg_games',
-                nonce: jlg_admin_ajax.nonce,
+                nonce: nonce,
                 search: searchTerm,
             },
             success: function(response) {
-                $('#jlg-api-search-button').text('Rechercher').prop('disabled', false);
+                button.text('Rechercher').prop('disabled', false);
+
+                if (response === '-1') {
+                    resultsDiv.html('<p style="color:red;">Vérification de sécurité échouée. Actualisez la page.</p>');
+                    return;
+                }
 
                 if (response.success) {
                     var games = [];
@@ -54,7 +79,7 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function() {
-                $('#jlg-api-search-button').text('Rechercher').prop('disabled', false);
+                button.text('Rechercher').prop('disabled', false);
                 resultsDiv.html('<p style="color:red;">Erreur de communication.</p>');
             }
         });
