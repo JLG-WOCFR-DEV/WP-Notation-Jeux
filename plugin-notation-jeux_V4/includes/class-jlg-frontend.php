@@ -81,6 +81,61 @@ class JLG_Frontend {
     }
 
     /**
+     * Assainit une valeur de couleur hexadécimale.
+     *
+     * @param mixed $value                Valeur à assainir.
+     * @param bool  $allow_transparent    Autoriser la valeur "transparent".
+     * @return string
+     */
+    private function sanitize_color_value($value, $allow_transparent = false) {
+        $sanitized = sanitize_hex_color($value);
+
+        if (!empty($sanitized)) {
+            return $sanitized;
+        }
+
+        if ($allow_transparent && is_string($value) && 'transparent' === strtolower(trim($value))) {
+            return 'transparent';
+        }
+
+        return '';
+    }
+
+    /**
+     * Assainit un ensemble de couleurs à partir d'un tableau source.
+     *
+     * @param array $definitions Définition des clés à assainir. Peut être une liste ou un tableau associatif.
+     * @param array $source      Tableau source dans lequel chercher les valeurs.
+     * @return array Tableau associatif des couleurs assainies.
+     */
+    private function sanitize_color_options(array $definitions, array $source) {
+        $sanitized = [];
+
+        foreach ($definitions as $target => $definition) {
+            $allow_transparent = false;
+
+            if (is_int($target)) {
+                $target_key = $definition;
+                $source_key = $definition;
+            } elseif (is_string($definition)) {
+                $target_key = $target;
+                $source_key = $definition;
+            } elseif (is_array($definition)) {
+                $target_key = $target;
+                $source_key = isset($definition['key']) ? $definition['key'] : $target;
+                $allow_transparent = !empty($definition['allow_transparent']);
+            } else {
+                continue;
+            }
+
+            $value = isset($source[$source_key]) ? $source[$source_key] : '';
+            $sanitized[$target_key] = $this->sanitize_color_value($value, $allow_transparent);
+        }
+
+        return $sanitized;
+    }
+
+    /**
      * Charge les scripts JavaScript nécessaires
      */
     public function enqueue_jlg_scripts() {
@@ -101,144 +156,114 @@ class JLG_Frontend {
             JLG_NOTATION_VERSION
         );
 
-        $sanitize_color = static function ($value, $allow_transparent = false) {
-            $sanitized = sanitize_hex_color($value);
+        $palette_colors = $this->sanitize_color_options([
+            'bg_color',
+            'bg_color_secondary',
+            'border_color',
+            'main_text_color',
+            'secondary_text_color',
+            'bar_bg_color',
+            'tagline_bg_color',
+            'tagline_text_color',
+        ], $palette);
+        extract($palette_colors, EXTR_OVERWRITE);
 
-            if (!empty($sanitized)) {
-                return $sanitized;
-            }
-
-            if ($allow_transparent && is_string($value) && 'transparent' === strtolower(trim($value))) {
-                return 'transparent';
-            }
-
-            return '';
-        };
-
-        $bg_color = $sanitize_color($palette['bg_color'] ?? '');
-        $bg_color_secondary = $sanitize_color($palette['bg_color_secondary'] ?? '');
-        $border_color = $sanitize_color($palette['border_color'] ?? '');
-        $main_text_color = $sanitize_color($palette['main_text_color'] ?? '');
-        $secondary_text_color = $sanitize_color($palette['secondary_text_color'] ?? '');
-        $bar_bg_color = $sanitize_color($palette['bar_bg_color'] ?? '');
-        $tagline_bg_color = $sanitize_color($palette['tagline_bg_color'] ?? '');
-        $tagline_text_color = $sanitize_color($palette['tagline_text_color'] ?? '');
-
-        $score_gradient_1 = $sanitize_color($options['score_gradient_1'] ?? '');
-        $score_gradient_2 = $sanitize_color($options['score_gradient_2'] ?? '');
-        $color_high = $sanitize_color($options['color_high'] ?? '');
-        $color_low = $sanitize_color($options['color_low'] ?? '');
-        $user_rating_text_color = $sanitize_color($options['user_rating_text_color'] ?? '');
-        $user_rating_star_color = $sanitize_color($options['user_rating_star_color'] ?? '');
-        $table_header_bg_color = $sanitize_color($options['table_header_bg_color'] ?? '');
-        $table_header_text_color = $sanitize_color($options['table_header_text_color'] ?? '');
-        $table_row_bg_color = $sanitize_color($options['table_row_bg_color'] ?? '', true);
-        $table_row_text_color = $sanitize_color($options['table_row_text_color'] ?? '');
-        $table_zebra_bg_color = $sanitize_color($options['table_zebra_bg_color'] ?? '', true);
-        $circle_border_color = $sanitize_color($options['circle_border_color'] ?? '');
+        $option_colors = $this->sanitize_color_options([
+            'score_gradient_1',
+            'score_gradient_2',
+            'color_high',
+            'color_low',
+            'user_rating_text_color',
+            'user_rating_star_color',
+            'table_header_bg_color',
+            'table_header_text_color',
+            'table_row_bg_color' => ['allow_transparent' => true],
+            'table_row_text_color',
+            'table_zebra_bg_color' => ['allow_transparent' => true],
+            'circle_border_color',
+        ], $options);
+        extract($option_colors, EXTR_OVERWRITE);
 
         $default_settings = JLG_Helpers::get_default_settings();
-        $default_score_gradient_1 = $sanitize_color($default_settings['score_gradient_1'] ?? '#000000');
-        $default_score_gradient_2 = $sanitize_color($default_settings['score_gradient_2'] ?? '#000000');
-        if ($default_score_gradient_1 === '') {
-            $default_score_gradient_1 = '#000000';
-        }
-        if ($default_score_gradient_2 === '') {
-            $default_score_gradient_2 = '#000000';
-        }
+        $default_colors = $this->sanitize_color_options([
+            'default_score_gradient_1' => 'score_gradient_1',
+            'default_score_gradient_2' => 'score_gradient_2',
+            'default_color_high' => 'color_high',
+            'default_color_low' => 'color_low',
+            'default_user_rating_text_color' => 'user_rating_text_color',
+            'default_user_rating_star_color' => 'user_rating_star_color',
+            'default_table_header_bg_color' => 'table_header_bg_color',
+            'default_table_header_text_color' => 'table_header_text_color',
+            'default_table_row_bg_color' => ['key' => 'table_row_bg_color', 'allow_transparent' => true],
+            'default_table_row_text_color' => 'table_row_text_color',
+            'default_table_zebra_bg_color' => ['key' => 'table_zebra_bg_color', 'allow_transparent' => true],
+            'default_circle_border_color' => 'circle_border_color',
+            'default_light_bg_color' => 'light_bg_color',
+            'default_light_bg_color_secondary' => 'light_bg_color_secondary',
+            'default_light_border_color' => 'light_border_color',
+            'default_light_text_color' => 'light_text_color',
+            'default_light_text_color_secondary' => 'light_text_color_secondary',
+            'default_dark_bg_color' => 'dark_bg_color',
+            'default_dark_bg_color_secondary' => 'dark_bg_color_secondary',
+            'default_dark_border_color' => 'dark_border_color',
+            'default_dark_text_color' => 'dark_text_color',
+            'default_dark_text_color_secondary' => 'dark_text_color_secondary',
+        ], $default_settings);
+        extract($default_colors, EXTR_OVERWRITE);
+
+        $default_score_gradient_1 = $default_score_gradient_1 !== '' ? $default_score_gradient_1 : '#000000';
+        $default_score_gradient_2 = $default_score_gradient_2 !== '' ? $default_score_gradient_2 : '#000000';
 
         $theme = $options['visual_theme'] ?? 'dark';
         if ($theme === 'light') {
-            $default_bg_color = $sanitize_color($default_settings['light_bg_color'] ?? '#ffffff');
-            $default_bg_color_secondary = $sanitize_color($default_settings['light_bg_color_secondary'] ?? '#f9fafb');
-            $default_border_color = $sanitize_color($default_settings['light_border_color'] ?? '#e5e7eb');
-            $default_text_color = $sanitize_color($default_settings['light_text_color'] ?? '#111827');
-            $default_secondary_text_color = $sanitize_color($default_settings['light_text_color_secondary'] ?? '#6b7280');
+            $default_bg_color = $default_light_bg_color !== '' ? $default_light_bg_color : '#ffffff';
+            $default_bg_color_secondary = $default_light_bg_color_secondary !== '' ? $default_light_bg_color_secondary : '#f9fafb';
+            $default_border_color = $default_light_border_color !== '' ? $default_light_border_color : '#e5e7eb';
+            $default_text_color = $default_light_text_color !== '' ? $default_light_text_color : '#111827';
+            $default_secondary_text_color = $default_light_text_color_secondary !== '' ? $default_light_text_color_secondary : '#6b7280';
         } else {
-            $default_bg_color = $sanitize_color($default_settings['dark_bg_color'] ?? '#18181b');
-            $default_bg_color_secondary = $sanitize_color($default_settings['dark_bg_color_secondary'] ?? '#27272a');
-            $default_border_color = $sanitize_color($default_settings['dark_border_color'] ?? '#3f3f46');
-            $default_text_color = $sanitize_color($default_settings['dark_text_color'] ?? '#fafafa');
-            $default_secondary_text_color = $sanitize_color($default_settings['dark_text_color_secondary'] ?? '#a1a1aa');
-        }
-        if ($default_bg_color === '') {
-            $default_bg_color = '#000000';
-        }
-        if ($default_bg_color_secondary === '') {
-            $default_bg_color_secondary = $default_bg_color;
-        }
-        if ($default_border_color === '') {
-            $default_border_color = 'transparent';
-        }
-        if ($default_text_color === '') {
-            $default_text_color = '#000000';
-        }
-        if ($default_secondary_text_color === '') {
-            $default_secondary_text_color = $default_text_color;
+            $default_bg_color = $default_dark_bg_color !== '' ? $default_dark_bg_color : '#18181b';
+            $default_bg_color_secondary = $default_dark_bg_color_secondary !== '' ? $default_dark_bg_color_secondary : '#27272a';
+            $default_border_color = $default_dark_border_color !== '' ? $default_dark_border_color : '#3f3f46';
+            $default_text_color = $default_dark_text_color !== '' ? $default_dark_text_color : '#fafafa';
+            $default_secondary_text_color = $default_dark_text_color_secondary !== '' ? $default_dark_text_color_secondary : '#a1a1aa';
         }
 
-        $default_color_high = $sanitize_color($default_settings['color_high'] ?? '#22c55e');
-        if ($default_color_high === '') {
-            $default_color_high = '#22c55e';
-        }
-        $default_color_low = $sanitize_color($default_settings['color_low'] ?? '#ef4444');
-        if ($default_color_low === '') {
-            $default_color_low = '#ef4444';
-        }
-        $default_user_rating_text_color = $sanitize_color($default_settings['user_rating_text_color'] ?? '#a1a1aa');
-        if ($default_user_rating_text_color === '') {
-            $default_user_rating_text_color = '#a1a1aa';
-        }
-        $default_user_rating_star_color = $sanitize_color($default_settings['user_rating_star_color'] ?? '#f59e0b');
-        if ($default_user_rating_star_color === '') {
-            $default_user_rating_star_color = '#f59e0b';
-        }
-        $default_table_header_bg_color = $sanitize_color($default_settings['table_header_bg_color'] ?? '#3f3f46');
-        if ($default_table_header_bg_color === '') {
-            $default_table_header_bg_color = $default_bg_color_secondary;
-        }
-        $default_table_header_text_color = $sanitize_color($default_settings['table_header_text_color'] ?? '#ffffff');
-        if ($default_table_header_text_color === '') {
-            $default_table_header_text_color = $default_text_color;
-        }
-        $default_table_row_bg_color = $sanitize_color($default_settings['table_row_bg_color'] ?? 'transparent', true);
-        if ($default_table_row_bg_color === '') {
-            $default_table_row_bg_color = 'transparent';
-        }
-        $default_table_row_text_color = $sanitize_color($default_settings['table_row_text_color'] ?? '#a1a1aa');
-        if ($default_table_row_text_color === '') {
-            $default_table_row_text_color = $default_secondary_text_color;
-        }
-        $default_table_zebra_bg_color = $sanitize_color($default_settings['table_zebra_bg_color'] ?? '#27272a', true);
-        if ($default_table_zebra_bg_color === '') {
-            $default_table_zebra_bg_color = 'transparent';
-        }
-        $default_circle_border_color = $sanitize_color($default_settings['circle_border_color'] ?? '#60a5fa');
-        if ($default_circle_border_color === '') {
-            $default_circle_border_color = 'transparent';
+        $default_color_high = $default_color_high !== '' ? $default_color_high : '#22c55e';
+        $default_color_low = $default_color_low !== '' ? $default_color_low : '#ef4444';
+        $default_user_rating_text_color = $default_user_rating_text_color !== '' ? $default_user_rating_text_color : '#a1a1aa';
+        $default_user_rating_star_color = $default_user_rating_star_color !== '' ? $default_user_rating_star_color : '#f59e0b';
+        $default_table_header_bg_color = $default_table_header_bg_color !== '' ? $default_table_header_bg_color : $default_bg_color_secondary;
+        $default_table_header_text_color = $default_table_header_text_color !== '' ? $default_table_header_text_color : $default_text_color;
+        $default_table_row_bg_color = $default_table_row_bg_color !== '' ? $default_table_row_bg_color : 'transparent';
+        $default_table_row_text_color = $default_table_row_text_color !== '' ? $default_table_row_text_color : $default_secondary_text_color;
+        $default_table_zebra_bg_color = $default_table_zebra_bg_color !== '' ? $default_table_zebra_bg_color : 'transparent';
+        $default_circle_border_color = $default_circle_border_color !== '' ? $default_circle_border_color : 'transparent';
+
+        foreach ([
+            'score_gradient_1' => $default_score_gradient_1,
+            'score_gradient_2' => $default_score_gradient_2,
+            'bg_color' => $default_bg_color,
+            'bg_color_secondary' => $default_bg_color_secondary,
+            'border_color' => $default_border_color,
+            'main_text_color' => $default_text_color,
+            'secondary_text_color' => $default_secondary_text_color,
+            'color_high' => $default_color_high,
+            'color_low' => $default_color_low,
+            'user_rating_text_color' => $default_user_rating_text_color,
+            'user_rating_star_color' => $default_user_rating_star_color,
+            'table_header_bg_color' => $default_table_header_bg_color,
+            'table_header_text_color' => $default_table_header_text_color,
+            'table_row_bg_color' => $default_table_row_bg_color,
+            'table_row_text_color' => $default_table_row_text_color,
+            'table_zebra_bg_color' => $default_table_zebra_bg_color,
+            'circle_border_color' => $default_circle_border_color,
+        ] as $variable => $fallback) {
+            if ($$variable === '') {
+                $$variable = $fallback;
+            }
         }
 
-        if ($score_gradient_1 === '') {
-            $score_gradient_1 = $default_score_gradient_1;
-        }
-        if ($score_gradient_2 === '') {
-            $score_gradient_2 = $default_score_gradient_2;
-        }
-        if ($bg_color === '') {
-            $bg_color = $default_bg_color;
-        }
-        if ($bg_color_secondary === '') {
-            $bg_color_secondary = $default_bg_color_secondary;
-        }
-        if ($border_color === '') {
-            $border_color = $default_border_color;
-        }
-        if ($main_text_color === '') {
-            $main_text_color = $default_text_color;
-        }
-        if ($secondary_text_color === '') {
-            $secondary_text_color = $default_secondary_text_color;
-        }
         if ($bar_bg_color === '') {
             $bar_bg_color = $bg_color_secondary;
         }
@@ -248,40 +273,10 @@ class JLG_Frontend {
         if ($tagline_text_color === '') {
             $tagline_text_color = $secondary_text_color;
         }
-        if ($color_high === '') {
-            $color_high = $default_color_high;
-        }
-        if ($color_low === '') {
-            $color_low = $default_color_low;
-        }
-        if ($user_rating_text_color === '') {
-            $user_rating_text_color = $default_user_rating_text_color;
-        }
-        if ($user_rating_star_color === '') {
-            $user_rating_star_color = $default_user_rating_star_color;
-        }
-        if ($table_header_bg_color === '') {
-            $table_header_bg_color = $default_table_header_bg_color;
-        }
-        if ($table_header_text_color === '') {
-            $table_header_text_color = $default_table_header_text_color;
-        }
-        if ($table_row_bg_color === '') {
-            $table_row_bg_color = $default_table_row_bg_color;
-        }
-        if ($table_row_text_color === '') {
-            $table_row_text_color = $default_table_row_text_color;
-        }
-        if ($table_zebra_bg_color === '') {
-            $table_zebra_bg_color = $default_table_zebra_bg_color;
-        }
-        if ($circle_border_color === '') {
-            $circle_border_color = $default_circle_border_color;
-        }
 
-        $table_row_hover_color = $sanitize_color(JLG_Helpers::adjust_hex_brightness($bg_color_secondary, 5));
-        $table_link_color = $sanitize_color(JLG_Helpers::adjust_hex_brightness($table_row_text_color, 20));
-        $score_gradient_1_hover = $sanitize_color(JLG_Helpers::adjust_hex_brightness($score_gradient_1, 20));
+        $table_row_hover_color = $this->sanitize_color_value(JLG_Helpers::adjust_hex_brightness($bg_color_secondary, 5));
+        $table_link_color = $this->sanitize_color_value(JLG_Helpers::adjust_hex_brightness($table_row_text_color, 20));
+        $score_gradient_1_hover = $this->sanitize_color_value(JLG_Helpers::adjust_hex_brightness($score_gradient_1, 20));
 
         $inline_css  = ':root{' .
             '--jlg-bg-color:' . $bg_color . ';' .
@@ -315,7 +310,7 @@ class JLG_Frontend {
             if ($table_zebra_bg_color === 'transparent' || $table_zebra_bg_color === '') {
                 $zebra_hover_color = $table_zebra_bg_color;
             } else {
-                $zebra_hover_color = $sanitize_color(JLG_Helpers::adjust_hex_brightness($table_zebra_bg_color, 5));
+                $zebra_hover_color = $this->sanitize_color_value(JLG_Helpers::adjust_hex_brightness($table_zebra_bg_color, 5));
             }
 
             $inline_css .= '.jlg-summary-table tbody tr:nth-child(even):hover{background-color:' . $zebra_hover_color . ';}';
@@ -332,9 +327,9 @@ class JLG_Frontend {
 
         if ($options['score_layout'] === 'circle') {
             if (!empty($options['circle_dynamic_bg_enabled'])) {
-                $dynamic_color = $sanitize_color(JLG_Helpers::calculate_color_from_note($average_score, $options));
+                $dynamic_color = $this->sanitize_color_value(JLG_Helpers::calculate_color_from_note($average_score, $options));
                 $base_for_darker = $dynamic_color ?: $score_gradient_1;
-                $darker_color = $base_for_darker !== '' ? $sanitize_color(JLG_Helpers::adjust_hex_brightness($base_for_darker, -30)) : '';
+                $darker_color = $base_for_darker !== '' ? $this->sanitize_color_value(JLG_Helpers::adjust_hex_brightness($base_for_darker, -30)) : '';
             } else {
                 $dynamic_color = $score_gradient_1;
                 $darker_color = $score_gradient_2;
