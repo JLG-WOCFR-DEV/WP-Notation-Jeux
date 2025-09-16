@@ -5,9 +5,38 @@ class JLG_Admin_Ajax {
     
     public function __construct() {
         add_action('wp_ajax_jlg_search_rawg_games', [$this, 'handle_rawg_search']);
+        add_action('wp_ajax_nopriv_jlg_search_rawg_games', [$this, 'handle_rawg_search']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_ajax_assets']);
+    }
+
+    public function enqueue_admin_ajax_assets($hook_suffix) {
+        $allowed_hooks = [
+            'post.php',
+            'post-new.php',
+            'toplevel_page_notation_jlg_settings',
+        ];
+
+        if (!in_array($hook_suffix, $allowed_hooks, true)) {
+            return;
+        }
+
+        $script_handle = 'jlg-admin-api';
+        $script_url = JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-admin-api.js';
+        $version = defined('JLG_NOTATION_VERSION') ? JLG_NOTATION_VERSION : false;
+
+        wp_register_script($script_handle, $script_url, ['jquery'], $version, true);
+
+        wp_localize_script($script_handle, 'jlg_admin_ajax', [
+            'nonce' => wp_create_nonce('jlg_admin_ajax_nonce'),
+            'ajax_url' => admin_url('admin-ajax.php'),
+        ]);
+
+        wp_enqueue_script($script_handle);
     }
 
     public function handle_rawg_search() {
+        check_ajax_referer('jlg_admin_ajax_nonce', 'nonce');
+
         // Sécurité basique
         if (!current_user_can('edit_posts')) {
             wp_send_json_error('Permissions insuffisantes.');
