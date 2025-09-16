@@ -1,9 +1,9 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-$tabs = $tabs ?? [];
-$active_tab = $active_tab ?? '';
-$page_slug = $page_slug ?? '';
+$tabs = isset($variables['tabs']) && is_array($variables['tabs']) ? $variables['tabs'] : [];
+$active_tab = $variables['active_tab'] ?? '';
+$page_slug = $variables['page_slug'] ?? '';
 
 if (empty($tabs)) {
     return;

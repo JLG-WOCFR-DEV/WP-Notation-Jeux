@@ -1,8 +1,8 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-$tutorials = isset($tutorials) && is_array($tutorials) ? $tutorials : [];
-$platforms_url = $platforms_url ?? '';
+$tutorials = isset($variables['tutorials']) && is_array($variables['tutorials']) ? $variables['tutorials'] : [];
+$platforms_url = $variables['platforms_url'] ?? '';
 ?>
 <h2>📚 Guide d'Utilisation</h2>
 <p>Tutoriels et guides pour tirer le meilleur parti du plugin.</p>

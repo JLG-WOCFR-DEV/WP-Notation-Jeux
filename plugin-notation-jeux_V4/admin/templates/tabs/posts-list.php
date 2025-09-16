@@ -1,13 +1,13 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-$has_rated_posts = $has_rated_posts ?? false;
-$empty_state = $empty_state ?? [];
-$stats = $stats ?? [];
-$columns = isset($columns) && is_array($columns) ? $columns : [];
-$posts = isset($posts) && is_array($posts) ? $posts : [];
-$pagination = $pagination ?? '';
-$print_button_label = $print_button_label ?? '';
+$has_rated_posts = $variables['has_rated_posts'] ?? false;
+$empty_state = isset($variables['empty_state']) && is_array($variables['empty_state']) ? $variables['empty_state'] : [];
+$stats = isset($variables['stats']) && is_array($variables['stats']) ? $variables['stats'] : [];
+$columns = isset($variables['columns']) && is_array($variables['columns']) ? $variables['columns'] : [];
+$posts = isset($variables['posts']) && is_array($variables['posts']) ? $variables['posts'] : [];
+$pagination = $variables['pagination'] ?? '';
+$print_button_label = $variables['print_button_label'] ?? '';
 $column_count = count($columns) + 2;
 ?>
 <h2>📊 Vos Articles avec Notation</h2>

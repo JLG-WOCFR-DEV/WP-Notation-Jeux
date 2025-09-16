@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-$settings_page = $settings_page ?? '';
+$settings_page = $variables['settings_page'] ?? '';
 ?>
 <h2>🎨 Configuration du Plugin</h2>
 <p>Personnalisez l'apparence et le comportement du système de notation.</p>
