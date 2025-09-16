@@ -2,11 +2,11 @@
 if (!defined('ABSPATH')) exit;
 ?>
 
-<div class="jlg-user-rating-block <?php if ($has_voted) echo 'has-voted'; ?>">
+<div class="jlg-user-rating-block <?php if ($has_voted) echo esc_attr('has-voted'); ?>">
     <div class="jlg-user-rating-title"><?php esc_html_e('Votre avis nous intéresse !', 'notation-jlg'); ?></div>
     <div class="jlg-user-rating-stars" data-post-id="<?php echo esc_attr($post_id); ?>">
         <?php for ($i = 1; $i <= 5; $i++): ?>
-            <span class="jlg-user-star <?php if($has_voted && $i <= $user_vote) echo 'selected'; ?>" data-value="<?php echo $i; ?>">★</span>
+            <span class="jlg-user-star <?php if($has_voted && $i <= $user_vote) echo esc_attr('selected'); ?>" data-value="<?php echo esc_attr($i); ?>">★</span>
         <?php endfor; ?>
     </div>
     <div class="jlg-user-rating-summary">
