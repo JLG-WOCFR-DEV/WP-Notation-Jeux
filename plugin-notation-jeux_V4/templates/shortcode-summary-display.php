@@ -152,10 +152,10 @@ if (!function_exists('jlg_print_sortable_header')) {
                                 
                                 switch ($col) {
                                     case 'titre':
-                                        echo '<a href="' . get_permalink() . '">' . get_the_title() . '</a>';
+                                        echo '<a href="' . esc_url(get_permalink()) . '">' . esc_html(get_the_title()) . '</a>';
                                         break;
                                     case 'date':
-                                        echo get_the_date();
+                                        echo esc_html(get_the_date());
                                         break;
                                     case 'note':
                                         $score = get_post_meta($post_id, '_jlg_average_score', true);
