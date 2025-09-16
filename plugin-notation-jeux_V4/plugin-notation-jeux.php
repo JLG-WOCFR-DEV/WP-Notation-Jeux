@@ -24,14 +24,14 @@ define('JLG_NOTATION_PLUGIN_BASENAME', plugin_basename(__FILE__));
 // Vérifications de compatibilité
 if (version_compare(PHP_VERSION, '7.4', '<')) {
     add_action('admin_notices', function() {
-        echo '<div class="notice notice-error"><p><strong>JLG Notation:</strong> PHP 7.4+ requis. Version actuelle: ' . PHP_VERSION . '</p></div>';
+        echo '<div class="notice notice-error"><p><strong>JLG Notation:</strong> PHP 7.4+ requis. Version actuelle: ' . esc_html(PHP_VERSION) . '</p></div>';
     });
     return;
 }
 
 if (version_compare(get_bloginfo('version'), '5.0', '<')) {
     add_action('admin_notices', function() {
-        echo '<div class="notice notice-error"><p><strong>JLG Notation:</strong> WordPress 5.0+ requis. Version actuelle: ' . get_bloginfo('version') . '</p></div>';
+        echo '<div class="notice notice-error"><p><strong>JLG Notation:</strong> WordPress 5.0+ requis. Version actuelle: ' . esc_html(get_bloginfo('version')) . '</p></div>';
     });
     return;
 }
