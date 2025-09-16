@@ -37,7 +37,8 @@ jQuery(document).ready(function($) {
                 action: 'jlg_rate_post',
                 post_id: postId,
                 rating: rating,
-                nonce: jlg_rating_ajax.nonce
+                nonce: jlg_rating_ajax.nonce,
+                token: jlg_rating_ajax.token
             },
             success: function(response) {
                 ratingBlock.removeClass('is-loading');

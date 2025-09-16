@@ -403,13 +403,51 @@ class JLG_Frontend {
             wp_enqueue_script(
                 'jlg-user-rating',
                 JLG_NOTATION_PLUGIN_URL . 'assets/js/user-rating.js',
-                ['jquery'], 
-                JLG_NOTATION_VERSION, 
+                ['jquery'],
+                JLG_NOTATION_VERSION,
                 true
             );
+            $cookie_name = 'jlg_user_rating_token';
+            $token = '';
+
+            if (isset($_COOKIE[$cookie_name])) {
+                $cookie_token = sanitize_text_field(wp_unslash($_COOKIE[$cookie_name]));
+                if (preg_match('/^[A-Fa-f0-9]{32,128}$/', $cookie_token)) {
+                    $token = $cookie_token;
+                }
+            }
+
+            if ($token === '') {
+                try {
+                    $token = bin2hex(random_bytes(32));
+                } catch (Exception $e) {
+                    $token = md5(uniqid('', true));
+                }
+
+                $cookie_options = [
+                    'expires'  => time() + MONTH_IN_SECONDS,
+                    'path'     => defined('COOKIEPATH') ? COOKIEPATH : '/',
+                    'secure'   => is_ssl(),
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ];
+
+                if (defined('COOKIE_DOMAIN') && COOKIE_DOMAIN) {
+                    $cookie_options['domain'] = COOKIE_DOMAIN;
+                }
+
+                if (!headers_sent()) {
+                    setcookie($cookie_name, $token, $cookie_options);
+                }
+                $_COOKIE[$cookie_name] = $token;
+            }
+
+            $nonce = wp_create_nonce('jlg_user_rating_nonce_' . $token);
+
             wp_localize_script('jlg-user-rating', 'jlg_rating_ajax', [
-                'ajax_url' => admin_url('admin-ajax.php'), 
-                'nonce' => wp_create_nonce('jlg_user_rating_nonce')
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => $nonce,
+                'token'    => $token,
             ]);
         }
 
@@ -440,12 +478,32 @@ class JLG_Frontend {
      * Gère la notation AJAX des utilisateurs
      */
     public function handle_user_rating() {
-        check_ajax_referer('jlg_user_rating_nonce', 'nonce');
-        
+        $cookie_name = 'jlg_user_rating_token';
+        $token = '';
+
+        if (isset($_POST['token'])) {
+            $token = sanitize_text_field(wp_unslash($_POST['token']));
+        }
+
+        if ($token === '' && isset($_COOKIE[$cookie_name])) {
+            $cookie_token = sanitize_text_field(wp_unslash($_COOKIE[$cookie_name]));
+            if (preg_match('/^[A-Fa-f0-9]{32,128}$/', $cookie_token)) {
+                $token = $cookie_token;
+            }
+        }
+
+        if ($token === '' || !preg_match('/^[A-Fa-f0-9]{32,128}$/', $token)) {
+            wp_send_json_error(['message' => 'Jeton de sécurité manquant ou invalide.'], 400);
+        }
+
+        if (!check_ajax_referer('jlg_user_rating_nonce_' . $token, 'nonce', false)) {
+            wp_send_json_error(['message' => 'La vérification de sécurité a échoué.'], 403);
+        }
+
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
         $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
-        
-        if (!$post_id || $rating < 1 || $rating > 5) { 
+
+        if (!$post_id || $rating < 1 || $rating > 5) {
             wp_send_json_error(['message' => 'Données invalides.']); 
         }
         
