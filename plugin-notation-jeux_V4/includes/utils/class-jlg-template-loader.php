@@ -63,12 +63,14 @@ class JLG_Template_Loader {
     }
 
     private static function load_template_file($template_path, $variables) {
-        if (!empty($variables) && is_array($variables)) {
-            extract($variables, EXTR_SKIP);
-        }
+        $variables = is_array($variables) ? $variables : [];
 
         ob_start();
-        include $template_path;
+        (static function ($__template_path, $__variables) {
+            $variables = $__variables;
+            include $__template_path;
+        })($template_path, $variables);
+
         return ob_get_clean();
     }
 

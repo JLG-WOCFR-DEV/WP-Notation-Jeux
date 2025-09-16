@@ -1,9 +1,9 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-$page_title = $page_title ?? '';
-$tab_navigation = $tab_navigation ?? '';
-$tab_content = $tab_content ?? '';
+$page_title = $variables['page_title'] ?? '';
+$tab_navigation = $variables['tab_navigation'] ?? '';
+$tab_content = $variables['tab_content'] ?? '';
 ?>
 <div class="wrap">
     <?php if (!empty($page_title)) : ?>
