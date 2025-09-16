@@ -74,7 +74,7 @@ class JLG_Frontend {
         if (!empty(self::$shortcode_errors) && current_user_can('manage_options')) {
             echo '<div class="notice notice-error"><p><strong>Plugin Notation - JLG : Erreur de chargement des shortcodes !</strong></p><ul>';
             foreach (self::$shortcode_errors as $error) {
-                echo '<li>' . $error . '</li>';
+                printf('<li>%s</li>', esc_html($error));
             }
             echo '</ul></div>';
         }
