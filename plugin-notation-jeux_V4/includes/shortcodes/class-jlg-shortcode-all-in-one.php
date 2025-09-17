@@ -692,19 +692,26 @@ class JLG_Shortcode_All_In_One {
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Gestion du changement de langue
-            const flags = document.querySelectorAll('.jlg-aio-flag');
-            const taglines = document.querySelectorAll('.jlg-aio-tagline');
-            
-            flags.forEach(flag => {
+            const allFlags = document.querySelectorAll('.jlg-aio-flag');
+
+            allFlags.forEach(flag => {
+                const block = flag.closest('.jlg-all-in-one-block');
+                if (!block) {
+                    return;
+                }
+
+                const blockFlags = block.querySelectorAll('.jlg-aio-flag');
+                const blockTaglines = block.querySelectorAll('.jlg-aio-tagline');
+
                 flag.addEventListener('click', function() {
                     const selectedLang = this.dataset.lang;
-                    
-                    // Mettre à jour les drapeaux actifs
-                    flags.forEach(f => f.classList.remove('active'));
+
+                    // Mettre à jour les drapeaux actifs du bloc courant
+                    blockFlags.forEach(f => f.classList.remove('active'));
                     this.classList.add('active');
-                    
-                    // Afficher la bonne tagline
-                    taglines.forEach(t => {
+
+                    // Afficher la bonne tagline pour le bloc courant
+                    blockTaglines.forEach(t => {
                         if (t.dataset.lang === selectedLang) {
                             t.style.display = 'block';
                         } else {
@@ -727,10 +734,8 @@ class JLG_Shortcode_All_In_One {
                 threshold: 0.2
             });
 
-            const animatedBlock = document.querySelector('.jlg-all-in-one-block.animate-in');
-            if (animatedBlock) {
-                observer.observe(animatedBlock);
-            }
+            const animatedBlocks = document.querySelectorAll('.jlg-all-in-one-block.animate-in');
+            animatedBlocks.forEach(block => observer.observe(block));
             <?php endif; ?>
         });
         </script>
