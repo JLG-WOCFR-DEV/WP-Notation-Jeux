@@ -29,7 +29,16 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 - **API RAWG** : Remplissage automatique des informations de jeu
 - **SEO optimisé** : Support schema.org pour les rich snippets Google
 - **Thèmes visuels** : Mode clair et sombre avec personnalisation complète
+- **Gestion dynamique des plateformes** : Ajoutez, triez et réinitialisez vos plateformes depuis l'onglet Plateformes
 - **Responsive** : Parfaitement adapté mobile et tablette
+
+### Gestion des plateformes
+
+Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation – JLG** > **Plateformes**. Vous pouvez y :
+
+- ajouter de nouvelles plateformes pour enrichir vos fiches de test ;
+- réordonner et supprimer les plateformes existantes selon vos besoins ;
+- réinitialiser la liste pour revenir à la configuration par défaut grâce à l'option **Reset**.
 
 ### Shortcodes disponibles
 
