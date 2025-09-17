@@ -30,6 +30,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 = Shortcodes disponibles =
 
+* `[jlg_bloc_complet]` / `[bloc_notation_complet]` - Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`. Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
 * `[bloc_notation_jeu]` - Bloc de notation principal
 * `[jlg_fiche_technique]` - Fiche technique du jeu
 * `[tagline_notation_jlg]` - Phrase d'accroche bilingue
