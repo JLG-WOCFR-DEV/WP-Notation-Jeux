@@ -690,49 +690,62 @@ class JLG_Shortcode_All_In_One {
 
         <?php if (!empty($tagline_fr) && !empty($tagline_en)): ?>
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Gestion du changement de langue
-            const flags = document.querySelectorAll('.jlg-aio-flag');
-            const taglines = document.querySelectorAll('.jlg-aio-tagline');
-            
-            flags.forEach(flag => {
-                flag.addEventListener('click', function() {
-                    const selectedLang = this.dataset.lang;
-                    
-                    // Mettre à jour les drapeaux actifs
-                    flags.forEach(f => f.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Afficher la bonne tagline
-                    taglines.forEach(t => {
-                        if (t.dataset.lang === selectedLang) {
-                            t.style.display = 'block';
-                        } else {
-                            t.style.display = 'none';
-                        }
+        (function() {
+            const scriptEl = document.currentScript;
+
+            const initAllInOneBlock = function() {
+                const block = scriptEl && scriptEl.previousElementSibling
+                    ? scriptEl.previousElementSibling.closest('.jlg-all-in-one-block')
+                    : null;
+
+                if (!block) {
+                    return;
+                }
+
+                // Gestion du changement de langue
+                const flags = block.querySelectorAll('.jlg-aio-flag');
+                const taglines = block.querySelectorAll('.jlg-aio-tagline');
+
+                flags.forEach(flag => {
+                    flag.addEventListener('click', function() {
+                        const selectedLang = this.dataset.lang;
+
+                        // Mettre à jour les drapeaux actifs dans ce bloc uniquement
+                        flags.forEach(f => f.classList.remove('active'));
+                        this.classList.add('active');
+
+                        // Afficher la bonne tagline dans ce bloc
+                        taglines.forEach(t => {
+                            t.style.display = t.dataset.lang === selectedLang ? 'block' : 'none';
+                        });
                     });
                 });
-            });
 
-            <?php if ($options['enable_animations']): ?>
-            // Animation à l'apparition
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, {
-                threshold: 0.2
-            });
+                <?php if ($options['enable_animations']): ?>
+                if (block.classList.contains('animate-in')) {
+                    // Animation à l'apparition
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('is-visible');
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    }, {
+                        threshold: 0.2
+                    });
 
-            const animatedBlock = document.querySelector('.jlg-all-in-one-block.animate-in');
-            if (animatedBlock) {
-                observer.observe(animatedBlock);
+                    observer.observe(block);
+                }
+                <?php endif; ?>
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initAllInOneBlock);
+            } else {
+                initAllInOneBlock();
             }
-            <?php endif; ?>
-        });
+        })();
         </script>
         <?php endif; ?>
 
