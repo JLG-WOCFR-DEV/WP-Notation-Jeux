@@ -53,9 +53,9 @@ class JLG_Admin_Settings {
             if (in_array($key, $select_fields)) {
                 continue;
             }
-            
+
             if (isset($input[$key])) {
-                $sanitized[$key] = $this->sanitize_option_value($key, $input[$key]);
+                $sanitized[$key] = $this->sanitize_option_value($key, $input[$key], $default_value);
             } else {
                 // Pour les checkboxes non cochées
                 if (strpos($key, 'enabled') !== false || strpos($key, 'pulse') !== false || strpos($key, 'striping') !== false) {
@@ -69,7 +69,7 @@ class JLG_Admin_Settings {
         return $sanitized;
     }
 
-    private function sanitize_option_value($key, $value) {
+    private function sanitize_option_value($key, $value, $default_value = '') {
         // Couleurs
         if (strpos($key, 'color') !== false && strpos($key, 'color_mode') === false) {
             $allow_transparent_fields = [
@@ -87,7 +87,11 @@ class JLG_Admin_Settings {
 
             $sanitized_color = sanitize_hex_color($value);
 
-            return !empty($sanitized_color) ? $sanitized_color : '#000000';
+            if (!empty($sanitized_color)) {
+                return $sanitized_color;
+            }
+
+            return is_string($default_value) ? $default_value : '';
         }
         
         // Nombres
