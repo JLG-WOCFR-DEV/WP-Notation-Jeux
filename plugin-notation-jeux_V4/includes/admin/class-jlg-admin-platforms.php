@@ -347,7 +347,7 @@ class JLG_Admin_Platforms {
                 <?php if ($debug_messages && !empty($debug_messages)) : ?>
                 <div style="background: #fff; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
                     <?php foreach ($debug_messages as $msg): ?>
-                        <div style="margin: 5px 0;"><?php echo $msg; ?></div>
+                        <div style="margin: 5px 0;"><?php echo esc_html($msg); ?></div>
                     <?php endforeach; ?>
                 </div>
                 <?php else: ?>
@@ -375,7 +375,9 @@ class JLG_Admin_Platforms {
                 <?php if (!empty($_POST)): ?>
                 <details style="margin-top: 15px;">
                     <summary style="cursor: pointer; font-weight: bold;">📨 Données POST reçues</summary>
-                    <pre style="background: #f5f5f5; padding: 10px; overflow: auto; margin-top: 10px; font-size: 11px;"><?php print_r($_POST); ?></pre>
+                    <pre style="background: #f5f5f5; padding: 10px; overflow: auto; margin-top: 10px; font-size: 11px;">
+                        <?php echo esc_html(print_r($_POST, true)); ?>
+                    </pre>
                 </details>
                 <?php endif; ?>
                 
