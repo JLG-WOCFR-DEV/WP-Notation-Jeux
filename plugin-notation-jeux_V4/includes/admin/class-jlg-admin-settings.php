@@ -58,7 +58,12 @@ class JLG_Admin_Settings {
                 $sanitized[$key] = $this->sanitize_option_value($key, $input[$key], $default_value);
             } else {
                 // Pour les checkboxes non cochées
-                if (strpos($key, 'enabled') !== false || strpos($key, 'pulse') !== false || strpos($key, 'striping') !== false) {
+                if (
+                    strpos($key, 'enabled') !== false ||
+                    strpos($key, 'pulse') !== false ||
+                    strpos($key, 'striping') !== false ||
+                    strpos($key, 'enable_') === 0
+                ) {
                     $sanitized[$key] = 0;
                 } else {
                     $sanitized[$key] = $default_value;
@@ -102,7 +107,12 @@ class JLG_Admin_Settings {
         }
         
         // Checkboxes
-        if (strpos($key, 'enabled') !== false || strpos($key, 'pulse') !== false || strpos($key, 'striping') !== false) {
+        if (
+            strpos($key, 'enabled') !== false ||
+            strpos($key, 'pulse') !== false ||
+            strpos($key, 'striping') !== false ||
+            strpos($key, 'enable_') === 0
+        ) {
             return !empty($value) ? 1 : 0;
         }
 
