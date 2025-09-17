@@ -41,7 +41,7 @@ class JLG_Template_Loader {
         $directory = rtrim($directory, '/\\') . '/';
         $template_name = ltrim($template_name, '/');
 
-        if (!str_ends_with($template_name, '.php')) {
+        if (substr($template_name, -4) !== '.php') {
             $template_name .= '.php';
         }
 
