@@ -31,11 +31,11 @@ class JLG_Frontend {
      */
     private function load_shortcodes() {
         $shortcodes = [
-            'Rating_Block', 
-            'Pros_Cons', 
-            'Game_Info', 
-            'User_Rating', 
-            'Tagline', 
+            'Rating_Block',
+            'Pros_Cons',
+            'Game_Info',
+            'User_Rating',
+            'Tagline',
             'Summary_Display',
             'All_In_One'  // NOUVEAU SHORTCODE AJOUTÉ ICI
         ];
@@ -78,6 +78,44 @@ class JLG_Frontend {
             }
             echo '</ul></div>';
         }
+    }
+
+    /**
+     * Retourne la liste des shortcodes disponibles.
+     *
+     * @return array
+     */
+    private function get_plugin_shortcodes() {
+        return [
+            'bloc_notation_jeu',
+            'jlg_points_forts_faibles',
+            'jlg_fiche_technique',
+            'tagline_notation_jlg',
+            'jlg_tableau_recap',
+            'notation_utilisateurs_jlg',
+            'jlg_bloc_complet',
+            'bloc_notation_complet',
+        ];
+    }
+
+    /**
+     * Vérifie si un contenu contient l'un des shortcodes du plugin.
+     *
+     * @param string $content
+     * @return bool
+     */
+    private function content_has_plugin_shortcode($content) {
+        if (!is_string($content) || $content === '') {
+            return false;
+        }
+
+        foreach ($this->get_plugin_shortcodes() as $shortcode) {
+            if (has_shortcode($content, $shortcode)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -139,7 +177,17 @@ class JLG_Frontend {
      * Charge les scripts JavaScript nécessaires
      */
     public function enqueue_jlg_scripts() {
-        if (!is_singular('post')) {
+        $should_enqueue = is_singular('post');
+
+        if (!$should_enqueue) {
+            $queried_object = get_queried_object();
+
+            if ($queried_object instanceof WP_Post && $this->content_has_plugin_shortcode($queried_object->post_content ?? '')) {
+                $should_enqueue = true;
+            }
+        }
+
+        if (!$should_enqueue) {
             return;
         }
 
