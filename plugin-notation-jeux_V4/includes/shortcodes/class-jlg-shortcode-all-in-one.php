@@ -746,5 +746,4 @@ class JLG_Shortcode_All_In_One {
     }
 }
 
-// Initialiser le shortcode
-new JLG_Shortcode_All_In_One();
+// L'initialisation est désormais gérée par JLG_Frontend::load_shortcodes()
