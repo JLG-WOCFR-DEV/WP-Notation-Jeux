@@ -90,7 +90,7 @@ class JLG_Admin_Metaboxes {
         
         // Récupérer les métadonnées
         $meta = [];
-        $keys = ['tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes'];
+        $keys = ['tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url'];
         foreach ($keys as $key) {
             $meta[$key] = get_post_meta($post->ID, '_jlg_' . $key, true);
         }
@@ -103,18 +103,20 @@ class JLG_Admin_Metaboxes {
         
         $fields = [
             'developpeur' => 'Développeur(s)',
-            'editeur' => 'Éditeur(s)', 
+            'editeur' => 'Éditeur(s)',
             'date_sortie' => 'Date de sortie',
             'version' => 'Version testée',
             'pegi' => 'PEGI',
-            'temps_de_jeu' => 'Temps de jeu'
+            'temps_de_jeu' => 'Temps de jeu',
+            'cover_image_url' => 'URL de la jaquette'
         ];
-        
+
         foreach ($fields as $key => $label) {
             $type = ($key === 'date_sortie') ? 'date' : 'text';
             echo '<div>';
             echo '<label><strong>' . esc_html($label) . ' :</strong></label><br>';
-            echo '<input type="' . $type . '" name="jlg_' . esc_attr($key) . '" value="' . esc_attr($meta[$key] ?? '') . '" style="width:100%;">';
+            $id_attribute = ($key === 'cover_image_url') ? ' id="jlg_cover_image_url"' : '';
+            echo '<input type="' . $type . '" name="jlg_' . esc_attr($key) . '"' . $id_attribute . ' value="' . esc_attr($meta[$key] ?? '') . '" style="width:100%;">';
             echo '</div>';
         }
         
@@ -233,7 +235,16 @@ class JLG_Admin_Metaboxes {
                     }
                 }
             }
-            
+
+            if (isset($_POST['jlg_cover_image_url'])) {
+                $cover_image_url = esc_url_raw($_POST['jlg_cover_image_url']);
+                if (!empty($cover_image_url)) {
+                    update_post_meta($post_id, '_jlg_cover_image_url', $cover_image_url);
+                } else {
+                    delete_post_meta($post_id, '_jlg_cover_image_url');
+                }
+            }
+
             // Champs textarea
             $textarea_fields = ['tagline_fr', 'tagline_en', 'points_forts', 'points_faibles'];
             foreach ($textarea_fields as $field) {
