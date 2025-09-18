@@ -4,31 +4,30 @@ if (!defined('ABSPATH')) exit;
 class JLG_Admin_Metaboxes {
 
     public function __construct() {
-        add_action('add_meta_boxes', [$this, 'register_metaboxes']);
+        add_action('add_meta_boxes', [$this, 'register_metaboxes'], 10, 2);
         add_action('save_post', [$this, 'save_meta_data']);
     }
 
-    public function register_metaboxes() {
+    public function register_metaboxes($post_type, $post = null) {
         // Vérifier qu'on est bien sur un post
-        global $post;
-        if (!$post || $post->post_type !== 'post') {
+        if ($post_type !== 'post') {
             return;
         }
-        
+
         add_meta_box(
             'notation_jlg_metabox',
             '⭐ Notation du Jeu Vidéo',
             [$this, 'render_notation_metabox'],
-            'post',
+            $post_type,
             'side',
             'high'
         );
-        
+
         add_meta_box(
             'jlg_details_metabox',
             '🎮 Détails du Test',
             [$this, 'render_details_metabox'],
-            'post',
+            $post_type,
             'normal',
             'high'
         );
