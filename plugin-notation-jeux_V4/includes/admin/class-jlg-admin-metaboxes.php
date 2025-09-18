@@ -200,7 +200,8 @@ class JLG_Admin_Metaboxes {
             foreach ($categories as $key) {
                 $field_name = '_note_' . $key;
                 if (isset($_POST[$field_name])) {
-                    $value = sanitize_text_field($_POST[$field_name]);
+                    $raw_value = wp_unslash($_POST[$field_name]);
+                    $value = sanitize_text_field($raw_value);
                     
                     if ($value === '') {
                         delete_post_meta($post_id, $field_name);
@@ -227,7 +228,8 @@ class JLG_Admin_Metaboxes {
             $text_fields = ['developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu'];
             foreach ($text_fields as $field) {
                 if (isset($_POST['jlg_' . $field])) {
-                    $value = sanitize_text_field($_POST['jlg_' . $field]);
+                    $raw_value = wp_unslash($_POST['jlg_' . $field]);
+                    $value = sanitize_text_field($raw_value);
                     if (!empty($value)) {
                         update_post_meta($post_id, '_jlg_' . $field, $value);
                     } else {
@@ -237,7 +239,7 @@ class JLG_Admin_Metaboxes {
             }
 
             if (isset($_POST['jlg_cover_image_url'])) {
-                $cover_image_url = esc_url_raw($_POST['jlg_cover_image_url']);
+                $cover_image_url = esc_url_raw(wp_unslash($_POST['jlg_cover_image_url']));
                 if (!empty($cover_image_url)) {
                     update_post_meta($post_id, '_jlg_cover_image_url', $cover_image_url);
                 } else {
@@ -249,7 +251,8 @@ class JLG_Admin_Metaboxes {
             $textarea_fields = ['tagline_fr', 'tagline_en', 'points_forts', 'points_faibles'];
             foreach ($textarea_fields as $field) {
                 if (isset($_POST['jlg_' . $field])) {
-                    $value = sanitize_textarea_field($_POST['jlg_' . $field]);
+                    $raw_value = wp_unslash($_POST['jlg_' . $field]);
+                    $value = sanitize_textarea_field($raw_value);
                     if (!empty($value)) {
                         update_post_meta($post_id, '_jlg_' . $field, $value);
                     } else {
@@ -260,7 +263,9 @@ class JLG_Admin_Metaboxes {
             
             // Plateformes (checkboxes)
             if (isset($_POST['jlg_plateformes']) && is_array($_POST['jlg_plateformes'])) {
-                $platforms = array_map('sanitize_text_field', $_POST['jlg_plateformes']);
+                $raw_platforms = wp_unslash($_POST['jlg_plateformes']);
+                $raw_platforms = is_array($raw_platforms) ? $raw_platforms : [];
+                $platforms = array_map('sanitize_text_field', $raw_platforms);
                 update_post_meta($post_id, '_jlg_plateformes', $platforms);
             } else {
                 delete_post_meta($post_id, '_jlg_plateformes');
