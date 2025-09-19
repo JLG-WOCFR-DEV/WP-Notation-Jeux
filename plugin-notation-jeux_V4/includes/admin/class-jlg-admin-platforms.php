@@ -283,30 +283,38 @@ class JLG_Admin_Platforms {
             self::$debug_messages[] = "❌ Données d'ordre manquantes";
             return ['success' => false, 'message' => 'Données d\'ordre manquantes.'];
         }
-        
-        $all_platforms = $this->get_platforms();
-        $updated_count = 0;
-        
-        foreach ($_POST['platform_order'] as $key => $order) {
-            $key = sanitize_text_field($key);
-            $order = intval($order);
-            
-            if (isset($all_platforms[$key])) {
-                if (isset($platforms[$key])) {
-                    // Plateforme personnalisée
-                    $platforms[$key]['order'] = $order;
-                    $updated_count++;
-                } else {
-                    // Plateforme par défaut - on doit la sauvegarder pour modifier son ordre
-                    $platforms[$key] = $all_platforms[$key];
-                    $platforms[$key]['order'] = $order;
-                    $updated_count++;
-                }
-            }
+
+        $submitted_order = array_map('sanitize_text_field', array_filter($_POST['platform_order'], 'strlen'));
+        if (empty($submitted_order)) {
+            self::$debug_messages[] = "❌ Ordre soumis vide";
+            return ['success' => false, 'message' => 'Ordre soumis invalide.'];
         }
-        
+
+        $all_platforms = $this->get_platforms();
+        $updated_platforms = [];
+        $position = 1;
+
+        foreach ($submitted_order as $key) {
+            if (!isset($all_platforms[$key])) {
+                self::$debug_messages[] = "⚠️ Plateforme inconnue ignorée : $key";
+                continue;
+            }
+
+            $platform_data = $all_platforms[$key];
+            $platform_data['order'] = $position;
+            $updated_platforms[$key] = $platform_data;
+            $position++;
+        }
+
+        $updated_count = count($updated_platforms);
+        if ($updated_count === 0) {
+            self::$debug_messages[] = "❌ Aucun élément valide dans l'ordre soumis";
+            return ['success' => false, 'message' => 'Aucune plateforme valide reçue.'];
+        }
+
+        $platforms = $updated_platforms;
         self::$debug_messages[] = "📊 $updated_count plateformes mises à jour";
-        
+
         $result = update_option($this->option_name, $platforms);
         
         if ($result || get_option($this->option_name) !== false) {
@@ -408,20 +416,22 @@ class JLG_Admin_Platforms {
                         <table class="wp-list-table widefat striped">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px;">Ordre</th>
+                                    <th style="width: 40px;"></th>
+                                    <th style="width: 60px;">Ordre</th>
                                     <th style="width: 50px;">Icône</th>
                                     <th>Nom</th>
                                     <th style="width: 100px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="platforms-list">
-                                <?php foreach ($platforms as $key => $platform): ?>
+                                <?php $position = 1; foreach ($platforms as $key => $platform): ?>
                                 <tr data-key="<?php echo esc_attr($key); ?>">
-                                    <td>
-                                        <input type="number" 
-                                               name="platform_order[<?php echo esc_attr($key); ?>]" 
-                                               value="<?php echo esc_attr($platform['order'] ?? 999); ?>" 
-                                               style="width: 50px;">
+                                    <td class="jlg-sort-handle" style="cursor: move; text-align: center;">
+                                        <span class="dashicons dashicons-menu" aria-hidden="true"></span>
+                                        <span class="screen-reader-text">Réordonner <?php echo esc_html($platform['name']); ?></span>
+                                    </td>
+                                    <td class="jlg-platform-position">
+                                        <?php echo esc_html($position); ?>
                                     </td>
                                     <td style="text-align: center; font-size: 20px;">
                                         <?php echo esc_html($platform['icon'] ?? '🎮'); ?>
@@ -434,8 +444,8 @@ class JLG_Admin_Platforms {
                                     </td>
                                     <td>
                                         <?php if (isset($platform['custom']) && $platform['custom']): ?>
-                                            <button type="button" 
-                                                    class="button button-small delete-platform" 
+                                            <button type="button"
+                                                    class="button button-small delete-platform"
                                                     data-key="<?php echo esc_attr($key); ?>"
                                                     data-name="<?php echo esc_attr($platform['name']); ?>">
                                                 ❌ Supprimer
@@ -443,9 +453,10 @@ class JLG_Admin_Platforms {
                                         <?php else: ?>
                                             <span style="color: #999;">Par défaut</span>
                                         <?php endif; ?>
+                                        <input type="hidden" name="platform_order[]" value="<?php echo esc_attr($key); ?>">
                                     </td>
                                 </tr>
-                                <?php endforeach; ?>
+                                <?php $position++; endforeach; ?>
                             </tbody>
                         </table>
                         
