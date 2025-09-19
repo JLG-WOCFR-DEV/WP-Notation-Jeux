@@ -55,13 +55,29 @@ class JLG_Validator {
         if (!is_array($platforms)) {
             return [];
         }
-        
-        $allowed_platforms = [
-            'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch 2', 
-            'Nintendo Switch', 'PlayStation 4', 'Xbox One'
-        ];
-        
-        $sanitized = array_map('sanitize_text_field', $platforms);
-        return array_intersect($sanitized, $allowed_platforms);
+
+        $allowed_platforms = [];
+
+        if (class_exists('JLG_Admin_Platforms')) {
+            $platforms_manager = JLG_Admin_Platforms::get_instance();
+
+            if (method_exists($platforms_manager, 'get_platform_names')) {
+                $allowed_platforms = array_values($platforms_manager->get_platform_names());
+            }
+        }
+
+        if (empty($allowed_platforms)) {
+            $allowed_platforms = [
+                'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch',
+                'PlayStation 4', 'Xbox One', 'Steam Deck'
+            ];
+        }
+
+        $allowed_platforms = array_map('sanitize_text_field', $allowed_platforms);
+        $sanitized_platforms = array_map('sanitize_text_field', $platforms);
+
+        $valid_platforms = array_intersect($sanitized_platforms, $allowed_platforms);
+
+        return array_values(array_unique($valid_platforms));
     }
 }

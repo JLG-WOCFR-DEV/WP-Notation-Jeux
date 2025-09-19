@@ -264,7 +264,7 @@ class JLG_Admin_Metaboxes {
             if (isset($_POST['jlg_plateformes']) && is_array($_POST['jlg_plateformes'])) {
                 $raw_platforms = wp_unslash($_POST['jlg_plateformes']);
                 $raw_platforms = is_array($raw_platforms) ? $raw_platforms : [];
-                $platforms = array_map('sanitize_text_field', $raw_platforms);
+                $platforms = JLG_Validator::sanitize_platforms($raw_platforms);
                 update_post_meta($post_id, '_jlg_plateformes', $platforms);
             } else {
                 delete_post_meta($post_id, '_jlg_plateformes');
