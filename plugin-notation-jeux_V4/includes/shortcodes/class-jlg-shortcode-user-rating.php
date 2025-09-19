@@ -12,7 +12,7 @@ class JLG_Shortcode_User_Rating {
             return '';
         }
 
-        $options = get_option('notation_jlg_settings', JLG_Helpers::get_default_settings());
+        $options = JLG_Helpers::get_plugin_options();
         if (empty($options['user_rating_enabled'])) {
             return '';
         }
