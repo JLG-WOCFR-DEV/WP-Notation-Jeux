@@ -64,12 +64,15 @@ jQuery(document).ready(function($) {
         }
     }
 
-    function performAjax($wrapper, params, historyUrl) {
+    function performAjax($wrapper, params, historyUrl, options) {
         var ajaxUrl = jlgSummarySort.ajax_url;
 
         if (!ajaxUrl) {
             return;
         }
+
+        var settings = options || {};
+        var shouldUpdateHistory = settings.updateHistory !== false;
 
         var currentRequest = $wrapper.data('ajaxRequest');
         if (currentRequest && typeof currentRequest.abort === 'function') {
@@ -135,7 +138,7 @@ jQuery(document).ready(function($) {
 
             updateState($wrapper, response.data.state || {});
 
-            if (targetUrl) {
+            if (shouldUpdateHistory && targetUrl) {
                 updateHistory(targetUrl);
             }
         }).fail(function() {
@@ -192,5 +195,48 @@ jQuery(document).ready(function($) {
 
             performAjax($wrapper, params, url.href);
         });
+    });
+
+    window.addEventListener('popstate', function() {
+        var href = window.location.href;
+        var parsed = parseUrlParameters(href);
+        var hash = parsed.url.hash || '';
+        var $wrapper;
+
+        if (hash) {
+            try {
+                $wrapper = $(hash);
+            } catch (error) {
+                $wrapper = $();
+            }
+
+            if (!$wrapper || !$wrapper.length) {
+                var id = hash.replace(/^#/, '');
+                if (id) {
+                    $wrapper = $('#' + id);
+                }
+            }
+        }
+
+        if (!$wrapper || !$wrapper.length) {
+            $wrapper = $('.jlg-summary-wrapper').first();
+        }
+
+        if (!$wrapper || !$wrapper.length) {
+            return;
+        }
+
+        var currentRequest = $wrapper.data('ajaxRequest');
+        if (currentRequest) {
+            if (typeof currentRequest.state === 'function' && currentRequest.state() === 'pending') {
+                return;
+            }
+
+            if (typeof currentRequest.readyState !== 'undefined' && currentRequest.readyState !== 4) {
+                return;
+            }
+        }
+
+        performAjax($wrapper, parsed.params, parsed.url.href, { updateHistory: false });
     });
 });
