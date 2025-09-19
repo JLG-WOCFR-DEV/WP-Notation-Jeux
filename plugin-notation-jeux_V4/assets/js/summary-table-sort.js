@@ -77,6 +77,7 @@ jQuery(document).ready(function($) {
         }
 
         var targetUrl = historyUrl || window.location.href;
+        var skipHistory = Boolean($wrapper.data('skipHistory'));
 
         var requestData = {
             action: 'jlg_summary_sort',
@@ -135,7 +136,7 @@ jQuery(document).ready(function($) {
 
             updateState($wrapper, response.data.state || {});
 
-            if (targetUrl) {
+            if (!skipHistory && targetUrl) {
                 updateHistory(targetUrl);
             }
         }).fail(function() {
@@ -143,6 +144,9 @@ jQuery(document).ready(function($) {
         }).always(function() {
             $wrapper.removeClass('jlg-summary-loading');
             $wrapper.removeData('ajaxRequest');
+            if (skipHistory) {
+                $wrapper.removeData('skipHistory');
+            }
         });
     }
 
@@ -191,6 +195,42 @@ jQuery(document).ready(function($) {
             }
 
             performAjax($wrapper, params, url.href);
+        });
+
+        window.addEventListener('popstate', function() {
+            var href = window.location.href;
+            if (!href) {
+                return;
+            }
+
+            var parsed = parseUrlParameters(href);
+            if (!parsed || !parsed.url) {
+                return;
+            }
+
+            var hash = parsed.url.hash ? parsed.url.hash.replace(/^#/, '') : '';
+            if (hash) {
+                if ($wrapper.attr('id') !== hash) {
+                    return;
+                }
+            } else {
+                var $firstWrapper = $('.jlg-summary-wrapper').first();
+                if (!$wrapper.is($firstWrapper)) {
+                    return;
+                }
+            }
+
+            if (!$wrapper.length) {
+                return;
+            }
+
+            var currentRequest = $wrapper.data('ajaxRequest');
+            if (currentRequest && typeof currentRequest.abort === 'function') {
+                return;
+            }
+
+            $wrapper.data('skipHistory', true);
+            performAjax($wrapper, parsed.params, parsed.url.href);
         });
     });
 });
