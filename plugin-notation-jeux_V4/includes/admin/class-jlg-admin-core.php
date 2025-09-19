@@ -7,15 +7,21 @@ class JLG_Admin_Core {
     private $metaboxes;
     private $settings;
     private $platforms;
+    private $assets;
 
-    public static function get_instance() {
+    public static function get_instance($assets = null) {
         if (self::$instance === null) {
-            self::$instance = new self();
+            self::$instance = new self($assets);
+        } elseif ($assets instanceof JLG_Assets) {
+            self::$instance->assets = $assets;
         }
         return self::$instance;
     }
 
-    private function __construct() {
+    private function __construct($assets = null) {
+        if ($assets instanceof JLG_Assets) {
+            $this->assets = $assets;
+        }
         $this->load_admin_dependencies();
         $this->init_admin_components();
     }
@@ -50,8 +56,8 @@ class JLG_Admin_Core {
             $this->settings = new JLG_Admin_Settings();
         }
 
-        if (class_exists('JLG_Admin_Ajax')) {
-            new JLG_Admin_Ajax();
+        if (class_exists('JLG_Admin_Ajax') && $this->assets instanceof JLG_Assets) {
+            new JLG_Admin_Ajax($this->assets);
         }
         
         // Initialiser la classe Platforms en mode singleton

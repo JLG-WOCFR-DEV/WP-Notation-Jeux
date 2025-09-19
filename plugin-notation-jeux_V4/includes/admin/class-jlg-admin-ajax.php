@@ -2,8 +2,16 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Admin_Ajax {
-    
-    public function __construct() {
+
+    /**
+     * Gestionnaire centralisé des assets.
+     *
+     * @var JLG_Assets
+     */
+    private $assets;
+
+    public function __construct(JLG_Assets $assets) {
+        $this->assets = $assets;
         add_action('wp_ajax_jlg_search_rawg_games', [$this, 'handle_rawg_search']);
         add_action('wp_ajax_nopriv_jlg_search_rawg_games', [$this, 'handle_rawg_search']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_ajax_assets']);
@@ -20,18 +28,10 @@ class JLG_Admin_Ajax {
             return;
         }
 
-        $script_handle = 'jlg-admin-api';
-        $script_url = JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-admin-api.js';
-        $version = defined('JLG_NOTATION_VERSION') ? JLG_NOTATION_VERSION : false;
-
-        wp_register_script($script_handle, $script_url, ['jquery'], $version, true);
-
-        wp_localize_script($script_handle, 'jlg_admin_ajax', [
+        $this->assets->enqueue_admin_ajax([
             'nonce' => wp_create_nonce('jlg_admin_ajax_nonce'),
             'ajax_url' => admin_url('admin-ajax.php'),
         ]);
-
-        wp_enqueue_script($script_handle);
     }
 
     public function handle_rawg_search() {

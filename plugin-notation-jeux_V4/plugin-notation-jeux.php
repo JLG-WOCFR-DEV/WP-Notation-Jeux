@@ -43,6 +43,7 @@ final class JLG_Plugin_De_Notation_Main {
     private static $instance = null;
     private $admin = null;
     private $frontend = null;
+    private $assets = null;
 
     public static function get_instance() {
         if (self::$instance === null) {
@@ -61,6 +62,9 @@ final class JLG_Plugin_De_Notation_Main {
         // Helpers (requis par tous)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-helpers.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
+
+        // Gestion centralisée des assets
+        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-assets.php';
 
         // Frontend (toujours)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
@@ -94,9 +98,16 @@ final class JLG_Plugin_De_Notation_Main {
     }
 
     private function init_components() {
+        // Assets
+        if (class_exists('JLG_Assets')) {
+            $this->assets = new JLG_Assets(JLG_NOTATION_VERSION);
+            add_action('wp_enqueue_scripts', [$this->assets, 'enqueue_frontend'], 5);
+            add_action('admin_enqueue_scripts', [$this->assets, 'enqueue_admin'], 5);
+        }
+
         // Frontend
         if (class_exists('JLG_Frontend')) {
-            $this->frontend = new JLG_Frontend();
+            $this->frontend = new JLG_Frontend($this->assets);
         }
 
         // Widget
@@ -108,7 +119,7 @@ final class JLG_Plugin_De_Notation_Main {
 
         // Admin
         if (is_admin() && class_exists('JLG_Admin_Core')) {
-            $this->admin = JLG_Admin_Core::get_instance();
+            $this->admin = JLG_Admin_Core::get_instance($this->assets);
         }
     }
 

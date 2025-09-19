@@ -8,11 +8,13 @@ class JLG_Frontend {
      * @var array
      */
     private static $shortcode_errors = [];
+    private $assets;
 
-    public function __construct() {
+    public function __construct(JLG_Assets $assets) {
+        $this->assets = $assets;
         // On charge les shortcodes via le hook 'init' pour s'assurer que WordPress est prêt
         add_action('init', [$this, 'initialize_shortcodes']);
-        
+
         add_action('wp_enqueue_scripts', [$this, 'enqueue_jlg_scripts']);
         add_action('wp_ajax_jlg_rate_post', [$this, 'handle_user_rating']);
         add_action('wp_ajax_nopriv_jlg_rate_post', [$this, 'handle_user_rating']);
@@ -197,12 +199,7 @@ class JLG_Frontend {
         $average_score = JLG_Helpers::get_average_score_for_post($post_id);
 
         // Feuille de styles principale
-        wp_enqueue_style(
-            'jlg-frontend',
-            JLG_NOTATION_PLUGIN_URL . 'assets/css/jlg-frontend.css',
-            [],
-            JLG_NOTATION_VERSION
-        );
+        $this->assets->enqueue_frontend_style();
 
         $palette_colors = $this->sanitize_color_options([
             'bg_color',
@@ -448,13 +445,6 @@ class JLG_Frontend {
 
         // Script pour la notation utilisateur
         if (!empty($options['user_rating_enabled'])) {
-            wp_enqueue_script(
-                'jlg-user-rating',
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/user-rating.js',
-                ['jquery'],
-                JLG_NOTATION_VERSION,
-                true
-            );
             $cookie_name = 'jlg_user_rating_token';
             $token = '';
 
@@ -492,7 +482,7 @@ class JLG_Frontend {
 
             $nonce = wp_create_nonce('jlg_user_rating_nonce_' . $token);
 
-            wp_localize_script('jlg-user-rating', 'jlg_rating_ajax', [
+            $this->assets->enqueue_user_rating([
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'    => $nonce,
                 'token'    => $token,
@@ -501,24 +491,12 @@ class JLG_Frontend {
 
         // Script pour le changement de langue des taglines
         if (!empty($options['tagline_enabled'])) {
-            wp_enqueue_script(
-                'jlg-tagline-switcher', 
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/tagline-switcher.js', 
-                ['jquery'], 
-                JLG_NOTATION_VERSION, 
-                true
-            );
+            $this->assets->enqueue_tagline_switcher();
         }
 
         // Script pour les animations
         if (!empty($options['enable_animations'])) {
-            wp_enqueue_script(
-                'jlg-animations', 
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-animations.js', 
-                [], 
-                JLG_NOTATION_VERSION, 
-                true
-            );
+            $this->assets->enqueue_animations();
         }
     }
 
