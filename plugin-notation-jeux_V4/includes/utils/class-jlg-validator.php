@@ -56,14 +56,28 @@ class JLG_Validator {
         if (!is_array($platforms)) {
             return [];
         }
-        
-        $allowed_platforms = [
-            'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch 2', 
-            'Nintendo Switch', 'PlayStation 4', 'Xbox One'
-        ];
-        
+
+        $allowed_platforms = [];
+
+        if (class_exists('JLG_Admin_Platforms')) {
+            $platform_manager = JLG_Admin_Platforms::get_instance();
+            if ($platform_manager && method_exists($platform_manager, 'get_platform_names')) {
+                $platform_names = $platform_manager->get_platform_names();
+                if (is_array($platform_names)) {
+                    $allowed_platforms = array_map('sanitize_text_field', array_values($platform_names));
+                }
+            }
+        }
+
+        if (empty($allowed_platforms)) {
+            $allowed_platforms = [
+                'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch 2',
+                'Nintendo Switch', 'PlayStation 4', 'Xbox One'
+            ];
+        }
+
         $sanitized = array_map('sanitize_text_field', $platforms);
-        return array_intersect($sanitized, $allowed_platforms);
+        return array_values(array_intersect($sanitized, $allowed_platforms));
     }
 
     public static function validate_date($date, $allow_empty = true) {
