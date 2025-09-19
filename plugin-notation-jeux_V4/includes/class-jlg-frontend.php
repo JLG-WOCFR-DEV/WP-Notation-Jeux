@@ -603,6 +603,18 @@ class JLG_Frontend {
             return; 
         }
         
+        $review_rating_bounds = apply_filters(
+            'jlg_review_rating_bounds',
+            [
+                'min' => 0,
+                'max' => 10,
+            ],
+            $post_id
+        );
+
+        $review_best_rating  = isset($review_rating_bounds['max']) ? floatval($review_rating_bounds['max']) : 10;
+        $review_worst_rating = isset($review_rating_bounds['min']) ? floatval($review_rating_bounds['min']) : 0;
+
         $schema = [
             '@context'      => 'https://schema.org',
             '@type'         => 'Game',
@@ -612,8 +624,8 @@ class JLG_Frontend {
                 'reviewRating'  => [
                     '@type'       => 'Rating',
                     'ratingValue' => $average_score,
-                    'bestRating'  => '10',
-                    'worstRating' => '0',
+                    'bestRating'  => $review_best_rating,
+                    'worstRating' => $review_worst_rating,
                 ],
                 'author'        => [
                     '@type' => 'Person',
