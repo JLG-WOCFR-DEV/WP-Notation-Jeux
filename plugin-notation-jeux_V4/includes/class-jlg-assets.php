@@ -39,6 +39,9 @@ class JLG_Assets {
             'listSelector' => '#platforms-list',
             'positionSelector' => '.jlg-platform-position',
             'handleSelector' => '.jlg-sort-handle',
+            'rowSelector' => 'tr[data-key]',
+            'inputSelector' => 'input[name="platform_order[]"]',
+            'placeholderClass' => 'jlg-sortable-placeholder',
         ]);
 
         wp_enqueue_script($handle);
