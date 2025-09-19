@@ -149,6 +149,9 @@ jQuery(document).ready(function($) {
             $('#jlg_editeur').val(gameData.publishers);
             $('#jlg_date_sortie').val(gameData.release_date);
             $('#jlg_cover_image_url').val(gameData.cover_image);
+            if (gameData.pegi) {
+                $('#jlg_pegi').val(gameData.pegi);
+            }
 
             // Gère les cases à cocher des plateformes
             $('input[name="jlg_plateformes[]"]').prop('checked', false);

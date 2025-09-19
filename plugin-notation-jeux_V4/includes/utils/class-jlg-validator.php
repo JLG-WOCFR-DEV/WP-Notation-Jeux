@@ -2,7 +2,8 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Validator {
-    
+    private static $allowed_pegi_values = ['3', '7', '12', '16', '18'];
+
     public static function is_valid_score($score, $allow_empty = true) {
         if (($score === '' || $score === null) && $allow_empty) {
             return true;
@@ -63,5 +64,64 @@ class JLG_Validator {
         
         $sanitized = array_map('sanitize_text_field', $platforms);
         return array_intersect($sanitized, $allowed_platforms);
+    }
+
+    public static function validate_date($date, $allow_empty = true) {
+        if ($date === '' || $date === null) {
+            return $allow_empty;
+        }
+
+        $date_time = DateTime::createFromFormat('Y-m-d', $date);
+
+        return $date_time instanceof DateTime && $date_time->format('Y-m-d') === $date;
+    }
+
+    public static function sanitize_date($date) {
+        if (!self::validate_date($date, false)) {
+            return null;
+        }
+
+        $date_time = DateTime::createFromFormat('Y-m-d', $date);
+
+        return $date_time ? $date_time->format('Y-m-d') : null;
+    }
+
+    public static function get_allowed_pegi_values() {
+        return self::$allowed_pegi_values;
+    }
+
+    private static function normalize_pegi_value($pegi) {
+        if ($pegi === '' || $pegi === null) {
+            return null;
+        }
+
+        $normalized = strtoupper(trim($pegi));
+        $normalized = str_replace('PEGI', '', $normalized);
+        $normalized = str_replace('+', '', $normalized);
+        $normalized = preg_replace('/[^0-9]/', '', $normalized);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return in_array($normalized, self::$allowed_pegi_values, true) ? $normalized : null;
+    }
+
+    public static function validate_pegi($pegi, $allow_empty = true) {
+        if ($pegi === '' || $pegi === null) {
+            return $allow_empty;
+        }
+
+        return self::normalize_pegi_value($pegi) !== null;
+    }
+
+    public static function sanitize_pegi($pegi) {
+        $normalized = self::normalize_pegi_value($pegi);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        return 'PEGI ' . $normalized;
     }
 }

@@ -2,10 +2,37 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Admin_Metaboxes {
+    private $error_transient_key = '';
 
     public function __construct() {
         add_action('add_meta_boxes', [$this, 'register_metaboxes'], 10, 2);
         add_action('save_post', [$this, 'save_meta_data']);
+        add_action('admin_notices', [$this, 'display_validation_errors']);
+    }
+
+    private function get_error_transient_key() {
+        if ($this->error_transient_key === '') {
+            $user_id = get_current_user_id();
+            $this->error_transient_key = 'jlg_metabox_errors_' . (int) $user_id;
+        }
+
+        return $this->error_transient_key;
+    }
+
+    public function display_validation_errors() {
+        $errors = get_transient($this->get_error_transient_key());
+
+        if (empty($errors) || !is_array($errors)) {
+            return;
+        }
+
+        delete_transient($this->get_error_transient_key());
+
+        echo '<div class="notice notice-error"><p><strong>' . esc_html__('Notation JLG', 'notation-jlg') . ' :</strong></p><ul>';
+        foreach ($errors as $error) {
+            echo '<li>' . esc_html($error) . '</li>';
+        }
+        echo '</ul></div>';
     }
 
     public function register_metaboxes($post_type, $post = null) {
@@ -221,19 +248,63 @@ class JLG_Admin_Metaboxes {
             }
         }
 
+        $validation_errors = [];
+
         // Sauvegarder les détails
         if (isset($_POST['jlg_details_nonce']) && wp_verify_nonce($_POST['jlg_details_nonce'], 'jlg_save_details_data')) {
             // Champs texte simples
-            $text_fields = ['developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu'];
-            foreach ($text_fields as $field) {
+            $text_fields = [
+                'developpeur' => __('Développeur(s)', 'notation-jlg'),
+                'editeur' => __('Éditeur(s)', 'notation-jlg'),
+                'date_sortie' => __('Date de sortie', 'notation-jlg'),
+                'version' => __('Version testée', 'notation-jlg'),
+                'pegi' => __('PEGI', 'notation-jlg'),
+                'temps_de_jeu' => __('Temps de jeu', 'notation-jlg'),
+            ];
+            foreach ($text_fields as $field => $label) {
                 if (isset($_POST['jlg_' . $field])) {
                     $raw_value = wp_unslash($_POST['jlg_' . $field]);
                     $value = sanitize_text_field($raw_value);
-                    if (!empty($value)) {
-                        update_post_meta($post_id, '_jlg_' . $field, $value);
-                    } else {
+                    if ($value === '') {
                         delete_post_meta($post_id, '_jlg_' . $field);
+                        continue;
                     }
+
+                    if ($field === 'date_sortie') {
+                        $sanitized_date = JLG_Validator::sanitize_date($value);
+                        if ($sanitized_date === null) {
+                            delete_post_meta($post_id, '_jlg_' . $field);
+                            $validation_errors[] = sprintf(
+                                /* translators: %s is the field label. */
+                                __('%s : format de date invalide. Utilisez AAAA-MM-JJ.', 'notation-jlg'),
+                                $label
+                            );
+                            continue;
+                        }
+
+                        update_post_meta($post_id, '_jlg_' . $field, $sanitized_date);
+                        continue;
+                    }
+
+                    if ($field === 'pegi') {
+                        if (!JLG_Validator::validate_pegi($value, false)) {
+                            delete_post_meta($post_id, '_jlg_' . $field);
+                            $validation_errors[] = sprintf(
+                                /* translators: %s is a list of allowed PEGI values */
+                                __('PEGI invalide. Valeurs acceptées : %s.', 'notation-jlg'),
+                                implode(', ', array_map(function($rating) {
+                                    return 'PEGI ' . $rating;
+                                }, JLG_Validator::get_allowed_pegi_values()))
+                            );
+                            continue;
+                        }
+
+                        $sanitized_pegi = JLG_Validator::sanitize_pegi($value);
+                        update_post_meta($post_id, '_jlg_' . $field, $sanitized_pegi);
+                        continue;
+                    }
+
+                    update_post_meta($post_id, '_jlg_' . $field, $value);
                 }
             }
 
@@ -269,6 +340,10 @@ class JLG_Admin_Metaboxes {
             } else {
                 delete_post_meta($post_id, '_jlg_plateformes');
             }
+        }
+
+        if (!empty($validation_errors)) {
+            set_transient($this->get_error_transient_key(), $validation_errors, MINUTE_IN_SECONDS);
         }
     }
 }
