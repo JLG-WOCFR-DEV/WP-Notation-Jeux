@@ -1,4 +1,11 @@
 jQuery(document).ready(function($) {
+    var adminStrings = (typeof jlgAdminApiL10n !== 'undefined') ? jlgAdminApiL10n : {};
+    function getString(key, fallback) {
+        if (adminStrings && Object.prototype.hasOwnProperty.call(adminStrings, key)) {
+            return adminStrings[key];
+        }
+        return fallback;
+    }
     // Recherche de jeu
     $('#jlg-api-search-button').on('click', function() {
         var searchInput = $('#jlg-api-search-input');
@@ -19,7 +26,7 @@ jQuery(document).ready(function($) {
                 .append(
                     $('<p>')
                         .css('color', 'red')
-                        .text('Configuration AJAX invalide.')
+                        .text(getString('invalidAjaxConfig', 'Configuration AJAX invalide.'))
                 );
             return;
         }
@@ -32,7 +39,7 @@ jQuery(document).ready(function($) {
                 .append(
                     $('<p>')
                         .css('color', 'red')
-                        .text('Nonce de sécurité manquant. Actualisez la page.')
+                        .text(getString('missingNonce', 'Nonce de sécurité manquant. Actualisez la page.'))
                 );
             return;
         }
@@ -43,13 +50,13 @@ jQuery(document).ready(function($) {
                 .append(
                     $('<p>')
                         .css('color', 'red')
-                        .text('Veuillez entrer au moins 3 caractères.')
+                        .text(getString('minCharsMessage', 'Veuillez entrer au moins 3 caractères.'))
                 );
             return;
         }
 
-        button.text('Recherche...').prop('disabled', true);
-        resultsDiv.text('Chargement...');
+        button.text(getString('searchingText', 'Recherche...')).prop('disabled', true);
+        resultsDiv.text(getString('loadingText', 'Chargement...'));
 
         $.ajax({
             url: ajaxEndpoint,
@@ -60,7 +67,7 @@ jQuery(document).ready(function($) {
                 search: searchTerm,
             },
             success: function(response) {
-                button.text('Rechercher').prop('disabled', false);
+                button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
 
                 if (response === '-1') {
                     resultsDiv
@@ -68,7 +75,7 @@ jQuery(document).ready(function($) {
                         .append(
                             $('<p>')
                                 .css('color', 'red')
-                                .text('Vérification de sécurité échouée. Actualisez la page.')
+                                .text(getString('securityFailed', 'Vérification de sécurité échouée. Actualisez la page.'))
                         );
                     return;
                 }
@@ -96,7 +103,7 @@ jQuery(document).ready(function($) {
                         'padding-left': '20px'
                     });
                     games.forEach(function(game, index) {
-                        var year = game.release_date ? new Date(game.release_date).getFullYear() : 'N/A';
+                        var year = game.release_date ? new Date(game.release_date).getFullYear() : getString('notAvailableLabel', 'N/A');
                         var listItem = $('<li>');
                         var name = game.name ? String(game.name) : '';
                         listItem.append($('<strong>').text(name));
@@ -105,7 +112,7 @@ jQuery(document).ready(function($) {
                             .attr('type', 'button')
                             .addClass('button button-small jlg-select-game')
                             .attr('data-index', index)
-                            .text('Choisir');
+                            .text(getString('selectLabel', 'Choisir'));
                         listItem.append(buttonSelect);
                         list.append(listItem);
                     });
@@ -126,13 +133,13 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function() {
-                button.text('Rechercher').prop('disabled', false);
+                button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
                 resultsDiv
                     .empty()
                     .append(
                         $('<p>')
                             .css('color', 'red')
-                            .text('Erreur de communication.')
+                            .text(getString('communicationError', 'Erreur de communication.'))
                     );
             }
         });
@@ -182,7 +189,7 @@ jQuery(document).ready(function($) {
                             color: 'green',
                             'font-weight': 'bold'
                         })
-                        .text('Fiche technique remplie !')
+                        .text(getString('filledMessage', 'Fiche technique remplie !'))
                 );
         }
     });

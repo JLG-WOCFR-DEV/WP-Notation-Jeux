@@ -3,6 +3,9 @@ if (!defined('ABSPATH')) exit;
 
 class JLG_Assets {
     private static $instance = null;
+    private $localizations = [];
+    private $text_domain = 'notation-jlg';
+    private $languages_path;
 
     public static function get_instance() {
         if (self::$instance === null) {
@@ -13,7 +16,12 @@ class JLG_Assets {
     }
 
     private function __construct() {
+        $this->languages_path = JLG_NOTATION_PLUGIN_DIR . 'languages';
+        $this->register_default_localizations();
+
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
+        add_action('admin_enqueue_scripts', [$this, 'maybe_localize_scripts'], 20, 0);
+        add_action('wp_enqueue_scripts', [$this, 'maybe_localize_scripts'], 20, 0);
     }
 
     public function enqueue_admin_assets($hook_suffix) {
@@ -42,5 +50,68 @@ class JLG_Assets {
         ]);
 
         wp_enqueue_script($handle);
+    }
+
+    public function register_localization($handle, $object_name, callable $data_callback, $text_domain = null) {
+        if (empty($handle) || empty($object_name)) {
+            return;
+        }
+
+        $this->localizations[$handle] = [
+            'object_name'  => $object_name,
+            'data_callback' => $data_callback,
+            'text_domain'  => $text_domain ?: $this->text_domain,
+        ];
+    }
+
+    public function maybe_localize_scripts() {
+        if (empty($this->localizations)) {
+            return;
+        }
+
+        foreach ($this->localizations as $handle => $config) {
+            if (!wp_script_is($handle, 'enqueued')) {
+                continue;
+            }
+
+            $data = [];
+            if (is_callable($config['data_callback'])) {
+                $data = call_user_func($config['data_callback']);
+            }
+
+            if (!empty($data)) {
+                wp_localize_script($handle, $config['object_name'], $data);
+            }
+
+            if (function_exists('wp_set_script_translations') && is_dir($this->languages_path)) {
+                $text_domain = $config['text_domain'] ?? $this->text_domain;
+                wp_set_script_translations($handle, $text_domain, $this->languages_path);
+            }
+        }
+    }
+
+    private function register_default_localizations() {
+        $this->register_localization('jlg-user-rating', 'jlgUserRatingL10n', function() {
+            return [
+                'successMessage'      => __('Merci pour votre vote !', 'notation-jlg'),
+                'genericErrorMessage' => __('Erreur. Veuillez réessayer.', 'notation-jlg'),
+            ];
+        });
+
+        $this->register_localization('jlg-admin-api', 'jlgAdminApiL10n', function() {
+            return [
+                'invalidAjaxConfig'   => __('Configuration AJAX invalide.', 'notation-jlg'),
+                'missingNonce'        => __('Nonce de sécurité manquant. Actualisez la page.', 'notation-jlg'),
+                'minCharsMessage'     => __('Veuillez entrer au moins 3 caractères.', 'notation-jlg'),
+                'searchingText'       => __('Recherche...', 'notation-jlg'),
+                'loadingText'         => __('Chargement...', 'notation-jlg'),
+                'searchButtonLabel'   => __('Rechercher', 'notation-jlg'),
+                'securityFailed'      => __('Vérification de sécurité échouée. Actualisez la page.', 'notation-jlg'),
+                'selectLabel'         => __('Choisir', 'notation-jlg'),
+                'communicationError'  => __('Erreur de communication.', 'notation-jlg'),
+                'filledMessage'       => __('Fiche technique remplie !', 'notation-jlg'),
+                'notAvailableLabel'   => __('N/A', 'notation-jlg'),
+            ];
+        });
     }
 }

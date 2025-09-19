@@ -1,20 +1,131 @@
-# Translation template for the Notation JLG plugin.
-# Copyright (C) YEAR Notation JLG
-# This file is distributed under the same license as the Notation JLG package.
-# Translators: Please update the header information with your details.
+# Copyright (C) 2025 Jérôme Le Gousse
+# This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Notation - JLG (Version 5.0)\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-15 21:53+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Project-Id-Version: Notation - JLG (Version 5.0) 5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/plugin-notation-jeux_V4\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: xgettext\n"
+"POT-Creation-Date: 2025-09-19T20:16:57+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: notation-jlg\n"
+
+#. Plugin Name of the plugin
+#: plugin-notation-jeux.php
+msgid "Notation - JLG (Version 5.0)"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: plugin-notation-jeux.php
+msgid "https://votresite.com/"
+msgstr ""
+
+#. Description of the plugin
+#: plugin-notation-jeux.php
+msgid "Système de notation complet et personnalisable pour les tests de jeux vidéo - Version refactorisée et optimisée."
+msgstr ""
+
+#. Author of the plugin
+#: plugin-notation-jeux.php
+msgid "Jérôme Le Gousse"
+msgstr ""
+
+#: includes/class-jlg-assets.php:96
+#: templates/shortcode-user-rating.php:37
+msgid "Merci pour votre vote !"
+msgstr ""
+
+#: includes/class-jlg-assets.php:97
+msgid "Erreur. Veuillez réessayer."
+msgstr ""
+
+#: includes/class-jlg-assets.php:103
+msgid "Configuration AJAX invalide."
+msgstr ""
+
+#: includes/class-jlg-assets.php:104
+msgid "Nonce de sécurité manquant. Actualisez la page."
+msgstr ""
+
+#: includes/class-jlg-assets.php:105
+msgid "Veuillez entrer au moins 3 caractères."
+msgstr ""
+
+#: includes/class-jlg-assets.php:106
+msgid "Recherche..."
+msgstr ""
+
+#: includes/class-jlg-assets.php:107
+msgid "Chargement..."
+msgstr ""
+
+#: includes/class-jlg-assets.php:108
+msgid "Rechercher"
+msgstr ""
+
+#: includes/class-jlg-assets.php:109
+msgid "Vérification de sécurité échouée. Actualisez la page."
+msgstr ""
+
+#: includes/class-jlg-assets.php:110
+msgid "Choisir"
+msgstr ""
+
+#: includes/class-jlg-assets.php:111
+msgid "Erreur de communication."
+msgstr ""
+
+#: includes/class-jlg-assets.php:112
+msgid "Fiche technique remplie !"
+msgstr ""
+
+#. translators: Abbreviation meaning that the user rating is not available.
+#. translators: Abbreviation meaning that the average score is not available.
+#: includes/class-jlg-assets.php:113
+#: templates/shortcode-user-rating.php:15
+#: templates/summary-table-fragment.php:130
+msgid "N/A"
+msgstr ""
+
+#: includes/class-jlg-frontend.php:538
+msgid "Une erreur est survenue. Merci de réessayer plus tard."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:609
+msgid "La vérification de sécurité a échoué."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:613
+msgid "Le shortcode requis est indisponible."
+msgstr ""
+
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:52
+msgid "Aucun article noté trouvé."
+msgstr ""
+
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:119
+msgid "Titre du jeu"
+msgstr ""
+
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:124
+msgid "Date"
+msgstr ""
+
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:129
+msgid "Note"
+msgstr ""
+
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:134
+msgid "Développeur"
+msgstr ""
+
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:138
+msgid "Éditeur"
+msgstr ""
 
 #. translators: Section title for the list of advantages in the pros and cons block.
 #: templates/shortcode-pros-cons.php:10
@@ -26,77 +137,23 @@ msgstr ""
 msgid "Points Faibles"
 msgstr ""
 
-#. translators: %s: Maximum rating value displayed with the thumbnail score.
-#: templates/widget-thumbnail-score.php:35
+#: templates/shortcode-rating-block.php:22
+#: templates/shortcode-rating-block.php:27
+msgid "Note Globale"
+msgstr ""
+
+#. translators: 1: Rating value for a specific category. 2: Maximum possible rating.
+#: templates/shortcode-rating-block.php:46
 #, php-format
-msgid "/%s"
+msgid "%1$s / %2$s"
 msgstr ""
 
-#: templates/shortcode-summary-display.php:21
-msgid "Titre du jeu"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:26
-msgid "Date"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:31
-msgid "Note"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:36
-msgid "Développeur"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:40
-msgid "Éditeur"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:62
-msgid " ▲"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:63
-msgid " ▼"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:91
+#: templates/shortcode-summary-display.php:46
 msgid "Toutes les catégories"
 msgstr ""
 
-#: templates/shortcode-summary-display.php:100
+#: templates/shortcode-summary-display.php:55
 msgid "Filtrer"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:128
-#: templates/shortcode-summary-display.php:186
-msgid "Aucun article trouvé pour cette sélection."
-msgstr ""
-
-#. translators: Abbreviation meaning that the average score is not available.
-#. translators: Abbreviation meaning that the user rating is not available.
-#: templates/shortcode-summary-display.php:163
-#: templates/shortcode-user-rating.php:15
-msgid "N/A"
-msgstr ""
-
-#. translators: %s: Maximum possible rating value.
-#: templates/shortcode-summary-display.php:167
-#, php-format
-msgid "/ %s"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:172
-#: templates/shortcode-summary-display.php:176
-msgid "-"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:201
-msgid "« Précédent"
-msgstr ""
-
-#: templates/shortcode-summary-display.php:202
-msgid "Suivant »"
 msgstr ""
 
 #: templates/shortcode-tagline.php:12
@@ -111,28 +168,49 @@ msgstr ""
 msgid "Votre avis nous intéresse !"
 msgstr ""
 
-#: templates/shortcode-user-rating.php:19
+#. translators: 1: Average user rating value. 2: Maximum possible rating. 3: Number of user votes.
+#: templates/shortcode-user-rating.php:18
 #, php-format
-msgid ""
-"Note moyenne : <strong class=\"jlg-user-rating-avg-value\">%1$s</strong> sur "
-"%2$s (<span class=\"jlg-user-rating-count-value\">%3$s</span> votes)"
+msgid "Note moyenne : <strong class=\"jlg-user-rating-avg-value\">%1$s</strong> sur %2$s (<span class=\"jlg-user-rating-count-value\">%3$s</span> votes)"
 msgstr ""
 
-#: templates/shortcode-user-rating.php:37
-msgid "Merci pour votre vote !"
+#: templates/summary-table-fragment.php:20
+msgid "Aucun article trouvé pour cette sélection."
+msgstr ""
+
+#: templates/summary-table-fragment.php:49
+msgid " ▲"
+msgstr ""
+
+#: templates/summary-table-fragment.php:50
+msgid " ▼"
+msgstr ""
+
+#. translators: %s: Maximum possible rating value.
+#: templates/summary-table-fragment.php:134
+#, php-format
+msgid "/ %s"
+msgstr ""
+
+#: templates/summary-table-fragment.php:139
+#: templates/summary-table-fragment.php:143
+msgid "-"
+msgstr ""
+
+#: templates/summary-table-fragment.php:180
+msgid "« Précédent"
+msgstr ""
+
+#: templates/summary-table-fragment.php:181
+msgid "Suivant »"
 msgstr ""
 
 #: templates/widget-latest-reviews.php:18
 msgid "Aucun test trouvé."
 msgstr ""
 
-#: templates/shortcode-rating-block.php:22
-#: templates/shortcode-rating-block.php:27
-msgid "Note Globale"
-msgstr ""
-
-#. translators: 1: Rating value for a specific category. 2: Maximum possible rating.
-#: templates/shortcode-rating-block.php:46
+#. translators: %s: Maximum rating value displayed with the thumbnail score.
+#: templates/widget-thumbnail-score.php:35
 #, php-format
-msgid "%1$s / %2$s"
+msgid "/%s"
 msgstr ""
