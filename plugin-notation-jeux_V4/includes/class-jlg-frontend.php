@@ -16,6 +16,8 @@ class JLG_Frontend {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_jlg_scripts']);
         add_action('wp_ajax_jlg_rate_post', [$this, 'handle_user_rating']);
         add_action('wp_ajax_nopriv_jlg_rate_post', [$this, 'handle_user_rating']);
+        add_action('wp_ajax_jlg_summary_sort', [$this, 'handle_summary_sort']);
+        add_action('wp_ajax_nopriv_jlg_summary_sort', [$this, 'handle_summary_sort']);
         add_action('wp_head', [$this, 'inject_review_schema']);
     }
 
@@ -502,10 +504,10 @@ class JLG_Frontend {
         // Script pour le changement de langue des taglines
         if (!empty($options['tagline_enabled'])) {
             wp_enqueue_script(
-                'jlg-tagline-switcher', 
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/tagline-switcher.js', 
-                ['jquery'], 
-                JLG_NOTATION_VERSION, 
+                'jlg-tagline-switcher',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/tagline-switcher.js',
+                ['jquery'],
+                JLG_NOTATION_VERSION,
                 true
             );
         }
@@ -513,13 +515,29 @@ class JLG_Frontend {
         // Script pour les animations
         if (!empty($options['enable_animations'])) {
             wp_enqueue_script(
-                'jlg-animations', 
-                JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-animations.js', 
-                [], 
-                JLG_NOTATION_VERSION, 
+                'jlg-animations',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-animations.js',
+                [],
+                JLG_NOTATION_VERSION,
                 true
             );
         }
+
+        wp_enqueue_script(
+            'jlg-summary-table-sort',
+            JLG_NOTATION_PLUGIN_URL . 'assets/js/summary-table-sort.js',
+            ['jquery'],
+            JLG_NOTATION_VERSION,
+            true
+        );
+
+        wp_localize_script('jlg-summary-table-sort', 'jlgSummarySort', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('jlg_summary_sort'),
+            'strings'  => [
+                'genericError' => esc_html__('Une erreur est survenue. Merci de réessayer plus tard.', 'notation-jlg'),
+            ],
+        ]);
     }
 
     /**
@@ -583,6 +601,81 @@ class JLG_Frontend {
         wp_send_json_success([
             'new_average' => number_format($new_average, 2), 
             'new_count' => count($ratings)
+        ]);
+    }
+
+    public function handle_summary_sort() {
+        if (!check_ajax_referer('jlg_summary_sort', 'nonce', false)) {
+            wp_send_json_error(['message' => esc_html__('La vérification de sécurité a échoué.', 'notation-jlg')], 403);
+        }
+
+        if (!class_exists('JLG_Shortcode_Summary_Display')) {
+            wp_send_json_error(['message' => esc_html__('Le shortcode requis est indisponible.', 'notation-jlg')], 500);
+        }
+
+        $atts = [
+            'posts_per_page' => isset($_POST['posts_per_page']) ? intval($_POST['posts_per_page']) : 12,
+            'layout'         => isset($_POST['layout']) ? sanitize_text_field(wp_unslash($_POST['layout'])) : 'table',
+            'categorie'      => isset($_POST['categorie']) ? sanitize_text_field(wp_unslash($_POST['categorie'])) : '',
+            'colonnes'       => isset($_POST['colonnes']) ? sanitize_text_field(wp_unslash($_POST['colonnes'])) : 'titre,date,note',
+            'id'             => isset($_POST['table_id']) ? sanitize_html_class(wp_unslash($_POST['table_id'])) : 'jlg-table-' . uniqid(),
+        ];
+
+        $request = [
+            'orderby'    => isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date',
+            'order'      => isset($_POST['order']) ? sanitize_text_field(wp_unslash($_POST['order'])) : 'DESC',
+            'cat_filter' => isset($_POST['cat_filter']) ? intval($_POST['cat_filter']) : 0,
+            'paged'      => isset($_POST['paged']) ? intval($_POST['paged']) : 1,
+        ];
+
+        $current_url = isset($_POST['current_url']) ? esc_url_raw(wp_unslash($_POST['current_url'])) : '';
+        $original_request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+
+        if (!empty($current_url)) {
+            $parsed_url = wp_parse_url($current_url);
+            if (!empty($parsed_url['path'])) {
+                $request_uri = $parsed_url['path'];
+                if (!empty($parsed_url['query'])) {
+                    $request_uri .= '?' . $parsed_url['query'];
+                }
+                $_SERVER['REQUEST_URI'] = $request_uri;
+            }
+        }
+
+        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, $request, false);
+
+        $state = [
+            'orderby'    => $context['orderby'] ?? 'date',
+            'order'      => $context['order'] ?? 'DESC',
+            'paged'      => $context['paged'] ?? 1,
+            'cat_filter' => $context['cat_filter'] ?? 0,
+            'total_pages' => 0,
+        ];
+
+        if (!empty($context['error']) && !empty($context['message'])) {
+            if ($original_request_uri !== '') {
+                $_SERVER['REQUEST_URI'] = $original_request_uri;
+            }
+
+            wp_send_json_success([
+                'html'  => $context['message'],
+                'state' => $state,
+            ]);
+        }
+
+        $html = JLG_Frontend::get_template_html('summary-table-fragment', $context);
+
+        if (isset($context['query']) && $context['query'] instanceof WP_Query) {
+            $state['total_pages'] = intval($context['query']->max_num_pages);
+        }
+
+        if ($original_request_uri !== '') {
+            $_SERVER['REQUEST_URI'] = $original_request_uri;
+        }
+
+        wp_send_json_success([
+            'html'  => $html,
+            'state' => $state,
         ]);
     }
 
@@ -688,6 +781,11 @@ class JLG_Frontend {
                 'paged'              => 1,
                 'orderby'            => '',
                 'order'              => '',
+                'colonnes'           => [],
+                'colonnes_disponibles' => [],
+                'error_message'      => '',
+                'cat_filter'         => 0,
+                'table_id'           => '',
                 'widget_args'        => [],
                 'title'              => '',
                 'latest_reviews'     => null,
