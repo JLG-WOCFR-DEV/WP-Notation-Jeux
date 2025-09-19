@@ -14,24 +14,42 @@ jQuery(document).ready(function($) {
         }
 
         if (!ajaxEndpoint) {
-            resultsDiv.html('<p style="color:red;">Configuration AJAX invalide.</p>');
+            resultsDiv
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text('Configuration AJAX invalide.')
+                );
             return;
         }
 
         var nonce = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.nonce) ? jlg_admin_ajax.nonce : '';
 
         if (!nonce) {
-            resultsDiv.html('<p style="color:red;">Nonce de sécurité manquant. Actualisez la page.</p>');
+            resultsDiv
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text('Nonce de sécurité manquant. Actualisez la page.')
+                );
             return;
         }
 
         if (searchTerm.length < 3) {
-            resultsDiv.html('<p style="color:red;">Veuillez entrer au moins 3 caractères.</p>');
+            resultsDiv
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text('Veuillez entrer au moins 3 caractères.')
+                );
             return;
         }
 
         button.text('Recherche...').prop('disabled', true);
-        resultsDiv.html('Chargement...');
+        resultsDiv.text('Chargement...');
 
         $.ajax({
             url: ajaxEndpoint,
@@ -45,7 +63,13 @@ jQuery(document).ready(function($) {
                 button.text('Rechercher').prop('disabled', false);
 
                 if (response === '-1') {
-                    resultsDiv.html('<p style="color:red;">Vérification de sécurité échouée. Actualisez la page.</p>');
+                    resultsDiv
+                        .empty()
+                        .append(
+                            $('<p>')
+                                .css('color', 'red')
+                                .text('Vérification de sécurité échouée. Actualisez la page.')
+                        );
                     return;
                 }
 
@@ -59,28 +83,57 @@ jQuery(document).ready(function($) {
                     }
 
                     if (!games.length && response.data && response.data.message) {
-                        resultsDiv.html('<p>' + response.data.message + '</p>');
+                        resultsDiv
+                            .empty()
+                            .append(
+                                $('<p>').text(response.data.message)
+                            );
                         resultsDiv.data('games', []);
                         return;
                     }
-                    var html = '<ul style="list-style: disc; padding-left: 20px;">';
+                    var list = $('<ul>').css({
+                        'list-style': 'disc',
+                        'padding-left': '20px'
+                    });
                     games.forEach(function(game, index) {
                         var year = game.release_date ? new Date(game.release_date).getFullYear() : 'N/A';
-                        html += `<li>
-                            <strong>${game.name}</strong> (${year})
-                            <button type="button" class="button button-small jlg-select-game" data-index="${index}">Choisir</button>
-                        </li>`;
+                        var listItem = $('<li>');
+                        var name = game.name ? String(game.name) : '';
+                        listItem.append($('<strong>').text(name));
+                        listItem.append(document.createTextNode(' (' + year + ') '));
+                        var buttonSelect = $('<button>')
+                            .attr('type', 'button')
+                            .addClass('button button-small jlg-select-game')
+                            .attr('data-index', index)
+                            .text('Choisir');
+                        listItem.append(buttonSelect);
+                        list.append(listItem);
                     });
-                    html += '</ul>';
-                    resultsDiv.html(html);
+                    resultsDiv.empty().append(list);
                     resultsDiv.data('games', games);
                 } else {
-                    resultsDiv.html('<p style="color:red;">' + response.data + '</p>');
+                    var errorMessage = '';
+                    if (response && response.data) {
+                        errorMessage = String(response.data);
+                    }
+                    resultsDiv
+                        .empty()
+                        .append(
+                            $('<p>')
+                                .css('color', 'red')
+                                .text(errorMessage)
+                        );
                 }
             },
             error: function() {
                 button.text('Rechercher').prop('disabled', false);
-                resultsDiv.html('<p style="color:red;">Erreur de communication.</p>');
+                resultsDiv
+                    .empty()
+                    .append(
+                        $('<p>')
+                            .css('color', 'red')
+                            .text('Erreur de communication.')
+                    );
             }
         });
     });
@@ -118,7 +171,16 @@ jQuery(document).ready(function($) {
                     }
                 });
             });
-            resultsDiv.html('<p style="color:green; font-weight:bold;">Fiche technique remplie !</p>');
+            resultsDiv
+                .empty()
+                .append(
+                    $('<p>')
+                        .css({
+                            color: 'green',
+                            'font-weight': 'bold'
+                        })
+                        .text('Fiche technique remplie !')
+                );
         }
     });
 });
