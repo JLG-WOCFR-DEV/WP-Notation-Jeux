@@ -320,8 +320,24 @@ class JLG_Frontend {
             wp_send_json_error(['message' => esc_html__('Le shortcode requis est indisponible.', 'notation-jlg')], 500);
         }
 
+        $default_posts_per_page = 12;
+        if (method_exists('JLG_Shortcode_Summary_Display', 'get_default_atts')) {
+            $default_atts = JLG_Shortcode_Summary_Display::get_default_atts();
+            if (is_array($default_atts) && isset($default_atts['posts_per_page'])) {
+                $default_posts_per_page = intval($default_atts['posts_per_page']);
+            }
+        }
+
+        $max_posts_per_page = 50;
+        $default_posts_per_page = max(1, min($max_posts_per_page, $default_posts_per_page));
+        $raw_posts_per_page = isset($_POST['posts_per_page']) ? intval($_POST['posts_per_page']) : $default_posts_per_page;
+        if ($raw_posts_per_page <= 0) {
+            $raw_posts_per_page = $default_posts_per_page;
+        }
+        $posts_per_page = max(1, min($max_posts_per_page, $raw_posts_per_page));
+
         $atts = [
-            'posts_per_page' => isset($_POST['posts_per_page']) ? intval($_POST['posts_per_page']) : 12,
+            'posts_per_page' => $posts_per_page,
             'layout'         => isset($_POST['layout']) ? sanitize_text_field(wp_unslash($_POST['layout'])) : 'table',
             'categorie'      => isset($_POST['categorie']) ? sanitize_text_field(wp_unslash($_POST['categorie'])) : '',
             'colonnes'       => isset($_POST['colonnes']) ? sanitize_text_field(wp_unslash($_POST['colonnes'])) : 'titre,date,note',
