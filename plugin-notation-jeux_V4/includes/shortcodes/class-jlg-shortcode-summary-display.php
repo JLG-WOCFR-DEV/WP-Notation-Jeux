@@ -103,7 +103,7 @@ class JLG_Shortcode_Summary_Display {
         ];
     }
 
-    protected static function get_default_atts() {
+    public static function get_default_atts() {
         return [
             'posts_per_page' => 12,
             'layout'         => 'table',
