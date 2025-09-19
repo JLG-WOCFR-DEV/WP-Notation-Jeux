@@ -798,6 +798,9 @@ class JLG_Frontend {
                 'count'              => 0,
                 'has_voted'          => false,
                 'user_vote'          => 0,
+                'block_id'           => '',
+                'css_variables'      => [],
+                'has_multiple_taglines' => false,
             ];
 
             // Fusionner les arguments fournis avec les valeurs par défaut.
