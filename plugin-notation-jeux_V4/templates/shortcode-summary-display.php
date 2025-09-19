@@ -54,7 +54,11 @@ if (!function_exists('jlg_print_sortable_header')) {
             $url = add_query_arg([
                 'orderby' => $sort_key,
                 'order' => $new_order
-            ], '#' . $table_id);
+            ]);
+
+            if (!empty($table_id)) {
+                $url .= '#' . $table_id;
+            }
             
             $indicator = '';
             if ($current_orderby === $sort_key || $current_orderby === $col) {
