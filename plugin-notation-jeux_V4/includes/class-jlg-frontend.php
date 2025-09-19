@@ -613,7 +613,7 @@ class JLG_Frontend {
                     '@type'       => 'Rating',
                     'ratingValue' => $average_score,
                     'bestRating'  => '10',
-                    'worstRating' => '1',
+                    'worstRating' => '0',
                 ],
                 'author'        => [
                     '@type' => 'Person',
