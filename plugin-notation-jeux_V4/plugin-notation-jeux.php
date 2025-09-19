@@ -60,7 +60,8 @@ final class JLG_Plugin_De_Notation_Main {
     private function load_dependencies() {
         // Helpers (requis par tous)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-helpers.php';
-        
+        require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
+
         // Frontend (toujours)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-widget.php';
