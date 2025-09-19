@@ -42,6 +42,7 @@ if (version_compare(get_bloginfo('version'), '5.0', '<')) {
 final class JLG_Plugin_De_Notation_Main {
     private static $instance = null;
     private $admin = null;
+    private $assets = null;
     private $frontend = null;
 
     public static function get_instance() {
@@ -60,6 +61,7 @@ final class JLG_Plugin_De_Notation_Main {
     private function load_dependencies() {
         // Helpers (requis par tous)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-helpers.php';
+        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-assets.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
 
         // Frontend (toujours)
@@ -94,6 +96,11 @@ final class JLG_Plugin_De_Notation_Main {
     }
 
     private function init_components() {
+        // Assets communs
+        if (class_exists('JLG_Assets')) {
+            $this->assets = JLG_Assets::get_instance();
+        }
+
         // Frontend
         if (class_exists('JLG_Frontend')) {
             $this->frontend = new JLG_Frontend();
