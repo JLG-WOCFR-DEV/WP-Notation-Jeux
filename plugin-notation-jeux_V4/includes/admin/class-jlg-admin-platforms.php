@@ -337,7 +337,8 @@ class JLG_Admin_Platforms {
             
             <!-- ZONE DE DEBUG AMÉLIORÉE -->
             <?php 
-            $show_debug = isset($_GET['debug']) || !empty(get_option('notation_jlg_settings')['debug_mode_enabled']);
+            $plugin_options = JLG_Helpers::get_plugin_options();
+            $show_debug = isset($_GET['debug']) || !empty($plugin_options['debug_mode_enabled']);
             if ($show_debug) :
                 $debug_messages = get_transient('jlg_platforms_debug');
             ?>
