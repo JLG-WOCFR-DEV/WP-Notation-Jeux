@@ -63,6 +63,7 @@ final class JLG_Plugin_De_Notation_Main {
         require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
 
         // Frontend (toujours)
+        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-dynamic-css.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-widget.php';
         
