@@ -284,15 +284,15 @@ class JLG_Admin_Platforms {
             return ['success' => false, 'message' => 'Données d\'ordre manquantes.'];
         }
 
-        $submitted_order = array_map('sanitize_text_field', array_filter($_POST['platform_order'], 'strlen'));
+        $raw_order = array_filter($_POST['platform_order'], 'strlen');
+        $submitted_order = array_map('sanitize_text_field', array_values($raw_order));
         if (empty($submitted_order)) {
             self::$debug_messages[] = "❌ Ordre soumis vide";
             return ['success' => false, 'message' => 'Ordre soumis invalide.'];
         }
 
         $all_platforms = $this->get_platforms();
-        $updated_platforms = [];
-        $position = 1;
+        $ordered_keys = [];
 
         foreach ($submitted_order as $key) {
             if (!isset($all_platforms[$key])) {
@@ -300,23 +300,42 @@ class JLG_Admin_Platforms {
                 continue;
             }
 
-            $platform_data = $all_platforms[$key];
-            $platform_data['order'] = $position;
-            $updated_platforms[$key] = $platform_data;
-            $position++;
+            if (in_array($key, $ordered_keys, true)) {
+                self::$debug_messages[] = "⚠️ Doublon ignoré dans l'ordre : $key";
+                continue;
+            }
+
+            $ordered_keys[] = $key;
         }
 
-        $updated_count = count($updated_platforms);
-        if ($updated_count === 0) {
+        if (empty($ordered_keys)) {
             self::$debug_messages[] = "❌ Aucun élément valide dans l'ordre soumis";
             return ['success' => false, 'message' => 'Aucune plateforme valide reçue.'];
         }
 
+        foreach ($all_platforms as $key => $platform_data) {
+            if (!in_array($key, $ordered_keys, true)) {
+                $ordered_keys[] = $key;
+            }
+        }
+
+        $updated_platforms = [];
+        foreach ($ordered_keys as $position => $key) {
+            if (!isset($all_platforms[$key])) {
+                continue;
+            }
+
+            $platform_data = $all_platforms[$key];
+            $platform_data['order'] = $position + 1;
+            $updated_platforms[$key] = $platform_data;
+        }
+
+        $updated_count = count($updated_platforms);
         $platforms = $updated_platforms;
         self::$debug_messages[] = "📊 $updated_count plateformes mises à jour";
 
         $result = update_option($this->option_name, $platforms);
-        
+
         if ($result || get_option($this->option_name) !== false) {
             self::$debug_messages[] = "✅ Ordre sauvegardé";
             return ['success' => true, 'message' => 'Ordre des plateformes mis à jour !'];
@@ -413,20 +432,22 @@ class JLG_Admin_Platforms {
                         <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
                         <input type="hidden" name="jlg_platform_action" value="update_order">
                         
-                        <table class="wp-list-table widefat striped">
+                        <table class="wp-list-table widefat striped jlg-platforms-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 60px;">Ordre</th>
-                                    <th style="width: 50px;">Icône</th>
-                                    <th>Nom</th>
-                                    <th style="width: 100px;">Actions</th>
+                                    <th scope="col" class="manage-column column-handle" style="width: 40px;">
+                                        <span class="screen-reader-text">Réordonner les plateformes</span>
+                                    </th>
+                                    <th scope="col" class="manage-column column-order" style="width: 60px;">Ordre</th>
+                                    <th scope="col" class="manage-column column-icon" style="width: 50px;">Icône</th>
+                                    <th scope="col" class="manage-column column-primary">Nom</th>
+                                    <th scope="col" class="manage-column column-actions" style="width: 120px;">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="platforms-list">
+                            <tbody id="platforms-list" class="jlg-sortable-list">
                                 <?php $position = 1; foreach ($platforms as $key => $platform): ?>
-                                <tr data-key="<?php echo esc_attr($key); ?>">
-                                    <td class="jlg-sort-handle" style="cursor: move; text-align: center;">
+                                <tr class="jlg-platform-row" data-key="<?php echo esc_attr($key); ?>">
+                                    <td class="jlg-sort-handle" style="cursor: move; text-align: center;" title="Glissez pour réordonner">
                                         <span class="dashicons dashicons-menu" aria-hidden="true"></span>
                                         <span class="screen-reader-text">Réordonner <?php echo esc_html($platform['name']); ?></span>
                                     </td>
@@ -459,7 +480,11 @@ class JLG_Admin_Platforms {
                                 <?php $position++; endforeach; ?>
                             </tbody>
                         </table>
-                        
+
+                        <p class="description" style="margin-top: 10px;">
+                            Faites glisser les lignes à l'aide de la poignée pour réorganiser les plateformes. L'ordre est enregistré automatiquement lors de la sauvegarde.
+                        </p>
+
                         <p style="margin-top: 15px;">
                             <input type="submit" class="button button-primary" value="💾 Enregistrer l'ordre">
                         </p>
