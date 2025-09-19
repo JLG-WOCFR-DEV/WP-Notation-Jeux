@@ -55,12 +55,27 @@ class JLG_Admin_Ajax {
                 'release_date' => '2024-01-15',
                 'developers' => 'Studio Exemple',
                 'publishers' => 'Éditeur Exemple',
-                'platforms' => ['PC', 'PlayStation 5']
+                'platforms' => ['PC', 'PlayStation 5'],
+                'pegi' => 'PEGI 12',
             ]
         ];
 
+        $normalized_games = array_map(function($game) {
+            if (!empty($game['release_date'])) {
+                $sanitized_date = JLG_Validator::sanitize_date($game['release_date']);
+                $game['release_date'] = $sanitized_date !== null ? $sanitized_date : '';
+            }
+
+            if (!empty($game['pegi'])) {
+                $sanitized_pegi = JLG_Validator::sanitize_pegi($game['pegi']);
+                $game['pegi'] = $sanitized_pegi !== null ? $sanitized_pegi : '';
+            }
+
+            return $game;
+        }, $mock_games);
+
         wp_send_json_success([
-            'games' => $mock_games,
+            'games' => $normalized_games,
             'message' => 'Recherche simulée. Configurez une vraie clé API RAWG dans les réglages pour des résultats réels.'
         ]);
     }
