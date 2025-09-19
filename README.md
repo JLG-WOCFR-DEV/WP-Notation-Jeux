@@ -10,9 +10,11 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 ## Installation et configuration initiale
 1. **Installer le plugin** depuis ce dépôt (copier `plugin-notation-jeux_V4` dans `wp-content/plugins/`) puis l’activer depuis le menu *Extensions* de WordPress.
 2. **Remplir les metaboxes** dédiées aux notes et aux détails du test dans l’éditeur d’articles : les six catégories sont notées sur 10 et la metabox principale capture fiche technique, plateformes, taglines bilingues, points forts/faibles, etc.
+   - Le champ **Date de sortie** n’accepte que le format `YYYY-MM-DD` et la **classification PEGI** doit correspondre aux valeurs officielles (PEGI 3, 7, 12, 16 ou 18). Une saisie invalide est ignorée, la méta étant supprimée et une notice d’erreur s’affichant dans l’administration.
 3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels.
 4. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
 5. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu.
+   - Les données importées depuis RAWG respectent le format attendu (`release_date` en `YYYY-MM-DD` et classifications PEGI normalisées), garantissant l’enregistrement automatique sans notice. Si une API tierce ou une saisie manuelle fournit une valeur hors format, le plugin la rejette afin d’éviter l’insertion de métadonnées incohérentes.
 
 ## Utilisation au quotidien
 - **Shortcodes principaux** :

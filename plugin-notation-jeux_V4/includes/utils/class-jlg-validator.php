@@ -2,6 +2,17 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Validator {
+
+    /**
+     * Liste des valeurs PEGI acceptées (normalisées en majuscules).
+     *
+     * @var string[]
+     */
+    private static $allowed_pegi = [
+        'PEGI 3', 'PEGI 7', 'PEGI 12', 'PEGI 16', 'PEGI 18',
+        '3', '7', '12', '16', '18',
+        '3+', '7+', '12+', '16+', '18+'
+    ];
     
     public static function is_valid_score($score, $allow_empty = true) {
         if (($score === '' || $score === null) && $allow_empty) {
@@ -55,13 +66,43 @@ class JLG_Validator {
         if (!is_array($platforms)) {
             return [];
         }
-        
+
         $allowed_platforms = [
-            'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch 2', 
+            'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch 2',
             'Nintendo Switch', 'PlayStation 4', 'Xbox One'
         ];
-        
+
         $sanitized = array_map('sanitize_text_field', $platforms);
         return array_intersect($sanitized, $allowed_platforms);
+    }
+
+    public static function validate_date($date) {
+        if ($date === '' || $date === null) {
+            return true;
+        }
+
+        $datetime = \DateTime::createFromFormat('Y-m-d', $date);
+
+        return $datetime instanceof \DateTime && $datetime->format('Y-m-d') === $date;
+    }
+
+    public static function validate_pegi($pegi) {
+        if ($pegi === '' || $pegi === null) {
+            return true;
+        }
+
+        $normalized_value = strtoupper(trim($pegi));
+
+        foreach (self::$allowed_pegi as $allowed) {
+            if ($normalized_value === strtoupper($allowed)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function get_allowed_pegi_values() {
+        return self::$allowed_pegi;
     }
 }

@@ -2,10 +2,12 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Admin_Metaboxes {
+    private $validation_errors = [];
 
     public function __construct() {
         add_action('add_meta_boxes', [$this, 'register_metaboxes'], 10, 2);
         add_action('save_post', [$this, 'save_meta_data']);
+        add_action('admin_notices', [$this, 'display_validation_errors']);
     }
 
     public function register_metaboxes($post_type, $post = null) {
@@ -230,7 +232,35 @@ class JLG_Admin_Metaboxes {
                     $raw_value = wp_unslash($_POST['jlg_' . $field]);
                     $value = sanitize_text_field($raw_value);
                     if (!empty($value)) {
-                        update_post_meta($post_id, '_jlg_' . $field, $value);
+                        $is_valid = true;
+
+                        if ($field === 'date_sortie' && class_exists('JLG_Validator')) {
+                            $is_valid = JLG_Validator::validate_date($value);
+                            if (!$is_valid) {
+                                $this->add_validation_error(sprintf(
+                                    'La date de sortie "%s" est invalide (format attendu YYYY-MM-DD). La valeur a été ignorée.',
+                                    $value
+                                ));
+                            }
+                        }
+
+                        if ($field === 'pegi' && class_exists('JLG_Validator')) {
+                            $is_valid = JLG_Validator::validate_pegi($value);
+                            if (!$is_valid) {
+                                $allowed_values = implode(', ', array_unique(JLG_Validator::get_allowed_pegi_values()));
+                                $this->add_validation_error(sprintf(
+                                    'La classification PEGI "%s" est invalide. Valeurs autorisées : %s.',
+                                    $value,
+                                    $allowed_values
+                                ));
+                            }
+                        }
+
+                        if ($is_valid) {
+                            update_post_meta($post_id, '_jlg_' . $field, $value);
+                        } else {
+                            delete_post_meta($post_id, '_jlg_' . $field);
+                        }
                     } else {
                         delete_post_meta($post_id, '_jlg_' . $field);
                     }
@@ -270,5 +300,23 @@ class JLG_Admin_Metaboxes {
                 delete_post_meta($post_id, '_jlg_plateformes');
             }
         }
+    }
+
+    private function add_validation_error($message) {
+        if (!empty($message)) {
+            $this->validation_errors[] = $message;
+        }
+    }
+
+    public function display_validation_errors() {
+        if (empty($this->validation_errors)) {
+            return;
+        }
+
+        foreach ($this->validation_errors as $message) {
+            echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>';
+        }
+
+        $this->validation_errors = [];
     }
 }

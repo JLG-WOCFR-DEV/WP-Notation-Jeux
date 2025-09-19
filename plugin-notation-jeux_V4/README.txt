@@ -51,9 +51,11 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 
 1. Téléchargez le plugin et décompressez l'archive
 2. Uploadez le dossier `plugin-notation-jeux` dans `/wp-content/plugins/`
+   * Remarque : le champ **Date de sortie** doit être saisi au format `YYYY-MM-DD` et la valeur **PEGI** doit correspondre aux classifications officielles (PEGI 3, 7, 12, 16 ou 18). Toute valeur invalide est ignorée, la méta concernée étant supprimée et une notice d'erreur s'affichant dans l'administration.
 3. Activez le plugin depuis le menu 'Extensions' de WordPress
 4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'
 5. Créez votre premier test avec notation !
+   * Les données importées via l'API RAWG respectent ces formats (`release_date` en `YYYY-MM-DD` et PEGI normalisé), ce qui évite l'apparition de notices lors de l'autoremplissage. Si une saisie manuelle ou une intégration tierce fournit un format différent, la valeur est rejetée pour préserver l'intégrité des métadonnées.
 
 == Tests manuels de sécurité CSS ==
 
