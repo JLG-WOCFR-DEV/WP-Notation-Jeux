@@ -590,7 +590,7 @@ class JLG_Frontend {
      * Injecte le schema de notation pour le SEO
      */
     public function inject_review_schema() {
-        $options = get_option('notation_jlg_settings', JLG_Helpers::get_default_settings());
+        $options = JLG_Helpers::get_plugin_options();
         
         if (empty($options['seo_schema_enabled']) || !is_singular('post')) { 
             return; 
@@ -637,7 +637,11 @@ class JLG_Frontend {
         
         $user_rating_count = get_post_meta($post_id, '_jlg_user_rating_count', true);
         
-        if (!empty($options['user_rating_enabled']) && $user_rating_count > 0) {
+        $user_rating_enabled = isset($options['user_rating_enabled'])
+            ? $options['user_rating_enabled']
+            : (JLG_Helpers::get_default_settings()['user_rating_enabled'] ?? 0);
+
+        if (!empty($user_rating_enabled) && $user_rating_count > 0) {
             $schema['aggregateRating'] = [
                 '@type'       => 'AggregateRating',
                 'ratingValue' => get_post_meta($post_id, '_jlg_user_rating_avg', true),
