@@ -1,4 +1,7 @@
 jQuery(document).ready(function($) {
+    var ratingMessages = (typeof jlgUserRatingL10n !== 'undefined') ? jlgUserRatingL10n : {};
+    var successMessage = ratingMessages.successMessage || 'Merci pour votre vote !';
+    var genericErrorMessage = ratingMessages.genericErrorMessage || 'Erreur. Veuillez réessayer.';
 
     // Effet de survol des étoiles
     $('.jlg-user-star').on('mouseover', function() {
@@ -49,7 +52,7 @@ jQuery(document).ready(function($) {
                     ratingBlock.find('.jlg-user-rating-avg-value').text(response.data.new_average);
                     ratingBlock.find('.jlg-user-rating-count-value').text(response.data.new_count);
                     
-                    ratingBlock.find('.jlg-rating-message').text('Merci pour votre vote !').show();
+                    ratingBlock.find('.jlg-rating-message').text(successMessage).show();
 
                     star.siblings().removeClass('selected');
                     star.add(star.prevAll()).addClass('selected');
@@ -60,7 +63,7 @@ jQuery(document).ready(function($) {
             },
             error: function() {
                 ratingBlock.removeClass('is-loading');
-                ratingBlock.find('.jlg-rating-message').text('Erreur. Veuillez réessayer.').show();
+                ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
             }
         });
     });
