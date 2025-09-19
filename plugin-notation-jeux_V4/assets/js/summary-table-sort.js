@@ -1,45 +1,196 @@
 jQuery(document).ready(function($) {
-    
-    // S'applique à toutes les tables avec la classe 'jlg-summary-table'
-    $('table.jlg-summary-table th.sortable').on('click', function() {
-        var table = $(this).parents('table').eq(0);
-        var rows = table.find('tbody tr').toArray().sort(comparer($(this).index()));
-        
-        var isAsc = !($(this).hasClass('sorted-asc'));
-        if (!isAsc) {
-            rows = rows.reverse();
+    if (typeof jlgSummarySort === 'undefined') {
+        return;
+    }
+
+    function parseUrlParameters(href) {
+        var url = new URL(href, window.location.href);
+        var params = {};
+
+        url.searchParams.forEach(function(value, key) {
+            params[key] = value;
+        });
+
+        return { url: url, params: params };
+    }
+
+    function updateHistory(url) {
+        if (typeof window.history.pushState === 'function') {
+            window.history.pushState({}, '', url);
+        }
+    }
+
+    function showError($wrapper, message) {
+        var $content = $wrapper.find('.jlg-summary-content');
+
+        if ($content.length) {
+            var $paragraph = $('<p>', {
+                'class': 'jlg-summary-error',
+                text: message,
+            });
+            $content.empty().append($paragraph);
+        }
+    }
+
+    function updateState($wrapper, state) {
+        if (!state) {
+            return;
         }
 
-        table.find('th.sortable').removeClass('sorted-asc sorted-desc');
-        $(this).addClass(isAsc ? 'sorted-asc' : 'sorted-desc');
-
-        for (var i = 0; i < rows.length; i++) {
-            table.append(rows[i]);
+        if (state.orderby) {
+            $wrapper.attr('data-orderby', state.orderby);
         }
-    });
+        if (state.order) {
+            $wrapper.attr('data-order', state.order);
+        }
+        if (state.paged) {
+            $wrapper.attr('data-paged', state.paged);
+        }
+        if (typeof state.cat_filter !== 'undefined') {
+            $wrapper.attr('data-cat-filter', state.cat_filter);
+        }
 
-    /**
-     * Crée une fonction de comparaison pour la méthode sort().
-     * @param {number} index L'index de la colonne sur laquelle trier.
-     * @returns Une fonction de comparaison.
-     */
-    function comparer(index) {
-        return function(a, b) {
-            var valA = getCellValue(a, index);
-            var valB = getCellValue(b, index);
-            
-            // Tente une comparaison numérique d'abord, sinon textuelle
-            return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.toString().localeCompare(valB.toString());
+        var $form = $wrapper.find('.jlg-summary-filters form');
+        if ($form.length) {
+            if (state.orderby) {
+                $form.find('input[name="orderby"]').val(state.orderby);
+            }
+            if (state.order) {
+                $form.find('input[name="order"]').val(state.order);
+            }
+            if (typeof state.cat_filter !== 'undefined') {
+                $form.find('select[name="cat_filter"]').val(state.cat_filter);
+            }
+        }
+    }
+
+    function performAjax($wrapper, params, historyUrl) {
+        var ajaxUrl = jlgSummarySort.ajax_url;
+
+        if (!ajaxUrl) {
+            return;
+        }
+
+        var currentRequest = $wrapper.data('ajaxRequest');
+        if (currentRequest && typeof currentRequest.abort === 'function') {
+            currentRequest.abort();
+        }
+
+        var targetUrl = historyUrl || window.location.href;
+
+        var requestData = {
+            action: 'jlg_summary_sort',
+            nonce: jlgSummarySort.nonce,
+            posts_per_page: $wrapper.data('postsPerPage'),
+            layout: $wrapper.data('layout'),
+            categorie: $wrapper.data('categorie') || '',
+            colonnes: $wrapper.data('colonnes') || '',
+            table_id: $wrapper.attr('id'),
+            current_url: targetUrl,
         };
+
+        var orderby = params.orderby || $wrapper.data('orderby') || 'date';
+        var order = params.order || $wrapper.data('order') || 'DESC';
+        var paged = (typeof params.paged !== 'undefined' && params.paged !== '') ? params.paged : 1;
+        var catFilter = params.cat_filter;
+
+        requestData.orderby = orderby;
+        requestData.order = order.toUpperCase();
+        requestData.paged = parseInt(paged, 10);
+        if (!requestData.paged || requestData.paged < 1) {
+            requestData.paged = 1;
+        }
+
+        if (typeof catFilter === 'undefined' || catFilter === '') {
+            catFilter = $wrapper.data('catFilter');
+        }
+
+        requestData.cat_filter = parseInt(catFilter, 10);
+        if (isNaN(requestData.cat_filter)) {
+            requestData.cat_filter = 0;
+        }
+
+        $wrapper.addClass('jlg-summary-loading');
+
+        var jqXHR = $.ajax({
+            url: ajaxUrl,
+            method: 'POST',
+            data: requestData,
+        });
+
+        $wrapper.data('ajaxRequest', jqXHR);
+
+        jqXHR.done(function(response) {
+            if (!response || !response.success || !response.data) {
+                showError($wrapper, jlgSummarySort.strings.genericError);
+                return;
+            }
+
+            var html = response.data.html || '';
+            var $content = $wrapper.find('.jlg-summary-content');
+
+            if ($content.length) {
+                $content.html(html);
+            }
+
+            updateState($wrapper, response.data.state || {});
+
+            if (targetUrl) {
+                updateHistory(targetUrl);
+            }
+        }).fail(function() {
+            showError($wrapper, jlgSummarySort.strings.genericError);
+        }).always(function() {
+            $wrapper.removeClass('jlg-summary-loading');
+            $wrapper.removeData('ajaxRequest');
+        });
     }
 
-    /**
-     * Récupère la valeur d'une cellule de tableau.
-     * @param {HTMLElement} row La ligne (tr).
-     * @param {number} index L'index de la cellule (td).
-     * @returns La valeur textuelle de la cellule.
-     */
-    function getCellValue(row, index) {
-        return $(row).children('td').eq(index).text();
-    }
+    $('.jlg-summary-wrapper').each(function() {
+        var $wrapper = $(this);
+
+        $wrapper.on('click', 'th.sortable a, .jlg-pagination a', function(event) {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.which === 2) {
+                return;
+            }
+
+            event.preventDefault();
+
+            var href = $(this).attr('href');
+            if (!href) {
+                return;
+            }
+
+            var parsed = parseUrlParameters(href);
+            performAjax($wrapper, parsed.params, parsed.url.href);
+        });
+
+        $wrapper.on('submit', '.jlg-summary-filters form', function(event) {
+            event.preventDefault();
+
+            var $form = $(this);
+            var params = {};
+
+            $.each($form.serializeArray(), function(_, field) {
+                if (field.name) {
+                    params[field.name] = field.value;
+                }
+            });
+
+            params.paged = 1;
+
+            var action = $form.attr('action') || window.location.href;
+            var url = new URL(action, window.location.href);
+
+            Object.keys(params).forEach(function(key) {
+                url.searchParams.set(key, params[key]);
+            });
+
+            if ($wrapper.attr('id')) {
+                url.hash = $wrapper.attr('id');
+            }
+
+            performAjax($wrapper, params, url.href);
+        });
+    });
 });

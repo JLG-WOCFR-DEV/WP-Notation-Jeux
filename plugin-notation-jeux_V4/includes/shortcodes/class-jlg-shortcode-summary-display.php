@@ -15,28 +15,56 @@ class JLG_Shortcode_Summary_Display {
     }
 
     public function render($atts) {
-        // Attributs avec valeurs par défaut
-        $atts = shortcode_atts([
-            'posts_per_page' => 12,
-            'layout'         => 'table',
-            'categorie'      => '',
-            'colonnes'       => 'titre,date,note',
-            'id'             => 'jlg-table-' . uniqid()
-        ], $atts, 'jlg_tableau_recap');
+        $context = self::get_render_context($atts, $_GET, true);
 
-        // Variables de tri et pagination
-        $paged = get_query_var('paged') ? get_query_var('paged') : 1;
-        $orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : 'date';
-        $order = isset($_GET['order']) && in_array(strtoupper($_GET['order']), ['ASC', 'DESC']) ? strtoupper($_GET['order']) : 'DESC';
-        $cat_filter = isset($_GET['cat_filter']) ? intval($_GET['cat_filter']) : 0;
-
-        // Récupérer les articles notés
-        $rated_post_ids = JLG_Helpers::get_rated_post_ids();
-        if (empty($rated_post_ids)) {
-            return '<p>Aucun article noté trouvé.</p>';
+        if (!empty($context['error']) && !empty($context['message'])) {
+            return $context['message'];
         }
 
-        // Arguments de la requête
+        return JLG_Frontend::get_template_html('shortcode-summary-display', $context);
+    }
+
+    public static function get_render_context($atts, $request = [], $use_global_paged = false) {
+        $atts = shortcode_atts(self::get_default_atts(), $atts, 'jlg_tableau_recap');
+        $atts['id'] = sanitize_html_class($atts['id']);
+        if ($atts['id'] === '') {
+            $atts['id'] = 'jlg-table-' . uniqid();
+        }
+        if (!in_array($atts['layout'], ['table', 'grid'], true)) {
+            $atts['layout'] = 'table';
+        }
+
+        $request = is_array($request) ? $request : [];
+
+        $orderby = isset($request['orderby']) ? sanitize_key($request['orderby']) : 'date';
+        $order = isset($request['order']) && in_array(strtoupper($request['order']), ['ASC', 'DESC'], true)
+            ? strtoupper($request['order'])
+            : 'DESC';
+        $cat_filter = isset($request['cat_filter']) ? intval($request['cat_filter']) : 0;
+
+        $paged = isset($request['paged']) ? intval($request['paged']) : 0;
+        if ($paged < 1) {
+            $paged = ($use_global_paged && get_query_var('paged')) ? intval(get_query_var('paged')) : 1;
+        }
+
+        $rated_post_ids = JLG_Helpers::get_rated_post_ids();
+        if (empty($rated_post_ids)) {
+            $no_results = '<p>' . esc_html__('Aucun article noté trouvé.', 'notation-jlg') . '</p>';
+
+            return [
+                'error'        => true,
+                'message'      => $no_results,
+                'atts'         => $atts,
+                'paged'        => $paged,
+                'orderby'      => $orderby,
+                'order'        => $order,
+                'cat_filter'   => $cat_filter,
+                'colonnes'     => self::prepare_columns($atts),
+                'colonnes_disponibles' => self::get_available_columns(),
+                'error_message' => $no_results,
+            ];
+        }
+
         $args = [
             'post_type'      => 'post',
             'posts_per_page' => intval($atts['posts_per_page']),
@@ -45,7 +73,6 @@ class JLG_Shortcode_Summary_Display {
             'order'          => $order,
         ];
 
-        // Gestion du tri
         if ($orderby === 'average_score' || $orderby === 'note') {
             $args['orderby'] = 'meta_value_num';
             $args['meta_key'] = '_jlg_average_score';
@@ -55,7 +82,6 @@ class JLG_Shortcode_Summary_Display {
             $args['orderby'] = $orderby;
         }
 
-        // Filtrage par catégorie
         if (!empty($atts['categorie'])) {
             $args['category_name'] = sanitize_text_field($atts['categorie']);
         } elseif ($cat_filter > 0) {
@@ -63,14 +89,73 @@ class JLG_Shortcode_Summary_Display {
         }
 
         $query = new WP_Query($args);
-        
-        // Utiliser le template pour le rendu
-        return JLG_Frontend::get_template_html('shortcode-summary-display', [
-            'query' => $query,
-            'atts'  => $atts,
-            'paged' => $paged,
-            'orderby' => $orderby,
-            'order' => $order
-        ]);
+
+        return [
+            'query'                => $query,
+            'atts'                 => $atts,
+            'paged'                => $paged,
+            'orderby'              => $orderby,
+            'order'                => $order,
+            'cat_filter'           => $cat_filter,
+            'colonnes'             => self::prepare_columns($atts),
+            'colonnes_disponibles' => self::get_available_columns(),
+            'error_message'        => '',
+        ];
+    }
+
+    protected static function get_default_atts() {
+        return [
+            'posts_per_page' => 12,
+            'layout'         => 'table',
+            'categorie'      => '',
+            'colonnes'       => 'titre,date,note',
+            'id'             => 'jlg-table-' . uniqid(),
+        ];
+    }
+
+    protected static function get_available_columns() {
+        return [
+            'titre' => [
+                'label'    => __('Titre du jeu', 'notation-jlg'),
+                'sortable' => true,
+                'key'      => 'title',
+            ],
+            'date' => [
+                'label'    => __('Date', 'notation-jlg'),
+                'sortable' => true,
+                'key'      => 'date',
+            ],
+            'note' => [
+                'label'    => __('Note', 'notation-jlg'),
+                'sortable' => true,
+                'key'      => 'average_score',
+            ],
+            'developpeur' => [
+                'label'    => __('Développeur', 'notation-jlg'),
+                'sortable' => false,
+            ],
+            'editeur' => [
+                'label'    => __('Éditeur', 'notation-jlg'),
+                'sortable' => false,
+            ],
+        ];
+    }
+
+    protected static function prepare_columns($atts) {
+        $requested = array_filter(array_map('trim', explode(',', $atts['colonnes'])));
+        $available = self::get_available_columns();
+        $columns = [];
+
+        foreach ($requested as $column) {
+            if (isset($available[$column])) {
+                $columns[] = $column;
+            }
+        }
+
+        if (empty($columns)) {
+            $columns = ['titre', 'date', 'note'];
+        }
+
+        return $columns;
     }
 }
