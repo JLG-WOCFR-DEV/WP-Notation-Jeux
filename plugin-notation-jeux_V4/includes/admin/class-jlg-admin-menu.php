@@ -126,11 +126,11 @@ class JLG_Admin_Menu {
             while ($query->have_posts()) {
                 $query->the_post();
                 $post_id = get_the_ID();
-                $score = get_post_meta($post_id, '_jlg_average_score', true);
+                $score_data = JLG_Helpers::get_resolved_average_score($post_id);
+                $score_value = $score_data['value'];
 
                 $score_color = '#0073aa';
-                if ($score !== '' && is_numeric($score)) {
-                    $score_value = (float) $score;
+                if ($score_value !== null) {
                     if ($score_value >= 8) {
                         $score_color = '#22c55e';
                     } elseif ($score_value >= 5) {
@@ -150,7 +150,7 @@ class JLG_Admin_Menu {
                     'edit_link' => get_edit_post_link($post_id),
                     'view_link' => get_permalink($post_id),
                     'date' => get_the_date('d/m/Y', $post_id),
-                    'score_display' => ($score !== '' && $score !== null) ? $score : 'N/A',
+                    'score_display' => $score_data['formatted'] ?? 'N/A',
                     'score_color' => $score_color,
                     'categories' => $cat_names,
                 ];
