@@ -9,11 +9,34 @@ class JLG_Frontend {
      */
     private static $shortcode_errors = [];
 
+    /**
+     * Instance courante du frontend.
+     *
+     * @var self|null
+     */
+    private static $instance = null;
+
+    /**
+     * Indique si au moins un shortcode du plugin a été rendu.
+     *
+     * @var bool
+     */
+    private static $shortcode_rendered = false;
+
+    /**
+     * Indique si les assets frontend ont déjà été chargés pour la requête.
+     *
+     * @var bool
+     */
+    private static $assets_enqueued = false;
+
     public function __construct() {
+        self::$instance = $this;
         // On charge les shortcodes via le hook 'init' pour s'assurer que WordPress est prêt
         add_action('init', [$this, 'initialize_shortcodes']);
-        
+
         add_action('wp_enqueue_scripts', [$this, 'enqueue_jlg_scripts']);
+        add_filter('do_shortcode_tag', [$this, 'track_shortcode_usage'], 10, 4);
         add_action('wp_ajax_jlg_rate_post', [$this, 'handle_user_rating']);
         add_action('wp_ajax_nopriv_jlg_rate_post', [$this, 'handle_user_rating']);
         add_action('wp_ajax_jlg_summary_sort', [$this, 'handle_summary_sort']);
@@ -101,6 +124,32 @@ class JLG_Frontend {
     }
 
     /**
+     * Marque l'utilisation d'un shortcode du plugin.
+     */
+    public static function mark_shortcode_rendered() {
+        self::$shortcode_rendered = true;
+
+        if (!self::$assets_enqueued && did_action('wp_enqueue_scripts') && self::$instance instanceof self) {
+            self::$instance->enqueue_jlg_scripts(true);
+
+            if (did_action('wp_print_styles') && !wp_style_is('jlg-frontend', 'done')) {
+                wp_print_styles('jlg-frontend');
+            }
+        }
+    }
+
+    /**
+     * Détecte l'exécution des shortcodes du plugin lors de leur rendu.
+     */
+    public function track_shortcode_usage($output, $tag, $attr, $m) {
+        if (in_array($tag, $this->get_plugin_shortcodes(), true)) {
+            self::mark_shortcode_rendered();
+        }
+
+        return $output;
+    }
+
+    /**
      * Vérifie si un contenu contient l'un des shortcodes du plugin.
      *
      * @param string $content
@@ -123,8 +172,16 @@ class JLG_Frontend {
     /**
      * Charge les scripts JavaScript nécessaires
      */
-    public function enqueue_jlg_scripts() {
-        $should_enqueue = is_singular('post');
+    public function enqueue_jlg_scripts($force = false) {
+        if (self::$assets_enqueued) {
+            return;
+        }
+
+        $should_enqueue = $force || self::$shortcode_rendered;
+
+        if (!$should_enqueue) {
+            $should_enqueue = is_singular('post');
+        }
 
         if (!$should_enqueue) {
             $queried_object = get_queried_object();
@@ -137,6 +194,9 @@ class JLG_Frontend {
         if (!$should_enqueue) {
             return;
         }
+
+        self::$assets_enqueued = true;
+        self::$shortcode_rendered = true;
 
         $options = JLG_Helpers::get_plugin_options();
         $palette = JLG_Helpers::get_color_palette();

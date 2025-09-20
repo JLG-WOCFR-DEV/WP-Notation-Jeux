@@ -21,6 +21,8 @@ class JLG_Shortcode_Summary_Display {
             return $context['message'];
         }
 
+        JLG_Frontend::mark_shortcode_rendered();
+
         return JLG_Frontend::get_template_html('shortcode-summary-display', $context);
     }
 

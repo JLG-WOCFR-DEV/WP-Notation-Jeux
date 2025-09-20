@@ -55,6 +55,8 @@ class JLG_Shortcode_Game_Info {
             return '';
         }
         
+        JLG_Frontend::mark_shortcode_rendered();
+
         return JLG_Frontend::get_template_html('shortcode-game-info', [
             'titre'             => sanitize_text_field($atts['titre']),
             'champs_a_afficher' => $data_to_display,
