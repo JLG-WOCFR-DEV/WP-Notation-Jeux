@@ -141,7 +141,10 @@ jQuery(document).ready(function($) {
             if (shouldUpdateHistory && targetUrl) {
                 updateHistory(targetUrl);
             }
-        }).fail(function() {
+        }).fail(function(_, textStatus) {
+            if (textStatus === 'abort') {
+                return;
+            }
             showError($wrapper, jlgSummarySort.strings.genericError);
         }).always(function() {
             $wrapper.removeClass('jlg-summary-loading');
