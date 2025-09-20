@@ -162,7 +162,7 @@ class JLG_Helpers {
     public static function get_average_score_for_post($post_id) {
         $total_score = 0;
         $count = 0;
-        
+
         foreach (self::$category_keys as $key) {
             $score = get_post_meta($post_id, '_note_' . $key, true);
             if ($score !== '' && is_numeric($score)) {
@@ -170,8 +170,44 @@ class JLG_Helpers {
                 $count++;
             }
         }
-        
+
         return ($count > 0) ? round($total_score / $count, 1) : null;
+    }
+
+    /**
+     * Retrieve the stored average score, falling back to a computed value when necessary.
+     *
+     * @param int $post_id The post ID.
+     * @return array{value: float|null, formatted: string|null}
+     */
+    public static function get_resolved_average_score($post_id) {
+        $stored_score = get_post_meta($post_id, '_jlg_average_score', true);
+
+        if ($stored_score !== '' && $stored_score !== null && is_numeric($stored_score)) {
+            $score_value = (float) $stored_score;
+
+            return [
+                'value' => $score_value,
+                'formatted' => number_format_i18n($score_value, 1),
+            ];
+        }
+
+        $fallback_score = self::get_average_score_for_post($post_id);
+
+        if ($fallback_score !== null && is_numeric($fallback_score)) {
+            update_post_meta($post_id, '_jlg_average_score', $fallback_score);
+            $fallback_value = (float) $fallback_score;
+
+            return [
+                'value' => $fallback_value,
+                'formatted' => number_format_i18n($fallback_value, 1),
+            ];
+        }
+
+        return [
+            'value' => null,
+            'formatted' => null,
+        ];
     }
 
     public static function get_rating_categories() {

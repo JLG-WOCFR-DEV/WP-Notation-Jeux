@@ -67,13 +67,16 @@ if ($layout === 'grid') :
         <?php if ($query instanceof WP_Query && $query->have_posts()) :
             while ($query->have_posts()) : $query->the_post();
                 $post_id = get_the_ID();
-                $score = get_post_meta($post_id, '_jlg_average_score', true);
+                $score_data = JLG_Helpers::get_resolved_average_score($post_id);
                 $cover_url = get_post_meta($post_id, '_jlg_cover_image_url', true);
                 if (empty($cover_url)) {
                     $cover_url = get_the_post_thumbnail_url($post_id, 'medium_large');
                 }
                 /* translators: Abbreviation meaning that the average score is not available. */
-                $score_display = $score ?: __('N/A', 'notation-jlg');
+                $score_display = $score_data['formatted'] ?? '';
+                if ($score_display === '') {
+                    $score_display = __('N/A', 'notation-jlg');
+                }
                 ?>
                 <a href="<?php the_permalink(); ?>" class="jlg-game-card">
                     <div class="jlg-game-card-score"><?php echo esc_html($score_display); ?></div>
@@ -127,9 +130,12 @@ else :
                                         echo esc_html(get_the_date());
                                         break;
                                     case 'note':
-                                        $score = get_post_meta($post_id, '_jlg_average_score', true);
+                                        $score_data = JLG_Helpers::get_resolved_average_score($post_id);
                                         /* translators: Abbreviation meaning that the average score is not available. */
-                                        $score_display = $score ?: __('N/A', 'notation-jlg');
+                                        $score_display = $score_data['formatted'] ?? '';
+                                        if ($score_display === '') {
+                                            $score_display = __('N/A', 'notation-jlg');
+                                        }
                                         echo '<strong>' . esc_html($score_display) . '</strong> ';
                                         printf(
                                             /* translators: %s: Maximum possible rating value. */
