@@ -18,7 +18,8 @@ $columns = is_array($colonnes) ? $colonnes : [];
 $available_columns = is_array($colonnes_disponibles) ? $colonnes_disponibles : [];
 $current_orderby = !empty($orderby) ? $orderby : 'date';
 $current_order = !empty($order) ? $order : 'DESC';
-$current_cat_filter = isset($cat_filter) ? intval($cat_filter) : 0;
+$show_filters = ($atts['layout'] === 'table' && empty($atts['categorie']));
+$current_cat_filter = ($show_filters && isset($cat_filter)) ? intval($cat_filter) : 0;
 $columns_attr = !empty($columns) ? implode(',', array_map('sanitize_key', $columns)) : '';
 ?>
 
@@ -35,7 +36,7 @@ $columns_attr = !empty($columns) ? implode(',', array_map('sanitize_key', $colum
     data-cat-filter="<?php echo esc_attr($current_cat_filter); ?>"
 >
     
-    <?php if ($atts['layout'] === 'table') : ?>
+    <?php if ($show_filters) : ?>
         <!-- Filtres -->
         <div class="jlg-summary-filters">
             <form method="get" action="">
