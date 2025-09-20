@@ -2,6 +2,24 @@ jQuery(document).ready(function($) {
     var ratingMessages = (typeof jlgUserRatingL10n !== 'undefined') ? jlgUserRatingL10n : {};
     var successMessage = ratingMessages.successMessage || 'Merci pour votre vote !';
     var genericErrorMessage = ratingMessages.genericErrorMessage || 'Erreur. Veuillez réessayer.';
+    var alreadyVotedMessage = ratingMessages.alreadyVotedMessage || 'Vous avez déjà voté !';
+
+    function isAlreadyVotedMessage(message) {
+        if (!message || typeof message !== 'string') {
+            return false;
+        }
+
+        var lowerMessage = message.toLowerCase().trim();
+
+        if (alreadyVotedMessage && typeof alreadyVotedMessage === 'string') {
+            var lowerReference = alreadyVotedMessage.toLowerCase().trim();
+            if (lowerMessage === lowerReference) {
+                return true;
+            }
+        }
+
+        return lowerMessage.indexOf('déjà voté') !== -1 || lowerMessage.indexOf('deja vote') !== -1;
+    }
 
     // Effet de survol des étoiles
     $('.jlg-user-star').on('mouseover', function() {
@@ -46,24 +64,39 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 ratingBlock.removeClass('is-loading');
 
+                var responseData = response && response.data ? response.data : {};
+                var errorMessage = responseData.message || genericErrorMessage;
+
                 if (response.success) {
                     ratingBlock.addClass('has-voted');
-                    
-                    ratingBlock.find('.jlg-user-rating-avg-value').text(response.data.new_average);
-                    ratingBlock.find('.jlg-user-rating-count-value').text(response.data.new_count);
-                    
+
+                    if (typeof responseData.new_average !== 'undefined') {
+                        ratingBlock.find('.jlg-user-rating-avg-value').text(responseData.new_average);
+                    }
+
+                    if (typeof responseData.new_count !== 'undefined') {
+                        ratingBlock.find('.jlg-user-rating-count-value').text(responseData.new_count);
+                    }
+
                     ratingBlock.find('.jlg-rating-message').text(successMessage).show();
 
                     star.siblings().removeClass('selected');
                     star.add(star.prevAll()).addClass('selected');
                 } else {
-                    ratingBlock.addClass('has-voted');
-                    ratingBlock.find('.jlg-rating-message').text(response.data.message).show();
+                    ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
+
+                    if (isAlreadyVotedMessage(errorMessage)) {
+                        ratingBlock.addClass('has-voted');
+                    } else {
+                        ratingBlock.removeClass('has-voted');
+                        star.add(star.prevAll()).removeClass('selected');
+                    }
                 }
             },
             error: function() {
-                ratingBlock.removeClass('is-loading');
+                ratingBlock.removeClass('is-loading has-voted');
                 ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
+                star.add(star.prevAll()).removeClass('selected');
             }
         });
     });
