@@ -408,7 +408,7 @@ class JLG_Admin_Platforms {
                         <li>Page actuelle : <?php echo esc_html($_GET['page'] ?? 'non définie'); ?></li>
                         <li>Onglet actuel : <?php echo esc_html($_GET['tab'] ?? 'non défini'); ?></li>
                         <li>URL actuelle : <?php echo esc_url($_SERVER['REQUEST_URI']); ?></li>
-                        <li>Méthode HTTP : <?php echo esc_html( $_SERVER['REQUEST_METHOD'] ?? '' ); ?></li>
+                        <li>Méthode HTTP : <?php echo esc_html( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ); ?></li>
                         <li>Plateformes sauvegardées : <?php echo count(get_option($this->option_name, [])); ?> personnalisées</li>
                         <li>Total plateformes : <?php echo count($platforms); ?></li>
                         <li>Hook admin_init exécuté : <?php echo did_action('admin_init'); ?> fois</li>
