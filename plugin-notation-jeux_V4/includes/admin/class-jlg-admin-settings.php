@@ -9,8 +9,9 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Admin_Settings {
-    
+
     private $option_name = 'notation_jlg_settings';
+    private $field_constraints = [];
 
     public function __construct() {
         add_action('admin_init', [$this, 'register_settings']);
@@ -75,6 +76,10 @@ class JLG_Admin_Settings {
     }
 
     private function sanitize_option_value($key, $value, $default_value = '') {
+        if (isset($this->field_constraints[$key])) {
+            return $this->normalize_numeric_value($key, $value, $default_value);
+        }
+
         // Couleurs
         if (strpos($key, 'color') !== false && strpos($key, 'color_mode') === false) {
             $allow_transparent_fields = [
@@ -100,10 +105,10 @@ class JLG_Admin_Settings {
         }
         
         // Nombres
-        if (strpos($key, 'size') !== false || strpos($key, 'width') !== false || 
-            strpos($key, 'padding') !== false || strpos($key, 'radius') !== false || 
+        if (strpos($key, 'size') !== false || strpos($key, 'width') !== false ||
+            strpos($key, 'padding') !== false || strpos($key, 'radius') !== false ||
             strpos($key, 'intensity') !== false || strpos($key, 'speed') !== false) {
-            return is_numeric($value) ? floatval($value) : 0;
+            return is_numeric($value) ? floatval($value) : (is_numeric($default_value) ? floatval($default_value) : 0);
         }
         
         // Checkboxes
@@ -128,6 +133,116 @@ class JLG_Admin_Settings {
         
         // Texte par défaut
         return sanitize_text_field($value);
+    }
+
+    private function normalize_numeric_value($key, $value, $default_value) {
+        $constraints = $this->field_constraints[$key];
+
+        $min = isset($constraints['min']) ? floatval($constraints['min']) : null;
+        $max = isset($constraints['max']) ? floatval($constraints['max']) : null;
+        $step = isset($constraints['step']) ? floatval($constraints['step']) : null;
+
+        if (!is_numeric($value)) {
+            if (is_numeric($default_value)) {
+                $number = floatval($default_value);
+            } elseif ($min !== null) {
+                $number = $min;
+            } else {
+                $number = 0;
+            }
+        } else {
+            $number = floatval($value);
+        }
+
+        if ($min !== null) {
+            $number = max($number, $min);
+        }
+
+        if ($max !== null) {
+            $number = min($number, $max);
+        }
+
+        if ($step !== null && $step > 0) {
+            $base = ($min !== null) ? $min : 0.0;
+            $steps = round(($number - $base) / $step);
+            $number = $base + ($steps * $step);
+            $number = $this->round_to_step_precision($number, $step);
+
+            if ($min !== null) {
+                $number = max($number, $min);
+            }
+
+            if ($max !== null) {
+                $number = min($number, $max);
+            }
+        }
+
+        if ($this->should_cast_to_int($step, $min, $max, $default_value)) {
+            return (int) round($number);
+        }
+
+        return $number;
+    }
+
+    private function round_to_step_precision($value, $step) {
+        $precision = $this->get_step_precision($step);
+
+        if ($precision > 0) {
+            return round($value, $precision);
+        }
+
+        return round($value);
+    }
+
+    private function get_step_precision($step) {
+        $formatted = rtrim(rtrim(sprintf('%.10F', $step), '0'), '.');
+        $decimal_position = strpos($formatted, '.');
+
+        if ($decimal_position === false) {
+            return 0;
+        }
+
+        return strlen($formatted) - $decimal_position - 1;
+    }
+
+    private function should_cast_to_int($step, $min, $max, $default_value) {
+        $step = $step ?? 1.0;
+
+        if (!$this->is_integer_like($step)) {
+            return false;
+        }
+
+        foreach ([$min, $max, $default_value] as $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (!$this->is_integer_like($value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function is_integer_like($value) {
+        if (!is_numeric($value)) {
+            return false;
+        }
+
+        return abs($value - round($value)) < 0.000001;
+    }
+
+    private function store_field_constraints(array $args) {
+        if (($args['type'] ?? '') !== 'number' || empty($args['id'])) {
+            return;
+        }
+
+        $this->field_constraints[$args['id']] = [
+            'min' => $args['min'] ?? null,
+            'max' => $args['max'] ?? null,
+            'step' => $args['step'] ?? null,
+        ];
     }
 
     private function register_all_sections() {
@@ -155,9 +270,11 @@ class JLG_Admin_Settings {
         add_settings_field('circle_border_enabled', 'Activer la bordure (Mode Cercle)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_layout',
             ['id' => 'circle_border_enabled', 'type' => 'checkbox']
         );
+        $circle_border_width_args = ['id' => 'circle_border_width', 'type' => 'number', 'min' => 1, 'max' => 20];
         add_settings_field('circle_border_width', 'Épaisseur bordure (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_layout',
-            ['id' => 'circle_border_width', 'type' => 'number', 'min' => 1, 'max' => 20]
+            $circle_border_width_args
         );
+        $this->store_field_constraints($circle_border_width_args);
         add_settings_field('circle_border_color', 'Couleur de la bordure', [$this, 'render_field'], 'notation_jlg_page', 'jlg_layout',
             ['id' => 'circle_border_color', 'type' => 'color']
         );
@@ -226,15 +343,19 @@ class JLG_Admin_Settings {
         add_settings_field('text_glow_custom_color', 'Couleur personnalisée', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_text',
             ['id' => 'text_glow_custom_color', 'type' => 'color', 'desc' => 'Utilisée uniquement si mode "Couleur fixe" est sélectionné']
         );
+        $text_glow_intensity_args = ['id' => 'text_glow_intensity', 'type' => 'number', 'min' => 5, 'max' => 50];
         add_settings_field('text_glow_intensity', 'Intensité (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_text',
-            ['id' => 'text_glow_intensity', 'type' => 'number', 'min' => 5, 'max' => 50]
+            $text_glow_intensity_args
         );
+        $this->store_field_constraints($text_glow_intensity_args);
         add_settings_field('text_glow_pulse', 'Activer la pulsation', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_text',
             ['id' => 'text_glow_pulse', 'type' => 'checkbox', 'desc' => 'Animation de pulsation du halo']
         );
+        $text_glow_speed_args = ['id' => 'text_glow_speed', 'type' => 'number', 'min' => 0.5, 'max' => 10, 'step' => 0.1];
         add_settings_field('text_glow_speed', 'Vitesse pulsation (sec)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_text',
-            ['id' => 'text_glow_speed', 'type' => 'number', 'min' => 0.5, 'max' => 10, 'step' => 0.1]
+            $text_glow_speed_args
         );
+        $this->store_field_constraints($text_glow_speed_args);
 
         // Section 5: Effet Glow/Neon (Mode Cercle)
         add_settings_section('jlg_glow_circle', '5. ✨ Effet Neon - Mode Cercle', null, 'notation_jlg_page');
@@ -249,15 +370,19 @@ class JLG_Admin_Settings {
         add_settings_field('circle_glow_custom_color', 'Couleur personnalisée', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_circle',
             ['id' => 'circle_glow_custom_color', 'type' => 'color', 'desc' => 'Utilisée uniquement si mode "Couleur fixe" est sélectionné']
         );
+        $circle_glow_intensity_args = ['id' => 'circle_glow_intensity', 'type' => 'number', 'min' => 5, 'max' => 50];
         add_settings_field('circle_glow_intensity', 'Intensité (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_circle',
-            ['id' => 'circle_glow_intensity', 'type' => 'number', 'min' => 5, 'max' => 50]
+            $circle_glow_intensity_args
         );
+        $this->store_field_constraints($circle_glow_intensity_args);
         add_settings_field('circle_glow_pulse', 'Activer la pulsation', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_circle',
             ['id' => 'circle_glow_pulse', 'type' => 'checkbox']
         );
+        $circle_glow_speed_args = ['id' => 'circle_glow_speed', 'type' => 'number', 'min' => 0.5, 'max' => 10, 'step' => 0.1];
         add_settings_field('circle_glow_speed', 'Vitesse pulsation (sec)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_glow_circle',
-            ['id' => 'circle_glow_speed', 'type' => 'number', 'min' => 0.5, 'max' => 10, 'step' => 0.1]
+            $circle_glow_speed_args
         );
+        $this->store_field_constraints($circle_glow_speed_args);
 
         // Section 6: Modules
         add_settings_section('jlg_modules', '6. 🧩 Modules', null, 'notation_jlg_page');
@@ -275,9 +400,11 @@ class JLG_Admin_Settings {
 
         // Section 7: Modules - Tagline
         add_settings_section('jlg_tagline_section', '7. 💬 Module Tagline', null, 'notation_jlg_page');
+        $tagline_font_size_args = ['id' => 'tagline_font_size', 'type' => 'number', 'min' => 12, 'max' => 32];
         add_settings_field('tagline_font_size', 'Taille de police (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_tagline_section',
-            ['id' => 'tagline_font_size', 'type' => 'number', 'min' => 12, 'max' => 32]
+            $tagline_font_size_args
         );
+        $this->store_field_constraints($tagline_font_size_args);
 
         // Section 8: Modules - Notation Utilisateurs
         add_settings_section('jlg_user_rating_section', '8. ⭐ Module Notation Utilisateurs', null, 'notation_jlg_page');
@@ -315,24 +442,34 @@ class JLG_Admin_Settings {
             ['id' => 'table_border_style', 'type' => 'select',
              'options' => ['none' => 'Aucune', 'horizontal' => 'Horizontales', 'full' => 'Grille complète']]
         );
+        $table_border_width_args = ['id' => 'table_border_width', 'type' => 'number', 'min' => 0, 'max' => 10];
         add_settings_field('table_border_width', 'Épaisseur bordures (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_table',
-            ['id' => 'table_border_width', 'type' => 'number', 'min' => 0, 'max' => 10]
+            $table_border_width_args
         );
+        $this->store_field_constraints($table_border_width_args);
 
         // Section 10: Style des Vignettes
         add_settings_section('jlg_thumbnail_section', '10. 🖼️ Style des Vignettes', null, 'notation_jlg_page');
         add_settings_field('thumb_text_color', 'Couleur du texte', [$this, 'render_field'], 'notation_jlg_page', 'jlg_thumbnail_section',
             ['id' => 'thumb_text_color', 'type' => 'color']
         );
+        $thumb_font_size_args = ['id' => 'thumb_font_size', 'type' => 'number', 'min' => 10, 'max' => 24];
         add_settings_field('thumb_font_size', 'Taille de police (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_thumbnail_section',
-            ['id' => 'thumb_font_size', 'type' => 'number', 'min' => 10, 'max' => 24]
+            $thumb_font_size_args
         );
+        $this->store_field_constraints($thumb_font_size_args);
+
+        $thumb_padding_args = ['id' => 'thumb_padding', 'type' => 'number', 'min' => 2, 'max' => 20];
         add_settings_field('thumb_padding', 'Espacement intérieur (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_thumbnail_section',
-            ['id' => 'thumb_padding', 'type' => 'number', 'min' => 2, 'max' => 20]
+            $thumb_padding_args
         );
+        $this->store_field_constraints($thumb_padding_args);
+
+        $thumb_border_radius_args = ['id' => 'thumb_border_radius', 'type' => 'number', 'min' => 0, 'max' => 50];
         add_settings_field('thumb_border_radius', 'Arrondi des coins (px)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_thumbnail_section',
-            ['id' => 'thumb_border_radius', 'type' => 'number', 'min' => 0, 'max' => 50]
+            $thumb_border_radius_args
         );
+        $this->store_field_constraints($thumb_border_radius_args);
 
         // Section 11: CSS Personnalisé
         add_settings_section('jlg_custom', '11. 🎨 CSS Personnalisé', null, 'notation_jlg_page');
