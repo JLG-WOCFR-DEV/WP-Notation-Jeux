@@ -258,13 +258,22 @@ class JLG_Admin_Platforms {
         $key = sanitize_text_field(wp_unslash($_POST['platform_key']));
         self::$debug_messages[] = "🔑 Clé à supprimer : $key";
         
-        // Vérifier si c'est une plateforme personnalisée
-        if (!isset($platforms[$key])) {
-            self::$debug_messages[] = "❌ Plateforme non trouvée ou non personnalisée";
-            return ['success' => false, 'message' => 'Cette plateforme ne peut pas être supprimée.'];
+        $all_platforms = $this->get_platforms();
+        if (!isset($all_platforms[$key])) {
+            self::$debug_messages[] = "❌ Plateforme introuvable";
+            return ['success' => false, 'message' => 'Plateforme introuvable.'];
         }
-        
-        $platform_name = $platforms[$key]['name'] ?? 'Inconnue';
+
+        if (!isset($platforms[$key]) || empty($platforms[$key]['custom'])) {
+            $platform_name = $all_platforms[$key]['name'] ?? 'Inconnue';
+            self::$debug_messages[] = "❌ Suppression refusée pour la plateforme non personnalisée '$platform_name'";
+            return [
+                'success' => false,
+                'message' => "La plateforme '$platform_name' est une plateforme par défaut et ne peut pas être supprimée."
+            ];
+        }
+
+        $platform_name = $platforms[$key]['name'] ?? $all_platforms[$key]['name'] ?? 'Inconnue';
         unset($platforms[$key]);
         
         $result = update_option($this->option_name, $platforms);
