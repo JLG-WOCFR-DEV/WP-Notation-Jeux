@@ -72,9 +72,11 @@ if ($layout === 'grid') :
                 if (empty($cover_url)) {
                     $cover_url = get_the_post_thumbnail_url($post_id, 'medium_large');
                 }
+                /* translators: Abbreviation meaning that the average score is not available. */
+                $score_display = $score ?: __('N/A', 'notation-jlg');
                 ?>
                 <a href="<?php the_permalink(); ?>" class="jlg-game-card">
-                    <div class="jlg-game-card-score"><?php echo esc_html($score); ?></div>
+                    <div class="jlg-game-card-score"><?php echo esc_html($score_display); ?></div>
                     <?php if ($cover_url) : ?>
                         <img src="<?php echo esc_url($cover_url); ?>" alt="<?php the_title_attribute(); ?>" loading="lazy">
                     <?php endif; ?>
