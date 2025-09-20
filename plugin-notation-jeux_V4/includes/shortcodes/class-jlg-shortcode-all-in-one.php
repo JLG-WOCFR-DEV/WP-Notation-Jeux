@@ -275,6 +275,8 @@ class JLG_Shortcode_All_In_One {
 
         $css_variables_string = $this->format_css_variables($css_variables);
 
+        JLG_Frontend::mark_shortcode_rendered();
+
         return JLG_Frontend::get_template_html('shortcode-all-in-one', [
             'options' => $options,
             'average_score' => $average_score,

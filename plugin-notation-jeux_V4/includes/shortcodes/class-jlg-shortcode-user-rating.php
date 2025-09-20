@@ -23,6 +23,8 @@ class JLG_Shortcode_User_Rating {
         $user_ip_hash = $user_ip ? wp_hash($user_ip) : '';
         $has_voted = (is_array($ratings) && $user_ip_hash && isset($ratings[$user_ip_hash]));
 
+        JLG_Frontend::mark_shortcode_rendered();
+
         return JLG_Frontend::get_template_html('shortcode-user-rating', [
             'options' => $options,
             'post_id' => $post_id,

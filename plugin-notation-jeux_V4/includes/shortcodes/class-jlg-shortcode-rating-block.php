@@ -35,6 +35,8 @@ class JLG_Shortcode_Rating_Block {
             }
         }
         
+        JLG_Frontend::mark_shortcode_rendered();
+
         return JLG_Frontend::get_template_html('shortcode-rating-block', [
             'options'       => JLG_Helpers::get_plugin_options(),
             'average_score' => $average_score,

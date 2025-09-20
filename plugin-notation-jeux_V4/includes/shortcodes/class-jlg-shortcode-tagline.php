@@ -24,6 +24,8 @@ class JLG_Shortcode_Tagline {
             return '';
         }
         
+        JLG_Frontend::mark_shortcode_rendered();
+
         return JLG_Frontend::get_template_html('shortcode-tagline', [
             'options' => $options,
             'tagline_fr' => $tagline_fr,

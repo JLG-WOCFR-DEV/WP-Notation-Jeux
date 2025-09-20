@@ -53,6 +53,16 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
 * `[jlg_tableau_recap]` - Tableau/grille récapitulatif
 
+== Utilisation dans les widgets et blocs ==
+
+* Les shortcodes du plugin peuvent être insérés dans les widgets classiques (Texte, Code) ou via le bloc **Shortcode** de
+  l'éditeur. Dès que l'un d'eux est exécuté, un indicateur global est levé et déclenche le chargement des feuilles de style
+  et scripts requis, même si la page affichée n'est pas un article singulier ou que le contenu principal ne contient aucun
+  shortcode.
+* Pour valider le comportement, placez par exemple `[jlg_tableau_recap]` dans un widget ou un bloc de barre latérale et
+  affichez une page ou une archive : les assets `jlg-frontend` et `jlg-user-rating` sont chargés automatiquement dès le
+  rendu du widget, assurant la même mise en forme que dans un article.
+
 == Installation ==
 
 1. Téléchargez le plugin et décompressez l'archive
