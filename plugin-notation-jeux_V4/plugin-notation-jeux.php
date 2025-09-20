@@ -21,6 +21,10 @@ define('JLG_NOTATION_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('JLG_NOTATION_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('JLG_NOTATION_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
+add_action('plugins_loaded', function() {
+    load_plugin_textdomain('notation-jlg', false, dirname(JLG_NOTATION_PLUGIN_BASENAME) . '/languages');
+});
+
 // Vérifications de compatibilité
 if (version_compare(PHP_VERSION, '7.4', '<')) {
     add_action('admin_notices', function() {
