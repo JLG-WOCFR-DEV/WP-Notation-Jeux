@@ -19,7 +19,6 @@ debug.log
 
 # Fichiers de développement
 test-plugin.php
-tests/
 node_modules/
 vendor/
 
