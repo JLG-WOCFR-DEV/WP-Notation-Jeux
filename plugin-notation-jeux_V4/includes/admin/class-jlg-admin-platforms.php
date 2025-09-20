@@ -99,8 +99,10 @@ class JLG_Admin_Platforms {
             }
             return;
         }
-        
-        self::$debug_messages[] = "✅ Action détectée : " . $_POST['jlg_platform_action'];
+
+        $posted_action = wp_unslash($_POST['jlg_platform_action']);
+        $sanitized_action = sanitize_text_field($posted_action);
+        self::$debug_messages[] = "✅ Action détectée : " . $sanitized_action;
         
         // Vérifier les permissions
         if (!current_user_can('manage_options')) {
@@ -114,14 +116,16 @@ class JLG_Admin_Platforms {
             self::$debug_messages[] = "❌ Nonce non trouvé";
             return;
         }
-        
-        if (!wp_verify_nonce($_POST['jlg_platform_nonce'], 'jlg_platform_action')) {
-            self::$debug_messages[] = "❌ Nonce invalide : " . $_POST['jlg_platform_nonce'];
+
+        $posted_nonce = wp_unslash($_POST['jlg_platform_nonce']);
+        $sanitized_nonce = sanitize_text_field($posted_nonce);
+        if (!wp_verify_nonce($posted_nonce, 'jlg_platform_action')) {
+            self::$debug_messages[] = "❌ Nonce invalide : " . $sanitized_nonce;
             wp_die('Erreur de sécurité');
         }
         self::$debug_messages[] = "✅ Nonce valide";
-        
-        $action = sanitize_text_field($_POST['jlg_platform_action']);
+
+        $action = $sanitized_action;
         $platforms = get_option($this->option_name, []);
         self::$debug_messages[] = "📦 Plateformes actuelles dans la DB : " . count($platforms) . " personnalisées";
         
@@ -178,9 +182,10 @@ class JLG_Admin_Platforms {
             self::$debug_messages[] = "❌ Nom de plateforme vide";
             return ['success' => false, 'message' => 'Le nom de la plateforme est requis.'];
         }
-        
-        $name = sanitize_text_field($_POST['new_platform_name']);
-        $icon = sanitize_text_field($_POST['new_platform_icon'] ?? '🎮');
+
+        $name = sanitize_text_field(wp_unslash($_POST['new_platform_name']));
+        $icon_input = isset($_POST['new_platform_icon']) ? wp_unslash($_POST['new_platform_icon']) : '🎮';
+        $icon = sanitize_text_field($icon_input);
         
         self::$debug_messages[] = "📝 Nom : $name, Icône : $icon";
         
@@ -249,8 +254,8 @@ class JLG_Admin_Platforms {
             self::$debug_messages[] = "❌ Clé de plateforme manquante";
             return ['success' => false, 'message' => 'Clé de plateforme manquante.'];
         }
-        
-        $key = sanitize_text_field($_POST['platform_key']);
+
+        $key = sanitize_text_field(wp_unslash($_POST['platform_key']));
         self::$debug_messages[] = "🔑 Clé à supprimer : $key";
         
         // Vérifier si c'est une plateforme personnalisée
@@ -284,8 +289,10 @@ class JLG_Admin_Platforms {
             return ['success' => false, 'message' => 'Données d\'ordre manquantes.'];
         }
 
-        $raw_order = array_filter($_POST['platform_order'], 'strlen');
-        $submitted_order = array_map('sanitize_text_field', array_values($raw_order));
+        $raw_order = array_filter(wp_unslash($_POST['platform_order']), 'strlen');
+        $submitted_order = array_map(function($value) {
+            return sanitize_text_field($value);
+        }, array_values($raw_order));
         if (empty($submitted_order)) {
             self::$debug_messages[] = "❌ Ordre soumis vide";
             return ['success' => false, 'message' => 'Ordre soumis invalide.'];
