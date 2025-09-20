@@ -38,6 +38,7 @@ if (!function_exists('jlg_print_sortable_header')) {
             'orderby' => $sort_key,
             'order'   => $new_order,
         ]);
+        $url = remove_query_arg('paged', $url);
 
         if (!empty($table_id)) {
             $url .= '#' . $table_id;

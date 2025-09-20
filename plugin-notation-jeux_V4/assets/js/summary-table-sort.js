@@ -81,6 +81,22 @@ jQuery(document).ready(function($) {
 
         var targetUrl = historyUrl || window.location.href;
 
+        var currentOrderby = $wrapper.data('orderby') || 'date';
+        var currentOrder = ($wrapper.data('order') || 'DESC').toString().toUpperCase();
+        var orderby = params.orderby || currentOrderby;
+        var order = (params.order || currentOrder).toString().toUpperCase();
+        var shouldResetPage = (orderby !== currentOrderby) || (order !== currentOrder);
+
+        if (shouldResetPage && targetUrl) {
+            try {
+                var targetUrlObj = new URL(targetUrl, window.location.href);
+                targetUrlObj.searchParams.delete('paged');
+                targetUrl = targetUrlObj.href;
+            } catch (error) {
+                // Ignore URL parsing errors and fallback to original targetUrl.
+            }
+        }
+
         var requestData = {
             action: 'jlg_summary_sort',
             nonce: jlgSummarySort.nonce,
@@ -92,13 +108,19 @@ jQuery(document).ready(function($) {
             current_url: targetUrl,
         };
 
-        var orderby = params.orderby || $wrapper.data('orderby') || 'date';
-        var order = params.order || $wrapper.data('order') || 'DESC';
-        var paged = (typeof params.paged !== 'undefined' && params.paged !== '') ? params.paged : 1;
+        var paged;
+        if (shouldResetPage) {
+            paged = 1;
+            params.paged = 1;
+        } else if (typeof params.paged !== 'undefined' && params.paged !== '') {
+            paged = params.paged;
+        } else {
+            paged = $wrapper.data('paged') || 1;
+        }
         var catFilter = params.cat_filter;
 
         requestData.orderby = orderby;
-        requestData.order = order.toUpperCase();
+        requestData.order = order;
         requestData.paged = parseInt(paged, 10);
         if (!requestData.paged || requestData.paged < 1) {
             requestData.paged = 1;
