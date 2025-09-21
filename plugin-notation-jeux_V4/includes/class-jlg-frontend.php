@@ -334,10 +334,27 @@ class JLG_Frontend {
         }
 
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+
+        if (!$post_id) {
+            wp_send_json_error(['message' => 'Données invalides.']);
+        }
+
+        $post = get_post($post_id);
+
+        if (!$post || 'post' !== $post->post_type || 'trash' === $post->post_status || 'publish' !== $post->post_status) {
+            wp_send_json_error(['message' => 'Article introuvable ou non disponible pour la notation.'], 404);
+        }
+
+        $allows_user_rating = apply_filters('jlg_post_allows_user_rating', $this->post_allows_user_rating($post), $post);
+
+        if (!$allows_user_rating) {
+            wp_send_json_error(['message' => 'La notation des lecteurs est désactivée pour ce contenu.'], 403);
+        }
+
         $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
 
-        if (!$post_id || $rating < 1 || $rating > 5) {
-            wp_send_json_error(['message' => 'Données invalides.']); 
+        if ($rating < 1 || $rating > 5) {
+            wp_send_json_error(['message' => 'Données invalides.']);
         }
         
         $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
@@ -360,15 +377,34 @@ class JLG_Frontend {
 
         $ratings[$user_ip_hash] = $rating;
         update_post_meta($post_id, $meta_key, $ratings);
-        
+
         $new_average = round(array_sum($ratings) / count($ratings), 2);
         update_post_meta($post_id, '_jlg_user_rating_avg', $new_average);
         update_post_meta($post_id, '_jlg_user_rating_count', count($ratings));
-        
+
         wp_send_json_success([
-            'new_average' => number_format($new_average, 2), 
+            'new_average' => number_format($new_average, 2),
             'new_count' => count($ratings)
         ]);
+    }
+
+    /**
+     * Détermine si un article est éligible aux votes des lecteurs.
+     */
+    private function post_allows_user_rating($post) {
+        if (!($post instanceof WP_Post)) {
+            return false;
+        }
+
+        $content = $post->post_content ?? '';
+
+        foreach (['notation_utilisateurs_jlg', 'jlg_bloc_complet', 'bloc_notation_complet'] as $shortcode) {
+            if (has_shortcode($content, $shortcode)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function handle_summary_sort() {
