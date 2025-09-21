@@ -28,6 +28,54 @@ if (!function_exists('register_setting')) {
     }
 }
 
+if (!function_exists('get_option')) {
+    function get_option($option, $default = false) {
+        $options = $GLOBALS['jlg_test_options'] ?? [];
+
+        return $options[$option] ?? $default;
+    }
+}
+
+if (!function_exists('wp_parse_args')) {
+    function wp_parse_args($args, $defaults = []) {
+        if (is_object($args)) {
+            $args = get_object_vars($args);
+        }
+
+        if (is_array($args)) {
+            return array_merge($defaults, $args);
+        }
+
+        parse_str((string) $args, $parsed_args);
+
+        return array_merge($defaults, $parsed_args);
+    }
+}
+
+if (!function_exists('__')) {
+    function __($text, $domain = 'default') {
+        return (string) $text;
+    }
+}
+
+if (!function_exists('esc_html')) {
+    function esc_html($text) {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('esc_html__')) {
+    function esc_html__($text, $domain = 'default') {
+        return esc_html(__($text, $domain));
+    }
+}
+
+if (!function_exists('esc_html_e')) {
+    function esc_html_e($text, $domain = 'default') {
+        echo esc_html__($text, $domain);
+    }
+}
+
 if (!function_exists('add_settings_section')) {
     function add_settings_section($id, $title, $callback, $page) {
         // No-op stub used during tests.
@@ -49,6 +97,15 @@ if (!function_exists('sanitize_text_field')) {
         $filtered = filter_var($str, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW);
 
         return is_string($filtered) ? trim($filtered) : '';
+    }
+}
+
+if (!function_exists('number_format_i18n')) {
+    function number_format_i18n($number, $decimals = 0) {
+        $number   = (float) $number;
+        $decimals = (int) $decimals;
+
+        return number_format($number, $decimals, '.', ',');
     }
 }
 

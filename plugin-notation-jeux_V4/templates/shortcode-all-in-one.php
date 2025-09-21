@@ -47,11 +47,11 @@ $show_points = ($atts['afficher_points'] === 'oui' && (!empty($pros_list) || !em
         <div class="jlg-aio-main-score">
             <?php if ($score_layout === 'circle'): ?>
             <div class="jlg-aio-score-circle">
-                <div class="jlg-aio-score-value"><?php echo esc_html(number_format($average_score, 1, ',', ' ')); ?></div>
+                <div class="jlg-aio-score-value"><?php echo esc_html(number_format_i18n($average_score, 1)); ?></div>
                 <div class="jlg-aio-score-label"><?php echo esc_html__('Note Globale', 'notation-jlg'); ?></div>
             </div>
             <?php else: ?>
-            <div class="jlg-aio-score-value"><?php echo esc_html(number_format($average_score, 1, ',', ' ')); ?></div>
+            <div class="jlg-aio-score-value"><?php echo esc_html(number_format_i18n($average_score, 1)); ?></div>
             <div class="jlg-aio-score-label"><?php echo esc_html__('Note Globale', 'notation-jlg'); ?></div>
             <?php endif; ?>
         </div>
@@ -62,7 +62,7 @@ $show_points = ($atts['afficher_points'] === 'oui' && (!empty($pros_list) || !em
             <div class="jlg-aio-score-item">
                 <div class="jlg-aio-score-header">
                     <span class="jlg-aio-score-label"><?php echo esc_html($categories[$key]); ?></span>
-                    <span class="jlg-aio-score-number"><?php echo esc_html(number_format($score_value, 1, ',', ' ')); ?> / 10</span>
+                    <span class="jlg-aio-score-number"><?php echo esc_html(number_format_i18n($score_value, 1)); ?> / 10</span>
                 </div>
                 <div class="jlg-aio-score-bar-bg">
                     <div class="jlg-aio-score-bar"

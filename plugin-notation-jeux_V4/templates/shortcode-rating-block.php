@@ -18,12 +18,12 @@ $options = JLG_Helpers::get_plugin_options();
     <div class="global-score-wrapper">
         <?php if($options['score_layout'] === 'circle'): ?>
             <div class="score-circle">
-                <div class="score-value"><?php echo esc_html(number_format($average_score, 1, ',', ' ')); ?></div>
+                <div class="score-value"><?php echo esc_html(number_format_i18n($average_score, 1)); ?></div>
                 <div class="score-label"><?php esc_html_e('Note Globale', 'notation-jlg'); ?></div>
             </div>
         <?php else: ?>
             <div class="global-score-text">
-                <div class="score-value"><?php echo esc_html(number_format($average_score, 1, ',', ' ')); ?></div>
+                <div class="score-value"><?php echo esc_html(number_format_i18n($average_score, 1)); ?></div>
                 <div class="score-label"><?php esc_html_e('Note Globale', 'notation-jlg'); ?></div>
             </div>
         <?php endif; ?>
@@ -40,7 +40,7 @@ $options = JLG_Helpers::get_plugin_options();
                     <span><?php echo esc_html($categories[$key]); ?></span>
                     <span>
                         <?php
-                        $formatted_score_value = esc_html(number_format($score_value, 1, ',', ' '));
+                        $formatted_score_value = esc_html(number_format_i18n($score_value, 1));
                         printf(
                             /* translators: 1: Rating value for a specific category. 2: Maximum possible rating. */
                             esc_html__('%1$s / %2$s', 'notation-jlg'),
