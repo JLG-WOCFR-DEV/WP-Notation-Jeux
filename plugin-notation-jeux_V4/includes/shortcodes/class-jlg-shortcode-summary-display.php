@@ -50,6 +50,12 @@ class JLG_Shortcode_Summary_Display {
         }
 
         $rated_post_ids = JLG_Helpers::get_rated_post_ids();
+
+        if (($orderby === 'average_score' || $orderby === 'note') && !empty($rated_post_ids)) {
+            foreach ($rated_post_ids as $post_id) {
+                JLG_Helpers::get_resolved_average_score($post_id);
+            }
+        }
         if (empty($rated_post_ids)) {
             $no_results = '<p>' . esc_html__('Aucun article noté trouvé.', 'notation-jlg') . '</p>';
 
