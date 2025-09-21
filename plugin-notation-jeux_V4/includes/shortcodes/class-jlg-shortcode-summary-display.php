@@ -66,8 +66,29 @@ class JLG_Shortcode_Summary_Display {
         $rated_post_ids = JLG_Helpers::get_rated_post_ids();
 
         if (($orderby === 'average_score' || $orderby === 'note') && !empty($rated_post_ids)) {
-            foreach ($rated_post_ids as $post_id) {
-                JLG_Helpers::get_resolved_average_score($post_id);
+            $posts_missing_average = get_posts([
+                'post_type'      => 'post',
+                'post__in'       => $rated_post_ids,
+                'fields'         => 'ids',
+                'posts_per_page' => -1,
+                'meta_query'     => [
+                    'relation' => 'OR',
+                    [
+                        'key'     => '_jlg_average_score',
+                        'compare' => 'NOT EXISTS',
+                    ],
+                    [
+                        'key'     => '_jlg_average_score',
+                        'value'   => '',
+                        'compare' => '=',
+                    ],
+                ],
+            ]);
+
+            if (!empty($posts_missing_average)) {
+                foreach ($posts_missing_average as $post_id) {
+                    JLG_Helpers::get_resolved_average_score($post_id);
+                }
             }
         }
         if (empty($rated_post_ids)) {
