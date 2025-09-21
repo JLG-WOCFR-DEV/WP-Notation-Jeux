@@ -298,10 +298,31 @@ class JLG_Admin_Platforms {
             return ['success' => false, 'message' => 'Données d\'ordre manquantes.'];
         }
 
-        $raw_order = array_filter(wp_unslash($_POST['platform_order']), 'strlen');
+        $raw_order = [];
+
+        foreach ($_POST['platform_order'] as $index => $value) {
+            $unslashed_value = wp_unslash($value);
+
+            if (!is_scalar($unslashed_value)) {
+                self::$debug_messages[] = "⚠️ Valeur non scalaire ignorée pour l'indice $index";
+                continue;
+            }
+
+            if (!is_string($unslashed_value)) {
+                self::$debug_messages[] = "⚠️ Valeur non chaîne ignorée pour l'indice $index";
+                continue;
+            }
+
+            if ($unslashed_value === '') {
+                continue;
+            }
+
+            $raw_order[] = $unslashed_value;
+        }
+
         $submitted_order = array_map(function($value) {
             return sanitize_text_field($value);
-        }, array_values($raw_order));
+        }, $raw_order);
         if (empty($submitted_order)) {
             self::$debug_messages[] = "❌ Ordre soumis vide";
             return ['success' => false, 'message' => 'Ordre soumis invalide.'];
