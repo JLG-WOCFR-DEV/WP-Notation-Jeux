@@ -65,8 +65,16 @@ class JLG_Shortcode_All_In_One {
             $atts['style'] = 'moderne';
         }
 
-        // Sécurité : ne s'exécute que sur les articles ('post')
-        if (!$post_id || 'post' !== get_post_type($post_id)) {
+        if (!$post_id) {
+            return '';
+        }
+
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post || ($post->post_type ?? '') !== 'post') {
+            return '';
+        }
+
+        if (($post->post_status ?? '') !== 'publish' && !current_user_can('read_post', $post_id)) {
             return '';
         }
 
