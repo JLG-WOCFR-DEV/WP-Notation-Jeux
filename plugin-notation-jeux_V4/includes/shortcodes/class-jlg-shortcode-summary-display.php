@@ -27,7 +27,21 @@ class JLG_Shortcode_Summary_Display {
     }
 
     public static function get_render_context($atts, $request = [], $use_global_paged = false) {
-        $atts = shortcode_atts(self::get_default_atts(), $atts, 'jlg_tableau_recap');
+        $default_atts = self::get_default_atts();
+        $atts = shortcode_atts($default_atts, $atts, 'jlg_tableau_recap');
+
+        $default_posts_per_page = isset($default_atts['posts_per_page']) ? intval($default_atts['posts_per_page']) : 12;
+        if ($default_posts_per_page < 1) {
+            $default_posts_per_page = 1;
+        }
+
+        $posts_per_page = isset($atts['posts_per_page']) ? intval($atts['posts_per_page']) : $default_posts_per_page;
+        if ($posts_per_page < 1) {
+            $posts_per_page = $default_posts_per_page;
+        }
+        $posts_per_page = max(1, min($posts_per_page, 50));
+
+        $atts['posts_per_page'] = $posts_per_page;
         $atts['id'] = sanitize_html_class($atts['id']);
         if ($atts['id'] === '') {
             $atts['id'] = 'jlg-table-' . uniqid();
@@ -75,7 +89,7 @@ class JLG_Shortcode_Summary_Display {
 
         $args = [
             'post_type'      => 'post',
-            'posts_per_page' => intval($atts['posts_per_page']),
+            'posts_per_page' => $posts_per_page,
             'post__in'       => $rated_post_ids,
             'paged'          => $paged,
             'order'          => $order,
