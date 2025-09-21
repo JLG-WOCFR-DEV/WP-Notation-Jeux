@@ -142,9 +142,18 @@ final class JLG_Plugin_De_Notation_Main {
     }
 
     private function migrate_from_v4() {
-        // Les données existantes sont préservées automatiquement
-        // Aucune action requise - rétrocompatibilité totale
-        
+        $rated_post_ids = JLG_Helpers::get_rated_post_ids();
+
+        if (!empty($rated_post_ids) && is_array($rated_post_ids)) {
+            foreach ($rated_post_ids as $post_id) {
+                $post_id = intval($post_id);
+
+                if ($post_id > 0) {
+                    JLG_Helpers::get_resolved_average_score($post_id);
+                }
+            }
+        }
+
         add_option('jlg_migration_v5_completed', current_time('mysql'));
     }
 }
