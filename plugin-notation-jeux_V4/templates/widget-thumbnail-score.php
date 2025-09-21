@@ -27,7 +27,7 @@ $score_color = JLG_Helpers::calculate_color_from_note($average_score, $options);
     position: relative;
     z-index: 10;
 ">
-    <?php echo esc_html(number_format($average_score, 1)); ?>
+    <?php echo esc_html(number_format_i18n($average_score, 1)); ?>
     <span style="font-size: 0.8em; opacity: 0.9;">
         <?php
         printf(

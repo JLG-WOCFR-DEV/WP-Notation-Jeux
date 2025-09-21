@@ -171,7 +171,7 @@ function jlg_get_post_rating($post_id = null) {
 function jlg_display_post_rating($post_id = null) {
     $score = jlg_get_post_rating($post_id);
     if ($score !== null) {
-        echo '<span class="jlg-post-rating">' . esc_html(number_format($score, 1)) . '/10</span>';
+        echo '<span class="jlg-post-rating">' . esc_html(number_format_i18n($score, 1)) . '/10</span>';
     }
 }
 
