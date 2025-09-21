@@ -326,40 +326,48 @@ class JLG_Frontend {
         }
 
         if ($token === '' || !preg_match('/^[A-Fa-f0-9]{32,128}$/', $token)) {
-            wp_send_json_error(['message' => 'Jeton de sécurité manquant ou invalide.'], 400);
+            wp_send_json_error(['message' => esc_html__('Jeton de sécurité manquant ou invalide.', 'notation-jlg')], 400);
         }
 
         if (!check_ajax_referer('jlg_user_rating_nonce_' . $token, 'nonce', false)) {
-            wp_send_json_error(['message' => 'La vérification de sécurité a échoué.'], 403);
+            wp_send_json_error(['message' => esc_html__('La vérification de sécurité a échoué.', 'notation-jlg')], 403);
+        }
+
+        $options = JLG_Helpers::get_plugin_options();
+
+        if (empty($options['user_rating_enabled'])) {
+            wp_send_json_error([
+                'message' => esc_html__('La notation des lecteurs est désactivée.', 'notation-jlg'),
+            ], 403);
         }
 
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
 
         if (!$post_id) {
-            wp_send_json_error(['message' => 'Données invalides.']);
+            wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')]);
         }
 
         $post = get_post($post_id);
 
         if (!$post || 'post' !== $post->post_type || 'trash' === $post->post_status || 'publish' !== $post->post_status) {
-            wp_send_json_error(['message' => 'Article introuvable ou non disponible pour la notation.'], 404);
+            wp_send_json_error(['message' => esc_html__('Article introuvable ou non disponible pour la notation.', 'notation-jlg')], 404);
         }
 
         $allows_user_rating = apply_filters('jlg_post_allows_user_rating', $this->post_allows_user_rating($post), $post);
 
         if (!$allows_user_rating) {
-            wp_send_json_error(['message' => 'La notation des lecteurs est désactivée pour ce contenu.'], 403);
+            wp_send_json_error(['message' => esc_html__('La notation des lecteurs est désactivée pour ce contenu.', 'notation-jlg')], 403);
         }
 
         $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
 
         if ($rating < 1 || $rating > 5) {
-            wp_send_json_error(['message' => 'Données invalides.']);
+            wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')]);
         }
-        
+
         $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
         if (!$user_ip) {
-            wp_send_json_error(['message' => 'Adresse IP invalide.']);
+            wp_send_json_error(['message' => esc_html__('Adresse IP invalide.', 'notation-jlg')]);
         }
 
         $user_ip_hash = wp_hash($user_ip);
@@ -372,7 +380,7 @@ class JLG_Frontend {
         }
 
         if (isset($ratings[$user_ip_hash])) {
-            wp_send_json_error(['message' => 'Vous avez déjà voté !']);
+            wp_send_json_error(['message' => esc_html__('Vous avez déjà voté !', 'notation-jlg')]);
         }
 
         $ratings[$user_ip_hash] = $rating;
@@ -393,6 +401,12 @@ class JLG_Frontend {
      */
     private function post_allows_user_rating($post) {
         if (!($post instanceof WP_Post)) {
+            return false;
+        }
+
+        $options = JLG_Helpers::get_plugin_options();
+
+        if (empty($options['user_rating_enabled'])) {
             return false;
         }
 
