@@ -54,7 +54,17 @@ if (!function_exists('sanitize_text_field')) {
 
 if (!function_exists('wp_unslash')) {
     function wp_unslash($value) {
-        return $value;
+        if (is_array($value)) {
+            return array_map('wp_unslash', $value);
+        }
+
+        return is_string($value) ? stripslashes($value) : $value;
+    }
+}
+
+if (!function_exists('current_user_can')) {
+    function current_user_can($capability) {
+        return true;
     }
 }
 
@@ -193,3 +203,5 @@ if (!function_exists('wp_send_json_success')) {
 require_once __DIR__ . '/../includes/class-jlg-helpers.php';
 require_once __DIR__ . '/../includes/admin/class-jlg-admin-settings.php';
 require_once __DIR__ . '/../includes/class-jlg-frontend.php';
+require_once __DIR__ . '/../includes/utils/class-jlg-validator.php';
+require_once __DIR__ . '/../includes/admin/class-jlg-admin-ajax.php';
