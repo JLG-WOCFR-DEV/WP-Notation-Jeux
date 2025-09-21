@@ -4,9 +4,39 @@ if (!defined('ABSPATH')) {
     define('ABSPATH', __DIR__);
 }
 
+if (!defined('JLG_NOTATION_VERSION')) {
+    define('JLG_NOTATION_VERSION', 'test');
+}
+
+if (!defined('JLG_NOTATION_PLUGIN_URL')) {
+    define('JLG_NOTATION_PLUGIN_URL', 'https://example.com/plugin/');
+}
+
 if (!function_exists('add_action')) {
     function add_action($hook, $callback) {
         // No-op stub for WordPress hook registration in tests.
+    }
+}
+
+if (!function_exists('add_shortcode')) {
+    function add_shortcode($tag, $callback) {
+        // No-op stub for shortcode registration during tests.
+    }
+}
+
+if (!function_exists('shortcode_atts')) {
+    function shortcode_atts($pairs, $atts, $shortcode = '') {
+        if (!is_array($atts)) {
+            $atts = [];
+        }
+
+        return array_merge($pairs, $atts);
+    }
+}
+
+if (!function_exists('get_the_ID')) {
+    function get_the_ID() {
+        return 0;
     }
 }
 
@@ -120,7 +150,80 @@ if (!function_exists('wp_unslash')) {
 }
 
 if (!function_exists('current_user_can')) {
-    function current_user_can($capability) {
+    function current_user_can($capability, ...$args) {
+        if (isset($GLOBALS['jlg_test_current_user_can']) && is_callable($GLOBALS['jlg_test_current_user_can'])) {
+            return (bool) call_user_func($GLOBALS['jlg_test_current_user_can'], $capability, ...$args);
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('get_post_type')) {
+    function get_post_type($post = null) {
+        if ($post instanceof WP_Post) {
+            return $post->post_type ?? null;
+        }
+
+        if ($post === null) {
+            return null;
+        }
+
+        $resolved_post = get_post($post);
+
+        return $resolved_post instanceof WP_Post ? ($resolved_post->post_type ?? null) : null;
+    }
+}
+
+if (!function_exists('wp_register_style')) {
+    function wp_register_style($handle, $src, $deps = [], $ver = false) {
+        if (!isset($GLOBALS['jlg_test_styles'])) {
+            $GLOBALS['jlg_test_styles'] = [
+                'registered' => [],
+                'enqueued'   => [],
+            ];
+        }
+
+        $GLOBALS['jlg_test_styles']['registered'][$handle] = [
+            'src'  => $src,
+            'deps' => $deps,
+            'ver'  => $ver,
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('wp_style_is')) {
+    function wp_style_is($handle, $list = 'enqueued') {
+        $styles = $GLOBALS['jlg_test_styles'] ?? [
+            'registered' => [],
+            'enqueued'   => [],
+        ];
+
+        if ($list === 'registered') {
+            return array_key_exists($handle, $styles['registered']);
+        }
+
+        if ($list === 'enqueued') {
+            return array_key_exists($handle, $styles['enqueued']);
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('wp_enqueue_style')) {
+    function wp_enqueue_style($handle) {
+        if (!isset($GLOBALS['jlg_test_styles'])) {
+            $GLOBALS['jlg_test_styles'] = [
+                'registered' => [],
+                'enqueued'   => [],
+            ];
+        }
+
+        $GLOBALS['jlg_test_styles']['enqueued'][$handle] = true;
+
         return true;
     }
 }
@@ -170,6 +273,7 @@ if (!function_exists('has_shortcode')) {
 }
 
 if (!class_exists('WP_Post')) {
+    #[\AllowDynamicProperties]
     class WP_Post
     {
         public function __construct(array $data = [])
