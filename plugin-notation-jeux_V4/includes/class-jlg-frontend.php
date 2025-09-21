@@ -353,7 +353,11 @@ class JLG_Frontend {
             wp_send_json_error(['message' => esc_html__('Article introuvable ou non disponible pour la notation.', 'notation-jlg')], 404);
         }
 
-        $allows_user_rating = apply_filters('jlg_post_allows_user_rating', $this->post_allows_user_rating($post), $post);
+        $allows_user_rating = apply_filters(
+            'jlg_post_allows_user_rating',
+            $this->post_allows_user_rating($post, $options),
+            $post
+        );
 
         if (!$allows_user_rating) {
             wp_send_json_error(['message' => esc_html__('La notation des lecteurs est désactivée pour ce contenu.', 'notation-jlg')], 403);
@@ -399,12 +403,14 @@ class JLG_Frontend {
     /**
      * Détermine si un article est éligible aux votes des lecteurs.
      */
-    private function post_allows_user_rating($post) {
+    private function post_allows_user_rating($post, $options = null) {
         if (!($post instanceof WP_Post)) {
             return false;
         }
 
-        $options = JLG_Helpers::get_plugin_options();
+        if (!is_array($options)) {
+            $options = JLG_Helpers::get_plugin_options();
+        }
 
         if (empty($options['user_rating_enabled'])) {
             return false;
