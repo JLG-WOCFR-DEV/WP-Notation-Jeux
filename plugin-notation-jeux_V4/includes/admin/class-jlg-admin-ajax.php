@@ -42,7 +42,7 @@ class JLG_Admin_Ajax {
             wp_send_json_error('Permissions insuffisantes.');
         }
 
-        $search_term = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        $search_term = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
         
         if (empty($search_term)) {
             wp_send_json_error('Terme de recherche vide.');
