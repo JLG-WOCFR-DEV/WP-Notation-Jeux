@@ -103,7 +103,7 @@
     line-height: 1;
     margin-bottom: 8px;
     text-shadow: var(--jlg-aio-text-shadow, none);
-    animation: var(--jlg-aio-text-animation, none);
+    animation: var(--jlg-aio-text-animation, none) !important;
 }
 
 .jlg-aio-score-circle {
@@ -118,7 +118,7 @@
     background: var(--jlg-aio-circle-bg, transparent);
     box-shadow: var(--jlg-aio-circle-shadow, none);
     border: var(--jlg-aio-circle-border, none);
-    animation: var(--jlg-aio-circle-animation, none);
+    animation: var(--jlg-aio-circle-animation, none) !important;
 }
 
 .jlg-aio-score-circle .jlg-aio-score-value {
