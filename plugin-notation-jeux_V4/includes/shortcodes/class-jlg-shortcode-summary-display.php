@@ -63,9 +63,17 @@ class JLG_Shortcode_Summary_Display {
             $paged = ($use_global_paged && get_query_var('paged')) ? intval(get_query_var('paged')) : 1;
         }
 
+        $sorting_options = self::get_sorting_options();
+        if (!isset($sorting_options[$orderby])) {
+            $orderby = 'date';
+        }
+
+        $sorting = $sorting_options[$orderby];
+        $orderby = $sorting['key'];
+
         $rated_post_ids = JLG_Helpers::get_rated_post_ids();
 
-        if (($orderby === 'average_score' || $orderby === 'note') && !empty($rated_post_ids)) {
+        if (!empty($rated_post_ids) && isset($sorting['meta_key']) && $sorting['meta_key'] === '_jlg_average_score') {
             $posts_missing_average = get_posts([
                 'post_type'      => 'post',
                 'post__in'       => $rated_post_ids,
@@ -119,10 +127,15 @@ class JLG_Shortcode_Summary_Display {
         if ($orderby === 'average_score' || $orderby === 'note') {
             $args['orderby'] = 'meta_value_num';
             $args['meta_key'] = '_jlg_average_score';
-        } elseif ($orderby === 'title' || $orderby === 'titre') {
-            $args['orderby'] = 'title';
+        } elseif (!empty($sorting['meta_key'])) {
+            $args['orderby'] = $sorting['orderby'];
+            $args['meta_key'] = $sorting['meta_key'];
+
+            if (!empty($sorting['type'])) {
+                $args['meta_type'] = $sorting['type'];
+            }
         } else {
-            $args['orderby'] = $orderby;
+            $args['orderby'] = $sorting['orderby'];
         }
 
         if (!empty($atts['categorie'])) {
@@ -161,27 +174,103 @@ class JLG_Shortcode_Summary_Display {
             'titre' => [
                 'label'    => __('Titre du jeu', 'notation-jlg'),
                 'sortable' => true,
-                'key'      => 'title',
+                'sort'     => [
+                    'key'      => 'title',
+                    'orderby'  => 'title',
+                    'aliases'  => ['titre'],
+                ],
             ],
             'date' => [
                 'label'    => __('Date', 'notation-jlg'),
                 'sortable' => true,
-                'key'      => 'date',
+                'sort'     => [
+                    'key'     => 'date',
+                    'orderby' => 'date',
+                ],
             ],
             'note' => [
                 'label'    => __('Note', 'notation-jlg'),
                 'sortable' => true,
-                'key'      => 'average_score',
+                'sort'     => [
+                    'key'      => 'average_score',
+                    'orderby'  => 'meta_value_num',
+                    'meta_key' => '_jlg_average_score',
+                    'aliases'  => ['note'],
+                ],
             ],
             'developpeur' => [
                 'label'    => __('Développeur', 'notation-jlg'),
-                'sortable' => false,
+                'sortable' => true,
+                'sort'     => [
+                    'key'      => 'meta__jlg_developpeur',
+                    'orderby'  => 'meta_value',
+                    'meta_key' => '_jlg_developpeur',
+                    'type'     => 'CHAR',
+                    'aliases'  => ['developpeur'],
+                ],
             ],
             'editeur' => [
                 'label'    => __('Éditeur', 'notation-jlg'),
-                'sortable' => false,
+                'sortable' => true,
+                'sort'     => [
+                    'key'      => 'meta__jlg_editeur',
+                    'orderby'  => 'meta_value',
+                    'meta_key' => '_jlg_editeur',
+                    'type'     => 'CHAR',
+                    'aliases'  => ['editeur'],
+                ],
             ],
         ];
+    }
+
+    protected static function get_sorting_options() {
+        $columns = self::get_available_columns();
+        $options = [];
+
+        foreach ($columns as $column_key => $column) {
+            if (empty($column['sortable'])) {
+                continue;
+            }
+
+            $sort = isset($column['sort']) && is_array($column['sort']) ? $column['sort'] : [];
+            $primary_key = isset($sort['key']) ? sanitize_key($sort['key']) : sanitize_key($column_key);
+            $option = [
+                'key'     => $primary_key,
+                'orderby' => isset($sort['orderby']) ? $sort['orderby'] : $primary_key,
+            ];
+
+            if (!empty($sort['meta_key'])) {
+                $option['meta_key'] = $sort['meta_key'];
+            }
+
+            if (!empty($sort['type'])) {
+                $option['type'] = $sort['type'];
+            }
+
+            $options[$primary_key] = $option;
+
+            $aliases = [];
+
+            if (!empty($sort['aliases']) && is_array($sort['aliases'])) {
+                $aliases = array_map('sanitize_key', $sort['aliases']);
+            }
+
+            $aliases[] = sanitize_key($column_key);
+            $aliases = array_unique(array_filter($aliases));
+
+            foreach ($aliases as $alias) {
+                $options[$alias] = $option;
+            }
+        }
+
+        if (!isset($options['date'])) {
+            $options['date'] = [
+                'key'     => 'date',
+                'orderby' => 'date',
+            ];
+        }
+
+        return $options;
     }
 
     protected static function prepare_columns($atts) {
