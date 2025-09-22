@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 echo $widget_args['before_widget'];
 
 if (!empty($title)) {
-    echo $widget_args['before_title'] . $title . $widget_args['after_title'];
+    echo $widget_args['before_title'] . esc_html($title) . $widget_args['after_title'];
 }
 
 if ($latest_reviews->have_posts()) {
