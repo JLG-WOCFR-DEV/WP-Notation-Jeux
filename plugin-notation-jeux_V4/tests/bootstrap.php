@@ -40,6 +40,39 @@ if (!function_exists('get_the_ID')) {
     }
 }
 
+if (!function_exists('get_the_title')) {
+    function get_the_title($post = 0) {
+        if (is_object($post) && isset($post->post_title)) {
+            return (string) $post->post_title;
+        }
+
+        if (is_array($post) && isset($post['post_title'])) {
+            return (string) $post['post_title'];
+        }
+
+        $post_id = (int) $post;
+        if ($post_id <= 0) {
+            return '';
+        }
+
+        $posts = $GLOBALS['jlg_test_posts'] ?? [];
+
+        if (isset($posts[$post_id])) {
+            $stored_post = $posts[$post_id];
+
+            if (is_object($stored_post) && isset($stored_post->post_title)) {
+                return (string) $stored_post->post_title;
+            }
+
+            if (is_array($stored_post) && isset($stored_post['post_title'])) {
+                return (string) $stored_post['post_title'];
+            }
+        }
+
+        return '';
+    }
+}
+
 if (!function_exists('add_filter')) {
     function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
         // No-op stub for WordPress filter registration in tests.

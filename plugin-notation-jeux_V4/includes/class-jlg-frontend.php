@@ -553,7 +553,7 @@ class JLG_Frontend {
         $schema = [
             '@context'      => 'https://schema.org',
             '@type'         => 'Game',
-            'name'          => get_the_title($post_id),
+            'name'          => JLG_Helpers::get_game_title($post_id),
             'review'        => [
                 '@type'         => 'Review',
                 'reviewRating'  => [

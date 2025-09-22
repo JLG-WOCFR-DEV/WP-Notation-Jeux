@@ -146,7 +146,7 @@ class JLG_Admin_Menu {
                 }, $categories);
 
                 $posts[] = [
-                    'title' => get_the_title(),
+                    'title' => JLG_Helpers::get_game_title($post_id),
                     'edit_link' => get_edit_post_link($post_id),
                     'view_link' => get_permalink($post_id),
                     'date' => get_the_date('d/m/Y', $post_id),

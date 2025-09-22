@@ -25,6 +25,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 - **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
 - **Notation utilisateurs** : Permettez à vos lecteurs de voter
 - **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
+- **Nom de jeu personnalisé** : Remplacez le titre WordPress dans les tableaux, widgets et données structurées
 - **Widget** : Affichez vos derniers tests notés
 - **API RAWG** : Remplissage automatique des informations de jeu
 - **SEO optimisé** : Support schema.org pour les rich snippets Google
@@ -44,6 +45,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 
 - La **date de sortie** est vérifiée avec `DateTime::createFromFormat('Y-m-d')`. Une valeur invalide est rejetée, la méta correspondante est supprimée et une alerte d'administration liste les erreurs détectées.
 - Le champ **PEGI** n'accepte que les mentions officielles `PEGI 3`, `PEGI 7`, `PEGI 12`, `PEGI 16` et `PEGI 18`. Toute autre valeur est ignorée et signalée via la même notice.
+- Le champ **Nom du jeu** est nettoyé (espaces superflus, longueur maximale) avant sauvegarde pour garantir un affichage cohérent.
 - Les formulaires d'édition utilisent un champ HTML `type="date"` et les réponses de l'API RAWG sont normalisées pour renvoyer le format `AAAA-MM-JJ` ainsi qu'une valeur PEGI conforme lorsque disponible, garantissant une expérience cohérente.
 
 ### Shortcodes disponibles
