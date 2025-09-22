@@ -68,6 +68,7 @@ if ($layout === 'grid') :
         <?php if ($query instanceof WP_Query && $query->have_posts()) :
             while ($query->have_posts()) : $query->the_post();
                 $post_id = get_the_ID();
+                $game_title = JLG_Helpers::get_game_title($post_id);
                 $score_data = JLG_Helpers::get_resolved_average_score($post_id);
                 $cover_url = get_post_meta($post_id, '_jlg_cover_image_url', true);
                 if (empty($cover_url)) {
@@ -82,10 +83,10 @@ if ($layout === 'grid') :
                 <a href="<?php the_permalink(); ?>" class="jlg-game-card">
                     <div class="jlg-game-card-score"><?php echo esc_html($score_display); ?></div>
                     <?php if ($cover_url) : ?>
-                        <img src="<?php echo esc_url($cover_url); ?>" alt="<?php the_title_attribute(); ?>" loading="lazy">
+                        <img src="<?php echo esc_url($cover_url); ?>" alt="<?php echo esc_attr($game_title); ?>" loading="lazy">
                     <?php endif; ?>
                     <div class="jlg-game-card-title">
-                        <span><?php the_title(); ?></span>
+                        <span><?php echo esc_html($game_title); ?></span>
                     </div>
                 </a>
             <?php endwhile;
@@ -125,7 +126,8 @@ else :
 
                                 switch ($col) {
                                     case 'titre':
-                                        echo '<a href="' . esc_url(get_permalink()) . '">' . esc_html(get_the_title()) . '</a>';
+                                        $game_title = JLG_Helpers::get_game_title($post_id);
+                                        echo '<a href="' . esc_url(get_permalink()) . '">' . esc_html($game_title) . '</a>';
                                         break;
                                     case 'date':
                                         echo esc_html(get_the_date());

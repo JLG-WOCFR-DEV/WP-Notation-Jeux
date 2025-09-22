@@ -129,6 +129,39 @@ class JLG_Helpers {
         return wp_parse_args($saved_options, $defaults);
     }
 
+    /**
+     * Retrieve the preferred title for a review.
+     *
+     * @param int $post_id The post identifier.
+     * @return string The stored game title if available, otherwise the WordPress post title.
+     */
+    public static function get_game_title($post_id) {
+        $post_id = (int) $post_id;
+
+        if ($post_id <= 0) {
+            return '';
+        }
+
+        $raw_meta_title = get_post_meta($post_id, '_jlg_game_title', true);
+        $resolved_title = '';
+
+        if (is_string($raw_meta_title)) {
+            $meta_title = sanitize_text_field($raw_meta_title);
+            if ($meta_title !== '') {
+                $resolved_title = $meta_title;
+            }
+        }
+
+        if ($resolved_title === '') {
+            $fallback_title = get_the_title($post_id);
+            if (is_string($fallback_title)) {
+                $resolved_title = $fallback_title;
+            }
+        }
+
+        return apply_filters('jlg_game_title', (string) $resolved_title, $post_id, $raw_meta_title);
+    }
+
     public static function get_color_palette() {
         $options = self::get_plugin_options();
         $theme = $options['visual_theme'] ?? 'dark';

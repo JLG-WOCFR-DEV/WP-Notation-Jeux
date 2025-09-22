@@ -116,17 +116,23 @@ class JLG_Admin_Metaboxes {
         
         // Récupérer les métadonnées
         $meta = [];
-        $keys = ['tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url'];
+        $keys = ['game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url'];
         foreach ($keys as $key) {
             $meta[$key] = get_post_meta($post->ID, '_jlg_' . $key, true);
         }
-        
+
         echo '<div class="jlg-metabox-details">';
-        
+
+        echo '<div style="margin-bottom:20px;">';
+        echo '<label for="jlg_game_title"><strong>' . esc_html__('Nom du jeu', 'notation-jlg') . ' :</strong></label><br>';
+        echo '<input type="text" id="jlg_game_title" name="jlg_game_title" value="' . esc_attr($meta['game_title'] ?? '') . '" style="width:100%;">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__('Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée.', 'notation-jlg') . '</p>';
+        echo '</div>';
+
         // Fiche technique
         echo '<h3>📋 Fiche Technique</h3>';
         echo '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:20px;">';
-        
+
         $fields = [
             'developpeur' => 'Développeur(s)',
             'editeur' => 'Éditeur(s)',
@@ -254,6 +260,7 @@ class JLG_Admin_Metaboxes {
         if (isset($_POST['jlg_details_nonce']) && wp_verify_nonce($_POST['jlg_details_nonce'], 'jlg_save_details_data')) {
             // Champs texte simples
             $text_fields = [
+                'game_title' => __('Nom du jeu', 'notation-jlg'),
                 'developpeur' => __('Développeur(s)', 'notation-jlg'),
                 'editeur' => __('Éditeur(s)', 'notation-jlg'),
                 'date_sortie' => __('Date de sortie', 'notation-jlg'),
@@ -265,6 +272,13 @@ class JLG_Admin_Metaboxes {
                 if (isset($_POST['jlg_' . $field])) {
                     $raw_value = wp_unslash($_POST['jlg_' . $field]);
                     $value = sanitize_text_field($raw_value);
+                    if ($field === 'game_title' && $value !== '') {
+                        if (function_exists('mb_substr')) {
+                            $value = mb_substr($value, 0, 150);
+                        } else {
+                            $value = substr($value, 0, 150);
+                        }
+                    }
                     if ($value === '') {
                         delete_post_meta($post_id, '_jlg_' . $field);
                         continue;
