@@ -213,6 +213,19 @@ if (!function_exists('sanitize_text_field')) {
     }
 }
 
+if (!function_exists('sanitize_key')) {
+    function sanitize_key($key) {
+        if (!is_string($key)) {
+            return '';
+        }
+
+        $key = strtolower($key);
+        $key = preg_replace('/[^a-z0-9_]/', '', $key);
+
+        return (string) $key;
+    }
+}
+
 if (!function_exists('sanitize_title')) {
     function sanitize_title($title) {
         $title = strtolower((string) $title);
@@ -220,6 +233,22 @@ if (!function_exists('sanitize_title')) {
         $title = preg_replace('/[\s-]+/', '-', $title);
 
         return trim($title, '-');
+    }
+}
+
+if (!function_exists('sanitize_html_class')) {
+    function sanitize_html_class($class, $fallback = '') {
+        if (!is_string($class)) {
+            $class = '';
+        }
+
+        $sanitized = preg_replace('/[^A-Za-z0-9_-]/', '', $class);
+
+        if ($sanitized === '' && $fallback !== '') {
+            return sanitize_html_class($fallback);
+        }
+
+        return $sanitized;
     }
 }
 
@@ -472,3 +501,4 @@ require_once __DIR__ . '/../includes/admin/class-jlg-admin-platforms.php';
 require_once __DIR__ . '/../includes/class-jlg-frontend.php';
 require_once __DIR__ . '/../includes/utils/class-jlg-validator.php';
 require_once __DIR__ . '/../includes/admin/class-jlg-admin-ajax.php';
+require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-summary-display.php';

@@ -130,6 +130,8 @@ if (!defined('ABSPATH')) exit;
             <li><strong>editeur</strong> : Éditeur</li>
         </ul>
 
+        <p><strong>Tri :</strong> les en-têtes sont cliquables pour ordonner les résultats par titre (`orderby=title`), date (`orderby=date`), note moyenne (`orderby=average_score`) ainsi que par métadonnées développeur ou éditeur (`orderby=meta__jlg_developpeur`, `orderby=meta__jlg_editeur`).</p>
+
         <h4>Exemples :</h4>
         <pre style="background:#fff; padding:10px; border:1px solid #ddd; border-radius:3px;">
 [jlg_tableau_recap]

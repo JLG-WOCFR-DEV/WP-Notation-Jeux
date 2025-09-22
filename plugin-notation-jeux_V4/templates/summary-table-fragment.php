@@ -32,7 +32,14 @@ if (!function_exists('jlg_print_sortable_header')) {
             return;
         }
 
-        $sort_key = isset($col_info['key']) ? $col_info['key'] : $col;
+        $sort_key = $col;
+        if (isset($col_info['sort']['key'])) {
+            $sort_key = $col_info['sort']['key'];
+        } elseif (isset($col_info['key'])) {
+            $sort_key = $col_info['key'];
+        }
+
+        $sort_key = sanitize_key($sort_key);
         $new_order = ($current_orderby === $sort_key && $current_order === 'ASC') ? 'DESC' : 'ASC';
         $url = add_query_arg([
             'orderby' => $sort_key,
@@ -45,14 +52,24 @@ if (!function_exists('jlg_print_sortable_header')) {
         }
 
         $indicator = '';
-        if ($current_orderby === $sort_key || $current_orderby === $col) {
+        $is_active = ($current_orderby === $sort_key || $current_orderby === $col);
+        if (!$is_active && isset($col_info['sort']['aliases']) && is_array($col_info['sort']['aliases'])) {
+            foreach ($col_info['sort']['aliases'] as $alias) {
+                if ($current_orderby === sanitize_key($alias)) {
+                    $is_active = true;
+                    break;
+                }
+            }
+        }
+
+        if ($is_active) {
             $indicator = $current_order === 'ASC'
                 ? esc_html__(' ▲', 'notation-jlg')
                 : esc_html__(' ▼', 'notation-jlg');
         }
 
         $class = 'sortable';
-        if ($current_orderby === $sort_key || $current_orderby === $col) {
+        if ($is_active) {
             $class .= ' sorted ' . strtolower($current_order);
         }
 

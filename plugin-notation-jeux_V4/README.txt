@@ -53,7 +53,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[tagline_notation_jlg]` - Phrase d'accroche bilingue
 * `[jlg_points_forts_faibles]` - Points positifs et négatifs
 * `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
-* `[jlg_tableau_recap]` - Tableau/grille récapitulatif
+* `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les entêtes sont triables par titre, date, note moyenne et métadonnées développeur/éditeur via `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
 
 == Utilisation dans les widgets et blocs ==
 
