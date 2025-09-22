@@ -98,6 +98,7 @@ class JLG_Assets {
             return [
                 'successMessage'      => __('Merci pour votre vote !', 'notation-jlg'),
                 'genericErrorMessage' => __('Erreur. Veuillez réessayer.', 'notation-jlg'),
+                'alreadyVotedMessage' => __('Vous avez déjà voté !', 'notation-jlg'),
             ];
         });
 
