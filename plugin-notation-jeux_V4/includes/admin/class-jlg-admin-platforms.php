@@ -9,8 +9,17 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Admin_Platforms {
-    
+
     private $option_name = 'jlg_platforms_list';
+    private $default_platforms = [
+        'pc' => ['name' => 'PC', 'icon' => '💻', 'order' => 1, 'custom' => false],
+        'playstation-5' => ['name' => 'PlayStation 5', 'icon' => '🎮', 'order' => 2, 'custom' => false],
+        'xbox-series-x' => ['name' => 'Xbox Series S/X', 'icon' => '🎮', 'order' => 3, 'custom' => false],
+        'nintendo-switch' => ['name' => 'Nintendo Switch', 'icon' => '🎮', 'order' => 4, 'custom' => false],
+        'playstation-4' => ['name' => 'PlayStation 4', 'icon' => '🎮', 'order' => 5, 'custom' => false],
+        'xbox-one' => ['name' => 'Xbox One', 'icon' => '🎮', 'order' => 6, 'custom' => false],
+        'steam-deck' => ['name' => 'Steam Deck', 'icon' => '🎮', 'order' => 7, 'custom' => false],
+    ];
     private static $debug_messages = [];
     private static $instance = null;
     
@@ -34,28 +43,108 @@ class JLG_Admin_Platforms {
      * Obtenir la liste des plateformes
      */
     public function get_platforms() {
-        $saved_platforms = get_option($this->option_name, []);
-        
-        // Plateformes par défaut
-        $default_platforms = [
-            'pc' => ['name' => 'PC', 'icon' => '💻', 'order' => 1],
-            'playstation-5' => ['name' => 'PlayStation 5', 'icon' => '🎮', 'order' => 2],
-            'xbox-series-x' => ['name' => 'Xbox Series S/X', 'icon' => '🎮', 'order' => 3],
-            'nintendo-switch' => ['name' => 'Nintendo Switch', 'icon' => '🎮', 'order' => 4],
-            'playstation-4' => ['name' => 'PlayStation 4', 'icon' => '🎮', 'order' => 5],
-            'xbox-one' => ['name' => 'Xbox One', 'icon' => '🎮', 'order' => 6],
-            'steam-deck' => ['name' => 'Steam Deck', 'icon' => '🎮', 'order' => 7],
-        ];
-        
-        // Fusionner avec les plateformes sauvegardées
-        $platforms = array_merge($default_platforms, $saved_platforms);
-        
-        // Trier par ordre
-        uasort($platforms, function($a, $b) {
-            return ($a['order'] ?? 999) - ($b['order'] ?? 999);
+        $stored_platforms = $this->get_stored_platform_data();
+        $default_platforms = $this->get_default_platform_definitions();
+
+        $platforms = $default_platforms;
+
+        foreach ($stored_platforms['custom_platforms'] as $key => $custom_platform) {
+            if (!is_array($custom_platform)) {
+                continue;
+            }
+
+            $platforms[$key] = array_merge([
+                'name' => '',
+                'icon' => '🎮',
+                'custom' => true,
+            ], $custom_platform);
+        }
+
+        $order_map = $stored_platforms['order'];
+        $platform_keys = array_keys($platforms);
+
+        usort($platform_keys, function($a, $b) use ($order_map, $platforms) {
+            $order_a = isset($order_map[$a]) ? (int) $order_map[$a] : (int) ($platforms[$a]['order'] ?? PHP_INT_MAX);
+            $order_b = isset($order_map[$b]) ? (int) $order_map[$b] : (int) ($platforms[$b]['order'] ?? PHP_INT_MAX);
+
+            if ($order_a === $order_b) {
+                return strcmp($a, $b);
+            }
+
+            return $order_a <=> $order_b;
         });
-        
-        return $platforms;
+
+        $ordered_platforms = [];
+        foreach ($platform_keys as $index => $key) {
+            $platform = $platforms[$key];
+            $platform['order'] = isset($order_map[$key])
+                ? (int) $order_map[$key]
+                : (int) ($platform['order'] ?? ($index + 1));
+            $ordered_platforms[$key] = $platform;
+        }
+
+        return $ordered_platforms;
+    }
+
+    private function get_default_platform_definitions() {
+        return $this->default_platforms;
+    }
+
+    private function get_stored_platform_data() {
+        $stored = get_option($this->option_name, []);
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        if (isset($stored['custom_platforms']) || isset($stored['order'])) {
+            $custom = isset($stored['custom_platforms']) && is_array($stored['custom_platforms'])
+                ? $stored['custom_platforms']
+                : [];
+            $order = isset($stored['order']) && is_array($stored['order'])
+                ? array_map('intval', $stored['order'])
+                : [];
+
+            return [
+                'custom_platforms' => $custom,
+                'order' => $order,
+            ];
+        }
+
+        $custom = [];
+        $order = [];
+        foreach ($stored as $key => $platform) {
+            if (!is_array($platform)) {
+                continue;
+            }
+
+            if (!empty($platform['custom'])) {
+                $custom[$key] = [
+                    'name' => $platform['name'] ?? '',
+                    'icon' => $platform['icon'] ?? '🎮',
+                    'custom' => true,
+                ];
+            }
+
+            if (isset($platform['order'])) {
+                $order[$key] = (int) $platform['order'];
+            }
+        }
+
+        return [
+            'custom_platforms' => $custom,
+            'order' => $order,
+        ];
+    }
+
+    private function ensure_storage_structure(&$platforms) {
+        if (!isset($platforms['custom_platforms']) || !is_array($platforms['custom_platforms'])) {
+            $platforms['custom_platforms'] = [];
+        }
+
+        if (!isset($platforms['order']) || !is_array($platforms['order'])) {
+            $platforms['order'] = [];
+        }
     }
     
     /**
@@ -126,8 +215,8 @@ class JLG_Admin_Platforms {
         self::$debug_messages[] = "✅ Nonce valide";
 
         $action = $sanitized_action;
-        $platforms = get_option($this->option_name, []);
-        self::$debug_messages[] = "📦 Plateformes actuelles dans la DB : " . count($platforms) . " personnalisées";
+        $platforms = $this->get_stored_platform_data();
+        self::$debug_messages[] = "📦 Plateformes actuelles dans la DB : " . count($platforms['custom_platforms']) . " personnalisées";
         
         $success = false;
         $message = '';
@@ -177,7 +266,9 @@ class JLG_Admin_Platforms {
      */
     private function add_platform(&$platforms) {
         self::$debug_messages[] = "🎯 Tentative d'ajout de plateforme";
-        
+
+        $this->ensure_storage_structure($platforms);
+
         if (empty($_POST['new_platform_name'])) {
             self::$debug_messages[] = "❌ Nom de plateforme vide";
             return ['success' => false, 'message' => 'Le nom de la plateforme est requis.'];
@@ -212,18 +303,18 @@ class JLG_Admin_Platforms {
         foreach ($all_platforms as $platform) {
             $max_order = max($max_order, $platform['order'] ?? 0);
         }
-        
+
         // Ajouter la nouvelle plateforme
-        $platforms[$key] = [
+        $platforms['custom_platforms'][$key] = [
             'name' => $name,
             'icon' => $icon,
-            'order' => $max_order + 1,
-            'custom' => true // Marquer comme personnalisée
+            'custom' => true,
         ];
-        
+        $platforms['order'][$key] = $max_order + 1;
+
         self::$debug_messages[] = "💾 Tentative de sauvegarde dans la DB";
-        self::$debug_messages[] = "📊 Données à sauvegarder : " . json_encode($platforms[$key]);
-        
+        self::$debug_messages[] = "📊 Données à sauvegarder : " . json_encode($platforms['custom_platforms'][$key]);
+
         $result = update_option($this->option_name, $platforms);
         
         if ($result || get_option($this->option_name) !== false) {
@@ -231,7 +322,7 @@ class JLG_Admin_Platforms {
             
             // Vérification que la sauvegarde a bien fonctionné
             $saved = get_option($this->option_name);
-            if (isset($saved[$key])) {
+            if (isset($saved['custom_platforms'][$key])) {
                 self::$debug_messages[] = "✅ Vérification : plateforme bien présente dans la DB";
             } else {
                 self::$debug_messages[] = "⚠️ La plateforme a été sauvegardée mais n'apparaît pas dans la vérification";
@@ -249,7 +340,9 @@ class JLG_Admin_Platforms {
      */
     private function delete_platform(&$platforms) {
         self::$debug_messages[] = "🗑️ Tentative de suppression de plateforme";
-        
+
+        $this->ensure_storage_structure($platforms);
+
         if (empty($_POST['platform_key'])) {
             self::$debug_messages[] = "❌ Clé de plateforme manquante";
             return ['success' => false, 'message' => 'Clé de plateforme manquante.'];
@@ -264,7 +357,7 @@ class JLG_Admin_Platforms {
             return ['success' => false, 'message' => 'Plateforme introuvable.'];
         }
 
-        if (!isset($platforms[$key]) || empty($platforms[$key]['custom'])) {
+        if (!isset($platforms['custom_platforms'][$key]) || empty($platforms['custom_platforms'][$key]['custom'])) {
             $platform_name = $all_platforms[$key]['name'] ?? 'Inconnue';
             self::$debug_messages[] = "❌ Suppression refusée pour la plateforme non personnalisée '$platform_name'";
             return [
@@ -273,8 +366,9 @@ class JLG_Admin_Platforms {
             ];
         }
 
-        $platform_name = $platforms[$key]['name'] ?? $all_platforms[$key]['name'] ?? 'Inconnue';
-        unset($platforms[$key]);
+        $platform_name = $platforms['custom_platforms'][$key]['name'] ?? $all_platforms[$key]['name'] ?? 'Inconnue';
+        unset($platforms['custom_platforms'][$key]);
+        unset($platforms['order'][$key]);
         
         $result = update_option($this->option_name, $platforms);
         
@@ -292,7 +386,9 @@ class JLG_Admin_Platforms {
      */
     private function update_platform_order(&$platforms) {
         self::$debug_messages[] = "🔄 Mise à jour de l'ordre des plateformes";
-        
+
+        $this->ensure_storage_structure($platforms);
+
         if (!isset($_POST['platform_order']) || !is_array($_POST['platform_order'])) {
             self::$debug_messages[] = "❌ Données d'ordre manquantes";
             return ['success' => false, 'message' => 'Données d\'ordre manquantes.'];
@@ -335,20 +431,13 @@ class JLG_Admin_Platforms {
             }
         }
 
-        $updated_platforms = [];
+        $new_order = [];
         foreach ($ordered_keys as $position => $key) {
-            if (!isset($all_platforms[$key])) {
-                continue;
-            }
-
-            $platform_data = $all_platforms[$key];
-            $platform_data['order'] = $position + 1;
-            $updated_platforms[$key] = $platform_data;
+            $new_order[$key] = $position + 1;
         }
 
-        $updated_count = count($updated_platforms);
-        $platforms = $updated_platforms;
-        self::$debug_messages[] = "📊 $updated_count plateformes mises à jour";
+        $platforms['order'] = $new_order;
+        self::$debug_messages[] = "📊 " . count($new_order) . " positions sauvegardées";
 
         $result = update_option($this->option_name, $platforms);
 
@@ -409,7 +498,7 @@ class JLG_Admin_Platforms {
                         <li>Onglet actuel : <?php echo esc_html($_GET['tab'] ?? 'non défini'); ?></li>
                         <li>URL actuelle : <?php echo esc_url($_SERVER['REQUEST_URI']); ?></li>
                         <li>Méthode HTTP : <?php echo esc_html( $_SERVER['REQUEST_METHOD'] ?? 'inconnue' ); ?></li>
-                        <li>Plateformes sauvegardées : <?php echo count(get_option($this->option_name, [])); ?> personnalisées</li>
+                        <li>Plateformes sauvegardées : <?php echo count($this->get_stored_platform_data()['custom_platforms']); ?> personnalisées</li>
                         <li>Total plateformes : <?php echo count($platforms); ?></li>
                         <li>Hook admin_init exécuté : <?php echo did_action('admin_init'); ?> fois</li>
                         <li>Utilisateur peut gérer les options : <?php echo current_user_can('manage_options') ? 'Oui' : 'Non'; ?></li>
