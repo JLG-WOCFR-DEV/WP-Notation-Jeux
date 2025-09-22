@@ -223,7 +223,7 @@ class JLG_Shortcode_All_In_One {
                 $css_variables['--jlg-aio-text-glow-ps1'] = $ps1 . 'px';
                 $css_variables['--jlg-aio-text-glow-ps2'] = $ps2 . 'px';
                 $css_variables['--jlg-aio-text-glow-ps3'] = $ps3 . 'px';
-                $css_variables['--jlg-aio-text-animation'] = 'jlg-aio-text-glow-pulse ' . $speed . 's infinite ease-in-out !important';
+                $css_variables['--jlg-aio-text-animation'] = 'jlg-aio-text-glow-pulse ' . $speed . 's infinite ease-in-out';
             }
         } elseif ($score_layout === 'circle' && !empty($options['circle_glow_enabled'])) {
             $glow_mode = isset($options['circle_glow_color_mode']) ? $options['circle_glow_color_mode'] : 'dynamic';
@@ -266,7 +266,7 @@ class JLG_Shortcode_All_In_One {
                 $css_variables['--jlg-aio-circle-glow-ps1'] = $ps1 . 'px';
                 $css_variables['--jlg-aio-circle-glow-ps2'] = $ps2 . 'px';
                 $css_variables['--jlg-aio-circle-glow-ps3'] = $ps3 . 'px';
-                $css_variables['--jlg-aio-circle-animation'] = 'jlg-aio-circle-glow-pulse ' . $speed . 's infinite ease-in-out !important';
+                $css_variables['--jlg-aio-circle-animation'] = 'jlg-aio-circle-glow-pulse ' . $speed . 's infinite ease-in-out';
             }
         }
 
