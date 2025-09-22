@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit;
     <div class="jlg-user-rating-summary">
         <?php
         /* translators: Abbreviation meaning that the user rating is not available. */
-        $average_display = !empty($avg_rating) ? number_format(floatval($avg_rating), 2) : __('N/A', 'notation-jlg');
+        $average_display = !empty($avg_rating) ? number_format_i18n(floatval($avg_rating), 2) : __('N/A', 'notation-jlg');
         $votes_display = !empty($count) ? intval($count) : 0;
         /* translators: 1: Average user rating value. 2: Maximum possible rating. 3: Number of user votes. */
         $summary_template = __(
