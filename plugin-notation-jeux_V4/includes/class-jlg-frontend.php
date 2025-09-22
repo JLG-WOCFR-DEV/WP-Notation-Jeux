@@ -30,6 +30,13 @@ class JLG_Frontend {
      */
     private static $assets_enqueued = false;
 
+    /**
+     * Indique si l'impression différée des styles frontend a été programmée.
+     *
+     * @var bool
+     */
+    private static $deferred_styles_hooked = false;
+
     public function __construct() {
         self::$instance = $this;
         // On charge les shortcodes via le hook 'init' pour s'assurer que WordPress est prêt
@@ -133,8 +140,25 @@ class JLG_Frontend {
             self::$instance->enqueue_jlg_scripts(true);
 
             if (did_action('wp_print_styles') && !wp_style_is('jlg-frontend', 'done')) {
-                wp_print_styles('jlg-frontend');
+                if (!self::$deferred_styles_hooked) {
+                    self::$deferred_styles_hooked = true;
+                    add_action('wp_footer', [self::$instance, 'print_deferred_styles']);
+                }
             }
+        }
+    }
+
+    /**
+     * Imprime la feuille de style frontend si elle n'a pas déjà été imprimée.
+     */
+    public function print_deferred_styles() {
+        if (!wp_style_is('jlg-frontend', 'done')) {
+            wp_print_styles('jlg-frontend');
+        }
+
+        if (wp_style_is('jlg-frontend', 'done')) {
+            remove_action('wp_footer', [self::$instance, 'print_deferred_styles']);
+            self::$deferred_styles_hooked = false;
         }
     }
 
