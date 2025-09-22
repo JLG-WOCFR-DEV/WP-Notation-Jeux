@@ -395,7 +395,7 @@ class JLG_Frontend {
         update_post_meta($post_id, '_jlg_user_rating_count', count($ratings));
 
         wp_send_json_success([
-            'new_average' => number_format($new_average, 2),
+            'new_average' => number_format_i18n($new_average, 2),
             'new_count' => count($ratings)
         ]);
     }
