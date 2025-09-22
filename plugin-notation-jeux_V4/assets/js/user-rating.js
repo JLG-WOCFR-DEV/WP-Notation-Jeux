@@ -2,23 +2,68 @@ jQuery(document).ready(function($) {
     var ratingMessages = (typeof jlgUserRatingL10n !== 'undefined') ? jlgUserRatingL10n : {};
     var successMessage = ratingMessages.successMessage || 'Merci pour votre vote !';
     var genericErrorMessage = ratingMessages.genericErrorMessage || 'Erreur. Veuillez réessayer.';
-    var alreadyVotedMessage = ratingMessages.alreadyVotedMessage || 'Vous avez déjà voté !';
+
+    function getTranslatedAlreadyVotedMessage() {
+        if (ratingMessages.alreadyVotedMessage) {
+            return ratingMessages.alreadyVotedMessage;
+        }
+
+        if (typeof window !== 'undefined' && window.wp && window.wp.i18n && typeof window.wp.i18n.__ === 'function') {
+            return window.wp.i18n.__('Vous avez déjà voté !', 'notation-jlg');
+        }
+
+        return 'Vous avez déjà voté !';
+    }
+
+    var alreadyVotedMessage = getTranslatedAlreadyVotedMessage();
+
+    function normalizeForComparison(text) {
+        if (typeof text !== 'string') {
+            return '';
+        }
+
+        var normalized = text.toLowerCase().trim().replace(/[!¡?¿.,;:]/g, '');
+
+        if (typeof normalized.normalize === 'function') {
+            normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        return normalized;
+    }
+
+    function containsIndicator(message, indicator) {
+        var escapedIndicator = indicator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var pattern = new RegExp('(^|\\s|\\-|\\/)' + escapedIndicator + '($|\\s|\\-|\\/)', 'i');
+
+        return pattern.test(message);
+    }
 
     function isAlreadyVotedMessage(message) {
         if (!message || typeof message !== 'string') {
             return false;
         }
 
-        var lowerMessage = message.toLowerCase().trim();
+        var normalizedMessage = normalizeForComparison(message);
+        var normalizedReference = normalizeForComparison(alreadyVotedMessage);
 
-        if (alreadyVotedMessage && typeof alreadyVotedMessage === 'string') {
-            var lowerReference = alreadyVotedMessage.toLowerCase().trim();
-            if (lowerMessage === lowerReference) {
-                return true;
-            }
+        if (normalizedReference && normalizedMessage === normalizedReference) {
+            return true;
         }
 
-        return lowerMessage.indexOf('déjà voté') !== -1 || lowerMessage.indexOf('deja vote') !== -1;
+        var alreadyIndicators = ['deja', 'already', 'ya', 'ja', 'gia', 'bereits', 'schon', 'уже'];
+        var hasAlreadyIndicator = alreadyIndicators.some(function(indicator) {
+            return containsIndicator(normalizedMessage, indicator);
+        });
+
+        if (!hasAlreadyIndicator) {
+            return false;
+        }
+
+        var voteRoots = ['vot', 'stem', 'abstimm', 'abgestimm', 'голос'];
+
+        return voteRoots.some(function(root) {
+            return normalizedMessage.indexOf(root) !== -1;
+        });
     }
 
     // Effet de survol des étoiles
