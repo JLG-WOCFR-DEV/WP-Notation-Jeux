@@ -443,17 +443,13 @@ class JLG_Frontend {
 
         $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
         $user_ip_hash = $user_ip ? wp_hash($user_ip) : '';
+        $ip_log = [];
 
-        $token_hash = self::hash_user_rating_token($token);
+        if ($user_ip_hash !== '') {
+            $stored_ip_log = get_post_meta($post_id, '_jlg_user_rating_ips', true);
 
-        $ratings_meta = [];
-        $ratings = self::get_post_user_rating_tokens($post_id, $ratings_meta);
-
-        if ($user_ip_hash) {
-            $ip_log = get_post_meta($post_id, '_jlg_user_rating_ips', true);
-
-            if (!is_array($ip_log)) {
-                $ip_log = [];
+            if (is_array($stored_ip_log)) {
+                $ip_log = $stored_ip_log;
             }
 
             if (isset($ip_log[$user_ip_hash]) && (!is_array($ip_log[$user_ip_hash]) || empty($ip_log[$user_ip_hash]['legacy']))) {
@@ -462,6 +458,11 @@ class JLG_Frontend {
                 ], 409);
             }
         }
+
+        $token_hash = self::hash_user_rating_token($token);
+
+        $ratings_meta = [];
+        $ratings = self::get_post_user_rating_tokens($post_id, $ratings_meta);
 
         if (isset($ratings[$token_hash])) {
             wp_send_json_error(['message' => esc_html__('Vous avez déjà voté !', 'notation-jlg')]);
