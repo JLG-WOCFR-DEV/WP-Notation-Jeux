@@ -594,19 +594,33 @@ class JLG_Frontend {
             ],
         ];
         
-        $user_rating_count = get_post_meta($post_id, '_jlg_user_rating_count', true);
+        $user_rating_count = (int) get_post_meta($post_id, '_jlg_user_rating_count', true);
         
         $user_rating_enabled = isset($options['user_rating_enabled'])
             ? $options['user_rating_enabled']
             : (JLG_Helpers::get_default_settings()['user_rating_enabled'] ?? 0);
 
         if (!empty($user_rating_enabled) && $user_rating_count > 0) {
+            $aggregate_rating_value = (float) get_post_meta($post_id, '_jlg_user_rating_avg', true);
+
+            $user_rating_bounds = apply_filters(
+                'jlg_user_rating_bounds',
+                [
+                    'min' => 1,
+                    'max' => 5,
+                ],
+                $post_id
+            );
+
+            $aggregate_best_rating  = isset($user_rating_bounds['max']) ? floatval($user_rating_bounds['max']) : 5.0;
+            $aggregate_worst_rating = isset($user_rating_bounds['min']) ? floatval($user_rating_bounds['min']) : 1.0;
+
             $schema['aggregateRating'] = [
                 '@type'       => 'AggregateRating',
-                'ratingValue' => get_post_meta($post_id, '_jlg_user_rating_avg', true),
+                'ratingValue' => $aggregate_rating_value,
                 'ratingCount' => $user_rating_count,
-                'bestRating'  => '5',
-                'worstRating' => '1',
+                'bestRating'  => $aggregate_best_rating,
+                'worstRating' => $aggregate_worst_rating,
             ];
         }
         
