@@ -37,6 +37,13 @@ class JLG_Frontend {
      */
     private static $deferred_styles_hooked = false;
 
+    /**
+     * Liste des shortcodes exécutés durant la requête courante.
+     *
+     * @var array<string, bool>
+     */
+    private static $rendered_shortcodes = [];
+
     public function __construct() {
         self::$instance = $this;
         // On charge les shortcodes via le hook 'init' pour s'assurer que WordPress est prêt
@@ -130,13 +137,18 @@ class JLG_Frontend {
             'notation_utilisateurs_jlg',
             'jlg_bloc_complet',
             'bloc_notation_complet',
+            'jlg_game_explorer',
         ];
     }
 
     /**
      * Marque l'utilisation d'un shortcode du plugin.
      */
-    public static function mark_shortcode_rendered() {
+    public static function mark_shortcode_rendered($shortcode = null) {
+        if (is_string($shortcode) && $shortcode !== '') {
+            self::$rendered_shortcodes[$shortcode] = true;
+        }
+
         self::$shortcode_rendered = true;
 
         if (!self::$assets_enqueued && did_action('wp_enqueue_scripts') && self::$instance instanceof self) {
@@ -149,6 +161,20 @@ class JLG_Frontend {
                 }
             }
         }
+    }
+
+    /**
+     * Indique si un shortcode précis a déjà été exécuté.
+     *
+     * @param string $shortcode
+     * @return bool
+     */
+    public static function has_rendered_shortcode($shortcode) {
+        if ($shortcode === '') {
+            return false;
+        }
+
+        return isset(self::$rendered_shortcodes[$shortcode]);
     }
 
     /**
@@ -170,7 +196,7 @@ class JLG_Frontend {
      */
     public function track_shortcode_usage($output, $tag, $attr, $m) {
         if (in_array($tag, $this->get_plugin_shortcodes(), true)) {
-            self::mark_shortcode_rendered();
+            self::mark_shortcode_rendered($tag);
         }
 
         return $output;
@@ -262,6 +288,8 @@ class JLG_Frontend {
             return;
         }
 
+        $summary_ajax = $this->is_summary_sort_ajax_context();
+        $game_explorer_ajax = $this->is_game_explorer_ajax_context();
         $should_enqueue = $force || self::$shortcode_rendered;
 
         if (!$should_enqueue) {
@@ -311,6 +339,26 @@ class JLG_Frontend {
         if (!empty($game_explorer_css)) {
             wp_add_inline_style('jlg-game-explorer', $game_explorer_css);
         }
+
+        $queried_object = isset($queried_object) ? $queried_object : get_queried_object();
+        $post_content = '';
+
+        if ($queried_object instanceof WP_Post) {
+            $post_content = $queried_object->post_content ?? '';
+        }
+
+        $summary_shortcode_used = self::has_rendered_shortcode('jlg_tableau_recap');
+        if (!$summary_shortcode_used) {
+            $summary_shortcode_used = $this->content_has_specific_shortcode($post_content, 'jlg_tableau_recap');
+        }
+
+        $game_explorer_shortcode_used = self::has_rendered_shortcode('jlg_game_explorer');
+        if (!$game_explorer_shortcode_used) {
+            $game_explorer_shortcode_used = $this->content_has_specific_shortcode($post_content, 'jlg_game_explorer');
+        }
+
+        $should_enqueue_summary_script = $summary_shortcode_used || $summary_ajax;
+        $should_enqueue_game_explorer_script = $game_explorer_shortcode_used || $game_explorer_ajax;
 
         // Script pour la notation utilisateur
         if (!empty($options['user_rating_enabled'])) {
@@ -380,29 +428,82 @@ class JLG_Frontend {
             );
         }
 
-        wp_enqueue_script(
-            'jlg-summary-table-sort',
-            JLG_NOTATION_PLUGIN_URL . 'assets/js/summary-table-sort.js',
-            ['jquery'],
-            JLG_NOTATION_VERSION,
-            true
-        );
+        if ($should_enqueue_summary_script) {
+            if (!wp_script_is('jlg-summary-table-sort', 'registered')) {
+                wp_register_script(
+                    'jlg-summary-table-sort',
+                    JLG_NOTATION_PLUGIN_URL . 'assets/js/summary-table-sort.js',
+                    ['jquery'],
+                    JLG_NOTATION_VERSION,
+                    true
+                );
+            }
 
-        wp_enqueue_script(
-            'jlg-game-explorer',
-            JLG_NOTATION_PLUGIN_URL . 'assets/js/game-explorer.js',
-            [],
-            JLG_NOTATION_VERSION,
-            true
-        );
+            wp_enqueue_script('jlg-summary-table-sort');
 
-        wp_localize_script('jlg-summary-table-sort', 'jlgSummarySort', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce'    => wp_create_nonce('jlg_summary_sort'),
-            'strings'  => [
-                'genericError' => esc_html__('Une erreur est survenue. Merci de réessayer plus tard.', 'notation-jlg'),
-            ],
-        ]);
+            wp_localize_script('jlg-summary-table-sort', 'jlgSummarySort', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('jlg_summary_sort'),
+                'strings'  => [
+                    'genericError' => esc_html__('Une erreur est survenue. Merci de réessayer plus tard.', 'notation-jlg'),
+                ],
+            ]);
+        }
+
+        if ($should_enqueue_game_explorer_script && !wp_script_is('jlg-game-explorer', 'enqueued')) {
+            if (!wp_script_is('jlg-game-explorer', 'registered')) {
+                wp_register_script(
+                    'jlg-game-explorer',
+                    JLG_NOTATION_PLUGIN_URL . 'assets/js/game-explorer.js',
+                    [],
+                    JLG_NOTATION_VERSION,
+                    true
+                );
+            }
+
+            wp_enqueue_script('jlg-game-explorer');
+        }
+    }
+
+    /**
+     * Vérifie si un contenu contient un shortcode spécifique.
+     *
+     * @param string $content
+     * @param string $shortcode
+     * @return bool
+     */
+    private function content_has_specific_shortcode($content, $shortcode) {
+        if (!is_string($content) || $content === '' || $shortcode === '') {
+            return false;
+        }
+
+        if (!function_exists('has_shortcode')) {
+            return false;
+        }
+
+        return has_shortcode($content, $shortcode);
+    }
+
+    /**
+     * Détermine si la requête courante correspond à l'AJAX de tri du tableau récapitulatif.
+     *
+     * @return bool
+     */
+    private function is_summary_sort_ajax_context() {
+        $doing_ajax = function_exists('wp_doing_ajax') ? wp_doing_ajax() : (defined('DOING_AJAX') && DOING_AJAX);
+
+        return $doing_ajax && isset($_REQUEST['action']) && $_REQUEST['action'] === 'jlg_summary_sort';
+    }
+
+    /**
+     * Détermine si la requête courante correspond à l'AJAX de tri/filtrage du Game Explorer.
+     *
+     * @return bool
+     */
+    private function is_game_explorer_ajax_context() {
+        $doing_ajax = function_exists('wp_doing_ajax') ? wp_doing_ajax() : (defined('DOING_AJAX') && DOING_AJAX);
+
+        return $doing_ajax && isset($_REQUEST['action']) && $_REQUEST['action'] === 'jlg_game_explorer_sort';
     }
 
     private function build_game_explorer_css($options, $palette) {

@@ -14,14 +14,14 @@ class JLG_Shortcode_Summary_Display {
         add_shortcode('jlg_tableau_recap', [$this, 'render']);
     }
 
-    public function render($atts) {
+    public function render($atts, $content = '', $shortcode_tag = '') {
         $context = self::get_render_context($atts, $_GET, true);
 
         if (!empty($context['error']) && !empty($context['message'])) {
             return $context['message'];
         }
 
-        JLG_Frontend::mark_shortcode_rendered();
+        JLG_Frontend::mark_shortcode_rendered($shortcode_tag ?: 'jlg_tableau_recap');
 
         return JLG_Frontend::get_template_html('shortcode-summary-display', $context);
     }

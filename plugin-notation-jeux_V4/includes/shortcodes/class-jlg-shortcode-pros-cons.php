@@ -7,7 +7,7 @@ class JLG_Shortcode_Pros_Cons {
         add_shortcode('jlg_points_forts_faibles', [$this, 'render']);
     }
 
-    public function render() {
+    public function render($atts = [], $content = '', $shortcode_tag = '') {
         // Sécurité : ne s'exécute que sur les articles ('post') ou pages singulières
         if (!is_singular('post')) {
             return '';
@@ -21,7 +21,7 @@ class JLG_Shortcode_Pros_Cons {
             return '';
         }
         
-        JLG_Frontend::mark_shortcode_rendered();
+        JLG_Frontend::mark_shortcode_rendered($shortcode_tag ?: 'jlg_points_forts_faibles');
 
         return JLG_Frontend::get_template_html('shortcode-pros-cons', [
             'pros_list' => !empty($pros) ? array_filter(explode("\n", $pros)) : [],
