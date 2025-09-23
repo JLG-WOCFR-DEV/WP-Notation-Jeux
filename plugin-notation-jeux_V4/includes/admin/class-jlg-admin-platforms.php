@@ -196,7 +196,7 @@ class JLG_Admin_Platforms {
         // Vérifier les permissions
         if (!current_user_can('manage_options')) {
             self::$debug_messages[] = "❌ Permissions insuffisantes";
-            wp_die('Permissions insuffisantes');
+            wp_die(esc_html__('Permissions insuffisantes', 'notation-jlg'));
         }
         self::$debug_messages[] = "✅ Permissions OK";
         
@@ -210,7 +210,7 @@ class JLG_Admin_Platforms {
         $sanitized_nonce = sanitize_text_field($posted_nonce);
         if (!wp_verify_nonce($posted_nonce, 'jlg_platform_action')) {
             self::$debug_messages[] = "❌ Nonce invalide : " . $sanitized_nonce;
-            wp_die('Erreur de sécurité');
+            wp_die(esc_html__('Erreur de sécurité', 'notation-jlg'));
         }
         self::$debug_messages[] = "✅ Nonce valide";
 
@@ -243,7 +243,7 @@ class JLG_Admin_Platforms {
             case 'reset':
                 delete_option($this->option_name);
                 $success = true;
-                $message = 'Plateformes réinitialisées avec succès !';
+                $message = esc_html__('Plateformes réinitialisées avec succès !', 'notation-jlg');
                 self::$debug_messages[] = "🔄 Option supprimée de la DB";
                 break;
         }
@@ -271,7 +271,7 @@ class JLG_Admin_Platforms {
 
         if (empty($_POST['new_platform_name'])) {
             self::$debug_messages[] = "❌ Nom de plateforme vide";
-            return ['success' => false, 'message' => 'Le nom de la plateforme est requis.'];
+            return ['success' => false, 'message' => esc_html__('Le nom de la plateforme est requis.', 'notation-jlg')];
         }
 
         $name = sanitize_text_field(wp_unslash($_POST['new_platform_name']));
@@ -284,7 +284,7 @@ class JLG_Admin_Platforms {
         $key = sanitize_title($name);
         if (empty($key)) {
             self::$debug_messages[] = "❌ Clé générée vide pour le nom : $name";
-            return ['success' => false, 'message' => 'Nom de plateforme invalide.'];
+            return ['success' => false, 'message' => esc_html__('Nom de plateforme invalide.', 'notation-jlg')];
         }
         
         // Ajouter un suffixe si la clé existe déjà
@@ -328,10 +328,17 @@ class JLG_Admin_Platforms {
                 self::$debug_messages[] = "⚠️ La plateforme a été sauvegardée mais n'apparaît pas dans la vérification";
             }
             
-            return ['success' => true, 'message' => "Plateforme '$name' ajoutée avec succès !"];
+            return [
+                'success' => true,
+                'message' => sprintf(
+                    /* translators: %s: platform name. */
+                    esc_html__("Plateforme '%s' ajoutée avec succès !", 'notation-jlg'),
+                    $name
+                ),
+            ];
         } else {
             self::$debug_messages[] = "❌ Échec de la sauvegarde dans la DB";
-            return ['success' => false, 'message' => "Erreur lors de la sauvegarde."];
+            return ['success' => false, 'message' => esc_html__('Erreur lors de la sauvegarde.', 'notation-jlg')];
         }
     }
     
@@ -345,7 +352,7 @@ class JLG_Admin_Platforms {
 
         if (empty($_POST['platform_key'])) {
             self::$debug_messages[] = "❌ Clé de plateforme manquante";
-            return ['success' => false, 'message' => 'Clé de plateforme manquante.'];
+            return ['success' => false, 'message' => esc_html__('Clé de plateforme manquante.', 'notation-jlg')];
         }
 
         $key = sanitize_text_field(wp_unslash($_POST['platform_key']));
@@ -354,7 +361,7 @@ class JLG_Admin_Platforms {
         $all_platforms = $this->get_platforms();
         if (!isset($all_platforms[$key])) {
             self::$debug_messages[] = "❌ Plateforme introuvable";
-            return ['success' => false, 'message' => 'Plateforme introuvable.'];
+            return ['success' => false, 'message' => esc_html__('Plateforme introuvable.', 'notation-jlg')];
         }
 
         if (!isset($platforms['custom_platforms'][$key]) || empty($platforms['custom_platforms'][$key]['custom'])) {
@@ -362,7 +369,11 @@ class JLG_Admin_Platforms {
             self::$debug_messages[] = "❌ Suppression refusée pour la plateforme non personnalisée '$platform_name'";
             return [
                 'success' => false,
-                'message' => "La plateforme '$platform_name' est une plateforme par défaut et ne peut pas être supprimée."
+                'message' => sprintf(
+                    /* translators: %s: platform name. */
+                    esc_html__("La plateforme '%s' est une plateforme par défaut et ne peut pas être supprimée.", 'notation-jlg'),
+                    $platform_name
+                ),
             ];
         }
 
@@ -374,10 +385,17 @@ class JLG_Admin_Platforms {
         
         if ($result || get_option($this->option_name) !== false) {
             self::$debug_messages[] = "✅ Plateforme '$platform_name' supprimée";
-            return ['success' => true, 'message' => "Plateforme '$platform_name' supprimée avec succès !"];
+            return [
+                'success' => true,
+                'message' => sprintf(
+                    /* translators: %s: platform name. */
+                    esc_html__("Plateforme '%s' supprimée avec succès !", 'notation-jlg'),
+                    $platform_name
+                ),
+            ];
         } else {
             self::$debug_messages[] = "❌ Échec de la suppression";
-            return ['success' => false, 'message' => 'Erreur lors de la suppression.'];
+            return ['success' => false, 'message' => esc_html__('Erreur lors de la suppression.', 'notation-jlg')];
         }
     }
     
@@ -391,7 +409,7 @@ class JLG_Admin_Platforms {
 
         if (!isset($_POST['platform_order']) || !is_array($_POST['platform_order'])) {
             self::$debug_messages[] = "❌ Données d'ordre manquantes";
-            return ['success' => false, 'message' => 'Données d\'ordre manquantes.'];
+            return ['success' => false, 'message' => esc_html__('Données d\'ordre manquantes.', 'notation-jlg')];
         }
 
         $raw_order = array_filter(wp_unslash($_POST['platform_order']), 'strlen');
@@ -400,7 +418,7 @@ class JLG_Admin_Platforms {
         }, array_values($raw_order));
         if (empty($submitted_order)) {
             self::$debug_messages[] = "❌ Ordre soumis vide";
-            return ['success' => false, 'message' => 'Ordre soumis invalide.'];
+            return ['success' => false, 'message' => esc_html__('Ordre soumis invalide.', 'notation-jlg')];
         }
 
         $all_platforms = $this->get_platforms();
@@ -422,7 +440,7 @@ class JLG_Admin_Platforms {
 
         if (empty($ordered_keys)) {
             self::$debug_messages[] = "❌ Aucun élément valide dans l'ordre soumis";
-            return ['success' => false, 'message' => 'Aucune plateforme valide reçue.'];
+            return ['success' => false, 'message' => esc_html__('Aucune plateforme valide reçue.', 'notation-jlg')];
         }
 
         foreach ($all_platforms as $key => $platform_data) {
@@ -443,10 +461,10 @@ class JLG_Admin_Platforms {
 
         if ($result || get_option($this->option_name) !== false) {
             self::$debug_messages[] = "✅ Ordre sauvegardé";
-            return ['success' => true, 'message' => 'Ordre des plateformes mis à jour !'];
+            return ['success' => true, 'message' => esc_html__('Ordre des plateformes mis à jour !', 'notation-jlg')];
         } else {
             self::$debug_messages[] = "❌ Échec de la sauvegarde de l'ordre";
-            return ['success' => false, 'message' => 'Erreur lors de la mise à jour.'];
+            return ['success' => false, 'message' => esc_html__('Erreur lors de la mise à jour.', 'notation-jlg')];
         }
     }
     
