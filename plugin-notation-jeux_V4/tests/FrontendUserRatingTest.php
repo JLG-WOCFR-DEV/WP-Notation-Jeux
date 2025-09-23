@@ -67,6 +67,12 @@ class FrontendUserRatingTest extends TestCase
             $this->assertNull($exception->status);
         }
 
+        $ip_hash = wp_hash('198.51.100.42');
+        $this->assertArrayHasKey($post_id, $GLOBALS['jlg_test_meta']);
+        $this->assertArrayHasKey('_jlg_user_rating_ips', $GLOBALS['jlg_test_meta'][$post_id]);
+        $this->assertArrayHasKey($ip_hash, $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_ips']);
+        $this->assertArrayNotHasKey('legacy', $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_ips'][$ip_hash]);
+
         $first_updates_count = count($GLOBALS['jlg_test_meta_updates']);
 
         $_POST = [
@@ -76,6 +82,7 @@ class FrontendUserRatingTest extends TestCase
             'rating'  => '5',
         ];
         $_COOKIE = [];
+        unset($_COOKIE['jlg_user_rating_token']);
         $_SERVER['REMOTE_ADDR'] = '198.51.100.42';
 
         try {
