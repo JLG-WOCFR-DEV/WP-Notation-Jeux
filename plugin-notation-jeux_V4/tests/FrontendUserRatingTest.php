@@ -2,6 +2,13 @@
 
 use PHPUnit\Framework\TestCase;
 
+if (!function_exists('did_action')) {
+    function did_action($hook_name)
+    {
+        return 0;
+    }
+}
+
 class FrontendUserRatingTest extends TestCase
 {
     protected function setUp(): void
@@ -13,6 +20,7 @@ class FrontendUserRatingTest extends TestCase
         $GLOBALS['jlg_test_posts']       = [];
         $GLOBALS['jlg_test_meta']        = [];
         $GLOBALS['jlg_test_meta_updates'] = [];
+        $this->resetShortcodeTracking();
     }
 
     public function test_handle_user_rating_rejects_unavailable_post(): void
@@ -99,5 +107,54 @@ class FrontendUserRatingTest extends TestCase
         }
 
         $this->assertSame($first_updates_count, count($GLOBALS['jlg_test_meta_updates']));
+    }
+
+    public function test_handle_user_rating_accepts_vote_when_shortcode_rendered_outside_content(): void
+    {
+        $post_id = 654;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '',
+        ]);
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.5';
+
+        $frontend = new JLG_Frontend();
+        JLG_Frontend::mark_shortcode_rendered('notation_utilisateurs_jlg');
+
+        $_POST = [
+            'token'   => str_repeat('c', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '5',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+            $this->assertNull($exception->status);
+            $this->assertSame('5.00', $exception->data['new_average']);
+            $this->assertSame(1, $exception->data['new_count']);
+        }
+    }
+
+    private function resetShortcodeTracking(): void
+    {
+        $reflection = new \ReflectionClass(JLG_Frontend::class);
+
+        foreach ([
+            'rendered_shortcodes' => [],
+            'shortcode_rendered'  => false,
+        ] as $property => $value) {
+            if ($reflection->hasProperty($property)) {
+                $property_reflection = $reflection->getProperty($property);
+                $property_reflection->setAccessible(true);
+                $property_reflection->setValue(null, $value);
+            }
+        }
     }
 }
