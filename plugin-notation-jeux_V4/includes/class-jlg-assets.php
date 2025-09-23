@@ -117,5 +117,20 @@ class JLG_Assets {
                 'notAvailableLabel'   => __('N/A', 'notation-jlg'),
             ];
         });
+
+        $this->register_localization('jlg-game-explorer', 'jlgGameExplorerL10n', function() {
+            return [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce'   => wp_create_nonce('jlg_game_explorer'),
+                'strings' => [
+                    'loading'    => esc_html__('Chargement des jeux...', 'notation-jlg'),
+                    'noResults'  => esc_html__('Aucun jeu ne correspond à votre sélection.', 'notation-jlg'),
+                    'reset'      => esc_html__('Réinitialiser les filtres', 'notation-jlg'),
+                    'genericError' => esc_html__('Impossible de charger les jeux pour le moment.', 'notation-jlg'),
+                    'countSingular' => esc_html__('%d jeu', 'notation-jlg'),
+                    'countPlural'   => esc_html__('%d jeux', 'notation-jlg'),
+                ],
+            ];
+        });
     }
 }

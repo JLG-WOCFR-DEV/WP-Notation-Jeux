@@ -34,6 +34,18 @@ class JLG_Helpers {
         ];
     }
 
+    private static function get_default_platform_definitions() {
+        return [
+            'pc' => ['name' => 'PC', 'order' => 1],
+            'playstation-5' => ['name' => 'PlayStation 5', 'order' => 2],
+            'xbox-series-x' => ['name' => 'Xbox Series S/X', 'order' => 3],
+            'nintendo-switch' => ['name' => 'Nintendo Switch', 'order' => 4],
+            'playstation-4' => ['name' => 'PlayStation 4', 'order' => 5],
+            'xbox-one' => ['name' => 'Xbox One', 'order' => 6],
+            'steam-deck' => ['name' => 'Steam Deck', 'order' => 7],
+        ];
+    }
+
     public static function get_default_settings() {
         $dark_defaults = self::get_theme_defaults()['dark'];
         $light_defaults = self::get_theme_defaults()['light'];
@@ -106,7 +118,12 @@ class JLG_Helpers {
             'thumb_font_size'       => 14,
             'thumb_padding'         => 8,
             'thumb_border_radius'   => 4,
-            
+
+            // Options Game Explorer
+            'game_explorer_columns'        => 3,
+            'game_explorer_posts_per_page' => 12,
+            'game_explorer_filters'        => 'letter,category,platform,availability',
+
             // Libellés
             'label_cat1' => 'Gameplay',
             'label_cat2' => 'Graphismes',
@@ -461,6 +478,98 @@ class JLG_Helpers {
         return $css;
     }
     
+    public static function get_registered_platform_labels() {
+        $defaults = self::get_default_platform_definitions();
+        $stored = get_option('jlg_platforms_list', []);
+        $platforms = $defaults;
+        $order_map = [];
+
+        if (is_array($stored)) {
+            if (isset($stored['custom_platforms']) || isset($stored['order'])) {
+                $custom_platforms = isset($stored['custom_platforms']) && is_array($stored['custom_platforms'])
+                    ? $stored['custom_platforms']
+                    : [];
+
+                foreach ($custom_platforms as $key => $platform) {
+                    if (!is_array($platform)) {
+                        continue;
+                    }
+
+                    $name = isset($platform['name']) ? sanitize_text_field($platform['name']) : '';
+
+                    if ($name === '') {
+                        continue;
+                    }
+
+                    $platforms[$key] = [
+                        'name'  => $name,
+                        'order' => isset($platform['order']) ? (int) $platform['order'] : (int) (($platforms[$key]['order'] ?? count($platforms) + 1)),
+                    ];
+                }
+
+                if (isset($stored['order']) && is_array($stored['order'])) {
+                    $order_map = array_map('intval', $stored['order']);
+                }
+            } else {
+                foreach ($stored as $key => $platform) {
+                    if (!is_array($platform)) {
+                        continue;
+                    }
+
+                    $name = isset($platform['name']) ? sanitize_text_field($platform['name']) : '';
+
+                    if ($name === '') {
+                        continue;
+                    }
+
+                    $platforms[$key] = [
+                        'name'  => $name,
+                        'order' => isset($platform['order']) ? (int) $platform['order'] : (int) (($defaults[$key]['order'] ?? count($platforms) + 1)),
+                    ];
+
+                    if (isset($platform['order'])) {
+                        $order_map[$key] = (int) $platform['order'];
+                    }
+                }
+            }
+        }
+
+        $keys = array_keys($platforms);
+
+        usort($keys, function($a, $b) use ($order_map, $platforms) {
+            $order_a = isset($order_map[$a]) ? $order_map[$a] : (int) ($platforms[$a]['order'] ?? PHP_INT_MAX);
+            $order_b = isset($order_map[$b]) ? $order_map[$b] : (int) ($platforms[$b]['order'] ?? PHP_INT_MAX);
+
+            if ($order_a === $order_b) {
+                return strcmp((string) $a, (string) $b);
+            }
+
+            return $order_a <=> $order_b;
+        });
+
+        $labels = [];
+
+        foreach ($keys as $key) {
+            $name = isset($platforms[$key]['name']) ? (string) $platforms[$key]['name'] : '';
+
+            if ($name === '') {
+                continue;
+            }
+
+            $labels[$key] = $name;
+        }
+
+        if (empty($labels)) {
+            foreach ($defaults as $key => $platform) {
+                if (isset($platform['name']) && $platform['name'] !== '') {
+                    $labels[$key] = $platform['name'];
+                }
+            }
+        }
+
+        return $labels;
+    }
+
     /**
      * Réinitialise toutes les options du plugin
      */
