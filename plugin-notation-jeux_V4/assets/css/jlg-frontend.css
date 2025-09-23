@@ -45,7 +45,26 @@
 .jlg-game-info-box .platforms-list span{display:inline-block;background:var(--jlg-border-color);padding:3px 8px;border-radius:4px;font-size:0.9em;margin:2px;}
 
 /* Summary Display */
-.jlg-summary-filters{margin-bottom:20px;text-align:right;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.jlg-summary-filters{margin-bottom:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column;gap:12px;}
+.jlg-summary-letter-filter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.jlg-summary-letter-filter button{border:1px solid var(--jlg-border-color);background-color:var(--jlg-bg-color);color:var(--jlg-secondary-text-color);padding:6px 10px;border-radius:4px;font-size:0.85rem;cursor:pointer;transition:all .2s ease;}
+.jlg-summary-letter-filter button:hover{background-color:var(--jlg-table-row-hover-color);}
+.jlg-summary-letter-filter button.is-active{background-color:var(--jlg-score-gradient-1);border-color:var(--jlg-score-gradient-1);color:#fff;}
+.jlg-summary-filters-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;}
+.jlg-summary-filters-form select{min-width:180px;}
+.jlg-active-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:15px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.jlg-active-filter-badge{background-color:var(--jlg-border-color);color:var(--jlg-secondary-text-color);border-radius:9999px;padding:4px 10px;font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;}
+.jlg-genre-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.jlg-genre-badge{background-color:var(--jlg-border-color);color:var(--jlg-secondary-text-color);border-radius:9999px;padding:2px 10px;font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;display:inline-flex;align-items:center;}
+.jlg-summary-table .jlg-genre-badges{margin-top:6px;}
+.jlg-summary-table .jlg-genre-badge{background-color:var(--jlg-bg-color-secondary);}
+.jlg-game-card .jlg-genre-badges{position:absolute;left:15px;right:15px;bottom:15px;z-index:2;gap:6px;pointer-events:none;}
+.jlg-game-card .jlg-genre-badge{background-color:rgba(0,0,0,.65);color:#fff;}
+.jlg-game-card-title{position:absolute;bottom:0;left:0;right:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,0) 100%);padding:30px 15px 60px;}
+.jlg-summary-wrapper .jlg-summary-letter-filter button:focus{outline:2px solid var(--jlg-score-gradient-1);outline-offset:2px;}
+.jlg-summary-wrapper .jlg-summary-letter-filter button.is-active:focus{outline:2px solid rgba(255,255,255,.9);}
+.jlg-summary-filters-form input[type="submit"]{margin-left:auto;}
+@media (min-width:768px){.jlg-summary-filters{flex-direction:row;align-items:flex-start;justify-content:space-between;}.jlg-summary-filters-form{justify-content:flex-end;}}
 .jlg-summary-filters select,
 .jlg-summary-filters input[type="submit"]{padding:8px 12px;border-radius:4px;border:1px solid var(--jlg-border-color);background-color:var(--jlg-bg-color);color:var(--jlg-main-text-color);vertical-align:middle;transition:all .2s ease;}
 .jlg-summary-filters input[type="submit"]{background-color:var(--jlg-score-gradient-1);color:#fff;border-color:var(--jlg-score-gradient-1);cursor:pointer;}
@@ -64,7 +83,6 @@
 .jlg-game-card img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease;}
 .jlg-game-card:hover img{transform:scale(1.05);}
 .jlg-game-card-score{position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,.8);color:#fff;font-weight:bold;font-size:1.2rem;padding:5px 10px;border-radius:6px;backdrop-filter:blur(5px);}
-.jlg-game-card-title{position:absolute;bottom:0;left:0;right:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,0) 100%);padding:30px 15px 15px;}
 .jlg-game-card-title span{color:#fff;font-weight:600;text-decoration:none;font-size:1.1rem;}
 .jlg-pagination{text-align:center;margin-top:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
 .jlg-pagination .page-numbers{padding:8px 12px;margin:0 2px;border:1px solid var(--jlg-border-color);background-color:var(--jlg-bg-color-secondary);color:var(--jlg-secondary-text-color);text-decoration:none;border-radius:4px;}

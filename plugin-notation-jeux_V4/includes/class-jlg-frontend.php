@@ -789,6 +789,8 @@ class JLG_Frontend {
             'categorie'      => isset($_POST['categorie']) ? sanitize_text_field(wp_unslash($_POST['categorie'])) : '',
             'colonnes'       => isset($_POST['colonnes']) ? sanitize_text_field(wp_unslash($_POST['colonnes'])) : 'titre,date,note',
             'id'             => isset($_POST['table_id']) ? sanitize_html_class(wp_unslash($_POST['table_id'])) : 'jlg-table-' . uniqid(),
+            'letter_filter'  => isset($_POST['letter_filter']) ? JLG_Shortcode_Summary_Display::normalize_letter_filter(wp_unslash($_POST['letter_filter'])) : '',
+            'genre_filter'   => isset($_POST['genre_filter']) ? sanitize_text_field(wp_unslash($_POST['genre_filter'])) : '',
         ];
 
         $request = [
@@ -796,6 +798,8 @@ class JLG_Frontend {
             'order'      => isset($_POST['order']) ? sanitize_text_field(wp_unslash($_POST['order'])) : 'DESC',
             'cat_filter' => isset($_POST['cat_filter']) ? intval($_POST['cat_filter']) : 0,
             'paged'      => isset($_POST['paged']) ? intval($_POST['paged']) : 1,
+            'letter_filter' => isset($_POST['letter_filter']) ? JLG_Shortcode_Summary_Display::normalize_letter_filter(wp_unslash($_POST['letter_filter'])) : '',
+            'genre_filter'  => isset($_POST['genre_filter']) ? sanitize_text_field(wp_unslash($_POST['genre_filter'])) : '',
         ];
 
         $current_url = isset($_POST['current_url']) ? esc_url_raw(wp_unslash($_POST['current_url'])) : '';
@@ -819,6 +823,8 @@ class JLG_Frontend {
             'order'      => $context['order'] ?? 'DESC',
             'paged'      => $context['paged'] ?? 1,
             'cat_filter' => $context['cat_filter'] ?? 0,
+            'letter_filter' => $context['letter_filter'] ?? '',
+            'genre_filter'  => $context['genre_filter'] ?? '',
             'total_pages' => 0,
         ];
 

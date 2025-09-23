@@ -17,16 +17,73 @@ $layout = isset($atts['layout']) ? $atts['layout'] : 'table';
 $current_orderby = !empty($orderby) ? $orderby : 'date';
 $current_order = !empty($order) ? strtoupper($order) : 'DESC';
 $current_cat_filter = isset($cat_filter) ? intval($cat_filter) : 0;
+$current_letter_filter = isset($letter_filter) ? sanitize_text_field($letter_filter) : (isset($atts['letter_filter']) ? sanitize_text_field($atts['letter_filter']) : '');
+$current_genre_filter = isset($genre_filter) ? sanitize_text_field($genre_filter) : (isset($atts['genre_filter']) ? sanitize_text_field($atts['genre_filter']) : '');
+$genre_taxonomy = apply_filters('jlg_summary_genre_taxonomy', 'jlg_game_genre');
+$has_genre_taxonomy = !empty($genre_taxonomy) && taxonomy_exists($genre_taxonomy);
 $default_empty_message = '<p>' . esc_html__('Aucun article trouvé pour cette sélection.', 'notation-jlg') . '</p>';
 $empty_message = !empty($error_message) ? $error_message : $default_empty_message;
 $columns_count = count($columns);
+
+$active_filter_labels = [];
+
+if ($current_cat_filter > 0) {
+    $category = get_category($current_cat_filter);
+
+    if ($category && !is_wp_error($category)) {
+        $active_filter_labels[] = sprintf(
+            /* translators: %s is the category name. */
+            esc_html__('Catégorie : %s', 'notation-jlg'),
+            $category->name
+        );
+    }
+}
+
+if ($current_letter_filter !== '') {
+    $letter_label = $current_letter_filter === '#'
+        ? esc_html__('0-9', 'notation-jlg')
+        : strtoupper($current_letter_filter);
+
+    $active_filter_labels[] = sprintf(
+        /* translators: %s is the first letter used to filter results. */
+        esc_html__('Lettre : %s', 'notation-jlg'),
+        $letter_label
+    );
+}
+
+if ($current_genre_filter !== '') {
+    $genre_display = $current_genre_filter;
+
+    if ($has_genre_taxonomy) {
+        $genre_term = get_term_by('slug', $current_genre_filter, $genre_taxonomy);
+
+        if ($genre_term && !is_wp_error($genre_term)) {
+            $genre_display = $genre_term->name;
+        }
+    }
+
+    $active_filter_labels[] = sprintf(
+        /* translators: %s is the selected genre. */
+        esc_html__('Genre : %s', 'notation-jlg'),
+        $genre_display
+    );
+}
+
+if (empty($error_message) && !empty($active_filter_labels)) {
+    $message_labels = implode(', ', array_map('esc_html', $active_filter_labels));
+    $empty_message = '<p>' . sprintf(
+        /* translators: %s is the list of active filters. */
+        esc_html__('Aucun article ne correspond aux filtres : %s.', 'notation-jlg'),
+        $message_labels
+    ) . '</p>';
+}
 
 if ($columns_count === 0) {
     $columns_count = 1;
 }
 
 if (!function_exists('jlg_print_sortable_header')) {
-    function jlg_print_sortable_header($col, $col_info, $current_orderby, $current_order, $table_id) {
+    function jlg_print_sortable_header($col, $col_info, $current_orderby, $current_order, $table_id, $extra_params = []) {
         if (!isset($col_info['sortable']) || !$col_info['sortable']) {
             echo '<th>' . esc_html($col_info['label']) . '</th>';
             return;
@@ -41,10 +98,30 @@ if (!function_exists('jlg_print_sortable_header')) {
 
         $sort_key = sanitize_key($sort_key);
         $new_order = ($current_orderby === $sort_key && $current_order === 'ASC') ? 'DESC' : 'ASC';
-        $url = add_query_arg([
+        $args = [
             'orderby' => $sort_key,
             'order'   => $new_order,
-        ]);
+        ];
+
+        if (!empty($extra_params) && is_array($extra_params)) {
+            $filtered_params = array_filter($extra_params, function($value) {
+                if ($value === null || $value === '') {
+                    return false;
+                }
+
+                if ($value === 0 || $value === '0') {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (!empty($filtered_params)) {
+                $args = array_merge($filtered_params, $args);
+            }
+        }
+
+        $url = add_query_arg($args);
         $url = remove_query_arg('paged', $url);
 
         if (!empty($table_id)) {
@@ -79,6 +156,38 @@ if (!function_exists('jlg_print_sortable_header')) {
     }
 }
 
+if (!function_exists('jlg_render_genre_badges')) {
+    function jlg_render_genre_badges($terms) {
+        if (empty($terms) || is_wp_error($terms)) {
+            return '';
+        }
+
+        $badges = [];
+
+        foreach ($terms as $term) {
+            if (!($term instanceof WP_Term)) {
+                continue;
+            }
+
+            $badges[] = '<span class="jlg-genre-badge">' . esc_html($term->name) . '</span>';
+        }
+
+        if (empty($badges)) {
+            return '';
+        }
+
+        return '<div class="jlg-genre-badges">' . implode('', $badges) . '</div>';
+    }
+}
+
+if (!empty($active_filter_labels)) {
+    echo '<div class="jlg-active-filters" aria-live="polite">';
+    foreach ($active_filter_labels as $label) {
+        echo '<span class="jlg-active-filter-badge">' . esc_html($label) . '</span>';
+    }
+    echo '</div>';
+}
+
 if ($layout === 'grid') :
     ?>
     <div class="jlg-summary-grid-wrapper">
@@ -96,6 +205,8 @@ if ($layout === 'grid') :
                 if ($score_display === '') {
                     $score_display = __('N/A', 'notation-jlg');
                 }
+                $genre_terms = $has_genre_taxonomy ? get_the_terms($post_id, $genre_taxonomy) : [];
+                $genre_badges_html = jlg_render_genre_badges($genre_terms);
                 ?>
                 <a href="<?php the_permalink(); ?>" class="jlg-game-card">
                     <div class="jlg-game-card-score"><?php echo esc_html($score_display); ?></div>
@@ -105,6 +216,9 @@ if ($layout === 'grid') :
                     <div class="jlg-game-card-title">
                         <span><?php echo esc_html($game_title); ?></span>
                     </div>
+                    <?php if ($genre_badges_html !== '') : ?>
+                        <?php echo wp_kses_post($genre_badges_html); ?>
+                    <?php endif; ?>
                 </a>
             <?php endwhile;
         else :
@@ -119,11 +233,18 @@ else :
             <thead>
                 <tr>
                     <?php
+                    $header_extra_params = [
+                        'cat_filter'    => $current_cat_filter,
+                        'letter_filter' => $current_letter_filter,
+                        'genre_filter'  => $current_genre_filter,
+                    ];
+                    ?>
+                    <?php
                     foreach ($columns as $col) {
                         if (!isset($available_columns[$col])) {
                             continue;
                         }
-                        jlg_print_sortable_header($col, $available_columns[$col], $current_orderby, $current_order, $table_id);
+                        jlg_print_sortable_header($col, $available_columns[$col], $current_orderby, $current_order, $table_id, $header_extra_params);
                     }
                     ?>
                 </tr>
@@ -132,6 +253,8 @@ else :
                 <?php if ($query instanceof WP_Query && $query->have_posts()) :
                     while ($query->have_posts()) : $query->the_post();
                         $post_id = get_the_ID();
+                        $genre_terms = $has_genre_taxonomy ? get_the_terms($post_id, $genre_taxonomy) : [];
+                        $genre_badges_html = jlg_render_genre_badges($genre_terms);
                         ?>
                         <tr>
                             <?php
@@ -145,6 +268,9 @@ else :
                                     case 'titre':
                                         $game_title = JLG_Helpers::get_game_title($post_id);
                                         echo '<a href="' . esc_url(get_permalink()) . '">' . esc_html($game_title) . '</a>';
+                                        if ($genre_badges_html !== '') {
+                                            echo wp_kses_post($genre_badges_html);
+                                        }
                                         break;
                                     case 'date':
                                         echo esc_html(get_the_date());
@@ -215,6 +341,14 @@ if ($total_pages > 1) {
 
     if ($current_cat_filter > 0) {
         $pagination_args['add_args']['cat_filter'] = $current_cat_filter;
+    }
+
+    if ($current_letter_filter !== '') {
+        $pagination_args['add_args']['letter_filter'] = $current_letter_filter;
+    }
+
+    if ($current_genre_filter !== '') {
+        $pagination_args['add_args']['genre_filter'] = $current_genre_filter;
     }
 
     $pagination_links = paginate_links($pagination_args);
