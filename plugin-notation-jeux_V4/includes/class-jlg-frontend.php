@@ -851,7 +851,7 @@ class JLG_Frontend {
         $content = $post->post_content ?? '';
 
         foreach (['notation_utilisateurs_jlg', 'jlg_bloc_complet', 'bloc_notation_complet'] as $shortcode) {
-            if (has_shortcode($content, $shortcode)) {
+            if (has_shortcode($content, $shortcode) || self::has_rendered_shortcode($shortcode)) {
                 return true;
             }
         }
