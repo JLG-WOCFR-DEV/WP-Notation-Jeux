@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-23T10:18:50+00:00\n"
+"POT-Creation-Date: 2025-09-23T10:59:14+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: notation-jlg\n"
@@ -34,51 +34,202 @@ msgstr ""
 msgid "Jérôme Le Gousse"
 msgstr ""
 
+#: includes/admin/class-jlg-admin-menu.php:20
+msgctxt "Admin page title"
+msgid "Notation JLG"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:21
+msgctxt "Admin menu title"
+msgid "Notation - JLG"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:32
+msgid "Accès refusé."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:45
+msgid "⭐ Notation JLG v5.0"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:53
+msgid "⚙️ Réglages"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:54
+msgid "📊 Articles Notés"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:55
+msgid "🎮 Plateformes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:56
+msgid "📝 Shortcodes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:57
+msgid "📚 Tutoriels"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:178
+msgid "Page "
+msgstr ""
+
 #: includes/admin/class-jlg-admin-metaboxes.php:31
 msgid "Notation JLG"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:127
-#: includes/admin/class-jlg-admin-metaboxes.php:263
+#: includes/admin/class-jlg-admin-metaboxes.php:46
+msgid "⭐ Notation du Jeu Vidéo"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:55
+msgid "🎮 Détails du Test"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:73
+msgid "Gameplay"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:74
+msgid "Graphismes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:75
+msgid "Bande-son"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:76
+msgid "Durée de vie"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:77
+msgid "Scénario"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:78
+msgid "Originalité"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:90
+msgid "Entrez les notes sur 10. Laissez vide si non pertinent."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:96
+msgctxt "score input suffix"
+msgid "/ 10"
+msgstr ""
+
+#. translators: %s: average score value.
+#: includes/admin/class-jlg-admin-metaboxes.php:104
+#, php-format
+msgid "%s / 10"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:107
+msgid "Note moyenne :"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:132
+#: includes/admin/class-jlg-admin-metaboxes.php:268
 msgid "Nom du jeu"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:129
+#: includes/admin/class-jlg-admin-metaboxes.php:134
 msgid "Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:264
+#: includes/admin/class-jlg-admin-metaboxes.php:138
+msgid "📋 Fiche Technique"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:142
+#: includes/admin/class-jlg-admin-metaboxes.php:269
 msgid "Développeur(s)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:265
+#: includes/admin/class-jlg-admin-metaboxes.php:143
+#: includes/admin/class-jlg-admin-metaboxes.php:270
 msgid "Éditeur(s)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:266
+#: includes/admin/class-jlg-admin-metaboxes.php:144
+#: includes/admin/class-jlg-admin-metaboxes.php:271
 msgid "Date de sortie"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:267
+#: includes/admin/class-jlg-admin-metaboxes.php:145
+#: includes/admin/class-jlg-admin-metaboxes.php:272
 msgid "Version testée"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:268
+#: includes/admin/class-jlg-admin-metaboxes.php:146
+#: includes/admin/class-jlg-admin-metaboxes.php:273
 msgid "PEGI"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:269
+#: includes/admin/class-jlg-admin-metaboxes.php:147
+#: includes/admin/class-jlg-admin-metaboxes.php:274
 msgid "Temps de jeu"
 msgstr ""
 
+#: includes/admin/class-jlg-admin-metaboxes.php:148
+msgid "URL de la jaquette"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:164
+msgid "Plateformes :"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:189
+msgid "💬 Taglines"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:192
+msgid "Française :"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:196
+msgid "Anglaise :"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:202
+msgid "⚖️ Points Forts & Faibles"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:203
+msgid "Un point par ligne"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:206
+msgid "Points Forts :"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:207
+msgid ""
+"Gameplay addictif\n"
+"Graphismes superbes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:210
+msgid "Points Faibles :"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:211
+msgid ""
+"Durée de vie courte\n"
+"Bugs occasionnels"
+msgstr ""
+
 #. translators: %s is the field label.
-#: includes/admin/class-jlg-admin-metaboxes.php:293
+#: includes/admin/class-jlg-admin-metaboxes.php:298
 #, php-format
 msgid "%s : format de date invalide. Utilisez AAAA-MM-JJ."
 msgstr ""
 
 #. translators: %s is a list of allowed PEGI values
-#: includes/admin/class-jlg-admin-metaboxes.php:308
+#: includes/admin/class-jlg-admin-metaboxes.php:313
 #, php-format
 msgid "PEGI invalide. Valeurs acceptées : %s."
 msgstr ""
@@ -167,7 +318,7 @@ msgid "Erreur. Veuillez réessayer."
 msgstr ""
 
 #: includes/class-jlg-assets.php:101
-#: includes/class-jlg-frontend.php:395
+#: includes/class-jlg-frontend.php:453
 #: assets/js/user-rating.js:12
 msgid "Vous avez déjà voté !"
 msgstr ""
@@ -220,38 +371,64 @@ msgstr ""
 msgid "N/A"
 msgstr ""
 
-#: includes/class-jlg-frontend.php:322
+#: includes/class-jlg-frontend.php:380
 msgid "Une erreur est survenue. Merci de réessayer plus tard."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:343
+#: includes/class-jlg-frontend.php:401
 msgid "Jeton de sécurité manquant ou invalide."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:347
-#: includes/class-jlg-frontend.php:649
+#: includes/class-jlg-frontend.php:405
+#: includes/class-jlg-frontend.php:707
 msgid "La vérification de sécurité a échoué."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:354
+#: includes/class-jlg-frontend.php:412
 msgid "La notation des lecteurs est désactivée."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:361
-#: includes/class-jlg-frontend.php:383
+#: includes/class-jlg-frontend.php:419
+#: includes/class-jlg-frontend.php:441
 msgid "Données invalides."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:367
+#: includes/class-jlg-frontend.php:425
 msgid "Article introuvable ou non disponible pour la notation."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:377
+#: includes/class-jlg-frontend.php:435
 msgid "La notation des lecteurs est désactivée pour ce contenu."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:653
+#: includes/class-jlg-frontend.php:711
 msgid "Le shortcode requis est indisponible."
+msgstr ""
+
+#: includes/class-jlg-widget.php:9
+msgid "Notation JLG : Derniers Tests"
+msgstr ""
+
+#: includes/class-jlg-widget.php:10
+msgid "Affiche les derniers articles ayant reçu une note."
+msgstr ""
+
+#: includes/class-jlg-widget.php:15
+#: includes/class-jlg-widget.php:50
+msgid "Derniers Tests"
+msgstr ""
+
+#: includes/class-jlg-widget.php:25
+#: templates/widget-latest-reviews.php:20
+msgid "Aucun test trouvé."
+msgstr ""
+
+#: includes/class-jlg-widget.php:54
+msgid "Titre :"
+msgstr ""
+
+#: includes/class-jlg-widget.php:60
+msgid "Nombre d'articles à afficher :"
 msgstr ""
 
 #: includes/shortcodes/class-jlg-shortcode-summary-display.php:103
@@ -358,10 +535,6 @@ msgstr ""
 
 #: templates/summary-table-fragment.php:209
 msgid "Suivant »"
-msgstr ""
-
-#: templates/widget-latest-reviews.php:20
-msgid "Aucun test trouvé."
 msgstr ""
 
 #. translators: %s: Maximum rating value displayed with the thumbnail score.

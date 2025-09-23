@@ -17,8 +17,8 @@ class JLG_Admin_Menu {
 
     public function add_admin_menu() {
         add_menu_page(
-            'Notation JLG',
-            'Notation - JLG',
+            _x('Notation JLG', 'Admin page title', 'notation-jlg'),
+            _x('Notation - JLG', 'Admin menu title', 'notation-jlg'),
             'manage_options',
             $this->page_slug,
             [$this, 'render_admin_page'],
@@ -29,7 +29,7 @@ class JLG_Admin_Menu {
 
     public function render_admin_page() {
         if (!current_user_can('manage_options')) {
-            wp_die('Accès refusé.');
+            wp_die(esc_html__('Accès refusé.', 'notation-jlg'));
         }
 
         $tabs = $this->get_tabs();
@@ -42,7 +42,7 @@ class JLG_Admin_Menu {
         $tab_content = $this->get_tab_content($active_tab);
 
         JLG_Template_Loader::display_admin_template('admin-page', [
-            'page_title' => '⭐ Notation JLG v5.0',
+            'page_title' => __('⭐ Notation JLG v5.0', 'notation-jlg'),
             'tab_navigation' => $tab_navigation,
             'tab_content' => $tab_content,
         ]);
@@ -50,11 +50,11 @@ class JLG_Admin_Menu {
 
     private function get_tabs() {
         return [
-            'reglages' => '⚙️ Réglages',
-            'articles_notes' => '📊 Articles Notés',
-            'plateformes' => '🎮 Plateformes',
-            'shortcodes' => '📝 Shortcodes',
-            'tutoriels' => '📚 Tutoriels',
+            'reglages' => __('⚙️ Réglages', 'notation-jlg'),
+            'articles_notes' => __('📊 Articles Notés', 'notation-jlg'),
+            'plateformes' => __('🎮 Plateformes', 'notation-jlg'),
+            'shortcodes' => __('📝 Shortcodes', 'notation-jlg'),
+            'tutoriels' => __('📚 Tutoriels', 'notation-jlg'),
         ];
     }
 
@@ -175,7 +175,7 @@ class JLG_Admin_Menu {
                 'end_size' => 1,
                 'mid_size' => 2,
                 'type' => 'plain',
-                'before_page_number' => '<span class="screen-reader-text">Page </span>',
+                'before_page_number' => '<span class="screen-reader-text">' . esc_html__('Page ', 'notation-jlg') . '</span>',
             ];
 
             if (isset($_GET['orderby'])) {

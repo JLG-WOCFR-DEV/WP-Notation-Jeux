@@ -43,7 +43,7 @@ class JLG_Admin_Metaboxes {
 
         add_meta_box(
             'notation_jlg_metabox',
-            '⭐ Notation du Jeu Vidéo',
+            esc_html__('⭐ Notation du Jeu Vidéo', 'notation-jlg'),
             [$this, 'render_notation_metabox'],
             $post_type,
             'side',
@@ -52,7 +52,7 @@ class JLG_Admin_Metaboxes {
 
         add_meta_box(
             'jlg_details_metabox',
-            '🎮 Détails du Test',
+            esc_html__('🎮 Détails du Test', 'notation-jlg'),
             [$this, 'render_details_metabox'],
             $post_type,
             'normal',
@@ -70,12 +70,12 @@ class JLG_Admin_Metaboxes {
         
         // Récupérer les catégories de notation
         $categories = [
-            'cat1' => 'Gameplay',
-            'cat2' => 'Graphismes',
-            'cat3' => 'Bande-son',
-            'cat4' => 'Durée de vie',
-            'cat5' => 'Scénario',
-            'cat6' => 'Originalité'
+            'cat1' => __('Gameplay', 'notation-jlg'),
+            'cat2' => __('Graphismes', 'notation-jlg'),
+            'cat3' => __('Bande-son', 'notation-jlg'),
+            'cat4' => __('Durée de vie', 'notation-jlg'),
+            'cat5' => __('Scénario', 'notation-jlg'),
+            'cat6' => __('Originalité', 'notation-jlg')
         ];
         
         // Si la classe Helpers existe, on l'utilise
@@ -87,19 +87,24 @@ class JLG_Admin_Metaboxes {
         }
         
         echo '<div class="jlg-metabox-notation">';
-        echo '<p>Entrez les notes sur 10. Laissez vide si non pertinent.</p>';
+        echo '<p>' . esc_html__('Entrez les notes sur 10. Laissez vide si non pertinent.', 'notation-jlg') . '</p>';
         
         foreach ($categories as $key => $label) {
             $value = get_post_meta($post->ID, '_note_' . $key, true);
             echo '<div style="margin-bottom:10px;">';
             echo '<label><strong>' . esc_html($label) . ' :</strong></label><br>';
-            echo '<input type="number" step="0.1" min="0" max="10" name="_note_' . esc_attr($key) . '" value="' . esc_attr($value) . '" style="width:80px;" /> / 10';
+            echo '<input type="number" step="0.1" min="0" max="10" name="_note_' . esc_attr($key) . '" value="' . esc_attr($value) . '" style="width:80px;" /> ' . esc_html_x('/ 10', 'score input suffix', 'notation-jlg');
             echo '</div>';
         }
         
         if ($average_score !== null) {
             echo '<div style="background:#f0f6fc; padding:10px; margin-top:15px; border-radius:4px;">';
-            echo '<strong>Note moyenne :</strong> <span style="color:#0073aa; font-size:16px;">' . number_format($average_score, 1) . ' / 10</span>';
+            $average_display = sprintf(
+                /* translators: %s: average score value. */
+                __('%s / 10', 'notation-jlg'),
+                number_format_i18n($average_score, 1)
+            );
+            echo '<strong>' . esc_html__('Note moyenne :', 'notation-jlg') . '</strong> <span style="color:#0073aa; font-size:16px;">' . esc_html($average_display) . '</span>';
             echo '</div>';
         }
         
@@ -130,17 +135,17 @@ class JLG_Admin_Metaboxes {
         echo '</div>';
 
         // Fiche technique
-        echo '<h3>📋 Fiche Technique</h3>';
+        echo '<h3>' . esc_html__('📋 Fiche Technique', 'notation-jlg') . '</h3>';
         echo '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:20px;">';
 
         $fields = [
-            'developpeur' => 'Développeur(s)',
-            'editeur' => 'Éditeur(s)',
-            'date_sortie' => 'Date de sortie',
-            'version' => 'Version testée',
-            'pegi' => 'PEGI',
-            'temps_de_jeu' => 'Temps de jeu',
-            'cover_image_url' => 'URL de la jaquette'
+            'developpeur' => __('Développeur(s)', 'notation-jlg'),
+            'editeur' => __('Éditeur(s)', 'notation-jlg'),
+            'date_sortie' => __('Date de sortie', 'notation-jlg'),
+            'version' => __('Version testée', 'notation-jlg'),
+            'pegi' => __('PEGI', 'notation-jlg'),
+            'temps_de_jeu' => __('Temps de jeu', 'notation-jlg'),
+            'cover_image_url' => __('URL de la jaquette', 'notation-jlg')
         ];
 
         foreach ($fields as $key => $label) {
@@ -156,7 +161,7 @@ class JLG_Admin_Metaboxes {
         
         // Plateformes
         echo '<div style="margin-bottom:20px;">';
-        echo '<p><strong>Plateformes :</strong></p>';
+        echo '<p><strong>' . esc_html__('Plateformes :', 'notation-jlg') . '</strong></p>';
         
         // Récupérer les plateformes depuis la classe JLG_Admin_Platforms
         $platforms_list = ['PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch', 'PlayStation 4', 'Xbox One'];
@@ -181,29 +186,29 @@ class JLG_Admin_Metaboxes {
         echo '</div>';
         
         // Taglines
-        echo '<h3>💬 Taglines</h3>';
+        echo '<h3>' . esc_html__('💬 Taglines', 'notation-jlg') . '</h3>';
         echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
         echo '<div>';
-        echo '<label><strong>Française :</strong></label><br>';
+        echo '<label><strong>' . esc_html__('Française :', 'notation-jlg') . '</strong></label><br>';
         echo '<textarea name="jlg_tagline_fr" rows="3" style="width:100%;">' . esc_textarea($meta['tagline_fr'] ?? '') . '</textarea>';
         echo '</div>';
         echo '<div>';
-        echo '<label><strong>Anglaise :</strong></label><br>';
+        echo '<label><strong>' . esc_html__('Anglaise :', 'notation-jlg') . '</strong></label><br>';
         echo '<textarea name="jlg_tagline_en" rows="3" style="width:100%;">' . esc_textarea($meta['tagline_en'] ?? '') . '</textarea>';
         echo '</div>';
         echo '</div>';
-        
+
         // Points forts/faibles
-        echo '<h3>⚖️ Points Forts & Faibles</h3>';
-        echo '<p style="font-style:italic;">Un point par ligne</p>';
+        echo '<h3>' . esc_html__('⚖️ Points Forts & Faibles', 'notation-jlg') . '</h3>';
+        echo '<p style="font-style:italic;">' . esc_html__('Un point par ligne', 'notation-jlg') . '</p>';
         echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">';
         echo '<div>';
-        echo '<label><strong>Points Forts :</strong></label><br>';
-        echo '<textarea name="jlg_points_forts" rows="8" style="width:100%;" placeholder="Gameplay addictif&#10;Graphismes superbes">' . esc_textarea($meta['points_forts'] ?? '') . '</textarea>';
+        echo '<label><strong>' . esc_html__('Points Forts :', 'notation-jlg') . '</strong></label><br>';
+        echo '<textarea name="jlg_points_forts" rows="8" style="width:100%;" placeholder="' . esc_attr__("Gameplay addictif\nGraphismes superbes", 'notation-jlg') . '">' . esc_textarea($meta['points_forts'] ?? '') . '</textarea>';
         echo '</div>';
         echo '<div>';
-        echo '<label><strong>Points Faibles :</strong></label><br>';
-        echo '<textarea name="jlg_points_faibles" rows="8" style="width:100%;" placeholder="Durée de vie courte&#10;Bugs occasionnels">' . esc_textarea($meta['points_faibles'] ?? '') . '</textarea>';
+        echo '<label><strong>' . esc_html__('Points Faibles :', 'notation-jlg') . '</strong></label><br>';
+        echo '<textarea name="jlg_points_faibles" rows="8" style="width:100%;" placeholder="' . esc_attr__("Durée de vie courte\nBugs occasionnels", 'notation-jlg') . '">' . esc_textarea($meta['points_faibles'] ?? '') . '</textarea>';
         echo '</div>';
         echo '</div>';
         
