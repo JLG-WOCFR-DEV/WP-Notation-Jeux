@@ -259,17 +259,21 @@ class JLG_Admin_Platforms {
                 break;
         }
         
-        // Stocker le message pour l'affichage
         if ($success) {
-            set_transient('jlg_platforms_message', ['type' => 'success', 'message' => $message], 30);
             self::$debug_messages[] = "✅ Action réussie : " . $message;
         } else {
-            set_transient('jlg_platforms_message', ['type' => 'error', 'message' => $message], 30);
             self::$debug_messages[] = "❌ Erreur : " . $message;
         }
 
         // Stocker les messages de debug dans un transient
         set_transient('jlg_platforms_debug', self::$debug_messages, 60);
+
+        // Stocker le message pour l'affichage puis rediriger immédiatement
+        if ($success) {
+            set_transient('jlg_platforms_message', ['type' => 'success', 'message' => $message], 30);
+        } else {
+            set_transient('jlg_platforms_message', ['type' => 'error', 'message' => $message], 30);
+        }
 
         wp_safe_redirect($redirect_url);
         exit;
