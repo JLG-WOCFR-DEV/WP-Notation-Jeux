@@ -18,10 +18,7 @@ class JLG_Shortcode_User_Rating {
         }
 
         $post_id = get_the_ID();
-        $ratings = get_post_meta($post_id, '_jlg_user_ratings', true);
-        $user_ip = isset($_SERVER['REMOTE_ADDR']) ? filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP) : false;
-        $user_ip_hash = $user_ip ? wp_hash($user_ip) : '';
-        $has_voted = (is_array($ratings) && $user_ip_hash && isset($ratings[$user_ip_hash]));
+        list($has_voted, $user_vote) = JLG_Frontend::get_user_vote_for_post($post_id);
 
         JLG_Frontend::mark_shortcode_rendered();
 
@@ -31,7 +28,7 @@ class JLG_Shortcode_User_Rating {
             'avg_rating' => get_post_meta($post_id, '_jlg_user_rating_avg', true),
             'count' => get_post_meta($post_id, '_jlg_user_rating_count', true),
             'has_voted' => $has_voted,
-            'user_vote' => $has_voted ? $ratings[$user_ip_hash] : 0
+            'user_vote' => $user_vote
         ]);
     }
 }
