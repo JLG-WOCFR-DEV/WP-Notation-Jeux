@@ -217,6 +217,17 @@ class JLG_Admin_Platforms {
         $action = $sanitized_action;
         $platforms = $this->get_stored_platform_data();
         self::$debug_messages[] = "📦 Plateformes actuelles dans la DB : " . count($platforms['custom_platforms']) . " personnalisées";
+
+        $redirect_args = [
+            'page' => 'notation_jlg_settings',
+            'tab' => 'plateformes',
+        ];
+
+        if (isset($_GET['debug'])) {
+            $redirect_args['debug'] = sanitize_text_field(wp_unslash($_GET['debug']));
+        }
+
+        $redirect_url = add_query_arg($redirect_args, admin_url('admin.php'));
         
         $success = false;
         $message = '';
@@ -256,9 +267,12 @@ class JLG_Admin_Platforms {
             set_transient('jlg_platforms_message', ['type' => 'error', 'message' => $message], 30);
             self::$debug_messages[] = "❌ Erreur : " . $message;
         }
-        
+
         // Stocker les messages de debug dans un transient
         set_transient('jlg_platforms_debug', self::$debug_messages, 60);
+
+        wp_safe_redirect($redirect_url);
+        exit;
     }
     
     /**
