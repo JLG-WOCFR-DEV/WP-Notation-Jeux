@@ -218,20 +218,9 @@ class JLG_Admin_Platforms {
         $platforms = $this->get_stored_platform_data();
         self::$debug_messages[] = "📦 Plateformes actuelles dans la DB : " . count($platforms['custom_platforms']) . " personnalisées";
 
-        $redirect_args = [
-            'page' => 'notation_jlg_settings',
-            'tab' => 'plateformes',
-        ];
-
-        if (isset($_GET['debug'])) {
-            $redirect_args['debug'] = sanitize_text_field(wp_unslash($_GET['debug']));
-        }
-
-        $redirect_url = add_query_arg($redirect_args, admin_url('admin.php'));
-        
         $success = false;
         $message = '';
-        
+
         switch ($action) {
             case 'add':
                 $result = $this->add_platform($platforms);
@@ -258,15 +247,31 @@ class JLG_Admin_Platforms {
                 self::$debug_messages[] = "🔄 Option supprimée de la DB";
                 break;
         }
-        
+
         // Stocker le message pour l'affichage
         if ($success) {
-            set_transient('jlg_platforms_message', ['type' => 'success', 'message' => $message], 30);
             self::$debug_messages[] = "✅ Action réussie : " . $message;
         } else {
-            set_transient('jlg_platforms_message', ['type' => 'error', 'message' => $message], 30);
             self::$debug_messages[] = "❌ Erreur : " . $message;
         }
+
+        $message_data = [
+            'type' => $success ? 'success' : 'error',
+            'message' => $message,
+        ];
+
+        set_transient('jlg_platforms_message', $message_data, 30);
+
+        $redirect_args = [
+            'page' => 'notation_jlg_settings',
+            'tab' => 'plateformes',
+        ];
+
+        if (isset($_GET['debug'])) {
+            $redirect_args['debug'] = sanitize_text_field(wp_unslash($_GET['debug']));
+        }
+
+        $redirect_url = add_query_arg($redirect_args, admin_url('admin.php'));
 
         // Stocker les messages de debug dans un transient
         set_transient('jlg_platforms_debug', self::$debug_messages, 60);
