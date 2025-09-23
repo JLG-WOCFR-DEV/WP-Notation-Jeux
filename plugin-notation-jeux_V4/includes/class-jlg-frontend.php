@@ -214,7 +214,10 @@ class JLG_Frontend {
         }
 
         foreach ($meta as $meta_key => $values) {
-            if (strpos($meta_key, '_jlg_') !== 0) {
+            $is_plugin_meta = strpos($meta_key, '_jlg_') === 0
+                || strpos($meta_key, '_note_') === 0;
+
+            if (!$is_plugin_meta) {
                 continue;
             }
 
