@@ -6,13 +6,13 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
     public function __construct() {
         parent::__construct(
             'jlg_latest_reviews_widget',
-            'Notation JLG : Derniers Tests',
-            ['description' => 'Affiche les derniers articles ayant reçu une note.']
+            __('Notation JLG : Derniers Tests', 'notation-jlg'),
+            ['description' => __('Affiche les derniers articles ayant reçu une note.', 'notation-jlg')]
         );
     }
 
     public function widget($args, $instance) {
-        $title = apply_filters('widget_title', $instance['title'] ?? 'Derniers Tests');
+        $title = apply_filters('widget_title', $instance['title'] ?? __('Derniers Tests', 'notation-jlg'));
         $number = (!empty($instance['number'])) ? absint($instance['number']) : 5;
 
         $rated_post_ids = JLG_Helpers::get_rated_post_ids();
@@ -22,7 +22,7 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
             if (!empty($title)) {
                 echo $args['before_title'] . $title . $args['after_title'];
             }
-            echo '<p>Aucun test trouvé.</p>';
+            echo '<p>' . esc_html__('Aucun test trouvé.', 'notation-jlg') . '</p>';
             echo $args['after_widget'];
             return;
         }
@@ -47,19 +47,19 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
     }
 
     public function form($instance) {
-        $title = !empty($instance['title']) ? $instance['title'] : 'Derniers Tests';
+        $title = !empty($instance['title']) ? $instance['title'] : __('Derniers Tests', 'notation-jlg');
         $number = isset($instance['number']) ? absint($instance['number']) : 5;
         ?>
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>">Titre :</label>
-            <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" 
-                   name="<?php echo esc_attr($this->get_field_name('title')); ?>" 
+            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php echo esc_html__('Titre :', 'notation-jlg'); ?></label>
+            <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>"
+                   name="<?php echo esc_attr($this->get_field_name('title')); ?>"
                    type="text" value="<?php echo esc_attr($title); ?>">
         </p>
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('number')); ?>">Nombre d'articles à afficher :</label>
-            <input class="tiny-text" id="<?php echo esc_attr($this->get_field_id('number')); ?>" 
-                   name="<?php echo esc_attr($this->get_field_name('number')); ?>" 
+            <label for="<?php echo esc_attr($this->get_field_id('number')); ?>"><?php echo esc_html__('Nombre d\'articles à afficher :', 'notation-jlg'); ?></label>
+            <input class="tiny-text" id="<?php echo esc_attr($this->get_field_id('number')); ?>"
+                   name="<?php echo esc_attr($this->get_field_name('number')); ?>"
                    type="number" step="1" min="1" value="<?php echo esc_attr($number); ?>" size="3">
         </p>
         <?php
