@@ -57,6 +57,26 @@ class JLG_Shortcode_Summary_Display {
             ? strtoupper($request['order'])
             : 'DESC';
         $cat_filter = isset($request['cat_filter']) ? intval($request['cat_filter']) : 0;
+        $genre_filter = '';
+
+        if (!empty($atts['genre'])) {
+            $genre_filter = sanitize_title($atts['genre']);
+        }
+
+        if (isset($request['genre_filter'])) {
+            $genre_filter = sanitize_title($request['genre_filter']);
+        }
+
+        $genre_options = [];
+        if (class_exists('JLG_Helpers')) {
+            foreach (JLG_Helpers::get_registered_genres() as $slug => $genre) {
+                $genre_options[$slug] = $genre['name'];
+            }
+        }
+
+        if ($genre_filter !== '' && !isset($genre_options[$genre_filter])) {
+            $genre_filter = '';
+        }
 
         $paged = isset($request['paged']) ? intval($request['paged']) : 0;
         if ($paged < 1) {
@@ -110,8 +130,10 @@ class JLG_Shortcode_Summary_Display {
                 'orderby'      => $orderby,
                 'order'        => $order,
                 'cat_filter'   => $cat_filter,
+                'genre_filter' => $genre_filter,
                 'colonnes'     => self::prepare_columns($atts),
                 'colonnes_disponibles' => self::get_available_columns(),
+                'genre_options'        => $genre_options,
                 'error_message' => $no_results,
             ];
         }
@@ -144,6 +166,15 @@ class JLG_Shortcode_Summary_Display {
             $args['cat'] = $cat_filter;
         }
 
+        if ($genre_filter !== '') {
+            $args['meta_query'] = isset($args['meta_query']) && is_array($args['meta_query']) ? $args['meta_query'] : [];
+            $args['meta_query'][] = [
+                'key'     => '_jlg_genres',
+                'value'   => '"' . $genre_filter . '"',
+                'compare' => 'LIKE',
+            ];
+        }
+
         $query = new WP_Query($args);
 
         return [
@@ -153,8 +184,10 @@ class JLG_Shortcode_Summary_Display {
             'orderby'              => $orderby,
             'order'                => $order,
             'cat_filter'           => $cat_filter,
+            'genre_filter'         => $genre_filter,
             'colonnes'             => self::prepare_columns($atts),
             'colonnes_disponibles' => self::get_available_columns(),
+            'genre_options'        => $genre_options,
             'error_message'        => '',
         ];
     }
@@ -164,6 +197,7 @@ class JLG_Shortcode_Summary_Display {
             'posts_per_page' => 12,
             'layout'         => 'table',
             'categorie'      => '',
+            'genre'          => '',
             'colonnes'       => 'titre,date,note',
             'id'             => 'jlg-table-' . uniqid(),
         ];
@@ -197,6 +231,10 @@ class JLG_Shortcode_Summary_Display {
                     'meta_key' => '_jlg_average_score',
                     'aliases'  => ['note'],
                 ],
+            ],
+            'genres' => [
+                'label'    => __('Genres', 'notation-jlg'),
+                'sortable' => false,
             ],
             'developpeur' => [
                 'label'    => __('Développeur', 'notation-jlg'),

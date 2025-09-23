@@ -9,6 +9,7 @@ if (!defined('ABSPATH')) exit;
 class JLG_Helpers {
 
     private static $option_name = 'notation_jlg_settings';
+    private static $genres_option_name = 'jlg_genres_list';
     private static $category_keys = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'];
 
     private static function get_theme_defaults() {
@@ -129,6 +130,240 @@ class JLG_Helpers {
         return wp_parse_args($saved_options, $defaults);
     }
 
+    public static function get_default_genre_definitions() {
+        $defaults = [
+            'action' => ['name' => __('Action', 'notation-jlg'), 'color' => '#ef4444', 'badge' => '⚔️', 'order' => 1, 'custom' => false],
+            'aventure' => ['name' => __('Aventure', 'notation-jlg'), 'color' => '#f97316', 'badge' => '🧭', 'order' => 2, 'custom' => false],
+            'rpg' => ['name' => __('RPG', 'notation-jlg'), 'color' => '#6366f1', 'badge' => '🛡️', 'order' => 3, 'custom' => false],
+            'strategie' => ['name' => __('Stratégie', 'notation-jlg'), 'color' => '#0ea5e9', 'badge' => '♟️', 'order' => 4, 'custom' => false],
+            'sport' => ['name' => __('Sport', 'notation-jlg'), 'color' => '#22c55e', 'badge' => '🏆', 'order' => 5, 'custom' => false],
+            'course' => ['name' => __('Course', 'notation-jlg'), 'color' => '#ec4899', 'badge' => '🏎️', 'order' => 6, 'custom' => false],
+            'simulation' => ['name' => __('Simulation', 'notation-jlg'), 'color' => '#10b981', 'badge' => '🛠️', 'order' => 7, 'custom' => false],
+            'independant' => ['name' => __('Indépendant', 'notation-jlg'), 'color' => '#a855f7', 'badge' => '✨', 'order' => 8, 'custom' => false],
+        ];
+
+        return apply_filters('jlg_default_genre_definitions', $defaults);
+    }
+
+    public static function get_default_genres_storage() {
+        $defaults = self::get_default_genre_definitions();
+        $order = [];
+        $position = 1;
+
+        foreach ($defaults as $slug => $data) {
+            $slug = sanitize_title($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $order[$slug] = isset($data['order']) ? (int) $data['order'] : $position;
+            $position++;
+        }
+
+        return [
+            'custom_genres' => [],
+            'order' => $order,
+        ];
+    }
+
+    public static function get_registered_genres() {
+        static $cached = null;
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $defaults = self::get_default_genre_definitions();
+        $stored = get_option(self::$genres_option_name, []);
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $custom = isset($stored['custom_genres']) && is_array($stored['custom_genres']) ? $stored['custom_genres'] : [];
+        $order_map = isset($stored['order']) && is_array($stored['order']) ? $stored['order'] : [];
+
+        $genres = [];
+
+        foreach ($defaults as $slug => $data) {
+            $slug = sanitize_title($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $color = isset($data['color']) ? sanitize_hex_color($data['color']) : '';
+            if (empty($color)) {
+                $color = '#4b5563';
+            }
+
+            $genres[$slug] = [
+                'slug'   => $slug,
+                'name'   => sanitize_text_field($data['name'] ?? $slug),
+                'color'  => $color,
+                'badge'  => sanitize_text_field($data['badge'] ?? ''),
+                'order'  => isset($data['order']) ? (int) $data['order'] : PHP_INT_MAX,
+                'custom' => false,
+            ];
+        }
+
+        foreach ($custom as $slug => $data) {
+            $slug = sanitize_title($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $color = isset($data['color']) ? sanitize_hex_color($data['color']) : '';
+            if (empty($color)) {
+                $color = '#2563eb';
+            }
+
+            $genres[$slug] = [
+                'slug'   => $slug,
+                'name'   => sanitize_text_field($data['name'] ?? $slug),
+                'color'  => $color,
+                'badge'  => sanitize_text_field($data['badge'] ?? ''),
+                'order'  => isset($order_map[$slug]) ? (int) $order_map[$slug] : (isset($data['order']) ? (int) $data['order'] : PHP_INT_MAX),
+                'custom' => true,
+            ];
+        }
+
+        $orders = [];
+        foreach ($genres as $slug => $genre) {
+            $orders[$slug] = isset($order_map[$slug]) ? (int) $order_map[$slug] : (isset($genre['order']) ? (int) $genre['order'] : PHP_INT_MAX);
+        }
+
+        uasort($genres, function($a, $b) use ($orders) {
+            $order_a = $orders[$a['slug']] ?? PHP_INT_MAX;
+            $order_b = $orders[$b['slug']] ?? PHP_INT_MAX;
+
+            if ($order_a === $order_b) {
+                return strcmp($a['name'], $b['name']);
+            }
+
+            return $order_a <=> $order_b;
+        });
+
+        $cached = apply_filters('jlg_registered_genres', $genres);
+        return $cached;
+    }
+
+    public static function get_default_genre_definitions() {
+        $defaults = [
+            'action' => ['name' => __('Action', 'notation-jlg'), 'color' => '#ef4444', 'badge' => '⚔️', 'order' => 1, 'custom' => false],
+            'aventure' => ['name' => __('Aventure', 'notation-jlg'), 'color' => '#f97316', 'badge' => '🧭', 'order' => 2, 'custom' => false],
+            'rpg' => ['name' => __('RPG', 'notation-jlg'), 'color' => '#6366f1', 'badge' => '🛡️', 'order' => 3, 'custom' => false],
+            'strategie' => ['name' => __('Stratégie', 'notation-jlg'), 'color' => '#0ea5e9', 'badge' => '♟️', 'order' => 4, 'custom' => false],
+            'sport' => ['name' => __('Sport', 'notation-jlg'), 'color' => '#22c55e', 'badge' => '🏆', 'order' => 5, 'custom' => false],
+            'course' => ['name' => __('Course', 'notation-jlg'), 'color' => '#ec4899', 'badge' => '🏎️', 'order' => 6, 'custom' => false],
+            'simulation' => ['name' => __('Simulation', 'notation-jlg'), 'color' => '#10b981', 'badge' => '🛠️', 'order' => 7, 'custom' => false],
+            'independant' => ['name' => __('Indépendant', 'notation-jlg'), 'color' => '#a855f7', 'badge' => '✨', 'order' => 8, 'custom' => false],
+        ];
+
+        return apply_filters('jlg_default_genre_definitions', $defaults);
+    }
+
+    public static function get_default_genres_storage() {
+        $defaults = self::get_default_genre_definitions();
+        $order = [];
+        $position = 1;
+
+        foreach ($defaults as $slug => $data) {
+            $slug = sanitize_title($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $order[$slug] = isset($data['order']) ? (int) $data['order'] : $position;
+            $position++;
+        }
+
+        return [
+            'custom_genres' => [],
+            'order' => $order,
+        ];
+    }
+
+    public static function get_registered_genres() {
+        static $cached = null;
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $defaults = self::get_default_genre_definitions();
+        $stored = get_option(self::$genres_option_name, []);
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $custom = isset($stored['custom_genres']) && is_array($stored['custom_genres']) ? $stored['custom_genres'] : [];
+        $order_map = isset($stored['order']) && is_array($stored['order']) ? $stored['order'] : [];
+
+        $genres = [];
+
+        foreach ($defaults as $slug => $data) {
+            $slug = sanitize_title($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $color = isset($data['color']) ? sanitize_hex_color($data['color']) : '';
+            if (empty($color)) {
+                $color = '#4b5563';
+            }
+
+            $genres[$slug] = [
+                'slug'   => $slug,
+                'name'   => sanitize_text_field($data['name'] ?? $slug),
+                'color'  => $color,
+                'badge'  => sanitize_text_field($data['badge'] ?? ''),
+                'order'  => isset($data['order']) ? (int) $data['order'] : PHP_INT_MAX,
+                'custom' => false,
+            ];
+        }
+
+        foreach ($custom as $slug => $data) {
+            $slug = sanitize_title($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $color = isset($data['color']) ? sanitize_hex_color($data['color']) : '';
+            if (empty($color)) {
+                $color = '#2563eb';
+            }
+
+            $genres[$slug] = [
+                'slug'   => $slug,
+                'name'   => sanitize_text_field($data['name'] ?? $slug),
+                'color'  => $color,
+                'badge'  => sanitize_text_field($data['badge'] ?? ''),
+                'order'  => isset($order_map[$slug]) ? (int) $order_map[$slug] : (isset($data['order']) ? (int) $data['order'] : PHP_INT_MAX),
+                'custom' => true,
+            ];
+        }
+
+        $orders = [];
+        foreach ($genres as $slug => $genre) {
+            $orders[$slug] = isset($order_map[$slug]) ? (int) $order_map[$slug] : (isset($genre['order']) ? (int) $genre['order'] : PHP_INT_MAX);
+        }
+
+        uasort($genres, function($a, $b) use ($orders) {
+            $order_a = $orders[$a['slug']] ?? PHP_INT_MAX;
+            $order_b = $orders[$b['slug']] ?? PHP_INT_MAX;
+
+            if ($order_a === $order_b) {
+                return strcmp($a['name'], $b['name']);
+            }
+
+            return $order_a <=> $order_b;
+        });
+
+        $cached = apply_filters('jlg_registered_genres', $genres);
+        return $cached;
+    }
+
     /**
      * Retrieve the preferred title for a review.
      *
@@ -160,6 +395,120 @@ class JLG_Helpers {
         }
 
         return apply_filters('jlg_game_title', (string) $resolved_title, $post_id, $raw_meta_title);
+    }
+
+    public static function get_game_genres($post_id) {
+        $post_id = (int) $post_id;
+
+        if ($post_id <= 0) {
+            return [
+                'primary' => null,
+                'genres'  => [],
+            ];
+        }
+
+        $registered = self::get_registered_genres();
+        if (empty($registered)) {
+            return [
+                'primary' => null,
+                'genres'  => [],
+            ];
+        }
+
+        $raw_meta = get_post_meta($post_id, '_jlg_genres', true);
+        $selected_slugs = [];
+        $primary_slug = '';
+
+        if (is_array($raw_meta)) {
+            if (isset($raw_meta['selected']) && is_array($raw_meta['selected'])) {
+                $selected_slugs = array_map('sanitize_title', $raw_meta['selected']);
+            } else {
+                $selected_slugs = array_map('sanitize_title', $raw_meta);
+            }
+
+            if (!empty($raw_meta['primary'])) {
+                $primary_slug = sanitize_title($raw_meta['primary']);
+            }
+        } elseif (is_string($raw_meta) && $raw_meta !== '') {
+            $selected_slugs = array_map('sanitize_title', preg_split('/[,;|]/', $raw_meta));
+        }
+
+        $selected_slugs = array_values(array_unique(array_filter($selected_slugs, function($slug) use ($registered) {
+            return $slug !== '' && isset($registered[$slug]);
+        })));
+
+        if (empty($selected_slugs)) {
+            return [
+                'primary' => null,
+                'genres'  => [],
+            ];
+        }
+
+        if ($primary_slug === '' || !in_array($primary_slug, $selected_slugs, true)) {
+            $primary_slug = $selected_slugs[0];
+        }
+
+        $items = [];
+        $primary_item = null;
+
+        foreach ($selected_slugs as $slug) {
+            $genre = $registered[$slug];
+            $item = [
+                'slug'       => $slug,
+                'name'       => $genre['name'],
+                'color'      => $genre['color'],
+                'badge'      => $genre['badge'],
+                'is_primary' => ($slug === $primary_slug),
+            ];
+
+            if ($item['is_primary']) {
+                $primary_item = $item;
+            }
+
+            $items[] = $item;
+        }
+
+        return [
+            'primary' => $primary_item,
+            'genres'  => $items,
+        ];
+    }
+
+    public static function get_genre_badges_markup($post_id, $show_placeholder = true) {
+        $data = self::get_game_genres($post_id);
+
+        if (empty($data['genres'])) {
+            return $show_placeholder
+                ? '<span class="jlg-genre-badge is-empty">' . esc_html__('—', 'notation-jlg') . '</span>'
+                : '';
+        }
+
+        $badges = [];
+        foreach ($data['genres'] as $genre) {
+            $color = !empty($genre['color']) ? $genre['color'] : '#4b5563';
+            $rgb = sscanf($color, "#%02x%02x%02x");
+            if (!is_array($rgb) || count($rgb) !== 3) {
+                $rgb = [75, 85, 99];
+            }
+
+            $brightness = ($rgb[0] * 299 + $rgb[1] * 587 + $rgb[2] * 114) / 1000;
+            $text_color = ($brightness >= 140) ? '#111827' : '#ffffff';
+            $badge_symbol = !empty($genre['badge']) ? $genre['badge'] . ' ' : '';
+            $classes = ['jlg-genre-badge'];
+            if (!empty($genre['is_primary'])) {
+                $classes[] = 'is-primary';
+            }
+
+            $badges[] = sprintf(
+                '<span class="%1$s" style="background:%2$s;color:%3$s;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;font-weight:600;margin-right:6px;">%4$s</span>',
+                esc_attr(implode(' ', $classes)),
+                esc_attr($color),
+                esc_attr($text_color),
+                esc_html($badge_symbol . ($genre['name'] ?? ''))
+            );
+        }
+
+        return '<span class="jlg-genre-badges">' . implode('', $badges) . '</span>';
     }
 
     public static function get_color_palette() {
@@ -257,27 +606,129 @@ class JLG_Helpers {
     
     public static function get_rated_post_ids() {
         global $wpdb;
-        
+
         $meta_keys = array_map(function($key) {
             return '_note_' . $key;
         }, self::$category_keys);
-        
+
         $placeholders = implode(', ', array_fill(0, count($meta_keys), '%s'));
-        
+
         $query = $wpdb->prepare(
-            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} 
-            WHERE meta_key IN ($placeholders) 
-            AND meta_value != '' 
+            "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
+            WHERE meta_key IN ($placeholders)
+            AND meta_value != ''
             AND meta_value IS NOT NULL",
             ...$meta_keys
         );
-        
+
         return $wpdb->get_col($query);
     }
-    
+
+    public static function migrate_legacy_genre_meta() {
+        global $wpdb;
+
+        static $ran = false;
+
+        if ($ran) {
+            return;
+        }
+
+        $ran = true;
+
+        if (!isset($wpdb) || !is_object($wpdb)) {
+            return;
+        }
+
+        $legacy_keys = apply_filters('jlg_legacy_genre_meta_keys', ['jlg_genre', '_jlg_genre', 'jlg_genres']);
+
+        if (empty($legacy_keys) || !is_array($legacy_keys)) {
+            return;
+        }
+
+        $registered = self::get_registered_genres();
+        if (empty($registered)) {
+            return;
+        }
+
+        $unmapped = [];
+
+        foreach ($legacy_keys as $meta_key) {
+            $meta_key = sanitize_key($meta_key);
+            if ($meta_key === '') {
+                continue;
+            }
+
+            $rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
+                $meta_key
+            ));
+
+            if (empty($rows)) {
+                continue;
+            }
+
+            foreach ($rows as $row) {
+                $post_id = isset($row->post_id) ? (int) $row->post_id : 0;
+                if ($post_id <= 0) {
+                    continue;
+                }
+
+                $existing = get_post_meta($post_id, '_jlg_genres', true);
+                if (is_array($existing) && !empty($existing['selected'])) {
+                    continue;
+                }
+
+                $value = maybe_unserialize($row->meta_value);
+                $raw_values = [];
+                $primary = '';
+
+                if (is_array($value)) {
+                    if (isset($value['selected']) && is_array($value['selected'])) {
+                        $raw_values = $value['selected'];
+                        if (!empty($value['primary'])) {
+                            $primary = $value['primary'];
+                        }
+                    } else {
+                        $raw_values = $value;
+                    }
+                } elseif (is_string($value) && $value !== '') {
+                    $raw_values = preg_split('/[,;|]/', $value);
+                }
+
+                $raw_values = array_filter(array_map('trim', (array) $raw_values));
+
+                if (empty($raw_values)) {
+                    delete_post_meta($post_id, $meta_key);
+                    continue;
+                }
+
+                $sanitized_candidates = array_map('sanitize_title', $raw_values);
+                $sanitized_candidates = array_values(array_unique(array_filter($sanitized_candidates)));
+
+                $sanitized = JLG_Validator::sanitize_genres($sanitized_candidates, $primary);
+
+                if (!empty($sanitized) && !empty($sanitized['selected'])) {
+                    update_post_meta($post_id, '_jlg_genres', $sanitized);
+                    delete_post_meta($post_id, $meta_key);
+                } else {
+                    $unmapped = array_merge($unmapped, $raw_values);
+                }
+            }
+        }
+
+        if (!empty($unmapped)) {
+            $normalized = array_values(array_unique(array_filter(array_map('sanitize_text_field', $unmapped))));
+            if (!empty($normalized)) {
+                update_option('jlg_genres_migration_unmapped', $normalized);
+            }
+        } else {
+            delete_option('jlg_genres_migration_unmapped');
+        }
+    }
+
     public static function adjust_hex_brightness($hex, $steps) {
         $hex = str_replace('#', '', $hex);
-        
+
         if (strlen($hex) == 3) {
             $hex = str_repeat(substr($hex,0,1), 2) . 
                    str_repeat(substr($hex,1,1), 2) . 

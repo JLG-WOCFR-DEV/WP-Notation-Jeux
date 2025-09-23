@@ -196,7 +196,58 @@ class JLG_Admin_Metaboxes {
             echo '</label>';
         }
         echo '</div>';
-        
+
+        // Genres
+        echo '<div style="margin-bottom:20px;">';
+        echo '<p><strong>' . esc_html__('Types de jeu :', 'notation-jlg') . '</strong></p>';
+
+        $available_genres = class_exists('JLG_Helpers') ? JLG_Helpers::get_registered_genres() : [];
+        $genre_selection = class_exists('JLG_Helpers') ? JLG_Helpers::get_game_genres($post->ID) : ['genres' => [], 'primary' => null];
+        $selected_genres = [];
+        $primary_genre = '';
+
+        if (!empty($genre_selection['genres']) && is_array($genre_selection['genres'])) {
+            foreach ($genre_selection['genres'] as $genre_item) {
+                if (!empty($genre_item['slug'])) {
+                    $selected_genres[] = $genre_item['slug'];
+                }
+            }
+        }
+
+        if (!empty($genre_selection['primary']['slug'])) {
+            $primary_genre = $genre_selection['primary']['slug'];
+        }
+
+        if (empty($available_genres)) {
+            echo '<p class="description">' . esc_html__('Aucun genre disponible. Ajoutez vos types de jeu dans l’onglet dédié.', 'notation-jlg') . '</p>';
+        } else {
+            echo '<div class="jlg-genre-selection" style="display:flex;flex-direction:column;gap:8px;">';
+            foreach ($available_genres as $slug => $genre) {
+                $color = !empty($genre['color']) ? $genre['color'] : '#4b5563';
+                $rgb = sscanf($color, "#%02x%02x%02x");
+                if (!is_array($rgb) || count($rgb) !== 3) {
+                    $rgb = [75, 85, 99];
+                }
+                $brightness = ($rgb[0] * 299 + $rgb[1] * 587 + $rgb[2] * 114) / 1000;
+                $text_color = ($brightness >= 140) ? '#111827' : '#ffffff';
+                $badge = !empty($genre['badge']) ? $genre['badge'] . ' ' : '';
+                $is_checked = in_array($slug, $selected_genres, true);
+                $is_primary = ($primary_genre === $slug);
+
+                echo '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;">';
+                echo '<input type="checkbox" name="jlg_genres[]" value="' . esc_attr($slug) . '"' . checked($is_checked, true, false) . ' />';
+                echo '<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:' . esc_attr($color) . ';color:' . esc_attr($text_color) . ';font-weight:600;">' . esc_html($badge . $genre['name']) . '</span>';
+                echo '<span style="margin-left:auto; display:inline-flex; align-items:center; gap:4px;">';
+                echo '<input type="radio" name="jlg_primary_genre" value="' . esc_attr($slug) . '"' . checked($is_primary, true, false) . ' />';
+                echo '<span style="font-size:12px; color:#4b5563;">' . esc_html__('Principal', 'notation-jlg') . '</span>';
+                echo '</span>';
+                echo '</label>';
+            }
+            echo '</div>';
+            echo '<p class="description">' . esc_html__('Sélectionnez un ou plusieurs genres et définissez le genre principal.', 'notation-jlg') . '</p>';
+        }
+        echo '</div>';
+
         // Taglines
         echo '<h3>' . esc_html__('💬 Taglines', 'notation-jlg') . '</h3>';
         echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
@@ -370,6 +421,16 @@ class JLG_Admin_Metaboxes {
                 update_post_meta($post_id, '_jlg_plateformes', $platforms);
             } else {
                 delete_post_meta($post_id, '_jlg_plateformes');
+            }
+
+            $genres_input = isset($_POST['jlg_genres']) ? wp_unslash($_POST['jlg_genres']) : [];
+            $primary_genre_input = isset($_POST['jlg_primary_genre']) ? wp_unslash($_POST['jlg_primary_genre']) : '';
+            $sanitized_genres = JLG_Validator::sanitize_genres($genres_input, $primary_genre_input);
+
+            if (!empty($sanitized_genres) && !empty($sanitized_genres['selected'])) {
+                update_post_meta($post_id, '_jlg_genres', $sanitized_genres);
+            } else {
+                delete_post_meta($post_id, '_jlg_genres');
             }
         }
 

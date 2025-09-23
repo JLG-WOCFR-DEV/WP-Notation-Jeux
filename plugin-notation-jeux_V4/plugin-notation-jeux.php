@@ -137,6 +137,12 @@ final class JLG_Plugin_De_Notation_Main {
             add_option('notation_jlg_settings', JLG_Helpers::get_default_settings());
         }
 
+        if (!get_option('jlg_genres_list')) {
+            add_option('jlg_genres_list', JLG_Helpers::get_default_genres_storage());
+        }
+
+        JLG_Helpers::migrate_legacy_genre_meta();
+
         update_option('jlg_notation_version', JLG_NOTATION_VERSION);
         flush_rewrite_rules();
     }

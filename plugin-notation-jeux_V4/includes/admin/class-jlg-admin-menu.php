@@ -53,6 +53,7 @@ class JLG_Admin_Menu {
             'reglages' => __('⚙️ Réglages', 'notation-jlg'),
             'articles_notes' => __('📊 Articles Notés', 'notation-jlg'),
             'plateformes' => __('🎮 Plateformes', 'notation-jlg'),
+            'genres' => __('🎭 Types de jeu', 'notation-jlg'),
             'shortcodes' => __('📝 Shortcodes', 'notation-jlg'),
             'tutoriels' => __('📚 Tutoriels', 'notation-jlg'),
         ];
@@ -72,6 +73,8 @@ class JLG_Admin_Menu {
                 return $this->get_posts_list_tab_content();
             case 'plateformes':
                 return $this->get_platforms_tab_content();
+            case 'genres':
+                return $this->get_genres_tab_content();
             case 'shortcodes':
                 return $this->get_shortcodes_tab_content();
             case 'tutoriels':
@@ -242,6 +245,33 @@ class JLG_Admin_Menu {
         }
 
         return $results;
+    }
+
+    private function get_genres_tab_content() {
+        ob_start();
+        echo '<h2 class=\"title\">' . esc_html__('🎭 Gestion des Types de jeu', 'notation-jlg') . '</h2>';
+        $this->render_genres_tab();
+        return ob_get_clean();
+    }
+
+    private function render_genres_tab() {
+        if (class_exists('JLG_Admin_Genres')) {
+            $genres_manager = JLG_Admin_Genres::get_instance();
+            $genres_manager->render_genres_page();
+            return;
+        }
+
+        $path = JLG_NOTATION_PLUGIN_DIR . 'includes/admin/class-jlg-admin-genres.php';
+        if (file_exists($path)) {
+            require_once $path;
+            if (class_exists('JLG_Admin_Genres')) {
+                $genres_manager = JLG_Admin_Genres::get_instance();
+                $genres_manager->render_genres_page();
+                return;
+            }
+        }
+
+        echo '<div class=\"notice notice-error\"><p>' . esc_html__('Impossible de charger la gestion des genres.', 'notation-jlg') . '</p></div>';
     }
 
     private function get_platforms_tab_content() {

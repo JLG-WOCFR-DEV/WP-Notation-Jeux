@@ -80,6 +80,56 @@ class JLG_Validator {
         return array_values(array_intersect($sanitized, $allowed_platforms));
     }
 
+    public static function sanitize_genres($genres, $primary = '') {
+        $registered = class_exists('JLG_Helpers') ? JLG_Helpers::get_registered_genres() : [];
+
+        if (empty($registered) || !is_array($registered)) {
+            return [];
+        }
+
+        if (!is_array($genres)) {
+            if (is_string($genres)) {
+                $genres = preg_split('/[,;|]/', $genres);
+            } else {
+                $genres = [];
+            }
+        }
+
+        $allowed_slugs = array_keys($registered);
+        $selected = [];
+
+        foreach ($genres as $value) {
+            if (is_array($value)) {
+                $value = implode(' ', $value);
+            }
+
+            $slug = sanitize_title($value);
+
+            if ($slug === '' || !in_array($slug, $allowed_slugs, true)) {
+                continue;
+            }
+
+            if (!in_array($slug, $selected, true)) {
+                $selected[] = $slug;
+            }
+        }
+
+        if (empty($selected)) {
+            return [];
+        }
+
+        $primary_slug = sanitize_title($primary);
+
+        if ($primary_slug === '' || !in_array($primary_slug, $selected, true)) {
+            $primary_slug = $selected[0];
+        }
+
+        return [
+            'selected' => $selected,
+            'primary' => $primary_slug,
+        ];
+    }
+
     public static function validate_date($date, $allow_empty = true) {
         if ($date === '' || $date === null) {
             return $allow_empty;

@@ -22,6 +22,8 @@ if ($delete_data) {
     delete_option('jlg_notation_version');
     delete_option('jlg_migration_v5_completed');
     delete_option('jlg_platforms_list');
+    delete_option('jlg_genres_list');
+    delete_option('jlg_genres_migration_unmapped');
     delete_option('jlg_notation_delete_data_on_uninstall');
     
     // Supprimer toutes les métadonnées des posts
@@ -33,6 +35,7 @@ if ($delete_data) {
         '_jlg_points_forts', '_jlg_points_faibles',
         '_jlg_developpeur', '_jlg_editeur',
         '_jlg_date_sortie', '_jlg_plateformes',
+        '_jlg_genres',
         '_jlg_cover_image_url', '_jlg_version',
         '_jlg_pegi', '_jlg_temps_de_jeu',
         '_jlg_user_ratings', '_jlg_user_rating_avg',
@@ -46,4 +49,6 @@ if ($delete_data) {
     // Nettoyer les transients éventuels
     $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_jlg_%'");
     $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_jlg_%'");
+
+    delete_metadata('user', 0, 'jlg_genres_notice_dismissed', '', true);
 }

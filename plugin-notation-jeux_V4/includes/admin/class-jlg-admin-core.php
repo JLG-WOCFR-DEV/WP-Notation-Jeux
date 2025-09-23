@@ -7,6 +7,7 @@ class JLG_Admin_Core {
     private $metaboxes;
     private $settings;
     private $platforms;
+    private $genres;
 
     public static function get_instance() {
         if (self::$instance === null) {
@@ -26,7 +27,8 @@ class JLG_Admin_Core {
             'includes/admin/class-jlg-admin-metaboxes.php',
             'includes/admin/class-jlg-admin-settings.php',
             'includes/admin/class-jlg-admin-ajax.php',
-            'includes/admin/class-jlg-admin-platforms.php'  // Ajout de la classe Platforms
+            'includes/admin/class-jlg-admin-platforms.php',
+            'includes/admin/class-jlg-admin-genres.php'
         ];
 
         foreach ($admin_files as $file) {
@@ -58,6 +60,10 @@ class JLG_Admin_Core {
         if (class_exists('JLG_Admin_Platforms')) {
             $this->platforms = JLG_Admin_Platforms::get_instance();
         }
+
+        if (class_exists('JLG_Admin_Genres')) {
+            $this->genres = JLG_Admin_Genres::get_instance();
+        }
     }
 
     public function get_component($component_name) {
@@ -66,6 +72,7 @@ class JLG_Admin_Core {
             case 'metaboxes': return $this->metaboxes;
             case 'settings': return $this->settings;
             case 'platforms': return $this->platforms;
+            case 'genres': return $this->genres;
             default: return null;
         }
     }

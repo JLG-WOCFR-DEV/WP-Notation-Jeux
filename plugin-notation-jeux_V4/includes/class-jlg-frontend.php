@@ -758,6 +758,7 @@ class JLG_Frontend {
             'order'      => isset($_POST['order']) ? sanitize_text_field(wp_unslash($_POST['order'])) : 'DESC',
             'cat_filter' => isset($_POST['cat_filter']) ? intval($_POST['cat_filter']) : 0,
             'paged'      => isset($_POST['paged']) ? intval($_POST['paged']) : 1,
+            'genre_filter' => isset($_POST['genre_filter']) ? sanitize_title(wp_unslash($_POST['genre_filter'])) : '',
         ];
 
         $current_url = isset($_POST['current_url']) ? esc_url_raw(wp_unslash($_POST['current_url'])) : '';
@@ -781,6 +782,7 @@ class JLG_Frontend {
             'order'      => $context['order'] ?? 'DESC',
             'paged'      => $context['paged'] ?? 1,
             'cat_filter' => $context['cat_filter'] ?? 0,
+            'genre_filter' => $context['genre_filter'] ?? '',
             'total_pages' => 0,
         ];
 
@@ -939,6 +941,8 @@ class JLG_Frontend {
                 'colonnes_disponibles' => [],
                 'error_message'      => '',
                 'cat_filter'         => 0,
+                'genre_filter'       => '',
+                'genre_options'      => [],
                 'table_id'           => '',
                 'widget_args'        => [],
                 'title'              => '',

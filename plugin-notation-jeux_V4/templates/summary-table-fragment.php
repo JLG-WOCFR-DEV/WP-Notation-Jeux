@@ -17,6 +17,8 @@ $layout = isset($atts['layout']) ? $atts['layout'] : 'table';
 $current_orderby = !empty($orderby) ? $orderby : 'date';
 $current_order = !empty($order) ? strtoupper($order) : 'DESC';
 $current_cat_filter = isset($cat_filter) ? intval($cat_filter) : 0;
+$resolved_genre_filter = isset($genre_filter) ? sanitize_title($genre_filter) : '';
+$genre_options = is_array($genre_options) ? $genre_options : [];
 $default_empty_message = '<p>' . esc_html__('Aucun article trouvé pour cette sélection.', 'notation-jlg') . '</p>';
 $empty_message = !empty($error_message) ? $error_message : $default_empty_message;
 $columns_count = count($columns);
@@ -105,6 +107,14 @@ if ($layout === 'grid') :
                     <div class="jlg-game-card-title">
                         <span><?php echo esc_html($game_title); ?></span>
                     </div>
+                    <?php
+                    $genre_markup = class_exists('JLG_Helpers') ? JLG_Helpers::get_genre_badges_markup($post_id) : '';
+                    if (!empty($genre_markup)) :
+                    ?>
+                        <div class="jlg-game-card-genres" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+                            <?php echo wp_kses_post($genre_markup); ?>
+                        </div>
+                    <?php endif; ?>
                 </a>
             <?php endwhile;
         else :
@@ -171,6 +181,9 @@ else :
                                         $publisher = get_post_meta($post_id, '_jlg_editeur', true) ?: __('-', 'notation-jlg');
                                         echo esc_html($publisher);
                                         break;
+                                    case 'genres':
+                                        echo wp_kses_post(class_exists('JLG_Helpers') ? JLG_Helpers::get_genre_badges_markup($post_id) : '');
+                                        break;
                                 }
                                 echo '</td>';
                             }
@@ -215,6 +228,10 @@ if ($total_pages > 1) {
 
     if ($current_cat_filter > 0) {
         $pagination_args['add_args']['cat_filter'] = $current_cat_filter;
+    }
+
+    if ($resolved_genre_filter !== '') {
+        $pagination_args['add_args']['genre_filter'] = $resolved_genre_filter;
     }
 
     $pagination_links = paginate_links($pagination_args);

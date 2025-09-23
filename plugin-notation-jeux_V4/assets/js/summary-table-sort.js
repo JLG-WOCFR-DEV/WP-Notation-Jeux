@@ -39,15 +39,23 @@ jQuery(document).ready(function($) {
 
         if (state.orderby) {
             $wrapper.attr('data-orderby', state.orderby);
+            $wrapper.data('orderby', state.orderby);
         }
         if (state.order) {
             $wrapper.attr('data-order', state.order);
+            $wrapper.data('order', state.order);
         }
         if (state.paged) {
             $wrapper.attr('data-paged', state.paged);
+            $wrapper.data('paged', state.paged);
         }
         if (typeof state.cat_filter !== 'undefined') {
             $wrapper.attr('data-cat-filter', state.cat_filter);
+            $wrapper.data('catFilter', state.cat_filter);
+        }
+        if (typeof state.genre_filter !== 'undefined') {
+            $wrapper.attr('data-genre-filter', state.genre_filter);
+            $wrapper.data('genreFilter', state.genre_filter);
         }
 
         var $form = $wrapper.find('.jlg-summary-filters form');
@@ -60,6 +68,9 @@ jQuery(document).ready(function($) {
             }
             if (typeof state.cat_filter !== 'undefined') {
                 $form.find('select[name="cat_filter"]').val(state.cat_filter);
+            }
+            if (typeof state.genre_filter !== 'undefined') {
+                $form.find('select[name="genre_filter"]').val(state.genre_filter);
             }
         }
     }
@@ -118,6 +129,7 @@ jQuery(document).ready(function($) {
             paged = $wrapper.data('paged') || 1;
         }
         var catFilter = params.cat_filter;
+        var genreFilter = params.genre_filter;
 
         requestData.orderby = orderby;
         requestData.order = order;
@@ -127,13 +139,27 @@ jQuery(document).ready(function($) {
         }
 
         if (typeof catFilter === 'undefined' || catFilter === '') {
-            catFilter = $wrapper.data('catFilter');
+            var storedCatFilter = $wrapper.data('catFilter');
+            if (typeof storedCatFilter === 'undefined') {
+                storedCatFilter = $wrapper.attr('data-cat-filter');
+            }
+            catFilter = typeof storedCatFilter !== 'undefined' ? storedCatFilter : '';
         }
 
         requestData.cat_filter = parseInt(catFilter, 10);
         if (isNaN(requestData.cat_filter)) {
             requestData.cat_filter = 0;
         }
+
+        if (typeof genreFilter === 'undefined' || genreFilter === null) {
+            var storedGenreFilter = $wrapper.data('genreFilter');
+            if (typeof storedGenreFilter === 'undefined') {
+                storedGenreFilter = $wrapper.attr('data-genre-filter');
+            }
+            genreFilter = typeof storedGenreFilter !== 'undefined' ? storedGenreFilter : '';
+        }
+
+        requestData.genre_filter = genreFilter ? genreFilter.toString() : '';
 
         $wrapper.addClass('jlg-summary-loading');
 
