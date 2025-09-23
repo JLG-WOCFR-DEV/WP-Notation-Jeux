@@ -249,14 +249,7 @@ class JLG_Frontend {
                 true
             );
             $cookie_name = 'jlg_user_rating_token';
-            $token = '';
-
-            if (isset($_COOKIE[$cookie_name])) {
-                $cookie_token = sanitize_text_field(wp_unslash($_COOKIE[$cookie_name]));
-                if (preg_match('/^[A-Fa-f0-9]{32,128}$/', $cookie_token)) {
-                    $token = $cookie_token;
-                }
-            }
+            $token = self::get_user_rating_token_from_cookie();
 
             if ($token === '') {
                 try {
@@ -339,17 +332,14 @@ class JLG_Frontend {
         $token = '';
 
         if (isset($_POST['token'])) {
-            $token = sanitize_text_field(wp_unslash($_POST['token']));
+            $token = self::normalize_user_rating_token(wp_unslash($_POST['token']));
         }
 
         if ($token === '' && isset($_COOKIE[$cookie_name])) {
-            $cookie_token = sanitize_text_field(wp_unslash($_COOKIE[$cookie_name]));
-            if (preg_match('/^[A-Fa-f0-9]{32,128}$/', $cookie_token)) {
-                $token = $cookie_token;
-            }
+            $token = self::normalize_user_rating_token(wp_unslash($_COOKIE[$cookie_name]));
         }
 
-        if ($token === '' || !preg_match('/^[A-Fa-f0-9]{32,128}$/', $token)) {
+        if ($token === '') {
             wp_send_json_error(['message' => esc_html__('Jeton de sécurité manquant ou invalide.', 'notation-jlg')], 400);
         }
 
@@ -394,34 +384,237 @@ class JLG_Frontend {
         }
 
         $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
-        if (!$user_ip) {
-            wp_send_json_error(['message' => esc_html__('Adresse IP invalide.', 'notation-jlg')]);
-        }
+        $user_ip_hash = $user_ip ? wp_hash($user_ip) : '';
 
-        $user_ip_hash = wp_hash($user_ip);
+        $token_hash = self::hash_user_rating_token($token);
 
-        $meta_key = '_jlg_user_ratings';
-        $ratings = get_post_meta($post_id, $meta_key, true);
+        $ratings_meta = [];
+        $ratings = self::get_post_user_rating_tokens($post_id, $ratings_meta);
 
-        if (!is_array($ratings)) {
-            $ratings = [];
-        }
-
-        if (isset($ratings[$user_ip_hash])) {
+        if (isset($ratings[$token_hash])) {
             wp_send_json_error(['message' => esc_html__('Vous avez déjà voté !', 'notation-jlg')]);
         }
 
-        $ratings[$user_ip_hash] = $rating;
-        update_post_meta($post_id, $meta_key, $ratings);
+        $ratings[$token_hash] = $rating;
+        self::store_post_user_rating_tokens($post_id, $ratings, $ratings_meta);
 
-        $new_average = round(array_sum($ratings) / count($ratings), 2);
+        if ($user_ip_hash) {
+            self::update_user_rating_ip_log($post_id, $user_ip_hash, $token_hash, $rating);
+        }
+
+        list($new_average, $ratings_count) = self::calculate_user_rating_stats($ratings);
+
         update_post_meta($post_id, '_jlg_user_rating_avg', $new_average);
-        update_post_meta($post_id, '_jlg_user_rating_count', count($ratings));
+        update_post_meta($post_id, '_jlg_user_rating_count', $ratings_count);
 
         wp_send_json_success([
             'new_average' => number_format_i18n($new_average, 2),
-            'new_count' => count($ratings)
+            'new_count' => $ratings_count
         ]);
+    }
+
+    private static function normalize_user_rating_token($token) {
+        if (!is_string($token)) {
+            return '';
+        }
+
+        $token = sanitize_text_field($token);
+
+        if (!preg_match('/^[A-Fa-f0-9]{32,128}$/', $token)) {
+            return '';
+        }
+
+        return $token;
+    }
+
+    public static function get_user_rating_token_from_cookie() {
+        $cookie_name = 'jlg_user_rating_token';
+
+        if (!isset($_COOKIE[$cookie_name])) {
+            return '';
+        }
+
+        return self::normalize_user_rating_token(wp_unslash($_COOKIE[$cookie_name]));
+    }
+
+    private static function hash_user_rating_token($token) {
+        return wp_hash($token);
+    }
+
+    private static function get_post_user_rating_tokens($post_id, &$meta = null) {
+        $meta_key = '_jlg_user_ratings';
+        $stored = get_post_meta($post_id, $meta_key, true);
+
+        if (!is_array($stored)) {
+            $stored = [];
+        }
+
+        $meta_data = [];
+
+        if (isset($stored['__meta']) && is_array($stored['__meta'])) {
+            $meta_data = $stored['__meta'];
+            unset($stored['__meta']);
+        }
+
+        $normalized = [];
+
+        foreach ($stored as $key => $value) {
+            if (!is_string($key) || !preg_match('/^[A-Fa-f0-9]{32,128}$/', $key)) {
+                continue;
+            }
+
+            if (!is_numeric($value)) {
+                continue;
+            }
+
+            $normalized[$key] = (float) $value;
+        }
+
+        $needs_meta_update = !isset($meta_data['version']) || (int) $meta_data['version'] < 2;
+
+        if ($needs_meta_update) {
+            $meta_data['version'] = 2;
+            $to_store = $normalized;
+            $to_store['__meta'] = $meta_data;
+            update_post_meta($post_id, $meta_key, $to_store);
+            self::ensure_ip_log_for_legacy_votes($post_id, $normalized);
+        }
+
+        if ($meta !== null) {
+            $meta = $meta_data;
+        }
+
+        return $normalized;
+    }
+
+    private static function store_post_user_rating_tokens($post_id, array $ratings, array $meta = []) {
+        if (!isset($meta['version']) || (int) $meta['version'] < 2) {
+            $meta['version'] = 2;
+        }
+
+        $data = $ratings;
+        $data['__meta'] = $meta;
+
+        update_post_meta($post_id, '_jlg_user_ratings', $data);
+    }
+
+    private static function ensure_ip_log_for_legacy_votes($post_id, array $ratings) {
+        if (empty($ratings)) {
+            return;
+        }
+
+        $ip_meta_key = '_jlg_user_rating_ips';
+        $ip_log = get_post_meta($post_id, $ip_meta_key, true);
+
+        if (!is_array($ip_log)) {
+            $ip_log = [];
+        }
+
+        $updated = false;
+        $timestamp = current_time('timestamp');
+
+        foreach ($ratings as $hash => $value) {
+            if (!isset($ip_log[$hash]) || !is_array($ip_log[$hash])) {
+                $ip_log[$hash] = [
+                    'rating'    => (float) $value,
+                    'votes'     => 1,
+                    'last_vote' => $timestamp,
+                    'legacy'    => true,
+                ];
+                $updated = true;
+                continue;
+            }
+
+            $existing = $ip_log[$hash];
+
+            if (!isset($existing['rating'])) {
+                $existing['rating'] = (float) $value;
+            }
+
+            if (!isset($existing['votes'])) {
+                $existing['votes'] = 1;
+            }
+
+            $existing['legacy'] = true;
+            $existing['last_vote'] = isset($existing['last_vote']) ? $existing['last_vote'] : $timestamp;
+
+            $ip_log[$hash] = $existing;
+            $updated = true;
+        }
+
+        if ($updated) {
+            update_post_meta($post_id, $ip_meta_key, $ip_log);
+        }
+    }
+
+    private static function update_user_rating_ip_log($post_id, $ip_hash, $token_hash, $rating) {
+        $ip_meta_key = '_jlg_user_rating_ips';
+        $ip_log = get_post_meta($post_id, $ip_meta_key, true);
+
+        if (!is_array($ip_log)) {
+            $ip_log = [];
+        }
+
+        $timestamp = current_time('timestamp');
+        $entry = isset($ip_log[$ip_hash]) && is_array($ip_log[$ip_hash]) ? $ip_log[$ip_hash] : [];
+
+        $entry['rating'] = (float) $rating;
+        $entry['token'] = $token_hash;
+        $entry['last_vote'] = $timestamp;
+        $entry['votes'] = isset($entry['votes']) ? (int) $entry['votes'] + 1 : 1;
+
+        unset($entry['legacy']);
+
+        $ip_log[$ip_hash] = $entry;
+
+        update_post_meta($post_id, $ip_meta_key, $ip_log);
+    }
+
+    private static function calculate_user_rating_stats(array $ratings) {
+        $values = [];
+
+        foreach ($ratings as $value) {
+            if (is_numeric($value)) {
+                $values[] = (float) $value;
+            }
+        }
+
+        $count = count($values);
+
+        if ($count === 0) {
+            return [0.0, 0];
+        }
+
+        $average = round(array_sum($values) / $count, 2);
+
+        return [$average, $count];
+    }
+
+    public static function get_user_vote_for_post($post_id, $token = '') {
+        $post_id = intval($post_id);
+
+        if ($post_id <= 0) {
+            return [false, 0];
+        }
+
+        if ($token === '') {
+            $token = self::get_user_rating_token_from_cookie();
+        } else {
+            $token = self::normalize_user_rating_token($token);
+        }
+
+        if ($token === '') {
+            return [false, 0];
+        }
+
+        $token_hash = self::hash_user_rating_token($token);
+        $ratings = self::get_post_user_rating_tokens($post_id);
+
+        if (isset($ratings[$token_hash])) {
+            return [true, $ratings[$token_hash]];
+        }
+
+        return [false, 0];
     }
 
     /**
