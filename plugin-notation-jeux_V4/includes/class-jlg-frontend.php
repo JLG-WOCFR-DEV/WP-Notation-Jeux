@@ -194,6 +194,64 @@ class JLG_Frontend {
     }
 
     /**
+     * Vérifie si un article possède des métadonnées du plugin.
+     *
+     * @param int $post_id
+     * @return bool
+     */
+    private function post_has_plugin_metadata($post_id) {
+        if (!$post_id) {
+            return false;
+        }
+
+        $meta = get_post_meta($post_id);
+
+        if (empty($meta) || !is_array($meta)) {
+            return false;
+        }
+
+        foreach ($meta as $meta_key => $values) {
+            if (strpos($meta_key, '_jlg_') !== 0) {
+                continue;
+            }
+
+            $values = is_array($values) ? $values : [$values];
+
+            foreach ($values as $value) {
+                if ($this->is_meta_value_filled($value)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Détermine si une valeur de métadonnée contient des informations exploitables.
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    private function is_meta_value_filled($value) {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if ($this->is_meta_value_filled($item)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (is_string($value)) {
+            return trim($value) !== '';
+        }
+
+        return $value !== null && $value !== '';
+    }
+
+    /**
      * Charge les scripts JavaScript nécessaires
      */
     public function enqueue_jlg_scripts($force = false) {
@@ -204,14 +262,14 @@ class JLG_Frontend {
         $should_enqueue = $force || self::$shortcode_rendered;
 
         if (!$should_enqueue) {
-            $should_enqueue = is_singular('post');
-        }
-
-        if (!$should_enqueue) {
             $queried_object = get_queried_object();
 
-            if ($queried_object instanceof WP_Post && $this->content_has_plugin_shortcode($queried_object->post_content ?? '')) {
-                $should_enqueue = true;
+            if ($queried_object instanceof WP_Post) {
+                if ($this->content_has_plugin_shortcode($queried_object->post_content ?? '')) {
+                    $should_enqueue = true;
+                } elseif ($this->post_has_plugin_metadata($queried_object->ID)) {
+                    $should_enqueue = true;
+                }
             }
         }
 
