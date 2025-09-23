@@ -38,7 +38,7 @@ class JLG_Shortcode_All_In_One {
         }
     }
 
-    public function render($atts) {
+    public function render($atts, $content = '', $shortcode_tag = '') {
         // Attributs du shortcode
         $atts = shortcode_atts([
             'post_id' => get_the_ID(),
@@ -283,7 +283,8 @@ class JLG_Shortcode_All_In_One {
 
         $css_variables_string = $this->format_css_variables($css_variables);
 
-        JLG_Frontend::mark_shortcode_rendered();
+        $tag = $shortcode_tag !== '' ? $shortcode_tag : 'jlg_bloc_complet';
+        JLG_Frontend::mark_shortcode_rendered($tag);
 
         return JLG_Frontend::get_template_html('shortcode-all-in-one', [
             'options' => $options,

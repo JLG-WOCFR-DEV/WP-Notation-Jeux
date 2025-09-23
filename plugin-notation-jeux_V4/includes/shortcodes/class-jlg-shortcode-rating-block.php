@@ -7,7 +7,7 @@ class JLG_Shortcode_Rating_Block {
         add_shortcode('bloc_notation_jeu', [$this, 'render']);
     }
 
-    public function render($atts) {
+    public function render($atts, $content = '', $shortcode_tag = '') {
         $atts = shortcode_atts([
             'post_id' => get_the_ID()
         ], $atts, 'bloc_notation_jeu');
@@ -43,7 +43,7 @@ class JLG_Shortcode_Rating_Block {
             }
         }
         
-        JLG_Frontend::mark_shortcode_rendered();
+        JLG_Frontend::mark_shortcode_rendered($shortcode_tag ?: 'bloc_notation_jeu');
 
         return JLG_Frontend::get_template_html('shortcode-rating-block', [
             'options'       => JLG_Helpers::get_plugin_options(),

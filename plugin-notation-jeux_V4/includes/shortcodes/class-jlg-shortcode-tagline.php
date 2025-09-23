@@ -7,7 +7,7 @@ class JLG_Shortcode_Tagline {
         add_shortcode('tagline_notation_jlg', [$this, 'render']);
     }
 
-    public function render() {
+    public function render($atts = [], $content = '', $shortcode_tag = '') {
         if (!is_singular('post')) {
             return '';
         }
@@ -24,7 +24,7 @@ class JLG_Shortcode_Tagline {
             return '';
         }
         
-        JLG_Frontend::mark_shortcode_rendered();
+        JLG_Frontend::mark_shortcode_rendered($shortcode_tag ?: 'tagline_notation_jlg');
 
         return JLG_Frontend::get_template_html('shortcode-tagline', [
             'options' => $options,
