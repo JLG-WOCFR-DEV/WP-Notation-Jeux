@@ -57,6 +57,22 @@ class JLG_Shortcode_Summary_Display {
             ? strtoupper($request['order'])
             : 'DESC';
         $cat_filter = isset($request['cat_filter']) ? intval($request['cat_filter']) : 0;
+        $letter_filter = '';
+        if (isset($request['letter_filter'])) {
+            $letter_filter = self::normalize_letter_filter($request['letter_filter']);
+        } elseif (!empty($atts['letter_filter'])) {
+            $letter_filter = self::normalize_letter_filter($atts['letter_filter']);
+        }
+
+        $genre_filter = '';
+        if (isset($request['genre_filter'])) {
+            $genre_filter = sanitize_text_field($request['genre_filter']);
+        } elseif (!empty($atts['genre_filter'])) {
+            $genre_filter = sanitize_text_field($atts['genre_filter']);
+        }
+
+        $atts['letter_filter'] = $letter_filter;
+        $atts['genre_filter'] = $genre_filter;
 
         $paged = isset($request['paged']) ? intval($request['paged']) : 0;
         if ($paged < 1) {
@@ -110,6 +126,8 @@ class JLG_Shortcode_Summary_Display {
                 'orderby'      => $orderby,
                 'order'        => $order,
                 'cat_filter'   => $cat_filter,
+                'letter_filter'=> $letter_filter,
+                'genre_filter' => $genre_filter,
                 'colonnes'     => self::prepare_columns($atts),
                 'colonnes_disponibles' => self::get_available_columns(),
                 'error_message' => $no_results,
@@ -144,7 +162,57 @@ class JLG_Shortcode_Summary_Display {
             $args['cat'] = $cat_filter;
         }
 
-        $query = new WP_Query($args);
+        if ($genre_filter !== '') {
+            $genre_taxonomy = apply_filters('jlg_summary_genre_taxonomy', 'jlg_game_genre');
+
+            if (!empty($genre_taxonomy) && taxonomy_exists($genre_taxonomy)) {
+                if (!isset($args['tax_query']) || !is_array($args['tax_query'])) {
+                    $args['tax_query'] = [];
+                }
+
+                if (!isset($args['tax_query']['relation'])) {
+                    $args['tax_query']['relation'] = 'AND';
+                }
+
+                $args['tax_query'][] = [
+                    'taxonomy' => $genre_taxonomy,
+                    'field'    => 'slug',
+                    'terms'    => $genre_filter,
+                ];
+            } else {
+                $genre_meta_key = apply_filters('jlg_summary_genre_meta_key', '_jlg_genre');
+
+                if (!empty($genre_meta_key)) {
+                    if (!isset($args['meta_query']) || !is_array($args['meta_query'])) {
+                        $args['meta_query'] = [];
+                    }
+
+                    if (!isset($args['meta_query']['relation'])) {
+                        $args['meta_query']['relation'] = 'AND';
+                    }
+
+                    $args['meta_query'][] = [
+                        'key'     => $genre_meta_key,
+                        'value'   => $genre_filter,
+                        'compare' => 'LIKE',
+                    ];
+                }
+            }
+        }
+
+        $letter_filter_active = ($letter_filter !== '');
+
+        if ($letter_filter_active) {
+            self::set_letter_filter($letter_filter);
+        }
+
+        try {
+            $query = new WP_Query($args);
+        } finally {
+            if ($letter_filter_active) {
+                self::clear_letter_filter();
+            }
+        }
 
         return [
             'query'                => $query,
@@ -153,6 +221,8 @@ class JLG_Shortcode_Summary_Display {
             'orderby'              => $orderby,
             'order'                => $order,
             'cat_filter'           => $cat_filter,
+            'letter_filter'        => $letter_filter,
+            'genre_filter'         => $genre_filter,
             'colonnes'             => self::prepare_columns($atts),
             'colonnes_disponibles' => self::get_available_columns(),
             'error_message'        => '',
@@ -166,7 +236,38 @@ class JLG_Shortcode_Summary_Display {
             'categorie'      => '',
             'colonnes'       => 'titre,date,note',
             'id'             => 'jlg-table-' . uniqid(),
+            'letter_filter'  => '',
+            'genre_filter'   => '',
         ];
+    }
+
+    public static function normalize_letter_filter($value) {
+        if ($value === null) {
+            return '';
+        }
+
+        $value = sanitize_text_field($value);
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $char = substr($value, 0, 1);
+
+        if ($char === '#') {
+            return '#';
+        }
+
+        if (ctype_digit($char)) {
+            return '#';
+        }
+
+        if (ctype_alpha($char)) {
+            return strtoupper($char);
+        }
+
+        return '';
     }
 
     protected static function get_available_columns() {
@@ -290,4 +391,50 @@ class JLG_Shortcode_Summary_Display {
 
         return $columns;
     }
+
+    protected static function set_letter_filter($letter) {
+        self::$active_letter_filter = $letter;
+
+        if (!self::$letter_filter_hooked) {
+            add_filter('posts_where', [__CLASS__, 'filter_letter_where']);
+            self::$letter_filter_hooked = true;
+        }
+    }
+
+    protected static function clear_letter_filter() {
+        if (self::$letter_filter_hooked) {
+            remove_filter('posts_where', [__CLASS__, 'filter_letter_where']);
+            self::$letter_filter_hooked = false;
+        }
+
+        self::$active_letter_filter = '';
+    }
+
+    public static function filter_letter_where($where) {
+        global $wpdb;
+
+        if (self::$active_letter_filter === '') {
+            return $where;
+        }
+
+        $meta_subquery = "(SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = {$wpdb->posts}.ID AND meta_key = '_jlg_game_title' ORDER BY meta_id DESC LIMIT 1)";
+
+        if (self::$active_letter_filter === '#') {
+            $condition = "REGEXP '^[0-9]'";
+            $where    .= " AND (({$meta_subquery} {$condition}) OR ({$wpdb->posts}.post_title {$condition}))";
+
+            return $where;
+        }
+
+        $like = $wpdb->esc_like(self::$active_letter_filter) . '%';
+        $meta_condition = $wpdb->prepare('LIKE %s', $like);
+        $title_condition = $wpdb->prepare('LIKE %s', $like);
+
+        $where .= " AND (({$meta_subquery} {$meta_condition}) OR ({$wpdb->posts}.post_title {$title_condition}))";
+
+        return $where;
+    }
+
+    private static $active_letter_filter = '';
+    private static $letter_filter_hooked = false;
 }
