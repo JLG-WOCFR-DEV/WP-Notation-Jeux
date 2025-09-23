@@ -7,14 +7,14 @@ class JLG_Shortcode_Game_Explorer {
         add_shortcode('jlg_game_explorer', [$this, 'render']);
     }
 
-    public function render($atts) {
+    public function render($atts, $content = '', $shortcode_tag = '') {
         $context = self::get_render_context($atts, $_GET);
 
         if (!empty($context['error']) && !empty($context['message'])) {
             return $context['message'];
         }
 
-        JLG_Frontend::mark_shortcode_rendered();
+        JLG_Frontend::mark_shortcode_rendered($shortcode_tag ?: 'jlg_game_explorer');
 
         return JLG_Frontend::get_template_html('shortcode-game-explorer', $context);
     }

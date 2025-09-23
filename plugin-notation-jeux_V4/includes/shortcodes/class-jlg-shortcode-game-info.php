@@ -7,7 +7,7 @@ class JLG_Shortcode_Game_Info {
         add_shortcode('jlg_fiche_technique', [$this, 'render']);
     }
 
-    public function render($atts) {
+    public function render($atts, $content = '', $shortcode_tag = '') {
         if (!is_singular('post')) {
             return '';
         }
@@ -55,7 +55,7 @@ class JLG_Shortcode_Game_Info {
             return '';
         }
         
-        JLG_Frontend::mark_shortcode_rendered();
+        JLG_Frontend::mark_shortcode_rendered($shortcode_tag ?: 'jlg_fiche_technique');
 
         return JLG_Frontend::get_template_html('shortcode-game-info', [
             'titre'             => sanitize_text_field($atts['titre']),
