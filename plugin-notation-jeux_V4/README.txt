@@ -54,6 +54,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[jlg_points_forts_faibles]` - Points positifs et négatifs
 * `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
 * `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les entêtes sont triables par titre, date, note moyenne et métadonnées développeur/éditeur via `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
+* `[jlg_game_explorer]` - Game Explorer interactif avec cartes et filtres dynamiques. Attributs : `posts_per_page` (nombre d'articles par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `availability`), `categorie`, `plateforme` et `lettre` pour forcer un filtrage initial.
 
 == Utilisation dans les widgets et blocs ==
 

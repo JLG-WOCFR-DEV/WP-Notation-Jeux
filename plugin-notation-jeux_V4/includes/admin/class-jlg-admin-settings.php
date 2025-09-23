@@ -494,9 +494,33 @@ class JLG_Admin_Settings {
         add_settings_field('debug_mode_enabled', 'Activer le mode debug', [$this, 'render_field'], 'notation_jlg_page', 'jlg_debug_section',
             ['id' => 'debug_mode_enabled', 'type' => 'checkbox', 'desc' => 'Affiche des informations de diagnostic dans le code source']
         );
-        
+
         // Ajout d'un bouton de debug pour voir les options actuelles
         add_settings_field('debug_current_options', 'Options actuelles', [$this, 'render_debug_info'], 'notation_jlg_page', 'jlg_debug_section');
+
+        // Section 15: Game Explorer
+        add_settings_section('jlg_game_explorer', '15. 🧭 Game Explorer', null, 'notation_jlg_page');
+
+        $game_explorer_columns_args = ['id' => 'game_explorer_columns', 'type' => 'number', 'min' => 2, 'max' => 4];
+        add_settings_field('game_explorer_columns', 'Colonnes (desktop)', [$this, 'render_field'], 'notation_jlg_page', 'jlg_game_explorer',
+            $game_explorer_columns_args
+        );
+        $this->store_field_constraints($game_explorer_columns_args);
+
+        $game_explorer_ppp_args = ['id' => 'game_explorer_posts_per_page', 'type' => 'number', 'min' => 6, 'max' => 36];
+        add_settings_field('game_explorer_posts_per_page', 'Jeux par page', [$this, 'render_field'], 'notation_jlg_page', 'jlg_game_explorer',
+            $game_explorer_ppp_args
+        );
+        $this->store_field_constraints($game_explorer_ppp_args);
+
+        add_settings_field('game_explorer_filters', 'Filtres disponibles', [$this, 'render_field'], 'notation_jlg_page', 'jlg_game_explorer',
+            [
+                'id' => 'game_explorer_filters',
+                'type' => 'text',
+                'placeholder' => 'letter,category,platform,availability',
+                'desc' => __('Liste séparée par des virgules. Options disponibles : letter, category, platform, availability.', 'notation-jlg'),
+            ]
+        );
     }
 
     public function render_field($args) {

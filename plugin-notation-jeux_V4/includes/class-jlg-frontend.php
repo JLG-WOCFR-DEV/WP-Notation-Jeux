@@ -48,6 +48,8 @@ class JLG_Frontend {
         add_action('wp_ajax_nopriv_jlg_rate_post', [$this, 'handle_user_rating']);
         add_action('wp_ajax_jlg_summary_sort', [$this, 'handle_summary_sort']);
         add_action('wp_ajax_nopriv_jlg_summary_sort', [$this, 'handle_summary_sort']);
+        add_action('wp_ajax_jlg_game_explorer_sort', [$this, 'handle_game_explorer_sort']);
+        add_action('wp_ajax_nopriv_jlg_game_explorer_sort', [$this, 'handle_game_explorer_sort']);
         add_action('wp_head', [$this, 'inject_review_schema']);
     }
 
@@ -69,7 +71,8 @@ class JLG_Frontend {
             'User_Rating',
             'Tagline',
             'Summary_Display',
-            'All_In_One'  // NOUVEAU SHORTCODE AJOUTÉ ICI
+            'All_In_One',  // NOUVEAU SHORTCODE AJOUTÉ ICI
+            'Game_Explorer',
         ];
         
         $errors = [];
@@ -297,6 +300,18 @@ class JLG_Frontend {
 
         wp_add_inline_style('jlg-frontend', $inline_css);
 
+        wp_enqueue_style(
+            'jlg-game-explorer',
+            JLG_NOTATION_PLUGIN_URL . 'assets/css/game-explorer.css',
+            ['jlg-frontend'],
+            JLG_NOTATION_VERSION
+        );
+
+        $game_explorer_css = $this->build_game_explorer_css($options, $palette);
+        if (!empty($game_explorer_css)) {
+            wp_add_inline_style('jlg-game-explorer', $game_explorer_css);
+        }
+
         // Script pour la notation utilisateur
         if (!empty($options['user_rating_enabled'])) {
             wp_enqueue_script(
@@ -373,6 +388,14 @@ class JLG_Frontend {
             true
         );
 
+        wp_enqueue_script(
+            'jlg-game-explorer',
+            JLG_NOTATION_PLUGIN_URL . 'assets/js/game-explorer.js',
+            [],
+            JLG_NOTATION_VERSION,
+            true
+        );
+
         wp_localize_script('jlg-summary-table-sort', 'jlgSummarySort', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('jlg_summary_sort'),
@@ -380,6 +403,21 @@ class JLG_Frontend {
                 'genericError' => esc_html__('Une erreur est survenue. Merci de réessayer plus tard.', 'notation-jlg'),
             ],
         ]);
+    }
+
+    private function build_game_explorer_css($options, $palette) {
+        $card_bg = $palette['bg_color_secondary'] ?? '#1f2937';
+        $border = $palette['border_color'] ?? '#3f3f46';
+        $text = $palette['text_color'] ?? '#fafafa';
+        $secondary = $palette['text_color_secondary'] ?? '#9ca3af';
+        $accent_primary = $options['score_gradient_1'] ?? '#60a5fa';
+        $accent_secondary = $options['score_gradient_2'] ?? '#c084fc';
+
+        $css = "
+.jlg-game-explorer{--jlg-ge-card-bg: {$card_bg};--jlg-ge-card-border: {$border};--jlg-ge-text: {$text};--jlg-ge-text-muted: {$secondary};--jlg-ge-accent: {$accent_primary};--jlg-ge-accent-alt: {$accent_secondary};}
+";
+
+        return trim($css);
     }
 
     /**
@@ -811,6 +849,76 @@ class JLG_Frontend {
         ]);
     }
 
+    public function handle_game_explorer_sort() {
+        if (!check_ajax_referer('jlg_game_explorer', 'nonce', false)) {
+            wp_send_json_error(['message' => esc_html__('La vérification de sécurité a échoué.', 'notation-jlg')], 403);
+        }
+
+        if (!class_exists('JLG_Shortcode_Game_Explorer')) {
+            wp_send_json_error(['message' => esc_html__('Le shortcode requis est indisponible.', 'notation-jlg')], 500);
+        }
+
+        $default_atts = JLG_Shortcode_Game_Explorer::get_default_atts();
+
+        $atts = [
+            'id'              => isset($_POST['container_id']) ? sanitize_html_class(wp_unslash($_POST['container_id'])) : ($default_atts['id'] ?? 'jlg-game-explorer-' . uniqid()),
+            'posts_per_page'  => isset($_POST['posts_per_page']) ? intval(wp_unslash($_POST['posts_per_page'])) : ($default_atts['posts_per_page'] ?? 12),
+            'columns'         => isset($_POST['columns']) ? intval(wp_unslash($_POST['columns'])) : ($default_atts['columns'] ?? 3),
+            'filters'         => isset($_POST['filters']) ? sanitize_text_field(wp_unslash($_POST['filters'])) : ($default_atts['filters'] ?? ''),
+            'categorie'       => isset($_POST['categorie']) ? sanitize_text_field(wp_unslash($_POST['categorie'])) : ($default_atts['categorie'] ?? ''),
+            'plateforme'      => isset($_POST['plateforme']) ? sanitize_text_field(wp_unslash($_POST['plateforme'])) : ($default_atts['plateforme'] ?? ''),
+            'lettre'          => isset($_POST['lettre']) ? sanitize_text_field(wp_unslash($_POST['lettre'])) : ($default_atts['lettre'] ?? ''),
+        ];
+
+        if ($atts['posts_per_page'] < 1) {
+            $atts['posts_per_page'] = $default_atts['posts_per_page'] ?? 12;
+        }
+
+        if ($atts['columns'] < 1) {
+            $atts['columns'] = $default_atts['columns'] ?? 3;
+        }
+
+        $request = [
+            'orderby'      => isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date',
+            'order'        => isset($_POST['order']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['order']))) : 'DESC',
+            'letter'       => isset($_POST['letter']) ? sanitize_text_field(wp_unslash($_POST['letter'])) : '',
+            'category'     => isset($_POST['category']) ? sanitize_text_field(wp_unslash($_POST['category'])) : '',
+            'platform'     => isset($_POST['platform']) ? sanitize_text_field(wp_unslash($_POST['platform'])) : '',
+            'availability' => isset($_POST['availability']) ? sanitize_key(wp_unslash($_POST['availability'])) : '',
+            'search'       => isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '',
+            'paged'        => isset($_POST['paged']) ? intval(wp_unslash($_POST['paged'])) : 1,
+        ];
+
+        $context = JLG_Shortcode_Game_Explorer::get_render_context($atts, $request);
+
+        $state = [
+            'orderby'      => $context['sort_key'] ?? $request['orderby'],
+            'order'        => $context['sort_order'] ?? $request['order'],
+            'letter'       => $context['current_filters']['letter'] ?? '',
+            'category'     => $context['current_filters']['category'] ?? '',
+            'platform'     => $context['current_filters']['platform'] ?? '',
+            'availability' => $context['current_filters']['availability'] ?? '',
+            'search'       => $context['current_filters']['search'] ?? '',
+            'paged'        => $context['pagination']['current'] ?? 1,
+            'total_pages'  => $context['pagination']['total'] ?? 0,
+            'total_items'  => $context['total_items'] ?? 0,
+        ];
+
+        if (!empty($context['error']) && !empty($context['message'])) {
+            wp_send_json_success([
+                'html'  => $context['message'],
+                'state' => $state,
+            ]);
+        }
+
+        $html = JLG_Frontend::get_template_html('game-explorer-fragment', $context);
+
+        wp_send_json_success([
+            'html'  => $html,
+            'state' => $state,
+        ]);
+    }
+
     /**
      * Injecte le schema de notation pour le SEO
      */
@@ -948,6 +1056,21 @@ class JLG_Frontend {
                 'count'              => 0,
                 'has_voted'          => false,
                 'user_vote'          => 0,
+                'games'              => [],
+                'letters'            => [],
+                'filters'            => [],
+                'current_filters'    => [],
+                'pagination'         => ['current' => 1, 'total' => 0],
+                'sort_options'       => [],
+                'sort_key'           => 'date',
+                'sort_order'         => 'DESC',
+                'filters_enabled'    => [],
+                'categories_list'    => [],
+                'platforms_list'     => [],
+                'availability_options' => [],
+                'total_items'        => 0,
+                'config_payload'     => [],
+                'message'            => '',
             ];
 
             // Fusionner les arguments fournis avec les valeurs par défaut.
