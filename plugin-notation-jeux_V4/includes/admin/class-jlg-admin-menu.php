@@ -150,7 +150,7 @@ class JLG_Admin_Menu {
                     'edit_link' => get_edit_post_link($post_id),
                     'view_link' => get_permalink($post_id),
                     'date' => get_the_date('d/m/Y', $post_id),
-                    'score_display' => $score_data['formatted'] ?? 'N/A',
+                    'score_display' => $score_data['formatted'] ?? __('N/A', 'notation-jlg'),
                     'score_color' => $score_color,
                     'categories' => $cat_names,
                 ];
@@ -200,15 +200,15 @@ class JLG_Admin_Menu {
             'columns' => $this->get_sortable_columns($orderby, $order),
             'posts' => $posts,
             'pagination' => $pagination,
-            'print_button_label' => '🖨️ Imprimer cette liste',
+            'print_button_label' => __('🖨️ Imprimer cette liste', 'notation-jlg'),
         ]);
     }
 
     private function get_sortable_columns($current_orderby, $current_order) {
         $columns = [
-            ['label' => 'Titre', 'key' => 'title'],
-            ['label' => 'Date', 'key' => 'date'],
-            ['label' => 'Note', 'key' => 'score'],
+            ['label' => __('Titre', 'notation-jlg'), 'key' => 'title'],
+            ['label' => __('Date', 'notation-jlg'), 'key' => 'date'],
+            ['label' => __('Note', 'notation-jlg'), 'key' => 'score'],
         ];
 
         $results = [];
@@ -246,7 +246,7 @@ class JLG_Admin_Menu {
 
     private function get_platforms_tab_content() {
         ob_start();
-        echo '<h2 class="title">🎮 Gestion des Plateformes</h2>';
+        echo '<h2 class="title">' . esc_html__('🎮 Gestion des Plateformes', 'notation-jlg') . '</h2>';
         $this->render_platforms_tab();
         return ob_get_clean();
     }
@@ -265,10 +265,10 @@ class JLG_Admin_Menu {
                     $platforms_manager = JLG_Admin_Platforms::get_instance();
                     $platforms_manager->render_platforms_page();
                 } else {
-                    echo '<div class="notice notice-error"><p>La classe de gestion des plateformes n\'a pas pu être chargée.</p></div>';
+                    echo '<div class="notice notice-error"><p>' . esc_html__('La classe de gestion des plateformes n\'a pas pu être chargée.', 'notation-jlg') . '</p></div>';
                 }
             } else {
-                echo '<div class="notice notice-error"><p>Fichier class-jlg-admin-platforms.php introuvable.</p></div>';
+                echo '<div class="notice notice-error"><p>' . esc_html__('Fichier class-jlg-admin-platforms.php introuvable.', 'notation-jlg') . '</p></div>';
             }
         }
     }
@@ -280,91 +280,91 @@ class JLG_Admin_Menu {
     private function get_tutorials_tab_content() {
         $tutorials = [
             [
-                'title' => '⚡ Démarrage rapide avec le Bloc Complet',
-                'content' => 'La méthode la plus simple pour créer un test professionnel.',
+                'title' => __('⚡ Démarrage rapide avec le Bloc Complet', 'notation-jlg'),
+                'content' => __('La méthode la plus simple pour créer un test professionnel.', 'notation-jlg'),
                 'steps' => [
-                    'Créer un nouvel article',
-                    'Remplir les notes dans la metabox (colonne droite)',
-                    'Ajouter tagline et points forts/faibles',
-                    'Insérer [jlg_bloc_complet] dans le contenu',
-                    'C\'est tout ! Publiez votre test',
+                    __('Créer un nouvel article', 'notation-jlg'),
+                    __('Remplir les notes dans la metabox (colonne droite)', 'notation-jlg'),
+                    __('Ajouter tagline et points forts/faibles', 'notation-jlg'),
+                    __('Insérer [jlg_bloc_complet] dans le contenu', 'notation-jlg'),
+                    __('C\'est tout ! Publiez votre test', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '🎮 Créer un test détaillé (méthode classique)',
-                'content' => 'Guide pas-à-pas pour un contrôle total.',
+                'title' => __('🎮 Créer un test détaillé (méthode classique)', 'notation-jlg'),
+                'content' => __('Guide pas-à-pas pour un contrôle total.', 'notation-jlg'),
                 'steps' => [
-                    'Créer un nouvel article',
-                    'Remplir la metabox "Notation" (colonne droite)',
-                    'Ajouter les détails du jeu (metabox principale)',
-                    'Intégrer les shortcodes séparés si besoin',
-                    'Publier et vérifier l\'affichage',
+                    __('Créer un nouvel article', 'notation-jlg'),
+                    __('Remplir la metabox "Notation" (colonne droite)', 'notation-jlg'),
+                    __('Ajouter les détails du jeu (metabox principale)', 'notation-jlg'),
+                    __('Intégrer les shortcodes séparés si besoin', 'notation-jlg'),
+                    __('Publier et vérifier l\'affichage', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '🎨 Personnalisation du Bloc Complet',
-                'content' => 'Créez un rendu unique.',
+                'title' => __('🎨 Personnalisation du Bloc Complet', 'notation-jlg'),
+                'content' => __('Créez un rendu unique.', 'notation-jlg'),
                 'steps' => [
-                    'Choisir le style (moderne/classique/compact)',
-                    'Définir une couleur d\'accent personnalisée',
-                    'Activer/désactiver les sections',
-                    'Personnaliser les titres des sections',
-                    'Combiner avec d\'autres shortcodes si besoin',
+                    __('Choisir le style (moderne/classique/compact)', 'notation-jlg'),
+                    __('Définir une couleur d\'accent personnalisée', 'notation-jlg'),
+                    __('Activer/désactiver les sections', 'notation-jlg'),
+                    __('Personnaliser les titres des sections', 'notation-jlg'),
+                    __('Combiner avec d\'autres shortcodes si besoin', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '🎨 Personnalisation visuelle globale',
-                'content' => 'Ajuster l\'apparence générale.',
+                'title' => __('🎨 Personnalisation visuelle globale', 'notation-jlg'),
+                'content' => __('Ajuster l\'apparence générale.', 'notation-jlg'),
                 'steps' => [
-                    'Choisir le thème (clair/sombre)',
-                    'Activer les effets Neon/Glow',
-                    'Configurer la pulsation',
-                    'Personnaliser les couleurs',
-                    'Ajouter du CSS personnalisé',
+                    __('Choisir le thème (clair/sombre)', 'notation-jlg'),
+                    __('Activer les effets Neon/Glow', 'notation-jlg'),
+                    __('Configurer la pulsation', 'notation-jlg'),
+                    __('Personnaliser les couleurs', 'notation-jlg'),
+                    __('Ajouter du CSS personnalisé', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '📊 Tableau récapitulatif avancé',
-                'content' => 'Maîtriser le shortcode tableau.',
+                'title' => __('📊 Tableau récapitulatif avancé', 'notation-jlg'),
+                'content' => __('Maîtriser le shortcode tableau.', 'notation-jlg'),
                 'steps' => [
-                    'Choisir entre table et grille',
-                    'Sélectionner les colonnes à afficher',
-                    'Filtrer par catégorie',
-                    'Ajuster la pagination',
-                    'Personnaliser les couleurs dans Réglages',
+                    __('Choisir entre table et grille', 'notation-jlg'),
+                    __('Sélectionner les colonnes à afficher', 'notation-jlg'),
+                    __('Filtrer par catégorie', 'notation-jlg'),
+                    __('Ajuster la pagination', 'notation-jlg'),
+                    __('Personnaliser les couleurs dans Réglages', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '⚡ Optimisations',
-                'content' => 'Améliorer les performances.',
+                'title' => __('⚡ Optimisations', 'notation-jlg'),
+                'content' => __('Améliorer les performances.', 'notation-jlg'),
                 'steps' => [
-                    'Utiliser [jlg_bloc_complet] au lieu de 3 shortcodes',
-                    'Activer un plugin de cache',
-                    'Optimiser les images de couverture',
-                    'Limiter le nombre d\'articles affichés',
-                    'Désactiver les animations si non nécessaires',
+                    __('Utiliser [jlg_bloc_complet] au lieu de 3 shortcodes', 'notation-jlg'),
+                    __('Activer un plugin de cache', 'notation-jlg'),
+                    __('Optimiser les images de couverture', 'notation-jlg'),
+                    __('Limiter le nombre d\'articles affichés', 'notation-jlg'),
+                    __('Désactiver les animations si non nécessaires', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '🔧 Intégration dans le thème',
-                'content' => 'Pour les développeurs.',
+                'title' => __('🔧 Intégration dans le thème', 'notation-jlg'),
+                'content' => __('Pour les développeurs.', 'notation-jlg'),
                 'steps' => [
-                    'Ajouter jlg_display_thumbnail_score() dans les templates',
-                    'Utiliser jlg_get_post_rating() pour récupérer la note',
-                    'Personnaliser les templates dans /templates/',
-                    'Créer des hooks personnalisés',
-                    'Surcharger les styles CSS du plugin',
+                    __('Ajouter jlg_display_thumbnail_score() dans les templates', 'notation-jlg'),
+                    __('Utiliser jlg_get_post_rating() pour récupérer la note', 'notation-jlg'),
+                    __('Personnaliser les templates dans /templates/', 'notation-jlg'),
+                    __('Créer des hooks personnalisés', 'notation-jlg'),
+                    __('Surcharger les styles CSS du plugin', 'notation-jlg'),
                 ],
             ],
             [
-                'title' => '❓ Dépannage',
-                'content' => 'Résoudre les problèmes courants.',
+                'title' => __('❓ Dépannage', 'notation-jlg'),
+                'content' => __('Résoudre les problèmes courants.', 'notation-jlg'),
                 'steps' => [
-                    'Vérifier les conflits de plugins',
-                    'Vider le cache navigateur et site',
-                    'Vérifier les permissions utilisateur',
-                    'Consulter les logs d\'erreur',
-                    'Réinitialiser les réglages si nécessaire',
+                    __('Vérifier les conflits de plugins', 'notation-jlg'),
+                    __('Vider le cache navigateur et site', 'notation-jlg'),
+                    __('Vérifier les permissions utilisateur', 'notation-jlg'),
+                    __('Consulter les logs d\'erreur', 'notation-jlg'),
+                    __('Réinitialiser les réglages si nécessaire', 'notation-jlg'),
                 ],
             ],
         ];

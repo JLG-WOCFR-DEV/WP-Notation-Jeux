@@ -164,8 +164,15 @@ class JLG_Admin_Metaboxes {
         echo '<p><strong>' . esc_html__('Plateformes :', 'notation-jlg') . '</strong></p>';
         
         // Récupérer les plateformes depuis la classe JLG_Admin_Platforms
-        $platforms_list = ['PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch', 'PlayStation 4', 'Xbox One'];
-        
+        $platforms_list = [
+            'PC' => __('PC', 'notation-jlg'),
+            'PlayStation 5' => __('PlayStation 5', 'notation-jlg'),
+            'Xbox Series S/X' => __('Xbox Series S/X', 'notation-jlg'),
+            'Nintendo Switch' => __('Nintendo Switch', 'notation-jlg'),
+            'PlayStation 4' => __('PlayStation 4', 'notation-jlg'),
+            'Xbox One' => __('Xbox One', 'notation-jlg'),
+        ];
+
         if (class_exists('JLG_Admin_Platforms')) {
             $platforms_manager = JLG_Admin_Platforms::get_instance();
             $all_platforms = $platforms_manager->get_platform_names();
@@ -173,14 +180,19 @@ class JLG_Admin_Metaboxes {
                 $platforms_list = array_values($all_platforms);
             }
         }
-        
+
         $selected = is_array($meta['plateformes']) ? $meta['plateformes'] : [];
-        
-        foreach ($platforms_list as $platform) {
-            $checked = in_array($platform, $selected) ? 'checked' : '';
+
+        foreach ($platforms_list as $platform_value => $platform_label) {
+            if (is_int($platform_value)) {
+                $platform_value = $platform_label;
+            }
+
+            $display_label = $platform_label;
+            $checked = in_array($platform_value, $selected) ? 'checked' : '';
             echo '<label style="margin-right:15px;">';
-            echo '<input type="checkbox" name="jlg_plateformes[]" value="' . esc_attr($platform) . '" ' . $checked . '> ';
-            echo esc_html($platform);
+            echo '<input type="checkbox" name="jlg_plateformes[]" value="' . esc_attr($platform_value) . '" ' . $checked . '> ';
+            echo esc_html($display_label);
             echo '</label>';
         }
         echo '</div>';

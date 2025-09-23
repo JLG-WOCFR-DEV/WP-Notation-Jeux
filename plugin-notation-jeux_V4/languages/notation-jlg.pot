@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-23T10:59:14+00:00\n"
+"POT-Creation-Date: 2025-09-23T11:27:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: notation-jlg\n"
@@ -72,8 +72,268 @@ msgstr ""
 msgid "📚 Tutoriels"
 msgstr ""
 
+#. translators: Abbreviation meaning that the user rating is not available.
+#: includes/admin/class-jlg-admin-menu.php:153
+#: includes/class-jlg-assets.php:117
+#: templates/shortcode-user-rating.php:15
+#: templates/summary-table-fragment.php:97
+#: templates/summary-table-fragment.php:157
+msgid "N/A"
+msgstr ""
+
 #: includes/admin/class-jlg-admin-menu.php:178
 msgid "Page "
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:203
+msgid "🖨️ Imprimer cette liste"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:209
+msgid "Titre"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:210
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:184
+msgid "Date"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:211
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:192
+msgid "Note"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:249
+msgid "🎮 Gestion des Plateformes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:268
+msgid "La classe de gestion des plateformes n'a pas pu être chargée."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:271
+msgid "Fichier class-jlg-admin-platforms.php introuvable."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:283
+msgid "⚡ Démarrage rapide avec le Bloc Complet"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:284
+msgid "La méthode la plus simple pour créer un test professionnel."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:286
+#: includes/admin/class-jlg-admin-menu.php:297
+msgid "Créer un nouvel article"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:287
+msgid "Remplir les notes dans la metabox (colonne droite)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:288
+msgid "Ajouter tagline et points forts/faibles"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:289
+msgid "Insérer [jlg_bloc_complet] dans le contenu"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:290
+msgid "C'est tout ! Publiez votre test"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:294
+msgid "🎮 Créer un test détaillé (méthode classique)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:295
+msgid "Guide pas-à-pas pour un contrôle total."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:298
+msgid "Remplir la metabox \"Notation\" (colonne droite)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:299
+msgid "Ajouter les détails du jeu (metabox principale)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:300
+msgid "Intégrer les shortcodes séparés si besoin"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:301
+msgid "Publier et vérifier l'affichage"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:305
+msgid "🎨 Personnalisation du Bloc Complet"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:306
+msgid "Créez un rendu unique."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:308
+msgid "Choisir le style (moderne/classique/compact)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:309
+msgid "Définir une couleur d'accent personnalisée"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:310
+msgid "Activer/désactiver les sections"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:311
+msgid "Personnaliser les titres des sections"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:312
+msgid "Combiner avec d'autres shortcodes si besoin"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:316
+msgid "🎨 Personnalisation visuelle globale"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:317
+msgid "Ajuster l'apparence générale."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:319
+msgid "Choisir le thème (clair/sombre)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:320
+msgid "Activer les effets Neon/Glow"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:321
+msgid "Configurer la pulsation"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:322
+msgid "Personnaliser les couleurs"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:323
+msgid "Ajouter du CSS personnalisé"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:327
+msgid "📊 Tableau récapitulatif avancé"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:328
+msgid "Maîtriser le shortcode tableau."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:330
+msgid "Choisir entre table et grille"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:331
+msgid "Sélectionner les colonnes à afficher"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:332
+msgid "Filtrer par catégorie"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:333
+msgid "Ajuster la pagination"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:334
+msgid "Personnaliser les couleurs dans Réglages"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:338
+msgid "⚡ Optimisations"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:339
+msgid "Améliorer les performances."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:341
+msgid "Utiliser [jlg_bloc_complet] au lieu de 3 shortcodes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:342
+msgid "Activer un plugin de cache"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:343
+msgid "Optimiser les images de couverture"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:344
+msgid "Limiter le nombre d'articles affichés"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:345
+msgid "Désactiver les animations si non nécessaires"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:349
+msgid "🔧 Intégration dans le thème"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:350
+msgid "Pour les développeurs."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:352
+msgid "Ajouter jlg_display_thumbnail_score() dans les templates"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:353
+msgid "Utiliser jlg_get_post_rating() pour récupérer la note"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:354
+msgid "Personnaliser les templates dans /templates/"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:355
+msgid "Créer des hooks personnalisés"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:356
+msgid "Surcharger les styles CSS du plugin"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:360
+msgid "❓ Dépannage"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:361
+msgid "Résoudre les problèmes courants."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:363
+msgid "Vérifier les conflits de plugins"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:364
+msgid "Vider le cache navigateur et site"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:365
+msgid "Vérifier les permissions utilisateur"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:366
+msgid "Consulter les logs d'erreur"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-menu.php:367
+msgid "Réinitialiser les réglages si nécessaire"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:31
@@ -132,7 +392,7 @@ msgid "Note moyenne :"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:132
-#: includes/admin/class-jlg-admin-metaboxes.php:268
+#: includes/admin/class-jlg-admin-metaboxes.php:280
 msgid "Nom du jeu"
 msgstr ""
 
@@ -145,32 +405,32 @@ msgid "📋 Fiche Technique"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:142
-#: includes/admin/class-jlg-admin-metaboxes.php:269
+#: includes/admin/class-jlg-admin-metaboxes.php:281
 msgid "Développeur(s)"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:143
-#: includes/admin/class-jlg-admin-metaboxes.php:270
+#: includes/admin/class-jlg-admin-metaboxes.php:282
 msgid "Éditeur(s)"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:144
-#: includes/admin/class-jlg-admin-metaboxes.php:271
+#: includes/admin/class-jlg-admin-metaboxes.php:283
 msgid "Date de sortie"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:145
-#: includes/admin/class-jlg-admin-metaboxes.php:272
+#: includes/admin/class-jlg-admin-metaboxes.php:284
 msgid "Version testée"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:146
-#: includes/admin/class-jlg-admin-metaboxes.php:273
+#: includes/admin/class-jlg-admin-metaboxes.php:285
 msgid "PEGI"
 msgstr ""
 
 #: includes/admin/class-jlg-admin-metaboxes.php:147
-#: includes/admin/class-jlg-admin-metaboxes.php:274
+#: includes/admin/class-jlg-admin-metaboxes.php:286
 msgid "Temps de jeu"
 msgstr ""
 
@@ -182,54 +442,78 @@ msgstr ""
 msgid "Plateformes :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:189
+#: includes/admin/class-jlg-admin-metaboxes.php:168
+msgid "PC"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:169
+msgid "PlayStation 5"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:170
+msgid "Xbox Series S/X"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:171
+msgid "Nintendo Switch"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:172
+msgid "PlayStation 4"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:173
+msgid "Xbox One"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:201
 msgid "💬 Taglines"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:192
+#: includes/admin/class-jlg-admin-metaboxes.php:204
 msgid "Française :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:196
+#: includes/admin/class-jlg-admin-metaboxes.php:208
 msgid "Anglaise :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:202
+#: includes/admin/class-jlg-admin-metaboxes.php:214
 msgid "⚖️ Points Forts & Faibles"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:203
+#: includes/admin/class-jlg-admin-metaboxes.php:215
 msgid "Un point par ligne"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:206
+#: includes/admin/class-jlg-admin-metaboxes.php:218
 msgid "Points Forts :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:207
+#: includes/admin/class-jlg-admin-metaboxes.php:219
 msgid ""
 "Gameplay addictif\n"
 "Graphismes superbes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:210
+#: includes/admin/class-jlg-admin-metaboxes.php:222
 msgid "Points Faibles :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:211
+#: includes/admin/class-jlg-admin-metaboxes.php:223
 msgid ""
 "Durée de vie courte\n"
 "Bugs occasionnels"
 msgstr ""
 
 #. translators: %s is the field label.
-#: includes/admin/class-jlg-admin-metaboxes.php:298
+#: includes/admin/class-jlg-admin-metaboxes.php:310
 #, php-format
 msgid "%s : format de date invalide. Utilisez AAAA-MM-JJ."
 msgstr ""
 
 #. translators: %s is a list of allowed PEGI values
-#: includes/admin/class-jlg-admin-metaboxes.php:313
+#: includes/admin/class-jlg-admin-metaboxes.php:325
 #, php-format
 msgid "PEGI invalide. Valeurs acceptées : %s."
 msgstr ""
@@ -242,69 +526,69 @@ msgstr ""
 msgid "Erreur de sécurité"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:246
+#: includes/admin/class-jlg-admin-platforms.php:257
 msgid "Plateformes réinitialisées avec succès !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:274
+#: includes/admin/class-jlg-admin-platforms.php:288
 msgid "Le nom de la plateforme est requis."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:287
+#: includes/admin/class-jlg-admin-platforms.php:301
 msgid "Nom de plateforme invalide."
 msgstr ""
 
 #. translators: %s: platform name.
-#: includes/admin/class-jlg-admin-platforms.php:335
+#: includes/admin/class-jlg-admin-platforms.php:349
 #, php-format
 msgid "Plateforme '%s' ajoutée avec succès !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:341
+#: includes/admin/class-jlg-admin-platforms.php:355
 msgid "Erreur lors de la sauvegarde."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:355
+#: includes/admin/class-jlg-admin-platforms.php:369
 msgid "Clé de plateforme manquante."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:364
+#: includes/admin/class-jlg-admin-platforms.php:378
 msgid "Plateforme introuvable."
 msgstr ""
 
 #. translators: %s: platform name.
-#: includes/admin/class-jlg-admin-platforms.php:374
+#: includes/admin/class-jlg-admin-platforms.php:388
 #, php-format
 msgid "La plateforme '%s' est une plateforme par défaut et ne peut pas être supprimée."
 msgstr ""
 
 #. translators: %s: platform name.
-#: includes/admin/class-jlg-admin-platforms.php:392
+#: includes/admin/class-jlg-admin-platforms.php:406
 #, php-format
 msgid "Plateforme '%s' supprimée avec succès !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:398
+#: includes/admin/class-jlg-admin-platforms.php:412
 msgid "Erreur lors de la suppression."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:412
+#: includes/admin/class-jlg-admin-platforms.php:426
 msgid "Données d'ordre manquantes."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:421
+#: includes/admin/class-jlg-admin-platforms.php:435
 msgid "Ordre soumis invalide."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:443
+#: includes/admin/class-jlg-admin-platforms.php:457
 msgid "Aucune plateforme valide reçue."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:464
+#: includes/admin/class-jlg-admin-platforms.php:478
 msgid "Ordre des plateformes mis à jour !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:467
+#: includes/admin/class-jlg-admin-platforms.php:481
 msgid "Erreur lors de la mise à jour."
 msgstr ""
 
@@ -361,14 +645,6 @@ msgstr ""
 
 #: includes/class-jlg-assets.php:116
 msgid "Fiche technique remplie !"
-msgstr ""
-
-#. translators: Abbreviation meaning that the user rating is not available.
-#: includes/class-jlg-assets.php:117
-#: templates/shortcode-user-rating.php:15
-#: templates/summary-table-fragment.php:97
-#: templates/summary-table-fragment.php:157
-msgid "N/A"
 msgstr ""
 
 #: includes/class-jlg-frontend.php:380
@@ -437,14 +713,6 @@ msgstr ""
 
 #: includes/shortcodes/class-jlg-shortcode-summary-display.php:175
 msgid "Titre du jeu"
-msgstr ""
-
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:184
-msgid "Date"
-msgstr ""
-
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:192
-msgid "Note"
 msgstr ""
 
 #: includes/shortcodes/class-jlg-shortcode-summary-display.php:202
