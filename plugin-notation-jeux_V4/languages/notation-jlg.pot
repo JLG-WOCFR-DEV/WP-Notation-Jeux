@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-19T20:16:57+00:00\n"
+"POT-Creation-Date: 2025-09-23T10:18:50+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: notation-jlg\n"
@@ -34,97 +34,265 @@ msgstr ""
 msgid "Jérôme Le Gousse"
 msgstr ""
 
-#: includes/class-jlg-assets.php:96
+#: includes/admin/class-jlg-admin-metaboxes.php:31
+msgid "Notation JLG"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:127
+#: includes/admin/class-jlg-admin-metaboxes.php:263
+msgid "Nom du jeu"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:129
+msgid "Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:264
+msgid "Développeur(s)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:265
+msgid "Éditeur(s)"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:266
+msgid "Date de sortie"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:267
+msgid "Version testée"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:268
+msgid "PEGI"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-metaboxes.php:269
+msgid "Temps de jeu"
+msgstr ""
+
+#. translators: %s is the field label.
+#: includes/admin/class-jlg-admin-metaboxes.php:293
+#, php-format
+msgid "%s : format de date invalide. Utilisez AAAA-MM-JJ."
+msgstr ""
+
+#. translators: %s is a list of allowed PEGI values
+#: includes/admin/class-jlg-admin-metaboxes.php:308
+#, php-format
+msgid "PEGI invalide. Valeurs acceptées : %s."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:199
+msgid "Permissions insuffisantes"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:213
+msgid "Erreur de sécurité"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:246
+msgid "Plateformes réinitialisées avec succès !"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:274
+msgid "Le nom de la plateforme est requis."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:287
+msgid "Nom de plateforme invalide."
+msgstr ""
+
+#. translators: %s: platform name.
+#: includes/admin/class-jlg-admin-platforms.php:335
+#, php-format
+msgid "Plateforme '%s' ajoutée avec succès !"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:341
+msgid "Erreur lors de la sauvegarde."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:355
+msgid "Clé de plateforme manquante."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:364
+msgid "Plateforme introuvable."
+msgstr ""
+
+#. translators: %s: platform name.
+#: includes/admin/class-jlg-admin-platforms.php:374
+#, php-format
+msgid "La plateforme '%s' est une plateforme par défaut et ne peut pas être supprimée."
+msgstr ""
+
+#. translators: %s: platform name.
+#: includes/admin/class-jlg-admin-platforms.php:392
+#, php-format
+msgid "Plateforme '%s' supprimée avec succès !"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:398
+msgid "Erreur lors de la suppression."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:412
+msgid "Données d'ordre manquantes."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:421
+msgid "Ordre soumis invalide."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:443
+msgid "Aucune plateforme valide reçue."
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:464
+msgid "Ordre des plateformes mis à jour !"
+msgstr ""
+
+#: includes/admin/class-jlg-admin-platforms.php:467
+msgid "Erreur lors de la mise à jour."
+msgstr ""
+
+#: includes/class-jlg-assets.php:99
 #: templates/shortcode-user-rating.php:37
 msgid "Merci pour votre vote !"
 msgstr ""
 
-#: includes/class-jlg-assets.php:97
+#: includes/class-jlg-assets.php:100
 msgid "Erreur. Veuillez réessayer."
 msgstr ""
 
-#: includes/class-jlg-assets.php:103
-msgid "Configuration AJAX invalide."
-msgstr ""
-
-#: includes/class-jlg-assets.php:104
-msgid "Nonce de sécurité manquant. Actualisez la page."
-msgstr ""
-
-#: includes/class-jlg-assets.php:105
-msgid "Veuillez entrer au moins 3 caractères."
-msgstr ""
-
-#: includes/class-jlg-assets.php:106
-msgid "Recherche..."
+#: includes/class-jlg-assets.php:101
+#: includes/class-jlg-frontend.php:395
+#: assets/js/user-rating.js:12
+msgid "Vous avez déjà voté !"
 msgstr ""
 
 #: includes/class-jlg-assets.php:107
-msgid "Chargement..."
+msgid "Configuration AJAX invalide."
 msgstr ""
 
 #: includes/class-jlg-assets.php:108
-msgid "Rechercher"
+msgid "Nonce de sécurité manquant. Actualisez la page."
 msgstr ""
 
 #: includes/class-jlg-assets.php:109
-msgid "Vérification de sécurité échouée. Actualisez la page."
+msgid "Veuillez entrer au moins 3 caractères."
 msgstr ""
 
 #: includes/class-jlg-assets.php:110
-msgid "Choisir"
+msgid "Recherche..."
 msgstr ""
 
 #: includes/class-jlg-assets.php:111
-msgid "Erreur de communication."
+msgid "Chargement..."
 msgstr ""
 
 #: includes/class-jlg-assets.php:112
+msgid "Rechercher"
+msgstr ""
+
+#: includes/class-jlg-assets.php:113
+msgid "Vérification de sécurité échouée. Actualisez la page."
+msgstr ""
+
+#: includes/class-jlg-assets.php:114
+msgid "Choisir"
+msgstr ""
+
+#: includes/class-jlg-assets.php:115
+msgid "Erreur de communication."
+msgstr ""
+
+#: includes/class-jlg-assets.php:116
 msgid "Fiche technique remplie !"
 msgstr ""
 
 #. translators: Abbreviation meaning that the user rating is not available.
-#. translators: Abbreviation meaning that the average score is not available.
-#: includes/class-jlg-assets.php:113
+#: includes/class-jlg-assets.php:117
 #: templates/shortcode-user-rating.php:15
-#: templates/summary-table-fragment.php:130
+#: templates/summary-table-fragment.php:97
+#: templates/summary-table-fragment.php:157
 msgid "N/A"
 msgstr ""
 
-#: includes/class-jlg-frontend.php:538
+#: includes/class-jlg-frontend.php:322
 msgid "Une erreur est survenue. Merci de réessayer plus tard."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:609
+#: includes/class-jlg-frontend.php:343
+msgid "Jeton de sécurité manquant ou invalide."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:347
+#: includes/class-jlg-frontend.php:649
 msgid "La vérification de sécurité a échoué."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:613
+#: includes/class-jlg-frontend.php:354
+msgid "La notation des lecteurs est désactivée."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:361
+#: includes/class-jlg-frontend.php:383
+msgid "Données invalides."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:367
+msgid "Article introuvable ou non disponible pour la notation."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:377
+msgid "La notation des lecteurs est désactivée pour ce contenu."
+msgstr ""
+
+#: includes/class-jlg-frontend.php:653
 msgid "Le shortcode requis est indisponible."
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:52
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:103
 msgid "Aucun article noté trouvé."
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:119
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:175
 msgid "Titre du jeu"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:124
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:184
 msgid "Date"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:129
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:192
 msgid "Note"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:134
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:202
 msgid "Développeur"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:138
+#: includes/shortcodes/class-jlg-shortcode-summary-display.php:213
 msgid "Éditeur"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:23
+#: templates/shortcode-tagline.php:12
+msgid "Français"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:27
+#: templates/shortcode-tagline.php:13
+msgid "English"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:51
+#: templates/shortcode-all-in-one.php:55
+#: templates/shortcode-rating-block.php:22
+#: templates/shortcode-rating-block.php:27
+msgid "Note Globale"
 msgstr ""
 
 #. translators: Section title for the list of advantages in the pros and cons block.
@@ -137,31 +305,18 @@ msgstr ""
 msgid "Points Faibles"
 msgstr ""
 
-#: templates/shortcode-rating-block.php:22
-#: templates/shortcode-rating-block.php:27
-msgid "Note Globale"
-msgstr ""
-
 #. translators: 1: Rating value for a specific category. 2: Maximum possible rating.
 #: templates/shortcode-rating-block.php:46
 #, php-format
 msgid "%1$s / %2$s"
 msgstr ""
 
-#: templates/shortcode-summary-display.php:46
+#: templates/shortcode-summary-display.php:47
 msgid "Toutes les catégories"
 msgstr ""
 
-#: templates/shortcode-summary-display.php:55
+#: templates/shortcode-summary-display.php:56
 msgid "Filtrer"
-msgstr ""
-
-#: templates/shortcode-tagline.php:12
-msgid "Français"
-msgstr ""
-
-#: templates/shortcode-tagline.php:13
-msgid "English"
 msgstr ""
 
 #: templates/shortcode-user-rating.php:6
@@ -178,34 +333,34 @@ msgstr ""
 msgid "Aucun article trouvé pour cette sélection."
 msgstr ""
 
-#: templates/summary-table-fragment.php:49
+#: templates/summary-table-fragment.php:67
 msgid " ▲"
 msgstr ""
 
-#: templates/summary-table-fragment.php:50
+#: templates/summary-table-fragment.php:68
 msgid " ▼"
 msgstr ""
 
 #. translators: %s: Maximum possible rating value.
-#: templates/summary-table-fragment.php:134
+#: templates/summary-table-fragment.php:162
 #, php-format
 msgid "/ %s"
 msgstr ""
 
-#: templates/summary-table-fragment.php:139
-#: templates/summary-table-fragment.php:143
+#: templates/summary-table-fragment.php:167
+#: templates/summary-table-fragment.php:171
 msgid "-"
 msgstr ""
 
-#: templates/summary-table-fragment.php:180
+#: templates/summary-table-fragment.php:208
 msgid "« Précédent"
 msgstr ""
 
-#: templates/summary-table-fragment.php:181
+#: templates/summary-table-fragment.php:209
 msgid "Suivant »"
 msgstr ""
 
-#: templates/widget-latest-reviews.php:18
+#: templates/widget-latest-reviews.php:20
 msgid "Aucun test trouvé."
 msgstr ""
 
