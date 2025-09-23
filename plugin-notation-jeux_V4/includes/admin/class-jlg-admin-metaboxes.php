@@ -164,23 +164,38 @@ class JLG_Admin_Metaboxes {
         echo '<p><strong>' . esc_html__('Plateformes :', 'notation-jlg') . '</strong></p>';
         
         // Récupérer les plateformes depuis la classe JLG_Admin_Platforms
-        $platforms_list = ['PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch', 'PlayStation 4', 'Xbox One'];
-        
+        $platforms_list = [
+            ['value' => 'PC', 'label' => __('PC', 'notation-jlg')],
+            ['value' => 'PlayStation 5', 'label' => __('PlayStation 5', 'notation-jlg')],
+            ['value' => 'Xbox Series S/X', 'label' => __('Xbox Series S/X', 'notation-jlg')],
+            ['value' => 'Nintendo Switch', 'label' => __('Nintendo Switch', 'notation-jlg')],
+            ['value' => 'PlayStation 4', 'label' => __('PlayStation 4', 'notation-jlg')],
+            ['value' => 'Xbox One', 'label' => __('Xbox One', 'notation-jlg')],
+        ];
+
         if (class_exists('JLG_Admin_Platforms')) {
             $platforms_manager = JLG_Admin_Platforms::get_instance();
             $all_platforms = $platforms_manager->get_platform_names();
             if (!empty($all_platforms)) {
-                $platforms_list = array_values($all_platforms);
+                $platforms_list = [];
+                foreach ($all_platforms as $platform_name) {
+                    $platforms_list[] = [
+                        'value' => $platform_name,
+                        'label' => $platform_name,
+                    ];
+                }
             }
         }
-        
+
         $selected = is_array($meta['plateformes']) ? $meta['plateformes'] : [];
-        
+
         foreach ($platforms_list as $platform) {
-            $checked = in_array($platform, $selected) ? 'checked' : '';
+            $value = $platform['value'];
+            $label = $platform['label'];
+            $checked = in_array($value, $selected, true) ? 'checked' : '';
             echo '<label style="margin-right:15px;">';
-            echo '<input type="checkbox" name="jlg_plateformes[]" value="' . esc_attr($platform) . '" ' . $checked . '> ';
-            echo esc_html($platform);
+            echo '<input type="checkbox" name="jlg_plateformes[]" value="' . esc_attr($value) . '" ' . $checked . '> ';
+            echo esc_html($label);
             echo '</label>';
         }
         echo '</div>';
@@ -312,7 +327,11 @@ class JLG_Admin_Metaboxes {
                                 /* translators: %s is a list of allowed PEGI values */
                                 __('PEGI invalide. Valeurs acceptées : %s.', 'notation-jlg'),
                                 implode(', ', array_map(function($rating) {
-                                    return 'PEGI ' . $rating;
+                                    return sprintf(
+                                        /* translators: %s: PEGI rating value. */
+                                        __('PEGI %s', 'notation-jlg'),
+                                        $rating
+                                    );
                                 }, JLG_Validator::get_allowed_pegi_values()))
                             );
                             continue;
