@@ -261,6 +261,30 @@ if (!function_exists('number_format_i18n')) {
     }
 }
 
+if (!function_exists('current_time')) {
+    function current_time($type, $gmt = 0) {
+        $timestamp = time();
+
+        if ($type === 'timestamp' || $type === 'U') {
+            return $timestamp;
+        }
+
+        if ($gmt) {
+            return gmdate($type === 'mysql' ? 'Y-m-d H:i:s' : (is_string($type) && $type !== '' ? $type : 'Y-m-d H:i:s'), $timestamp);
+        }
+
+        if ($type === 'mysql') {
+            return date('Y-m-d H:i:s', $timestamp);
+        }
+
+        if (is_string($type) && $type !== '') {
+            return date($type, $timestamp);
+        }
+
+        return $timestamp;
+    }
+}
+
 if (!function_exists('wp_unslash')) {
     function wp_unslash($value) {
         if (is_array($value)) {
@@ -439,11 +463,15 @@ if (!function_exists('get_post_meta')) {
 
         $value = $meta[$post_id][$key];
 
-        if ($single && is_array($value)) {
-            return reset($value);
+        if ($single) {
+            return $value;
         }
 
-        return $value;
+        if (is_array($value)) {
+            return $value;
+        }
+
+        return [$value];
     }
 }
 
