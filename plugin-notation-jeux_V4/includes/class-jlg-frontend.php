@@ -449,6 +449,20 @@ class JLG_Frontend {
         $ratings_meta = [];
         $ratings = self::get_post_user_rating_tokens($post_id, $ratings_meta);
 
+        if ($user_ip_hash) {
+            $ip_log = get_post_meta($post_id, '_jlg_user_rating_ips', true);
+
+            if (!is_array($ip_log)) {
+                $ip_log = [];
+            }
+
+            if (isset($ip_log[$user_ip_hash]) && (!is_array($ip_log[$user_ip_hash]) || empty($ip_log[$user_ip_hash]['legacy']))) {
+                wp_send_json_error([
+                    'message' => esc_html__('Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg'),
+                ], 409);
+            }
+        }
+
         if (isset($ratings[$token_hash])) {
             wp_send_json_error(['message' => esc_html__('Vous avez déjà voté !', 'notation-jlg')]);
         }
