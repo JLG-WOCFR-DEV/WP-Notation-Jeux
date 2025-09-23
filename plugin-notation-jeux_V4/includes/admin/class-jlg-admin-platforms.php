@@ -464,19 +464,17 @@ class JLG_Admin_Platforms {
         
         $platforms = $this->get_platforms();
         ?>
-        <div class="wrap">
-            <h2>🎮 Gestion des Plateformes</h2>
-            
-            <!-- ZONE DE DEBUG AMÉLIORÉE -->
-            <?php 
-            $plugin_options = JLG_Helpers::get_plugin_options();
-            $show_debug = isset($_GET['debug']) || !empty($plugin_options['debug_mode_enabled']);
-            if ($show_debug) :
-                $debug_messages = get_transient('jlg_platforms_debug');
-            ?>
+
+        <!-- ZONE DE DEBUG AMÉLIORÉE -->
+        <?php
+        $plugin_options = JLG_Helpers::get_plugin_options();
+        $show_debug = isset($_GET['debug']) || !empty($plugin_options['debug_mode_enabled']);
+        if ($show_debug) :
+            $debug_messages = get_transient('jlg_platforms_debug');
+        ?>
             <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
                 <h3 style="margin-top: 0;">🐛 Mode Debug - Informations de diagnostic</h3>
-                
+
                 <?php if ($debug_messages && !empty($debug_messages)) : ?>
                 <div style="background: #fff; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
                     <?php foreach ($debug_messages as $msg): ?>
@@ -518,161 +516,160 @@ class JLG_Admin_Platforms {
                     <a href="<?php echo esc_url(add_query_arg('debug', '0')); ?>" class="button button-small">Masquer le debug</a>
                 </p>
             </div>
-            <?php 
-            delete_transient('jlg_platforms_debug');
-            else: 
-            ?>
-            <p style="text-align: right;">
-                <a href="<?php echo esc_url(add_query_arg('debug', '1')); ?>" class="button button-small">🐛 Activer le mode debug</a>
-            </p>
-            <?php endif; ?>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                
-                <!-- Liste des plateformes -->
-                <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <h3>Plateformes actuelles</h3>
-                    
+        <?php
+        delete_transient('jlg_platforms_debug');
+        else:
+        ?>
+        <p style="text-align: right;">
+            <a href="<?php echo esc_url(add_query_arg('debug', '1')); ?>" class="button button-small">🐛 Activer le mode debug</a>
+        </p>
+        <?php endif; ?>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+
+            <!-- Liste des plateformes -->
+            <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3>Plateformes actuelles</h3>
+
+                <form method="post" action="">
+                    <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
+                    <input type="hidden" name="jlg_platform_action" value="update_order">
+
+                    <table class="wp-list-table widefat striped jlg-platforms-table">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="manage-column column-handle" style="width: 40px;">
+                                    <span class="screen-reader-text">Réordonner les plateformes</span>
+                                </th>
+                                <th scope="col" class="manage-column column-order" style="width: 60px;">Ordre</th>
+                                <th scope="col" class="manage-column column-icon" style="width: 50px;">Icône</th>
+                                <th scope="col" class="manage-column column-primary">Nom</th>
+                                <th scope="col" class="manage-column column-actions" style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="platforms-list" class="jlg-sortable-list">
+                            <?php $position = 1; foreach ($platforms as $key => $platform): ?>
+                            <tr class="jlg-platform-row" data-key="<?php echo esc_attr($key); ?>">
+                                <td class="jlg-sort-handle" style="cursor: move; text-align: center;" title="Glissez pour réordonner">
+                                    <span class="dashicons dashicons-menu" aria-hidden="true"></span>
+                                    <span class="screen-reader-text">Réordonner <?php echo esc_html($platform['name']); ?></span>
+                                </td>
+                                <td class="jlg-platform-position">
+                                    <?php echo esc_html($position); ?>
+                                </td>
+                                <td style="text-align: center; font-size: 20px;">
+                                    <?php echo esc_html($platform['icon'] ?? '🎮'); ?>
+                                </td>
+                                <td>
+                                    <strong><?php echo esc_html($platform['name']); ?></strong>
+                                    <?php if (isset($platform['custom']) && $platform['custom']): ?>
+                                        <span style="color: #666; font-size: 12px;">(Personnalisée)</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (isset($platform['custom']) && $platform['custom']): ?>
+                                        <button type="button"
+                                                class="button button-small delete-platform"
+                                                data-key="<?php echo esc_attr($key); ?>"
+                                                data-name="<?php echo esc_attr($platform['name']); ?>">
+                                            ❌ Supprimer
+                                        </button>
+                                    <?php else: ?>
+                                        <span style="color: #999;">Par défaut</span>
+                                    <?php endif; ?>
+                                    <input type="hidden" name="platform_order[]" value="<?php echo esc_attr($key); ?>">
+                                </td>
+                            </tr>
+                            <?php $position++; endforeach; ?>
+                        </tbody>
+                    </table>
+
+                    <p class="description" style="margin-top: 10px;">
+                        Faites glisser les lignes à l'aide de la poignée pour réorganiser les plateformes. L'ordre est enregistré automatiquement lors de la sauvegarde.
+                    </p>
+
+                    <p style="margin-top: 15px;">
+                        <input type="submit" class="button button-primary" value="💾 Enregistrer l'ordre">
+                    </p>
+                </form>
+            </div>
+
+            <!-- Formulaire d'ajout -->
+            <div>
+                <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                    <h3>➕ Ajouter une plateforme</h3>
+
                     <form method="post" action="">
                         <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
-                        <input type="hidden" name="jlg_platform_action" value="update_order">
-                        
-                        <table class="wp-list-table widefat striped jlg-platforms-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col" class="manage-column column-handle" style="width: 40px;">
-                                        <span class="screen-reader-text">Réordonner les plateformes</span>
-                                    </th>
-                                    <th scope="col" class="manage-column column-order" style="width: 60px;">Ordre</th>
-                                    <th scope="col" class="manage-column column-icon" style="width: 50px;">Icône</th>
-                                    <th scope="col" class="manage-column column-primary">Nom</th>
-                                    <th scope="col" class="manage-column column-actions" style="width: 120px;">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="platforms-list" class="jlg-sortable-list">
-                                <?php $position = 1; foreach ($platforms as $key => $platform): ?>
-                                <tr class="jlg-platform-row" data-key="<?php echo esc_attr($key); ?>">
-                                    <td class="jlg-sort-handle" style="cursor: move; text-align: center;" title="Glissez pour réordonner">
-                                        <span class="dashicons dashicons-menu" aria-hidden="true"></span>
-                                        <span class="screen-reader-text">Réordonner <?php echo esc_html($platform['name']); ?></span>
-                                    </td>
-                                    <td class="jlg-platform-position">
-                                        <?php echo esc_html($position); ?>
-                                    </td>
-                                    <td style="text-align: center; font-size: 20px;">
-                                        <?php echo esc_html($platform['icon'] ?? '🎮'); ?>
-                                    </td>
-                                    <td>
-                                        <strong><?php echo esc_html($platform['name']); ?></strong>
-                                        <?php if (isset($platform['custom']) && $platform['custom']): ?>
-                                            <span style="color: #666; font-size: 12px;">(Personnalisée)</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if (isset($platform['custom']) && $platform['custom']): ?>
-                                            <button type="button"
-                                                    class="button button-small delete-platform"
-                                                    data-key="<?php echo esc_attr($key); ?>"
-                                                    data-name="<?php echo esc_attr($platform['name']); ?>">
-                                                ❌ Supprimer
-                                            </button>
-                                        <?php else: ?>
-                                            <span style="color: #999;">Par défaut</span>
-                                        <?php endif; ?>
-                                        <input type="hidden" name="platform_order[]" value="<?php echo esc_attr($key); ?>">
-                                    </td>
-                                </tr>
-                                <?php $position++; endforeach; ?>
-                            </tbody>
+                        <input type="hidden" name="jlg_platform_action" value="add">
+
+                        <table class="form-table">
+                            <tr>
+                                <th><label for="new_platform_name">Nom de la plateforme <span style="color:red;">*</span></label></th>
+                                <td>
+                                    <input type="text"
+                                           id="new_platform_name"
+                                           name="new_platform_name"
+                                           class="regular-text"
+                                           placeholder="Ex: PlayStation 6"
+                                           required>
+                                    <p class="description">Entrez le nom de la nouvelle plateforme</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="new_platform_icon">Icône</label></th>
+                                <td>
+                                    <select id="new_platform_icon" name="new_platform_icon" style="font-size: 20px;">
+                                        <option value="🎮" selected>🎮 Manette</option>
+                                        <option value="💻">💻 PC</option>
+                                        <option value="📱">📱 Mobile</option>
+                                        <option value="🕹️">🕹️ Arcade</option>
+                                        <option value="🎯">🎯 Cible</option>
+                                        <option value="🎲">🎲 Dé</option>
+                                        <option value="🖥️">🖥️ Écran</option>
+                                        <option value="⌨️">⌨️ Clavier</option>
+                                    </select>
+                                </td>
+                            </tr>
                         </table>
 
-                        <p class="description" style="margin-top: 10px;">
-                            Faites glisser les lignes à l'aide de la poignée pour réorganiser les plateformes. L'ordre est enregistré automatiquement lors de la sauvegarde.
-                        </p>
-
-                        <p style="margin-top: 15px;">
-                            <input type="submit" class="button button-primary" value="💾 Enregistrer l'ordre">
+                        <p>
+                            <input type="submit" name="submit" class="button button-primary" value="➕ Ajouter la plateforme">
                         </p>
                     </form>
                 </div>
-                
-                <!-- Formulaire d'ajout -->
-                <div>
-                    <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
-                        <h3>➕ Ajouter une plateforme</h3>
-                        
-                        <form method="post" action="">
-                            <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
-                            <input type="hidden" name="jlg_platform_action" value="add">
-                            
-                            <table class="form-table">
-                                <tr>
-                                    <th><label for="new_platform_name">Nom de la plateforme <span style="color:red;">*</span></label></th>
-                                    <td>
-                                        <input type="text" 
-                                               id="new_platform_name" 
-                                               name="new_platform_name" 
-                                               class="regular-text" 
-                                               placeholder="Ex: PlayStation 6"
-                                               required>
-                                        <p class="description">Entrez le nom de la nouvelle plateforme</p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><label for="new_platform_icon">Icône</label></th>
-                                    <td>
-                                        <select id="new_platform_icon" name="new_platform_icon" style="font-size: 20px;">
-                                            <option value="🎮" selected>🎮 Manette</option>
-                                            <option value="💻">💻 PC</option>
-                                            <option value="📱">📱 Mobile</option>
-                                            <option value="🕹️">🕹️ Arcade</option>
-                                            <option value="🎯">🎯 Cible</option>
-                                            <option value="🎲">🎲 Dé</option>
-                                            <option value="🖥️">🖥️ Écran</option>
-                                            <option value="⌨️">⌨️ Clavier</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <p>
-                                <input type="submit" name="submit" class="button button-primary" value="➕ Ajouter la plateforme">
-                            </p>
-                        </form>
-                    </div>
-                    
-                    <!-- Actions supplémentaires -->
-                    <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <h3>⚙️ Actions</h3>
-                        
-                        <form method="post" action="" onsubmit="return confirm('Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?');">
-                            <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
-                            <input type="hidden" name="jlg_platform_action" value="reset">
-                            
-                            <p>
-                                <input type="submit" class="button" value="🔄 Réinitialiser aux plateformes par défaut">
-                            </p>
-                            <p class="description">
-                                Cette action supprimera toutes les plateformes personnalisées et restaurera les plateformes par défaut.
-                            </p>
-                        </form>
-                    </div>
-                    
-                    <!-- Instructions -->
-                    <div style="background: #f0f6fc; padding: 20px; border-radius: 8px; margin-top: 20px;">
-                        <h3>💡 Instructions</h3>
-                        <ul style="margin-left: 20px;">
-                            <li>Les plateformes par défaut ne peuvent pas être supprimées</li>
-                            <li>Vous pouvez réorganiser toutes les plateformes en changeant leur ordre</li>
-                            <li>Les plateformes personnalisées peuvent être supprimées à tout moment</li>
-                            <li>Les icônes ajoutent une touche visuelle dans l'interface admin</li>
-                            <li>Après chaque action, rafraîchissez la page si nécessaire</li>
-                        </ul>
-                    </div>
+
+                <!-- Actions supplémentaires -->
+                <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h3>⚙️ Actions</h3>
+
+                    <form method="post" action="" onsubmit="return confirm('Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?');">
+                        <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
+                        <input type="hidden" name="jlg_platform_action" value="reset">
+
+                        <p>
+                            <input type="submit" class="button" value="🔄 Réinitialiser aux plateformes par défaut">
+                        </p>
+                        <p class="description">
+                            Cette action supprimera toutes les plateformes personnalisées et restaurera les plateformes par défaut.
+                        </p>
+                    </form>
+                </div>
+
+                <!-- Instructions -->
+                <div style="background: #f0f6fc; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                    <h3>💡 Instructions</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>Les plateformes par défaut ne peuvent pas être supprimées</li>
+                        <li>Vous pouvez réorganiser toutes les plateformes en changeant leur ordre</li>
+                        <li>Les plateformes personnalisées peuvent être supprimées à tout moment</li>
+                        <li>Les icônes ajoutent une touche visuelle dans l'interface admin</li>
+                        <li>Après chaque action, rafraîchissez la page si nécessaire</li>
+                    </ul>
                 </div>
             </div>
         </div>
-        
+
         <!-- JavaScript pour la suppression -->
         <script>
         jQuery(document).ready(function($) {

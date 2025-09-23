@@ -246,6 +246,7 @@ class JLG_Admin_Menu {
 
     private function get_platforms_tab_content() {
         ob_start();
+        echo '<h2 class="title">🎮 Gestion des Plateformes</h2>';
         $this->render_platforms_tab();
         return ob_get_clean();
     }
