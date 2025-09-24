@@ -253,7 +253,7 @@ class JLG_Shortcode_Game_Explorer {
         $filters_enabled = self::normalize_filters($atts['filters']);
 
         $request = is_array($request) ? $request : [];
-        $orderby = isset($request['orderby']) ? sanitize_key($request['orderby']) : 'date';
+        $orderby = (isset($request['orderby']) && is_string($request['orderby'])) ? sanitize_key($request['orderby']) : 'date';
         $order = isset($request['order']) ? strtoupper(sanitize_text_field($request['order'])) : 'DESC';
         if (!in_array($order, ['ASC', 'DESC'], true)) {
             $order = 'DESC';
@@ -262,7 +262,7 @@ class JLG_Shortcode_Game_Explorer {
         $letter_filter = isset($request['letter']) ? self::normalize_letter($request['letter']) : '';
         $category_filter = isset($request['category']) ? sanitize_text_field($request['category']) : '';
         $platform_filter = isset($request['platform']) ? sanitize_text_field($request['platform']) : '';
-        $availability_filter = isset($request['availability']) ? sanitize_key($request['availability']) : '';
+        $availability_filter = (isset($request['availability']) && is_string($request['availability'])) ? sanitize_key($request['availability']) : '';
         $search_filter = isset($request['search']) ? sanitize_text_field($request['search']) : '';
         $paged = isset($request['paged']) ? max(1, (int) $request['paged']) : 1;
 
