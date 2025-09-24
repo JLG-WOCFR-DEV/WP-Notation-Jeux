@@ -284,23 +284,40 @@ class JLG_Helpers {
     }
     
     public static function get_rated_post_ids() {
+        $transient_key = 'jlg_rated_post_ids_v1';
+        $cached_post_ids = get_transient($transient_key);
+
+        if ($cached_post_ids !== false && is_array($cached_post_ids)) {
+            return array_map('intval', $cached_post_ids);
+        }
+
         global $wpdb;
-        
+
         $meta_keys = array_map(function($key) {
             return '_note_' . $key;
         }, self::$category_keys);
-        
+
         $placeholders = implode(', ', array_fill(0, count($meta_keys), '%s'));
-        
+
         $query = $wpdb->prepare(
-            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} 
-            WHERE meta_key IN ($placeholders) 
-            AND meta_value != '' 
+            "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
+            WHERE meta_key IN ($placeholders)
+            AND meta_value != ''
             AND meta_value IS NOT NULL",
             ...$meta_keys
         );
-        
-        return $wpdb->get_col($query);
+
+        $post_ids = array_map('intval', $wpdb->get_col($query));
+
+        $expiration_unit = defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60;
+
+        set_transient($transient_key, $post_ids, 15 * $expiration_unit);
+
+        return $post_ids;
+    }
+
+    public static function clear_rated_post_ids_cache() {
+        delete_transient('jlg_rated_post_ids_v1');
     }
     
     public static function adjust_hex_brightness($hex, $steps) {
