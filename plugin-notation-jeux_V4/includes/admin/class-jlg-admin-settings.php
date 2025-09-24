@@ -419,6 +419,12 @@ class JLG_Admin_Settings {
             $tagline_font_size_args
         );
         $this->store_field_constraints($tagline_font_size_args);
+        add_settings_field('tagline_bg_color', 'Fond de la tagline', [$this, 'render_field'], 'notation_jlg_page', 'jlg_tagline_section',
+            ['id' => 'tagline_bg_color', 'type' => 'color']
+        );
+        add_settings_field('tagline_text_color', 'Texte de la tagline', [$this, 'render_field'], 'notation_jlg_page', 'jlg_tagline_section',
+            ['id' => 'tagline_text_color', 'type' => 'color']
+        );
 
         // Section 8: Modules - Notation Utilisateurs
         add_settings_section('jlg_user_rating_section', '8. ⭐ Module Notation Utilisateurs', null, 'notation_jlg_page');
