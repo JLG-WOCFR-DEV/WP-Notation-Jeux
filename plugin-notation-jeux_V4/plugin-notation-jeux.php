@@ -61,8 +61,10 @@ final class JLG_Plugin_De_Notation_Main {
         $this->load_dependencies();
         $this->init_components();
         add_action('jlg_process_v5_migration', [$this, 'process_migration_batch']);
+        add_action('jlg_queue_average_rebuild', [$this, 'queue_additional_posts_for_migration']);
         add_action('init', [$this, 'ensure_migration_schedule']);
         register_activation_hook(__FILE__, [$this, 'on_activation']);
+        register_deactivation_hook(__FILE__, [$this, 'on_deactivation']);
     }
 
     private function load_dependencies() {
@@ -149,6 +151,15 @@ final class JLG_Plugin_De_Notation_Main {
         flush_rewrite_rules();
     }
 
+    public function on_deactivation() {
+        if (function_exists('wp_clear_scheduled_hook')) {
+            wp_clear_scheduled_hook('jlg_process_v5_migration');
+        }
+
+        delete_option('jlg_migration_v5_queue');
+        delete_option('jlg_migration_v5_completed');
+    }
+
     private function queue_migration_from_v4() {
         $rated_post_ids = array_filter(
             array_map('intval', JLG_Helpers::get_rated_post_ids() ?? []),
@@ -224,6 +235,39 @@ final class JLG_Plugin_De_Notation_Main {
 
         $delay = defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60;
         wp_schedule_single_event(time() + $delay, 'jlg_process_v5_migration');
+    }
+
+    public function queue_additional_posts_for_migration($post_ids) {
+        if (!is_array($post_ids)) {
+            $post_ids = [$post_ids];
+        }
+
+        $post_ids = array_filter(
+            array_map('intval', $post_ids),
+            static function ($post_id) {
+                return $post_id > 0;
+            }
+        );
+
+        if (empty($post_ids)) {
+            return;
+        }
+
+        $queue = get_option('jlg_migration_v5_queue', []);
+
+        if (!is_array($queue)) {
+            $queue = [];
+        }
+
+        $queue = array_map('intval', $queue);
+        $updated_queue = array_values(array_unique(array_merge($queue, $post_ids)));
+
+        if ($updated_queue === $queue) {
+            return;
+        }
+
+        update_option('jlg_migration_v5_queue', $updated_queue);
+        $this->schedule_next_migration_event();
     }
 }
 

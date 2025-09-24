@@ -9,6 +9,8 @@
 if (!defined('ABSPATH')) exit;
 
 class JLG_Shortcode_Summary_Display {
+
+    private const MAX_SYNC_AVERAGE_REBUILDS = 10;
     
     public function __construct() {
         add_shortcode('jlg_tableau_recap', [$this, 'render']);
@@ -90,11 +92,17 @@ class JLG_Shortcode_Summary_Display {
         $rated_post_ids = JLG_Helpers::get_rated_post_ids();
 
         if (!empty($rated_post_ids) && isset($sorting['meta_key']) && $sorting['meta_key'] === '_jlg_average_score') {
+            $max_sync = apply_filters('jlg_summary_max_sync_average_rebuilds', self::MAX_SYNC_AVERAGE_REBUILDS, $atts);
+            $max_sync = max(0, intval($max_sync));
+
             $posts_missing_average = get_posts([
                 'post_type'      => 'post',
                 'post__in'       => $rated_post_ids,
                 'fields'         => 'ids',
-                'posts_per_page' => -1,
+                'posts_per_page' => $max_sync + 1,
+                'orderby'        => 'ID',
+                'order'          => 'ASC',
+                'no_found_rows'  => true,
                 'meta_query'     => [
                     'relation' => 'OR',
                     [
@@ -110,8 +118,16 @@ class JLG_Shortcode_Summary_Display {
             ]);
 
             if (!empty($posts_missing_average)) {
-                foreach ($posts_missing_average as $post_id) {
+                $sync_targets = array_slice($posts_missing_average, 0, $max_sync);
+
+                foreach ($sync_targets as $post_id) {
                     JLG_Helpers::get_resolved_average_score($post_id);
+                }
+
+                $async_targets = array_diff($posts_missing_average, $sync_targets);
+
+                if (!empty($async_targets)) {
+                    JLG_Helpers::queue_average_score_rebuild($async_targets);
                 }
             }
         }
@@ -137,10 +153,21 @@ class JLG_Shortcode_Summary_Display {
         $args = [
             'post_type'      => 'post',
             'posts_per_page' => $posts_per_page,
-            'post__in'       => $rated_post_ids,
             'paged'          => $paged,
             'order'          => $order,
         ];
+
+        $max_post_in = apply_filters('jlg_summary_max_post__in', 500, $atts);
+        $max_post_in = max(0, intval($max_post_in));
+
+        if ($max_post_in === 0 || count($rated_post_ids) <= $max_post_in) {
+            $args['post__in'] = $rated_post_ids;
+        } else {
+            $args['meta_query'][] = [
+                'key'     => '_jlg_average_score',
+                'compare' => 'EXISTS',
+            ];
+        }
 
         if ($orderby === 'average_score' || $orderby === 'note') {
             $args['orderby'] = 'meta_value_num';

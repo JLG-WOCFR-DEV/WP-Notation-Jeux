@@ -293,27 +293,89 @@ class JLG_Helpers {
 
         global $wpdb;
 
-        $meta_keys = array_map(function($key) {
+        $meta_keys = array_map(static function ($key) {
             return '_note_' . $key;
         }, self::$category_keys);
 
-        $placeholders = implode(', ', array_fill(0, count($meta_keys), '%s'));
+        $post_types = apply_filters('jlg_rated_post_types', ['post']);
+        if (!is_array($post_types) || empty($post_types)) {
+            $post_types = ['post'];
+        }
+        $post_types = array_values(array_filter(array_map('sanitize_key', $post_types)));
+
+        $post_statuses = apply_filters('jlg_rated_post_statuses', ['publish']);
+        if (!is_array($post_statuses) || empty($post_statuses)) {
+            $post_statuses = ['publish'];
+        }
+        $post_statuses = array_values(array_filter(array_map('sanitize_key', $post_statuses)));
+
+        $meta_placeholders = implode(', ', array_fill(0, count($meta_keys), '%s'));
+        $type_placeholders = implode(', ', array_fill(0, count($post_types), '%s'));
+        $status_clause = '';
+        $prepare_args = array_merge($meta_keys, $post_types);
+
+        if (!empty($post_statuses)) {
+            $status_placeholders = implode(', ', array_fill(0, count($post_statuses), '%s'));
+            $status_clause = " AND p.post_status IN ($status_placeholders)";
+            $prepare_args = array_merge($prepare_args, $post_statuses);
+        }
+
+        $postmeta_table = isset($wpdb->postmeta) ? $wpdb->postmeta : (isset($wpdb->prefix) ? $wpdb->prefix . 'postmeta' : 'wp_postmeta');
+        $posts_table = isset($wpdb->posts) ? $wpdb->posts : (isset($wpdb->prefix) ? $wpdb->prefix . 'posts' : 'wp_posts');
+
+        $postmeta_table = preg_match('/^[A-Za-z0-9_]+$/', (string) $postmeta_table) ? $postmeta_table : 'wp_postmeta';
+        $posts_table = preg_match('/^[A-Za-z0-9_]+$/', (string) $posts_table) ? $posts_table : 'wp_posts';
 
         $query = $wpdb->prepare(
-            "SELECT DISTINCT post_id FROM {$wpdb->postmeta}
-            WHERE meta_key IN ($placeholders)
-            AND meta_value != ''
-            AND meta_value IS NOT NULL",
-            ...$meta_keys
+            "SELECT DISTINCT pm.post_id
+            FROM {$postmeta_table} pm
+            INNER JOIN {$posts_table} p ON p.ID = pm.post_id
+            WHERE pm.meta_key IN ($meta_placeholders)
+                AND pm.meta_value != ''
+                AND pm.meta_value IS NOT NULL
+                AND p.post_type IN ($type_placeholders)
+                $status_clause
+            ORDER BY pm.post_id ASC",
+            ...$prepare_args
         );
 
         $post_ids = array_map('intval', $wpdb->get_col($query));
 
-        $expiration_unit = defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60;
+        $expiration = apply_filters('jlg_rated_post_ids_cache_ttl', 15 * (defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60));
 
-        set_transient($transient_key, $post_ids, 15 * $expiration_unit);
+        if ($expiration > 0) {
+            set_transient($transient_key, $post_ids, $expiration);
+        }
 
         return $post_ids;
+    }
+
+    public static function queue_average_score_rebuild($post_ids) {
+        if (empty($post_ids)) {
+            return;
+        }
+
+        if (!is_array($post_ids)) {
+            $post_ids = [$post_ids];
+        }
+
+        $post_ids = array_filter(
+            array_map('intval', $post_ids),
+            static function ($post_id) {
+                return $post_id > 0;
+            }
+        );
+
+        if (empty($post_ids)) {
+            return;
+        }
+
+        /**
+         * Permet aux développeurs de traiter la mise à jour asynchrone des moyennes.
+         *
+         * @param int[] $post_ids Liste des IDs d'articles.
+         */
+        do_action('jlg_queue_average_rebuild', $post_ids);
     }
 
     public static function clear_rated_post_ids_cache() {

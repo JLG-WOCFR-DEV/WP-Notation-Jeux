@@ -3,6 +3,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class JLG_Frontend {
 
+    private const USER_RATING_MAX_STORED_VOTES = 250;
+    private const USER_RATING_RETENTION_DAYS = 180;
+
     /**
      * Contiendra les erreurs de chargement des shortcodes pour affichage.
      * @var array
@@ -611,13 +614,16 @@ class JLG_Frontend {
         }
 
         $ratings[$token_hash] = $rating;
+        $ratings_meta['timestamps'][$token_hash] = current_time('timestamp');
+
         self::store_post_user_rating_tokens($post_id, $ratings, $ratings_meta);
 
         if ($user_ip_hash) {
             self::update_user_rating_ip_log($post_id, $user_ip_hash, $token_hash, $rating);
         }
 
-        list($new_average, $ratings_count) = self::calculate_user_rating_stats($ratings);
+        $fresh_ratings = self::get_post_user_rating_tokens($post_id);
+        list($new_average, $ratings_count) = self::calculate_user_rating_stats($fresh_ratings);
 
         update_post_meta($post_id, '_jlg_user_rating_avg', $new_average);
         update_post_meta($post_id, '_jlg_user_rating_count', $ratings_count);
@@ -672,6 +678,16 @@ class JLG_Frontend {
         }
 
         $normalized = [];
+        $now = current_time('timestamp');
+
+        $needs_meta_update = !isset($meta_data['version']) || (int) $meta_data['version'] < 2;
+        $meta_data['version'] = 2;
+
+        if (!isset($meta_data['timestamps']) || !is_array($meta_data['timestamps'])) {
+            $meta_data['timestamps'] = [];
+        }
+
+        $meta_changed = $needs_meta_update;
 
         foreach ($stored as $key => $value) {
             if (!is_string($key) || !preg_match('/^[A-Fa-f0-9]{32,128}$/', $key)) {
@@ -683,20 +699,34 @@ class JLG_Frontend {
             }
 
             $normalized[$key] = (float) $value;
+
+            if (!isset($meta_data['timestamps'][$key]) || !is_numeric($meta_data['timestamps'][$key])) {
+                $meta_data['timestamps'][$key] = $now;
+                $meta_changed = true;
+            }
         }
 
-        $needs_meta_update = !isset($meta_data['version']) || (int) $meta_data['version'] < 2;
-
-        if ($needs_meta_update) {
-            $meta_data['version'] = 2;
-            $to_store = $normalized;
-            $to_store['__meta'] = $meta_data;
-            update_post_meta($post_id, $meta_key, $to_store);
-            self::ensure_ip_log_for_legacy_votes($post_id, $normalized);
+        foreach (array_keys($meta_data['timestamps']) as $hash) {
+            if (!isset($normalized[$hash])) {
+                unset($meta_data['timestamps'][$hash]);
+                $meta_changed = true;
+            }
         }
 
         if ($meta !== null) {
             $meta = $meta_data;
+        }
+
+        if ($needs_meta_update) {
+            self::ensure_ip_log_for_legacy_votes($post_id, $normalized);
+        }
+
+        if ($meta_changed) {
+            self::write_user_rating_store($post_id, $normalized, $meta_data, false);
+
+            if ($meta !== null) {
+                $meta = $meta_data;
+            }
         }
 
         return $normalized;
@@ -707,10 +737,87 @@ class JLG_Frontend {
             $meta['version'] = 2;
         }
 
+        if (!isset($meta['timestamps']) || !is_array($meta['timestamps'])) {
+            $meta['timestamps'] = [];
+        }
+
+        self::write_user_rating_store($post_id, $ratings, $meta, true);
+    }
+
+    private static function write_user_rating_store($post_id, array $ratings, array $meta, $run_prune = true) {
+        if ($run_prune) {
+            self::prune_user_rating_store($post_id, $ratings, $meta);
+        }
+
         $data = $ratings;
         $data['__meta'] = $meta;
 
         update_post_meta($post_id, '_jlg_user_ratings', $data);
+    }
+
+    private static function prune_user_rating_store($post_id, array &$ratings, array &$meta) {
+        $timestamps = isset($meta['timestamps']) && is_array($meta['timestamps']) ? $meta['timestamps'] : [];
+        $now = current_time('timestamp');
+        $retention = self::get_user_rating_retention_window();
+        $removed_tokens = [];
+
+        foreach ($timestamps as $hash => $timestamp) {
+            if (!isset($ratings[$hash])) {
+                unset($timestamps[$hash]);
+                continue;
+            }
+
+            $timestamp = intval($timestamp);
+
+            if ($timestamp <= 0) {
+                $timestamps[$hash] = $now;
+                continue;
+            }
+
+            if ($retention > 0 && ($now - $timestamp) > $retention) {
+                unset($ratings[$hash], $timestamps[$hash]);
+                $removed_tokens[] = $hash;
+            }
+        }
+
+        $max_entries = intval(apply_filters('jlg_user_rating_max_entries', self::USER_RATING_MAX_STORED_VOTES, $post_id));
+
+        if ($max_entries > 0 && count($ratings) > $max_entries) {
+            asort($timestamps);
+
+            foreach ($timestamps as $hash => $timestamp) {
+                if (!isset($ratings[$hash])) {
+                    continue;
+                }
+
+                if (count($ratings) <= $max_entries) {
+                    break;
+                }
+
+                unset($ratings[$hash], $timestamps[$hash]);
+                $removed_tokens[] = $hash;
+            }
+        }
+
+        $meta['timestamps'] = $timestamps;
+
+        if (!empty($removed_tokens)) {
+            self::prune_user_rating_ip_tokens($post_id, $removed_tokens, true);
+        } else {
+            self::prune_user_rating_ip_tokens($post_id, [], true);
+        }
+    }
+
+    private static function get_user_rating_retention_window() {
+        $days = intval(apply_filters('jlg_user_rating_retention_days', self::USER_RATING_RETENTION_DAYS));
+
+        if ($days <= 0) {
+            return 0;
+        }
+
+        $day_in_seconds = defined('DAY_IN_SECONDS') ? DAY_IN_SECONDS : 86400;
+
+        return $days * $day_in_seconds;
     }
 
     private static function ensure_ip_log_for_legacy_votes($post_id, array $ratings) {
@@ -783,6 +890,54 @@ class JLG_Frontend {
         $ip_log[$ip_hash] = $entry;
 
         update_post_meta($post_id, $ip_meta_key, $ip_log);
+        self::prune_user_rating_ip_tokens($post_id, [], true);
+    }
+
+    private static function prune_user_rating_ip_tokens($post_id, array $token_hashes = [], $check_retention = true) {
+        $ip_meta_key = '_jlg_user_rating_ips';
+        $ip_log = get_post_meta($post_id, $ip_meta_key, true);
+
+        if (!is_array($ip_log) || empty($ip_log)) {
+            return;
+        }
+
+        $now = current_time('timestamp');
+        $retention = $check_retention ? self::get_user_rating_retention_window() : 0;
+        $threshold = ($retention > 0) ? $now - $retention : null;
+        $tokens = [];
+
+        foreach ($token_hashes as $hash) {
+            $tokens[$hash] = true;
+        }
+
+        $updated = false;
+
+        foreach ($ip_log as $ip => $entry) {
+            if (!is_array($entry)) {
+                unset($ip_log[$ip]);
+                $updated = true;
+                continue;
+            }
+
+            if (!empty($tokens) && isset($entry['token']) && isset($tokens[$entry['token']])) {
+                unset($ip_log[$ip]);
+                $updated = true;
+                continue;
+            }
+
+            if ($threshold !== null && isset($entry['last_vote'])) {
+                $last_vote = intval($entry['last_vote']);
+
+                if ($last_vote > 0 && $last_vote < $threshold) {
+                    unset($ip_log[$ip]);
+                    $updated = true;
+                }
+            }
+        }
+
+        if ($updated) {
+            update_post_meta($post_id, $ip_meta_key, $ip_log);
+        }
     }
 
     private static function calculate_user_rating_stats(array $ratings) {
