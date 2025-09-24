@@ -245,21 +245,24 @@ class JLG_Admin_Metaboxes {
         // Sauvegarder les notes
         if (isset($_POST['jlg_notation_nonce']) && wp_verify_nonce($_POST['jlg_notation_nonce'], 'jlg_save_notes_data')) {
             $categories = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'];
-            
+            $scores_changed = false;
+
             foreach ($categories as $key) {
                 $field_name = '_note_' . $key;
                 if (isset($_POST[$field_name])) {
                     $raw_value = wp_unslash($_POST[$field_name]);
                     $value = sanitize_text_field($raw_value);
-                    
+
                     if ($value === '') {
-                        delete_post_meta($post_id, $field_name);
+                        $deleted = delete_post_meta($post_id, $field_name);
+                        $scores_changed = $scores_changed || (bool) $deleted;
                     } elseif (is_numeric($value) && $value >= 0 && $value <= 10) {
-                        update_post_meta($post_id, $field_name, round(floatval($value), 1));
+                        $updated = update_post_meta($post_id, $field_name, round(floatval($value), 1));
+                        $scores_changed = $scores_changed || (bool) $updated;
                     }
                 }
             }
-            
+
             // Recalculer la moyenne si la classe Helpers existe
             if (class_exists('JLG_Helpers')) {
                 $average = JLG_Helpers::get_average_score_for_post($post_id);
@@ -267,6 +270,10 @@ class JLG_Admin_Metaboxes {
                     update_post_meta($post_id, '_jlg_average_score', $average);
                 } else {
                     delete_post_meta($post_id, '_jlg_average_score');
+                }
+
+                if ($scores_changed) {
+                    JLG_Helpers::clear_rated_post_ids_cache();
                 }
             }
         }

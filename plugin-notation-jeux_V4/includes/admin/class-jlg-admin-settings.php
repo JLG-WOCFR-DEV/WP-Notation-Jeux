@@ -87,12 +87,13 @@ class JLG_Admin_Settings {
                 'table_zebra_bg_color',
             ];
 
-            if (is_string($value) && in_array($key, $allow_transparent_fields, true)) {
-                $trimmed_value = strtolower(trim($value));
+            $trimmed_value = is_string($value) ? strtolower(trim($value)) : '';
 
-                if ($trimmed_value === 'transparent') {
-                    return 'transparent';
-                }
+            if (
+                $trimmed_value === 'transparent'
+                && in_array($key, $allow_transparent_fields, true)
+            ) {
+                return 'transparent';
             }
 
             $sanitized_color = sanitize_hex_color($value);
@@ -101,7 +102,18 @@ class JLG_Admin_Settings {
                 return $sanitized_color;
             }
 
-            return is_string($default_value) ? $default_value : '';
+            $default_trimmed = is_string($default_value) ? strtolower(trim($default_value)) : '';
+
+            if (
+                $default_trimmed === 'transparent'
+                && in_array($key, $allow_transparent_fields, true)
+            ) {
+                return 'transparent';
+            }
+
+            $sanitized_default = is_string($default_value) ? sanitize_hex_color($default_value) : '';
+
+            return $sanitized_default ? $sanitized_default : '';
         }
         
         // Nombres
