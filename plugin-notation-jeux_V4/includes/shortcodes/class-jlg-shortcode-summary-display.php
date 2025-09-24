@@ -52,7 +52,7 @@ class JLG_Shortcode_Summary_Display {
 
         $request = is_array($request) ? $request : [];
 
-        $orderby = isset($request['orderby']) ? sanitize_key($request['orderby']) : 'date';
+        $orderby = (isset($request['orderby']) && is_string($request['orderby'])) ? sanitize_key($request['orderby']) : 'date';
         $order = isset($request['order']) && in_array(strtoupper($request['order']), ['ASC', 'DESC'], true)
             ? strtoupper($request['order'])
             : 'DESC';
