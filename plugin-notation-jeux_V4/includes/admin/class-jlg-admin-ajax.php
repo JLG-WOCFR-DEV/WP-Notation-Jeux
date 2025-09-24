@@ -5,7 +5,6 @@ class JLG_Admin_Ajax {
     
     public function __construct() {
         add_action('wp_ajax_jlg_search_rawg_games', [$this, 'handle_rawg_search']);
-        add_action('wp_ajax_nopriv_jlg_search_rawg_games', [$this, 'handle_rawg_search']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_ajax_assets']);
     }
 
@@ -39,13 +38,13 @@ class JLG_Admin_Ajax {
 
         // Sécurité basique
         if (!current_user_can('edit_posts')) {
-            wp_send_json_error('Permissions insuffisantes.');
+            wp_send_json_error('Permissions insuffisantes.', 403);
         }
 
         $search_term = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
         
         if (empty($search_term)) {
-            wp_send_json_error('Terme de recherche vide.');
+            wp_send_json_error('Terme de recherche vide.', 400);
         }
 
         // Simulation de réponse (remplacez par vraie API si vous avez une clé)

@@ -558,7 +558,7 @@ class JLG_Frontend {
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
 
         if (!$post_id) {
-            wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')]);
+            wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')], 400);
         }
 
         $post = get_post($post_id);
@@ -580,7 +580,7 @@ class JLG_Frontend {
         $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
 
         if ($rating < 1 || $rating > 5) {
-            wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')]);
+            wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')], 422);
         }
 
         $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
@@ -607,7 +607,7 @@ class JLG_Frontend {
         $ratings = self::get_post_user_rating_tokens($post_id, $ratings_meta);
 
         if (isset($ratings[$token_hash])) {
-            wp_send_json_error(['message' => esc_html__('Vous avez déjà voté !', 'notation-jlg')]);
+            wp_send_json_error(['message' => esc_html__('Vous avez déjà voté !', 'notation-jlg')], 409);
         }
 
         $ratings[$token_hash] = $rating;
