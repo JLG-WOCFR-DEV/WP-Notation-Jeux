@@ -11,6 +11,13 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
+if (function_exists('wp_clear_scheduled_hook')) {
+    wp_clear_scheduled_hook('jlg_process_v5_migration');
+}
+
+delete_option('jlg_migration_v5_queue');
+delete_option('jlg_migration_v5_completed');
+
 // Option pour vérifier si l'utilisateur veut supprimer les données
 $delete_data = get_option('jlg_notation_delete_data_on_uninstall', false);
 
