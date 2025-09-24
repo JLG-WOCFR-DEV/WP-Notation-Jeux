@@ -563,7 +563,7 @@ class JLG_Frontend {
 
         $post = get_post($post_id);
 
-        if (!$post || 'post' !== $post->post_type || 'trash' === $post->post_status || 'publish' !== $post->post_status) {
+        if (!($post instanceof WP_Post) || 'trash' === $post->post_status || 'publish' !== $post->post_status) {
             wp_send_json_error(['message' => esc_html__('Article introuvable ou non disponible pour la notation.', 'notation-jlg')], 404);
         }
 
@@ -837,6 +837,10 @@ class JLG_Frontend {
      */
     private function post_allows_user_rating($post, $options = null) {
         if (!($post instanceof WP_Post)) {
+            return false;
+        }
+
+        if ($post->post_type !== 'post') {
             return false;
         }
 

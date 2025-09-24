@@ -72,6 +72,8 @@ class JLG_Admin_Settings {
             }
         }
 
+        JLG_Helpers::flush_plugin_options_cache();
+
         return $sanitized;
     }
 
