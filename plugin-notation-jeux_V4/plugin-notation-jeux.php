@@ -77,6 +77,9 @@ final class JLG_Plugin_De_Notation_Main {
         add_action('update_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
         add_action('add_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
         add_action('delete_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
+        add_action('added_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
+        add_action('updated_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
+        add_action('deleted_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
 
         // Frontend (toujours)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-dynamic-css.php';

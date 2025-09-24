@@ -75,7 +75,7 @@ class FrontendUserRatingTest extends TestCase
             $this->assertNull($exception->status);
         }
 
-        $ip_hash = wp_hash('198.51.100.42');
+        $ip_hash = hash('sha256', '198.51.100.42|https://example.com');
         $this->assertArrayHasKey($post_id, $GLOBALS['jlg_test_meta']);
         $this->assertArrayHasKey('_jlg_user_rating_ips', $GLOBALS['jlg_test_meta'][$post_id]);
         $this->assertArrayHasKey($ip_hash, $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_ips']);

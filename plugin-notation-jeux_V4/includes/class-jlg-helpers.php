@@ -13,6 +13,21 @@ class JLG_Helpers {
     private static $options_cache = null;
     private static $default_settings_cache = null;
 
+    private static function get_rating_meta_keys() {
+        static $meta_keys = null;
+
+        if ($meta_keys === null) {
+            $meta_keys = array_map(
+                static function ($key) {
+                    return '_note_' . $key;
+                },
+                self::$category_keys
+            );
+        }
+
+        return $meta_keys;
+    }
+
     private static function get_theme_defaults() {
         return [
             'light' => [
@@ -282,6 +297,33 @@ class JLG_Helpers {
             'value' => null,
             'formatted' => null,
         ];
+    }
+
+    /**
+     * Clear the cached average score when one of the rating metas is changed.
+     */
+    public static function maybe_handle_rating_meta_change($meta_id, $post_id, $meta_key) {
+        unset($meta_id);
+
+        if (!is_string($meta_key) || !in_array($meta_key, self::get_rating_meta_keys(), true)) {
+            return;
+        }
+
+        self::invalidate_average_score_cache($post_id);
+    }
+
+    /**
+     * Delete the stored average and queue a rebuild for the provided post.
+     */
+    public static function invalidate_average_score_cache($post_id) {
+        $post_id = (int) $post_id;
+
+        if ($post_id <= 0) {
+            return;
+        }
+
+        delete_post_meta($post_id, '_jlg_average_score');
+        self::queue_average_score_rebuild($post_id);
     }
 
     public static function get_rating_categories() {
