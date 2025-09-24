@@ -48,6 +48,7 @@ final class JLG_Plugin_De_Notation_Main {
     private $admin = null;
     private $assets = null;
     private $frontend = null;
+    private const MIGRATION_BATCH_SIZE = 50;
 
     public static function get_instance() {
         if (self::$instance === null) {
@@ -59,6 +60,8 @@ final class JLG_Plugin_De_Notation_Main {
     private function __construct() {
         $this->load_dependencies();
         $this->init_components();
+        add_action('jlg_process_v5_migration', [$this, 'process_migration_batch']);
+        add_action('init', [$this, 'ensure_migration_schedule']);
         register_activation_hook(__FILE__, [$this, 'on_activation']);
     }
 
@@ -67,6 +70,10 @@ final class JLG_Plugin_De_Notation_Main {
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-helpers.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-assets.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
+
+        add_action('update_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
+        add_action('add_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
+        add_action('delete_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
 
         // Frontend (toujours)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-dynamic-css.php';
@@ -107,7 +114,8 @@ final class JLG_Plugin_De_Notation_Main {
         }
 
         // Frontend
-        if (class_exists('JLG_Frontend')) {
+        $doing_ajax = function_exists('wp_doing_ajax') ? wp_doing_ajax() : (defined('DOING_AJAX') && DOING_AJAX);
+        if ((!is_admin() || $doing_ajax) && class_exists('JLG_Frontend')) {
             $this->frontend = new JLG_Frontend();
         }
 
@@ -127,9 +135,9 @@ final class JLG_Plugin_De_Notation_Main {
     public function on_activation() {
         // Migration automatique depuis v4
         $current_version = get_option('jlg_notation_version', '4.0');
-        
+
         if (version_compare($current_version, '5.0', '<')) {
-            $this->migrate_from_v4();
+            $this->queue_migration_from_v4();
         }
 
         // Options par défaut
@@ -141,20 +149,81 @@ final class JLG_Plugin_De_Notation_Main {
         flush_rewrite_rules();
     }
 
-    private function migrate_from_v4() {
-        $rated_post_ids = JLG_Helpers::get_rated_post_ids();
+    private function queue_migration_from_v4() {
+        $rated_post_ids = array_filter(
+            array_map('intval', JLG_Helpers::get_rated_post_ids() ?? []),
+            static function ($post_id) {
+                return $post_id > 0;
+            }
+        );
 
-        if (!empty($rated_post_ids) && is_array($rated_post_ids)) {
-            foreach ($rated_post_ids as $post_id) {
-                $post_id = intval($post_id);
+        if (empty($rated_post_ids)) {
+            update_option('jlg_migration_v5_completed', current_time('mysql'));
+            delete_option('jlg_migration_v5_queue');
 
-                if ($post_id > 0) {
-                    JLG_Helpers::get_resolved_average_score($post_id);
-                }
+            return;
+        }
+
+        update_option('jlg_migration_v5_queue', array_values($rated_post_ids));
+        $this->schedule_next_migration_event();
+    }
+
+    public function ensure_migration_schedule() {
+        $queue = get_option('jlg_migration_v5_queue');
+
+        if (empty($queue) || !is_array($queue)) {
+            return;
+        }
+
+        if (!function_exists('wp_next_scheduled') || !function_exists('wp_schedule_single_event')) {
+            return;
+        }
+
+        if (!wp_next_scheduled('jlg_process_v5_migration')) {
+            $this->schedule_next_migration_event();
+        }
+    }
+
+    public function process_migration_batch() {
+        $queue = get_option('jlg_migration_v5_queue', []);
+
+        if (!is_array($queue) || empty($queue)) {
+            delete_option('jlg_migration_v5_queue');
+            update_option('jlg_migration_v5_completed', current_time('mysql'));
+
+            return;
+        }
+
+        $batch = array_splice($queue, 0, self::MIGRATION_BATCH_SIZE);
+
+        foreach ($batch as $post_id) {
+            $post_id = intval($post_id);
+
+            if ($post_id > 0) {
+                JLG_Helpers::get_resolved_average_score($post_id);
             }
         }
 
-        add_option('jlg_migration_v5_completed', current_time('mysql'));
+        if (empty($queue)) {
+            delete_option('jlg_migration_v5_queue');
+            update_option('jlg_migration_v5_completed', current_time('mysql'));
+        } else {
+            update_option('jlg_migration_v5_queue', array_values($queue));
+            $this->schedule_next_migration_event();
+        }
+    }
+
+    private function schedule_next_migration_event() {
+        if (!function_exists('wp_schedule_single_event') || !function_exists('wp_next_scheduled')) {
+            return;
+        }
+
+        if (wp_next_scheduled('jlg_process_v5_migration')) {
+            return;
+        }
+
+        $delay = defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60;
+        wp_schedule_single_event(time() + $delay, 'jlg_process_v5_migration');
     }
 }
 

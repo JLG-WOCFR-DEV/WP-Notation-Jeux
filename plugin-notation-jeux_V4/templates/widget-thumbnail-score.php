@@ -15,9 +15,9 @@ $score_color = JLG_Helpers::calculate_color_from_note($average_score, $options);
 <div class="jlg-thumbnail-score" style="
     background-color: <?php echo esc_attr($score_color); ?>;
     color: <?php echo esc_attr($options['thumb_text_color'] ?? '#ffffff'); ?>;
-    font-size: <?php echo intval($options['thumb_font_size'] ?? 14); ?>px;
-    padding: <?php echo intval($options['thumb_padding'] ?? 8); ?>px;
-    border-radius: <?php echo intval($options['thumb_border_radius'] ?? 4); ?>px;
+    font-size: <?php echo max(0, absint($options['thumb_font_size'] ?? 14)); ?>px;
+    padding: <?php echo max(0, absint($options['thumb_padding'] ?? 8)); ?>px;
+    border-radius: <?php echo max(0, absint($options['thumb_border_radius'] ?? 4)); ?>px;
     font-weight: bold;
     line-height: 1;
     display: inline-block;
