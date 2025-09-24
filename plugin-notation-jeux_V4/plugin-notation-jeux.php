@@ -49,6 +49,7 @@ final class JLG_Plugin_De_Notation_Main {
     private $assets = null;
     private $frontend = null;
     private const MIGRATION_BATCH_SIZE = 50;
+    private const MIGRATION_SCAN_BATCH_SIZE = 200;
 
     public static function get_instance() {
         if (self::$instance === null) {
@@ -157,36 +158,29 @@ final class JLG_Plugin_De_Notation_Main {
         }
 
         delete_option('jlg_migration_v5_queue');
+        delete_option('jlg_migration_v5_scan_state');
         delete_option('jlg_migration_v5_completed');
     }
 
     private function queue_migration_from_v4() {
-        $rated_post_ids = array_filter(
-            array_map('intval', JLG_Helpers::get_rated_post_ids() ?? []),
-            static function ($post_id) {
-                return $post_id > 0;
-            }
-        );
+        $this->store_migration_queue([]);
+        $this->store_migration_scan_state([
+            'last_post_id' => 0,
+            'complete' => false,
+        ]);
 
-        if (empty($rated_post_ids)) {
-            update_option('jlg_migration_v5_completed', current_time('mysql'));
-            delete_option('jlg_migration_v5_queue');
-
-            return;
-        }
-
-        update_option('jlg_migration_v5_queue', array_values($rated_post_ids));
         $this->schedule_next_migration_event();
     }
 
     public function ensure_migration_schedule() {
-        $queue = get_option('jlg_migration_v5_queue');
-
-        if (empty($queue) || !is_array($queue)) {
+        if (!function_exists('wp_next_scheduled') || !function_exists('wp_schedule_single_event')) {
             return;
         }
 
-        if (!function_exists('wp_next_scheduled') || !function_exists('wp_schedule_single_event')) {
+        $queue = $this->get_migration_queue();
+        $scan_state = $this->get_migration_scan_state();
+
+        if (empty($queue) && !empty($scan_state['complete'])) {
             return;
         }
 
@@ -196,11 +190,18 @@ final class JLG_Plugin_De_Notation_Main {
     }
 
     public function process_migration_batch() {
-        $queue = get_option('jlg_migration_v5_queue', []);
+        $queue = $this->get_migration_queue();
 
-        if (!is_array($queue) || empty($queue)) {
-            delete_option('jlg_migration_v5_queue');
-            update_option('jlg_migration_v5_completed', current_time('mysql'));
+        if (empty($queue)) {
+            $queue = $this->populate_migration_queue_batch();
+        }
+
+        if (empty($queue)) {
+            if ($this->is_migration_scan_complete()) {
+                $this->finalize_migration();
+            } else {
+                $this->schedule_next_migration_event();
+            }
 
             return;
         }
@@ -215,12 +216,12 @@ final class JLG_Plugin_De_Notation_Main {
             }
         }
 
-        if (empty($queue)) {
-            delete_option('jlg_migration_v5_queue');
-            update_option('jlg_migration_v5_completed', current_time('mysql'));
-        } else {
-            update_option('jlg_migration_v5_queue', array_values($queue));
+        $this->store_migration_queue($queue);
+
+        if (!empty($queue) || !$this->is_migration_scan_complete()) {
             $this->schedule_next_migration_event();
+        } else {
+            $this->finalize_migration();
         }
     }
 
@@ -235,6 +236,108 @@ final class JLG_Plugin_De_Notation_Main {
 
         $delay = defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60;
         wp_schedule_single_event(time() + $delay, 'jlg_process_v5_migration');
+    }
+
+    private function populate_migration_queue_batch() {
+        $queue = $this->get_migration_queue();
+        $scan_state = $this->get_migration_scan_state();
+
+        if (!empty($scan_state['complete'])) {
+            return $queue;
+        }
+
+        $batch_size = (int) apply_filters('jlg_migration_v5_scan_batch_size', self::MIGRATION_SCAN_BATCH_SIZE);
+        if ($batch_size <= 0) {
+            $batch_size = self::MIGRATION_SCAN_BATCH_SIZE;
+        }
+
+        $last_post_id = isset($scan_state['last_post_id']) ? (int) $scan_state['last_post_id'] : 0;
+        $fetched = JLG_Helpers::get_rated_post_ids_batch($last_post_id, $batch_size);
+
+        if (empty($fetched)) {
+            $scan_state['complete'] = true;
+            $this->store_migration_scan_state($scan_state);
+
+            return $queue;
+        }
+
+        $scan_state['last_post_id'] = max($fetched);
+
+        if ($batch_size > 0 && count($fetched) < $batch_size) {
+            $scan_state['complete'] = true;
+        }
+
+        $queue = array_values(array_unique(array_merge($queue, $fetched)));
+        $this->store_migration_queue($queue);
+        $this->store_migration_scan_state($scan_state);
+
+        return $queue;
+    }
+
+    private function get_migration_queue() {
+        $queue = get_option('jlg_migration_v5_queue', []);
+
+        if (!is_array($queue)) {
+            return [];
+        }
+
+        $queue = array_values(array_filter(array_map('intval', $queue), static function ($post_id) {
+            return $post_id > 0;
+        }));
+
+        sort($queue);
+
+        return $queue;
+    }
+
+    private function store_migration_queue(array $queue) {
+        $queue = array_values(array_filter(array_map('intval', $queue), static function ($post_id) {
+            return $post_id > 0;
+        }));
+
+        if (empty($queue)) {
+            delete_option('jlg_migration_v5_queue');
+
+            return;
+        }
+
+        update_option('jlg_migration_v5_queue', $queue, false);
+    }
+
+    private function get_migration_scan_state() {
+        $state = get_option('jlg_migration_v5_scan_state', []);
+
+        if (!is_array($state)) {
+            $state = [];
+        }
+
+        $has_complete_flag = is_array($state) && array_key_exists('complete', $state);
+
+        return [
+            'last_post_id' => isset($state['last_post_id']) ? (int) $state['last_post_id'] : 0,
+            'complete' => $has_complete_flag ? !empty($state['complete']) : true,
+        ];
+    }
+
+    private function store_migration_scan_state(array $state) {
+        $normalized = [
+            'last_post_id' => isset($state['last_post_id']) ? max(0, (int) $state['last_post_id']) : 0,
+            'complete' => !empty($state['complete']),
+        ];
+
+        update_option('jlg_migration_v5_scan_state', $normalized, false);
+    }
+
+    private function is_migration_scan_complete() {
+        $state = $this->get_migration_scan_state();
+
+        return !empty($state['complete']);
+    }
+
+    private function finalize_migration() {
+        $this->store_migration_queue([]);
+        delete_option('jlg_migration_v5_scan_state');
+        update_option('jlg_migration_v5_completed', current_time('mysql'), false);
     }
 
     public function queue_additional_posts_for_migration($post_ids) {
@@ -253,20 +356,14 @@ final class JLG_Plugin_De_Notation_Main {
             return;
         }
 
-        $queue = get_option('jlg_migration_v5_queue', []);
-
-        if (!is_array($queue)) {
-            $queue = [];
-        }
-
-        $queue = array_map('intval', $queue);
+        $queue = $this->get_migration_queue();
         $updated_queue = array_values(array_unique(array_merge($queue, $post_ids)));
 
         if ($updated_queue === $queue) {
             return;
         }
 
-        update_option('jlg_migration_v5_queue', $updated_queue);
+        $this->store_migration_queue($updated_queue);
         $this->schedule_next_migration_event();
     }
 }

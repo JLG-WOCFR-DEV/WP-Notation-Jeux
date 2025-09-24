@@ -70,7 +70,9 @@ class JLG_Helpers {
             'dark_border_color'       => $dark_defaults['border_color'],
             'dark_text_color'         => $dark_defaults['text_color'],
             'dark_text_color_secondary' => $dark_defaults['text_color_secondary'],
-            
+            'tagline_bg_color'        => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'      => $dark_defaults['tagline_text_color'],
+
             // Couleurs de Thème Clair personnalisables
             'light_bg_color'           => $light_defaults['bg_color'],
             'light_bg_color_secondary' => $light_defaults['bg_color_secondary'],
@@ -217,9 +219,12 @@ class JLG_Helpers {
             $palette['text_color']         = $options['dark_text_color'] ?? $theme_defaults['dark']['text_color'];
             $palette['text_color_secondary'] = $options['dark_text_color_secondary'] ?? $theme_defaults['dark']['text_color_secondary'];
         }
-        
-        $palette['tagline_bg_color']     = $palette['bg_color_secondary'];
-        $palette['tagline_text_color']   = $palette['text_color_secondary'];
+
+        $tagline_bg_option = isset($options['tagline_bg_color']) ? (string) $options['tagline_bg_color'] : '';
+        $tagline_text_option = isset($options['tagline_text_color']) ? (string) $options['tagline_text_color'] : '';
+
+        $palette['tagline_bg_color']     = $tagline_bg_option !== '' ? $tagline_bg_option : ($theme === 'light' ? $theme_defaults['light']['tagline_bg_color'] : $theme_defaults['dark']['tagline_bg_color']);
+        $palette['tagline_text_color']   = $tagline_text_option !== '' ? $tagline_text_option : ($theme === 'light' ? $theme_defaults['light']['tagline_text_color'] : $theme_defaults['dark']['tagline_text_color']);
         $palette['table_zebra_color']    = $palette['bg_color_secondary'];
         $palette['main_text_color']      = $palette['text_color'];
         $palette['secondary_text_color'] = $palette['text_color_secondary'];
@@ -299,6 +304,25 @@ class JLG_Helpers {
             return array_map('intval', $cached_post_ids);
         }
 
+        $post_ids = self::query_rated_post_ids();
+
+        $expiration = apply_filters('jlg_rated_post_ids_cache_ttl', 15 * (defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60));
+
+        if ($expiration > 0) {
+            set_transient($transient_key, $post_ids, $expiration);
+        }
+
+        return $post_ids;
+    }
+
+    public static function get_rated_post_ids_batch($after_post_id = 0, $limit = 200) {
+        $after_post_id = max(0, (int) $after_post_id);
+        $limit = (int) $limit;
+
+        if ($limit === 0) {
+            $limit = 200;
+        }
+
         global $wpdb;
 
         $meta_keys = array_map(static function ($key) {
@@ -334,28 +358,40 @@ class JLG_Helpers {
         $postmeta_table = preg_match('/^[A-Za-z0-9_]+$/', (string) $postmeta_table) ? $postmeta_table : 'wp_postmeta';
         $posts_table = preg_match('/^[A-Za-z0-9_]+$/', (string) $posts_table) ? $posts_table : 'wp_posts';
 
-        $query = $wpdb->prepare(
-            "SELECT DISTINCT pm.post_id
+        $after_clause = '';
+        if ($after_post_id > 0) {
+            $after_clause = 'AND pm.post_id > %d';
+            array_splice($prepare_args, count($meta_keys), 0, [$after_post_id]);
+        }
+
+        $limit_clause = '';
+        if ($limit > 0 && $limit < PHP_INT_MAX) {
+            $limit_clause = 'LIMIT %d';
+            $prepare_args[] = $limit;
+        }
+
+        $query = "SELECT DISTINCT pm.post_id
             FROM {$postmeta_table} pm
             INNER JOIN {$posts_table} p ON p.ID = pm.post_id
             WHERE pm.meta_key IN ($meta_placeholders)
                 AND pm.meta_value != ''
                 AND pm.meta_value IS NOT NULL
+                $after_clause
                 AND p.post_type IN ($type_placeholders)
                 $status_clause
-            ORDER BY pm.post_id ASC",
-            ...$prepare_args
-        );
+            ORDER BY pm.post_id ASC";
 
-        $post_ids = array_map('intval', $wpdb->get_col($query));
-
-        $expiration = apply_filters('jlg_rated_post_ids_cache_ttl', 15 * (defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60));
-
-        if ($expiration > 0) {
-            set_transient($transient_key, $post_ids, $expiration);
+        if ($limit_clause !== '') {
+            $query .= "\n            $limit_clause";
         }
 
-        return $post_ids;
+        $prepared = $wpdb->prepare($query, ...$prepare_args);
+
+        return array_map('intval', $wpdb->get_col($prepared));
+    }
+
+    private static function query_rated_post_ids() {
+        return self::get_rated_post_ids_batch(0, -1);
     }
 
     public static function queue_average_score_rebuild($post_ids) {

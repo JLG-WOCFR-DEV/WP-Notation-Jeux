@@ -16,6 +16,7 @@ if (function_exists('wp_clear_scheduled_hook')) {
 }
 
 delete_option('jlg_migration_v5_queue');
+delete_option('jlg_migration_v5_scan_state');
 delete_option('jlg_migration_v5_completed');
 
 // Option pour vérifier si l'utilisateur veut supprimer les données
@@ -28,6 +29,7 @@ if ($delete_data) {
     delete_option('notation_jlg_settings');
     delete_option('jlg_notation_version');
     delete_option('jlg_migration_v5_completed');
+    delete_option('jlg_migration_v5_scan_state');
     delete_option('jlg_platforms_list');
     delete_option('jlg_notation_delete_data_on_uninstall');
     
