@@ -897,30 +897,35 @@ class JLG_Frontend {
             'genre_filter'   => isset($_POST['genre_filter']) ? sanitize_text_field(wp_unslash($_POST['genre_filter'])) : '',
         ];
 
+        $allowed_sorts = JLG_Shortcode_Summary_Display::get_allowed_sort_keys();
+        $requested_orderby = isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date';
+        if (!in_array($requested_orderby, $allowed_sorts, true)) {
+            $requested_orderby = 'date';
+        }
+
+        $requested_order = isset($_POST['order']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['order']))) : 'DESC';
+        if (!in_array($requested_order, ['ASC', 'DESC'], true)) {
+            $requested_order = 'DESC';
+        }
+
         $request = [
-            'orderby'    => isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date',
-            'order'      => isset($_POST['order']) ? sanitize_text_field(wp_unslash($_POST['order'])) : 'DESC',
-            'cat_filter' => isset($_POST['cat_filter']) ? intval($_POST['cat_filter']) : 0,
-            'paged'      => isset($_POST['paged']) ? intval($_POST['paged']) : 1,
+            'orderby'       => $requested_orderby,
+            'order'         => $requested_order,
+            'cat_filter'    => isset($_POST['cat_filter']) ? intval($_POST['cat_filter']) : 0,
+            'paged'         => isset($_POST['paged']) ? intval($_POST['paged']) : 1,
             'letter_filter' => isset($_POST['letter_filter']) ? JLG_Shortcode_Summary_Display::normalize_letter_filter(wp_unslash($_POST['letter_filter'])) : '',
             'genre_filter'  => isset($_POST['genre_filter']) ? sanitize_text_field(wp_unslash($_POST['genre_filter'])) : '',
         ];
 
-        $current_url = isset($_POST['current_url']) ? esc_url_raw(wp_unslash($_POST['current_url'])) : '';
-        $original_request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        $current_url = isset($_POST['current_url']) ? wp_unslash($_POST['current_url']) : '';
+        $base_url = $this->sanitize_internal_url($current_url);
 
-        if (!empty($current_url)) {
-            $parsed_url = wp_parse_url($current_url);
-            if (!empty($parsed_url['path'])) {
-                $request_uri = $parsed_url['path'];
-                if (!empty($parsed_url['query'])) {
-                    $request_uri .= '?' . $parsed_url['query'];
-                }
-                $_SERVER['REQUEST_URI'] = $request_uri;
-            }
+        if ($base_url === '') {
+            $base_url = $this->sanitize_internal_url(wp_get_referer());
         }
 
         $context = JLG_Shortcode_Summary_Display::get_render_context($atts, $request, false);
+        $context['base_url'] = $base_url;
 
         $state = [
             'orderby'    => $context['orderby'] ?? 'date',
@@ -933,10 +938,6 @@ class JLG_Frontend {
         ];
 
         if (!empty($context['error']) && !empty($context['message'])) {
-            if ($original_request_uri !== '') {
-                $_SERVER['REQUEST_URI'] = $original_request_uri;
-            }
-
             wp_send_json_success([
                 'html'  => $context['message'],
                 'state' => $state,
@@ -947,10 +948,6 @@ class JLG_Frontend {
 
         if (isset($context['query']) && $context['query'] instanceof WP_Query) {
             $state['total_pages'] = intval($context['query']->max_num_pages);
-        }
-
-        if ($original_request_uri !== '') {
-            $_SERVER['REQUEST_URI'] = $original_request_uri;
         }
 
         wp_send_json_success([
@@ -988,9 +985,20 @@ class JLG_Frontend {
             $atts['columns'] = $default_atts['columns'] ?? 3;
         }
 
+        $allowed_sorts = JLG_Shortcode_Game_Explorer::get_allowed_sort_keys();
+        $requested_orderby = isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date';
+        if (!in_array($requested_orderby, $allowed_sorts, true)) {
+            $requested_orderby = 'date';
+        }
+
+        $requested_order = isset($_POST['order']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['order']))) : 'DESC';
+        if (!in_array($requested_order, ['ASC', 'DESC'], true)) {
+            $requested_order = 'DESC';
+        }
+
         $request = [
-            'orderby'      => isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date',
-            'order'        => isset($_POST['order']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['order']))) : 'DESC',
+            'orderby'      => $requested_orderby,
+            'order'        => $requested_order,
             'letter'       => isset($_POST['letter']) ? sanitize_text_field(wp_unslash($_POST['letter'])) : '',
             'category'     => isset($_POST['category']) ? sanitize_text_field(wp_unslash($_POST['category'])) : '',
             'platform'     => isset($_POST['platform']) ? sanitize_text_field(wp_unslash($_POST['platform'])) : '',
@@ -1027,6 +1035,47 @@ class JLG_Frontend {
             'html'  => $html,
             'state' => $state,
         ]);
+    }
+
+    private function sanitize_internal_url($url) {
+        if (!is_string($url)) {
+            return '';
+        }
+
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+
+        $sanitized_url = esc_url_raw($url);
+        if ($sanitized_url === '') {
+            return '';
+        }
+
+        $parsed_url = wp_parse_url($sanitized_url);
+        if ($parsed_url === false) {
+            return '';
+        }
+
+        if (!empty($parsed_url['scheme']) && !in_array($parsed_url['scheme'], ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (empty($parsed_url['path'])) {
+            return '';
+        }
+
+        $site_url = wp_parse_url(home_url('/'));
+        if (!empty($parsed_url['host'])) {
+            $site_host = isset($site_url['host']) ? strtolower($site_url['host']) : '';
+            $target_host = strtolower($parsed_url['host']);
+
+            if ($site_host !== '' && $target_host !== $site_host) {
+                return '';
+            }
+        }
+
+        return $sanitized_url;
     }
 
     /**
@@ -1178,6 +1227,7 @@ class JLG_Frontend {
                 'categories_list'    => [],
                 'platforms_list'     => [],
                 'availability_options' => [],
+                'base_url'           => '',
                 'total_items'        => 0,
                 'config_payload'     => [],
                 'message'            => '',

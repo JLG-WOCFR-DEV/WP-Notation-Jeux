@@ -10,6 +10,7 @@ class JLG_Helpers {
 
     private static $option_name = 'notation_jlg_settings';
     private static $category_keys = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'];
+    private static $options_cache = null;
 
     private static function get_theme_defaults() {
         return [
@@ -140,10 +141,20 @@ class JLG_Helpers {
         ];
     }
 
-    public static function get_plugin_options() {
+    public static function get_plugin_options($force_refresh = false) {
+        if (!$force_refresh && is_array(self::$options_cache)) {
+            return self::$options_cache;
+        }
+
         $defaults = self::get_default_settings();
         $saved_options = get_option(self::$option_name, $defaults);
-        return wp_parse_args($saved_options, $defaults);
+        self::$options_cache = wp_parse_args($saved_options, $defaults);
+
+        return self::$options_cache;
+    }
+
+    public static function flush_plugin_options_cache() {
+        self::$options_cache = null;
     }
 
     /**

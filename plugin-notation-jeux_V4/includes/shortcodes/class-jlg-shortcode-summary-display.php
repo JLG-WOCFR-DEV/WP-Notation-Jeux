@@ -374,6 +374,22 @@ class JLG_Shortcode_Summary_Display {
         return $options;
     }
 
+    public static function get_allowed_sort_keys() {
+        $options = self::get_sorting_options();
+        $allowed = [];
+
+        foreach ($options as $key => $option) {
+            $allowed[] = sanitize_key($key);
+            if (isset($option['key'])) {
+                $allowed[] = sanitize_key($option['key']);
+            }
+        }
+
+        $allowed[] = 'date';
+
+        return array_values(array_unique(array_filter($allowed)));
+    }
+
     protected static function prepare_columns($atts) {
         $requested = array_filter(array_map('trim', explode(',', $atts['colonnes'])));
         $available = self::get_available_columns();
