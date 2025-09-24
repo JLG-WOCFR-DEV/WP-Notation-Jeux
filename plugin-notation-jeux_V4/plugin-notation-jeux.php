@@ -68,6 +68,10 @@ final class JLG_Plugin_De_Notation_Main {
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-assets.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
 
+        if (class_exists('JLG_Helpers')) {
+            JLG_Helpers::register_hooks();
+        }
+
         // Frontend (toujours)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-dynamic-css.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
