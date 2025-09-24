@@ -3,6 +3,11 @@ if (!defined('ABSPATH')) exit;
 
 class JLG_Shortcode_Game_Explorer {
 
+    private const SNAPSHOT_TRANSIENT_KEY = 'jlg_game_explorer_snapshot_v1';
+
+    /** @var array<string, mixed>|null */
+    private static $filters_snapshot = null;
+
     public function __construct() {
         add_shortcode('jlg_game_explorer', [$this, 'render']);
     }
@@ -246,6 +251,181 @@ class JLG_Shortcode_Game_Explorer {
         return $letters;
     }
 
+    protected static function get_filters_snapshot() {
+        if (is_array(self::$filters_snapshot)) {
+            return self::$filters_snapshot;
+        }
+
+        $snapshot = get_transient(self::SNAPSHOT_TRANSIENT_KEY);
+
+        if (!is_array($snapshot) || empty($snapshot['posts'])) {
+            $snapshot = self::build_filters_snapshot();
+
+            $ttl = apply_filters('jlg_game_explorer_snapshot_ttl', defined('MINUTE_IN_SECONDS') ? 5 * MINUTE_IN_SECONDS : 300);
+            if (is_numeric($ttl) && (int) $ttl > 0) {
+                set_transient(self::SNAPSHOT_TRANSIENT_KEY, $snapshot, (int) $ttl);
+            }
+        }
+
+        self::$filters_snapshot = $snapshot;
+
+        return $snapshot;
+    }
+
+    protected static function build_filters_snapshot() {
+        $snapshot = [
+            'posts' => [],
+            'letters_map' => [],
+            'categories_map' => [],
+            'platforms_map' => [],
+        ];
+
+        $rated_posts = JLG_Helpers::get_rated_post_ids();
+        if (empty($rated_posts)) {
+            return $snapshot;
+        }
+
+        foreach ($rated_posts as $post_id) {
+            $post_id = (int) $post_id;
+            if ($post_id <= 0) {
+                continue;
+            }
+
+            $post = get_post($post_id);
+            if (!$post || $post->post_status !== 'publish') {
+                continue;
+            }
+
+            $title = JLG_Helpers::get_game_title($post_id);
+            if ($title === '') {
+                $title = get_the_title($post_id);
+            }
+
+            $letter = self::normalize_letter($title);
+            if ($letter !== '') {
+                $snapshot['letters_map'][$letter] = true;
+            }
+
+            $release_raw = get_post_meta($post_id, '_jlg_date_sortie', true);
+            $release_iso = self::normalize_date($release_raw);
+            $availability = self::determine_availability($release_iso);
+
+            $developer = get_post_meta($post_id, '_jlg_developpeur', true);
+            $developer = is_string($developer) ? sanitize_text_field($developer) : '';
+            $publisher = get_post_meta($post_id, '_jlg_editeur', true);
+            $publisher = is_string($publisher) ? sanitize_text_field($publisher) : '';
+
+            $platform_meta = get_post_meta($post_id, '_jlg_plateformes', true);
+            $platform_labels = [];
+            $platform_slugs = [];
+
+            if (is_array($platform_meta)) {
+                foreach ($platform_meta as $platform_item) {
+                    if (!is_string($platform_item)) {
+                        continue;
+                    }
+
+                    $label = sanitize_text_field($platform_item);
+                    if ($label === '') {
+                        continue;
+                    }
+
+                    $slug = self::resolve_platform_slug($label);
+                    $platform_labels[] = $label;
+                    if ($slug !== '') {
+                        $platform_slugs[] = $slug;
+                        if (!isset($snapshot['platforms_map'][$slug])) {
+                            $snapshot['platforms_map'][$slug] = $label;
+                        }
+                    }
+                }
+            } elseif (is_string($platform_meta) && $platform_meta !== '') {
+                $label = sanitize_text_field($platform_meta);
+                $slug = self::resolve_platform_slug($label);
+                $platform_labels[] = $label;
+                if ($slug !== '') {
+                    $platform_slugs[] = $slug;
+                    if (!isset($snapshot['platforms_map'][$slug])) {
+                        $snapshot['platforms_map'][$slug] = $label;
+                    }
+                }
+            }
+
+            $terms = get_the_terms($post_id, 'category');
+            $category_ids = [];
+            $category_slugs = [];
+            $primary_genre = '';
+
+            if ($terms && !is_wp_error($terms)) {
+                foreach ($terms as $term) {
+                    $snapshot['categories_map'][$term->term_id] = $term->name;
+                    $category_ids[] = (int) $term->term_id;
+                    $category_slugs[] = $term->slug;
+                    if ($primary_genre === '') {
+                        $primary_genre = $term->name;
+                    }
+                }
+            }
+
+            $search_tokens = strtolower(
+                wp_strip_all_tags($title . ' ' . $developer . ' ' . $publisher . ' ' . $primary_genre . ' ' . implode(' ', $platform_labels))
+            );
+
+            $snapshot['posts'][$post_id] = [
+                'letter'           => $letter,
+                'category_ids'     => $category_ids,
+                'category_slugs'   => $category_slugs,
+                'primary_genre'    => $primary_genre,
+                'platform_labels'  => $platform_labels,
+                'platform_slugs'   => $platform_slugs,
+                'developer'        => $developer,
+                'publisher'        => $publisher,
+                'release_iso'      => $release_iso,
+                'availability'     => $availability['status'],
+                'search_haystack'  => $search_tokens,
+            ];
+        }
+
+        return $snapshot;
+    }
+
+    protected static function filter_snapshot_post_ids($snapshot, $letter, $category_id, $category_slug, $platform_slug, $availability, $search) {
+        $matched_ids = [];
+        $search = is_string($search) ? strtolower($search) : '';
+
+        foreach ($snapshot['posts'] as $post_id => $data) {
+            if ($letter !== '' && ($data['letter'] ?? '') !== $letter) {
+                continue;
+            }
+
+            if ($category_id > 0) {
+                if (empty($data['category_ids']) || !in_array($category_id, $data['category_ids'], true)) {
+                    continue;
+                }
+            } elseif ($category_slug !== '') {
+                if (empty($data['category_slugs']) || !in_array($category_slug, $data['category_slugs'], true)) {
+                    continue;
+                }
+            }
+
+            if ($platform_slug !== '' && (empty($data['platform_slugs']) || !in_array($platform_slug, $data['platform_slugs'], true))) {
+                continue;
+            }
+
+            if ($availability !== '' && ($data['availability'] ?? '') !== $availability) {
+                continue;
+            }
+
+            if ($search !== '' && strpos($data['search_haystack'] ?? '', $search) === false) {
+                continue;
+            }
+
+            $matched_ids[] = (int) $post_id;
+        }
+
+        return $matched_ids;
+    }
+
     public static function get_render_context($atts, $request = []) {
         $defaults = self::get_default_atts();
         $atts = shortcode_atts($defaults, $atts, 'jlg_game_explorer');
@@ -310,255 +490,247 @@ class JLG_Shortcode_Game_Explorer {
             $letter_filter = $forced_letter;
         }
 
-        $rated_posts = JLG_Helpers::get_rated_post_ids();
-        if (empty($rated_posts)) {
-            $message = '<p>' . esc_html__('Aucun test noté n\'est disponible pour le moment.', 'notation-jlg') . '</p>';
-
-            return [
-                'error'   => true,
-                'message' => $message,
-                'atts'    => $atts,
-            ];
-        }
-
-        $games = [];
-        $letters_map = [];
-        $categories_map = [];
-        $platforms_map = [];
         $allowed_orderby = ['date', 'score', 'title'];
-
-        foreach ($rated_posts as $post_id) {
-            $post_id = (int) $post_id;
-            if ($post_id <= 0) {
-                continue;
-            }
-
-            $post = get_post($post_id);
-            if (!$post || $post->post_status !== 'publish') {
-                continue;
-            }
-
-            $title = JLG_Helpers::get_game_title($post_id);
-            if ($title === '') {
-                $title = get_the_title($post_id);
-            }
-
-            $letter = self::normalize_letter($title);
-            if ($letter !== '') {
-                $letters_map[$letter] = true;
-            }
-
-            $score_data = JLG_Helpers::get_resolved_average_score($post_id);
-            $score_value = isset($score_data['value']) ? $score_data['value'] : null;
-            $score_display = isset($score_data['formatted']) && $score_data['formatted'] !== ''
-                ? $score_data['formatted']
-                : esc_html__('N/A', 'notation-jlg');
-            $score_color = $score_value !== null
-                ? JLG_Helpers::calculate_color_from_note($score_value, $options)
-                : ($options['color_mid'] ?? '#f97316');
-
-            $cover_meta = get_post_meta($post_id, '_jlg_cover_image_url', true);
-            $cover_url = '';
-            if (is_string($cover_meta) && $cover_meta !== '') {
-                $cover_url = esc_url_raw($cover_meta);
-            }
-            if ($cover_url === '') {
-                $thumbnail = get_the_post_thumbnail_url($post_id, 'large');
-                if ($thumbnail) {
-                    $cover_url = $thumbnail;
-                }
-            }
-
-            $release_raw = get_post_meta($post_id, '_jlg_date_sortie', true);
-            $release_iso = self::normalize_date($release_raw);
-            $release_display = '';
-            if ($release_iso !== '') {
-                $release_display = date_i18n(get_option('date_format'), strtotime($release_iso . ' 00:00:00'));
-            }
-
-            $availability = self::determine_availability($release_iso);
-
-            $developer = get_post_meta($post_id, '_jlg_developpeur', true);
-            $publisher = get_post_meta($post_id, '_jlg_editeur', true);
-            $developer = is_string($developer) ? sanitize_text_field($developer) : '';
-            $publisher = is_string($publisher) ? sanitize_text_field($publisher) : '';
-
-            $platform_meta = get_post_meta($post_id, '_jlg_plateformes', true);
-            $platform_labels = [];
-            $platform_slugs = [];
-            if (is_array($platform_meta)) {
-                foreach ($platform_meta as $platform_item) {
-                    if (!is_string($platform_item)) {
-                        continue;
-                    }
-                    $label = sanitize_text_field($platform_item);
-                    if ($label === '') {
-                        continue;
-                    }
-                    $slug = self::resolve_platform_slug($label);
-                    $platform_labels[] = $label;
-                    if ($slug !== '') {
-                        $platform_slugs[] = $slug;
-                        $platforms_map[$slug] = $label;
-                    }
-                }
-            } elseif (is_string($platform_meta) && $platform_meta !== '') {
-                $label = sanitize_text_field($platform_meta);
-                $slug = self::resolve_platform_slug($label);
-                $platform_labels[] = $label;
-                if ($slug !== '') {
-                    $platform_slugs[] = $slug;
-                    $platforms_map[$slug] = $label;
-                }
-            }
-
-            $terms = get_the_terms($post_id, 'category');
-            $category_ids = [];
-            $category_slugs = [];
-            $primary_genre = '';
-            if ($terms && !is_wp_error($terms)) {
-                foreach ($terms as $term) {
-                    $categories_map[$term->term_id] = $term->name;
-                    $category_ids[] = (int) $term->term_id;
-                    $category_slugs[] = $term->slug;
-                    if ($primary_genre === '') {
-                        $primary_genre = $term->name;
-                    }
-                }
-            }
-
-            $excerpt = get_the_excerpt($post_id);
-            if (!is_string($excerpt) || $excerpt === '') {
-                $excerpt = wp_trim_words(wp_strip_all_tags($post->post_content), 24, '…');
-            }
-
-            $timestamp = get_post_time('U', true, $post);
-
-            $search_tokens = strtolower(
-                wp_strip_all_tags($title . ' ' . $developer . ' ' . $publisher . ' ' . $primary_genre . ' ' . implode(' ', $platform_labels))
-            );
-
-            $games[] = [
-                'post_id'             => $post_id,
-                'title'               => $title,
-                'permalink'           => get_permalink($post_id),
-                'score_value'         => $score_value,
-                'score_display'       => $score_display,
-                'score_color'         => $score_color,
-                'cover_url'           => $cover_url,
-                'release_date'        => $release_iso,
-                'release_display'     => $release_display,
-                'developer'           => $developer,
-                'publisher'           => $publisher,
-                'platforms'           => $platform_labels,
-                'platform_slugs'      => $platform_slugs,
-                'category_ids'        => $category_ids,
-                'category_slugs'      => $category_slugs,
-                'genre'               => $primary_genre,
-                'excerpt'             => $excerpt,
-                'letter'              => $letter,
-                'availability'        => $availability['status'],
-                'availability_label'  => $availability['label'],
-                'timestamp'           => $timestamp,
-                'search_haystack'     => $search_tokens,
-            ];
-        }
-
-        if (empty($games)) {
-            $message = '<p>' . esc_html__('Aucun test noté n\'est disponible pour le moment.', 'notation-jlg') . '</p>';
-
-            return [
-                'error'   => true,
-                'message' => $message,
-                'atts'    => $atts,
-            ];
-        }
-
-        $filtered_games = array_filter($games, function($game) use ($letter_filter, $category_filter, $platform_filter, $availability_filter, $search_filter) {
-            if ($letter_filter !== '' && $game['letter'] !== $letter_filter) {
-                return false;
-            }
-
-            if ($category_filter !== '') {
-                $category_id = (int) $category_filter;
-                if ($category_id > 0) {
-                    if (!in_array($category_id, $game['category_ids'], true)) {
-                        return false;
-                    }
-                } else {
-                    $category_slug = sanitize_title($category_filter);
-                    if ($category_slug !== '' && !in_array($category_slug, $game['category_slugs'], true)) {
-                        return false;
-                    }
-                }
-            }
-
-            if ($platform_filter !== '') {
-                $normalized_platform = sanitize_title($platform_filter);
-                if ($normalized_platform === '' || !in_array($normalized_platform, $game['platform_slugs'], true)) {
-                    return false;
-                }
-            }
-
-            if ($availability_filter !== '') {
-                if ($game['availability'] !== $availability_filter) {
-                    return false;
-                }
-            }
-
-            if ($search_filter !== '') {
-                $haystack = $game['search_haystack'];
-                if (strpos($haystack, strtolower($search_filter)) === false) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-
         if (!in_array($orderby, $allowed_orderby, true)) {
             $orderby = 'date';
         }
 
-        usort($filtered_games, function($a, $b) use ($orderby, $order) {
-            switch ($orderby) {
-                case 'score':
-                    $value_a = ($a['score_value'] !== null) ? (float) $a['score_value'] : -1;
-                    $value_b = ($b['score_value'] !== null) ? (float) $b['score_value'] : -1;
-                    break;
-                case 'title':
-                    $value_a = strtolower($a['title']);
-                    $value_b = strtolower($b['title']);
-                    break;
-                case 'date':
-                default:
-                    $value_a = (int) $a['timestamp'];
-                    $value_b = (int) $b['timestamp'];
-                    break;
+        $snapshot = self::get_filters_snapshot();
+        if (empty($snapshot['posts'])) {
+            $message = '<p>' . esc_html__('Aucun test noté n\'est disponible pour le moment.', 'notation-jlg') . '</p>';
+
+            return [
+                'error'   => true,
+                'message' => $message,
+                'atts'    => $atts,
+            ];
+        }
+
+        $category_filter_id = 0;
+        $category_filter_slug = '';
+        if ($category_filter !== '') {
+            if (ctype_digit((string) $category_filter)) {
+                $category_filter_id = (int) $category_filter;
+            } else {
+                $category_filter_slug = sanitize_title($category_filter);
             }
+        }
 
-            if ($value_a == $value_b) {
-                return 0;
-            }
+        $platform_filter_slug = $platform_filter !== '' ? self::resolve_platform_slug($platform_filter) : '';
+        $letter_filter = is_string($letter_filter) ? $letter_filter : '';
+        $availability_filter = is_string($availability_filter) ? $availability_filter : '';
+        $search_filter = is_string($search_filter) ? $search_filter : '';
 
-            if ($order === 'ASC') {
-                return ($value_a < $value_b) ? -1 : 1;
-            }
+        $matched_post_ids = self::filter_snapshot_post_ids(
+            $snapshot,
+            $letter_filter,
+            $category_filter_id,
+            $category_filter_slug,
+            $platform_filter_slug,
+            $availability_filter,
+            $search_filter
+        );
 
-            return ($value_a > $value_b) ? -1 : 1;
-        });
+        $category_filter_value = $category_filter_id > 0 ? (string) $category_filter_id : $category_filter_slug;
 
-        $total_items = count($filtered_games);
-        $total_pages = ($total_items > 0) ? (int) ceil($total_items / $posts_per_page) : 0;
-        if ($total_pages > 0 && $paged > $total_pages) {
+        if (empty($matched_post_ids)) {
+            $message = '<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>';
+
+            return [
+                'atts'               => array_merge($atts, [
+                    'posts_per_page' => $posts_per_page,
+                    'columns'        => $columns,
+                ]),
+                'games'              => [],
+                'letters'            => self::build_letter_navigation($snapshot['letters_map']),
+                'filters_enabled'    => $filters_enabled,
+                'current_filters'    => [
+                    'letter'       => $letter_filter,
+                    'category'     => $category_filter_value,
+                    'platform'     => $platform_filter_slug,
+                    'availability' => $availability_filter,
+                    'search'       => $search_filter,
+                ],
+                'sort_options'       => self::get_sort_options(),
+                'sort_key'           => $orderby,
+                'sort_order'         => $order,
+                'pagination'         => [
+                    'current' => 1,
+                    'total'   => 0,
+                ],
+                'categories_list'    => [],
+                'platforms_list'     => [],
+                'availability_options' => [
+                    'available'  => esc_html__('Disponible', 'notation-jlg'),
+                    'upcoming'   => esc_html__('À venir', 'notation-jlg'),
+                    'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
+                ],
+                'total_items'        => 0,
+                'message'            => $message,
+                'config_payload'     => [
+                    'atts' => [
+                        'id'             => $atts['id'],
+                        'posts_per_page' => $posts_per_page,
+                        'columns'        => $columns,
+                        'filters'        => implode(',', array_keys(array_filter($filters_enabled))),
+                        'categorie'      => $atts['categorie'],
+                        'plateforme'     => $atts['plateforme'],
+                        'lettre'         => $atts['lettre'],
+                    ],
+                    'state' => [
+                        'orderby'      => $orderby,
+                        'order'        => $order,
+                        'letter'       => $letter_filter,
+                        'category'     => $category_filter_value,
+                        'platform'     => $platform_filter_slug,
+                        'availability' => $availability_filter,
+                        'search'       => $search_filter,
+                        'paged'        => 1,
+                    ],
+                ],
+            ];
+        }
+
+        $matched_post_ids = array_values(array_unique(array_map('intval', $matched_post_ids)));
+
+        $total_items = count($matched_post_ids);
+        $total_pages = (int) ceil($total_items / $posts_per_page);
+        if ($total_pages === 0) {
+            $total_pages = 1;
+        }
+        if ($paged > $total_pages) {
             $paged = $total_pages;
         }
-        if ($total_pages === 0) {
+        if ($paged < 1) {
             $paged = 1;
         }
 
-        $offset = ($paged - 1) * $posts_per_page;
-        $page_games = array_slice($filtered_games, $offset, $posts_per_page);
+        $post_types = apply_filters('jlg_rated_post_types', ['post']);
+        if (!is_array($post_types) || empty($post_types)) {
+            $post_types = ['post'];
+        }
+        $post_statuses = apply_filters('jlg_rated_post_statuses', ['publish']);
+        if (!is_array($post_statuses) || empty($post_statuses)) {
+            $post_statuses = ['publish'];
+        }
+
+        $query_args = [
+            'post_type'              => $post_types,
+            'post_status'            => $post_statuses,
+            'post__in'               => $matched_post_ids,
+            'posts_per_page'         => $posts_per_page,
+            'paged'                  => $paged,
+            'order'                  => $order,
+            'orderby'                => 'date',
+            'ignore_sticky_posts'    => true,
+            'no_found_rows'          => true,
+            'update_post_term_cache' => false,
+        ];
+
+        if ($orderby === 'score') {
+            $query_args['meta_key'] = '_jlg_average_score';
+            $query_args['orderby'] = 'meta_value_num';
+            $query_args['meta_type'] = 'DECIMAL';
+        } elseif ($orderby === 'title') {
+            $query_args['orderby'] = 'title';
+        }
+
+        $query = new WP_Query($query_args);
+
+        $games = [];
+        if ($query->have_posts()) {
+            foreach ($query->posts as $post) {
+                $post_id = (int) $post->ID;
+                $post_info = isset($snapshot['posts'][$post_id]) ? $snapshot['posts'][$post_id] : [];
+
+                $title = JLG_Helpers::get_game_title($post_id);
+                if ($title === '') {
+                    $title = get_the_title($post_id);
+                }
+
+                $score_data = JLG_Helpers::get_resolved_average_score($post_id);
+                $score_value = isset($score_data['value']) ? $score_data['value'] : null;
+                $score_display = isset($score_data['formatted']) && $score_data['formatted'] !== ''
+                    ? $score_data['formatted']
+                    : esc_html__('N/A', 'notation-jlg');
+                $score_color = $score_value !== null
+                    ? JLG_Helpers::calculate_color_from_note($score_value, $options)
+                    : ($options['color_mid'] ?? '#f97316');
+
+                $cover_meta = get_post_meta($post_id, '_jlg_cover_image_url', true);
+                $cover_url = '';
+                if (is_string($cover_meta) && $cover_meta !== '') {
+                    $cover_url = esc_url_raw($cover_meta);
+                }
+                if ($cover_url === '') {
+                    $thumbnail = get_the_post_thumbnail_url($post_id, 'large');
+                    if ($thumbnail) {
+                        $cover_url = $thumbnail;
+                    }
+                }
+
+                $release_iso = isset($post_info['release_iso']) ? $post_info['release_iso'] : '';
+                $release_display = '';
+                if ($release_iso !== '') {
+                    $release_display = date_i18n(get_option('date_format'), strtotime($release_iso . ' 00:00:00'));
+                }
+                $availability_data = self::determine_availability($release_iso);
+                $availability_status = isset($post_info['availability']) ? $post_info['availability'] : $availability_data['status'];
+
+                $developer = isset($post_info['developer']) ? $post_info['developer'] : '';
+                $publisher = isset($post_info['publisher']) ? $post_info['publisher'] : '';
+
+                $platform_labels = isset($post_info['platform_labels']) ? $post_info['platform_labels'] : [];
+                $platform_slugs = isset($post_info['platform_slugs']) ? $post_info['platform_slugs'] : [];
+
+                $category_ids = isset($post_info['category_ids']) ? $post_info['category_ids'] : [];
+                $category_slugs = isset($post_info['category_slugs']) ? $post_info['category_slugs'] : [];
+                $primary_genre = isset($post_info['primary_genre']) ? $post_info['primary_genre'] : '';
+
+                $excerpt = get_the_excerpt($post_id);
+                if (!is_string($excerpt) || $excerpt === '') {
+                    $excerpt = wp_trim_words(wp_strip_all_tags($post->post_content), 24, '…');
+                }
+
+                $letter = isset($post_info['letter']) && $post_info['letter'] !== '' ? $post_info['letter'] : self::normalize_letter($title);
+
+                $games[] = [
+                    'post_id'             => $post_id,
+                    'title'               => $title,
+                    'permalink'           => get_permalink($post_id),
+                    'score_value'         => $score_value,
+                    'score_display'       => $score_display,
+                    'score_color'         => $score_color,
+                    'cover_url'           => $cover_url,
+                    'release_date'        => $release_iso,
+                    'release_display'     => $release_display,
+                    'developer'           => $developer,
+                    'publisher'           => $publisher,
+                    'platforms'           => $platform_labels,
+                    'platform_slugs'      => $platform_slugs,
+                    'category_ids'        => $category_ids,
+                    'category_slugs'      => $category_slugs,
+                    'genre'               => $primary_genre,
+                    'excerpt'             => $excerpt,
+                    'letter'              => $letter,
+                    'availability'        => $availability_status,
+                    'availability_label'  => $availability_data['label'],
+                    'timestamp'           => get_post_time('U', true, $post),
+                    'search_haystack'     => isset($post_info['search_haystack']) ? $post_info['search_haystack'] : '',
+                ];
+            }
+            wp_reset_postdata();
+        }
+
+        if (empty($games)) {
+            $total_items = 0;
+            $total_pages = 0;
+            $paged = 1;
+        }
+
+        $letters = self::build_letter_navigation($snapshot['letters_map']);
+        $categories_map = isset($snapshot['categories_map']) && is_array($snapshot['categories_map']) ? $snapshot['categories_map'] : [];
+        $platforms_map = isset($snapshot['platforms_map']) && is_array($snapshot['platforms_map']) ? $snapshot['platforms_map'] : [];
 
         $categories_list = [];
         if (!empty($categories_map)) {
@@ -618,8 +790,8 @@ class JLG_Shortcode_Game_Explorer {
                 'orderby'      => $orderby,
                 'order'        => $order,
                 'letter'       => $letter_filter,
-                'category'     => $category_filter,
-                'platform'     => $platform_filter,
+                'category'     => $category_filter_value,
+                'platform'     => $platform_filter_slug,
                 'availability' => $availability_filter,
                 'search'       => $search_filter,
                 'paged'        => $paged,
@@ -631,13 +803,13 @@ class JLG_Shortcode_Game_Explorer {
                 'posts_per_page' => $posts_per_page,
                 'columns'        => $columns,
             ]),
-            'games'              => array_values($page_games),
-            'letters'            => self::build_letter_navigation($letters_map),
+            'games'              => array_values($games),
+            'letters'            => $letters,
             'filters_enabled'    => $filters_enabled,
             'current_filters'    => [
                 'letter'       => $letter_filter,
-                'category'     => $category_filter,
-                'platform'     => $platform_filter,
+                'category'     => $category_filter_value,
+                'platform'     => $platform_filter_slug,
                 'availability' => $availability_filter,
                 'search'       => $search_filter,
             ],

@@ -11,6 +11,7 @@ class JLG_Helpers {
     private static $option_name = 'notation_jlg_settings';
     private static $category_keys = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'];
     private static $options_cache = null;
+    private static $default_settings_cache = null;
 
     private static function get_theme_defaults() {
         return [
@@ -48,10 +49,15 @@ class JLG_Helpers {
     }
 
     public static function get_default_settings() {
-        $dark_defaults = self::get_theme_defaults()['dark'];
-        $light_defaults = self::get_theme_defaults()['light'];
-        
-        return [
+        if (is_array(self::$default_settings_cache)) {
+            return self::$default_settings_cache;
+        }
+
+        $themes = self::get_theme_defaults();
+        $dark_defaults = $themes['dark'];
+        $light_defaults = $themes['light'];
+
+        self::$default_settings_cache = [
             // Options générales
             'visual_theme'      => 'dark',
             'score_layout'      => 'text',
@@ -139,6 +145,8 @@ class JLG_Helpers {
             'debug_mode_enabled' => 0,
             'rawg_api_key' => '',
         ];
+
+        return self::$default_settings_cache;
     }
 
     public static function get_plugin_options($force_refresh = false) {
