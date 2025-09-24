@@ -47,6 +47,13 @@ class JLG_Frontend {
      */
     private static $rendered_shortcodes = [];
 
+    /**
+     * Mémoïsation locale de la détection de métadonnées utilisées par le plugin.
+     *
+     * @var array<int, bool>
+     */
+    private $metadata_usage_cache = [];
+
     public function __construct() {
         self::$instance = $this;
         // On charge les shortcodes via le hook 'init' pour s'assurer que WordPress est prêt
@@ -232,34 +239,53 @@ class JLG_Frontend {
      * @return bool
      */
     private function post_has_plugin_metadata($post_id) {
-        if (!$post_id) {
+        $post_id = (int) $post_id;
+
+        if ($post_id <= 0) {
             return false;
         }
 
-        $meta = get_post_meta($post_id);
-
-        if (empty($meta) || !is_array($meta)) {
-            return false;
+        if (isset($this->metadata_usage_cache[$post_id])) {
+            return $this->metadata_usage_cache[$post_id];
         }
 
-        foreach ($meta as $meta_key => $values) {
-            $is_plugin_meta = strpos($meta_key, '_jlg_') === 0
-                || strpos($meta_key, '_note_') === 0;
+        $meta_keys = [
+            '_jlg_average_score',
+            '_jlg_game_title',
+            '_jlg_cover_image_url',
+            '_jlg_date_sortie',
+            '_jlg_developpeur',
+            '_jlg_editeur',
+            '_jlg_plateformes',
+            '_jlg_points_forts',
+            '_jlg_points_faibles',
+            '_jlg_tagline_fr',
+            '_jlg_tagline_en',
+            '_jlg_user_rating_avg',
+        ];
 
-            if (!$is_plugin_meta) {
+        foreach (array_keys(JLG_Helpers::get_rating_categories()) as $category_key) {
+            $meta_keys[] = '_note_' . $category_key;
+        }
+
+        $has_metadata = false;
+
+        foreach ($meta_keys as $meta_key) {
+            if (!metadata_exists('post', $post_id, $meta_key)) {
                 continue;
             }
 
-            $values = is_array($values) ? $values : [$values];
+            $value = get_post_meta($post_id, $meta_key, true);
 
-            foreach ($values as $value) {
-                if ($this->is_meta_value_filled($value)) {
-                    return true;
-                }
+            if ($this->is_meta_value_filled($value)) {
+                $has_metadata = true;
+                break;
             }
         }
 
-        return false;
+        $this->metadata_usage_cache[$post_id] = $has_metadata;
+
+        return $has_metadata;
     }
 
     /**
