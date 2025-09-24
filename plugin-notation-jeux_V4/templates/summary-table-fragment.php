@@ -14,6 +14,7 @@ if ($table_id === '' && isset($atts['id'])) {
     $table_id = sanitize_html_class($atts['id']);
 }
 $layout = isset($atts['layout']) ? $atts['layout'] : 'table';
+$base_url = isset($base_url) ? esc_url_raw($base_url) : '';
 $current_orderby = !empty($orderby) ? $orderby : 'date';
 $current_order = !empty($order) ? strtoupper($order) : 'DESC';
 $current_cat_filter = isset($cat_filter) ? intval($cat_filter) : 0;
@@ -84,6 +85,12 @@ if ($columns_count === 0) {
 
 if (!function_exists('jlg_print_sortable_header')) {
     function jlg_print_sortable_header($col, $col_info, $current_orderby, $current_order, $table_id, $extra_params = []) {
+        $base_url = '';
+        if (isset($extra_params['base_url'])) {
+            $base_url = esc_url_raw($extra_params['base_url']);
+            unset($extra_params['base_url']);
+        }
+
         if (!isset($col_info['sortable']) || !$col_info['sortable']) {
             echo '<th>' . esc_html($col_info['label']) . '</th>';
             return;
@@ -121,7 +128,11 @@ if (!function_exists('jlg_print_sortable_header')) {
             }
         }
 
-        $url = add_query_arg($args);
+        if ($base_url !== '') {
+            $url = add_query_arg($args, remove_query_arg('paged', $base_url));
+        } else {
+            $url = add_query_arg($args);
+        }
         $url = remove_query_arg('paged', $url);
 
         if (!empty($table_id)) {
@@ -237,6 +248,7 @@ else :
                         'cat_filter'    => $current_cat_filter,
                         'letter_filter' => $current_letter_filter,
                         'genre_filter'  => $current_genre_filter,
+                        'base_url'      => $base_url,
                     ];
                     ?>
                     <?php

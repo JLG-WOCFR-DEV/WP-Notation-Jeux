@@ -85,6 +85,19 @@ class JLG_Shortcode_Game_Explorer {
         ];
     }
 
+    public static function get_allowed_sort_keys() {
+        $options = self::get_sort_options();
+        $keys = [];
+
+        foreach ($options as $option) {
+            if (isset($option['orderby'])) {
+                $keys[] = sanitize_key($option['orderby']);
+            }
+        }
+
+        return array_values(array_unique(array_filter($keys)));
+    }
+
     protected static function normalize_filters($filters_string) {
         $allowed = ['letter', 'category', 'platform', 'availability', 'search'];
         $normalized = [];
