@@ -126,7 +126,7 @@ class JLG_Frontend {
         if (!empty(self::$shortcode_errors) && current_user_can('manage_options')) {
             echo '<div class="notice notice-error"><p><strong>Plugin Notation - JLG : Erreur de chargement des shortcodes !</strong></p><ul>';
             foreach (self::$shortcode_errors as $error) {
-                printf('<li>%s</li>', esc_html($error));
+                printf('<li>%s</li>', wp_kses_post($error));
             }
             echo '</ul></div>';
         }
@@ -613,7 +613,7 @@ class JLG_Frontend {
         }
 
         $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
-        $user_ip_hash = $user_ip ? wp_hash($user_ip) : '';
+        $user_ip_hash = $user_ip ? self::hash_user_ip($user_ip) : '';
         $ip_log = [];
 
         if ($user_ip_hash !== '') {
@@ -685,7 +685,18 @@ class JLG_Frontend {
     }
 
     private static function hash_user_rating_token($token) {
-        return wp_hash($token);
+        $hashed = hash('sha256', (string) $token);
+
+        return is_string($hashed) ? $hashed : '';
+    }
+
+    private static function hash_user_ip($ip_address) {
+        $context = apply_filters('jlg_user_rating_ip_hash_context', site_url());
+        $context = is_string($context) ? $context : '';
+
+        $hashed = hash('sha256', $ip_address . '|' . $context);
+
+        return is_string($hashed) ? $hashed : '';
     }
 
     private static function get_post_user_rating_tokens($post_id, &$meta = null) {

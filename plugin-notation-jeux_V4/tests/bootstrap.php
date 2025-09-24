@@ -85,6 +85,16 @@ if (!function_exists('apply_filters')) {
     }
 }
 
+if (!function_exists('do_action')) {
+    function do_action($hook, ...$args) {
+        if (!isset($GLOBALS['jlg_test_actions'])) {
+            $GLOBALS['jlg_test_actions'] = [];
+        }
+
+        $GLOBALS['jlg_test_actions'][] = [$hook, $args];
+    }
+}
+
 if (!function_exists('register_setting')) {
     function register_setting($option_group, $option_name, $args = []) {
         // No-op stub used during tests.
@@ -174,6 +184,12 @@ if (!function_exists('__')) {
 if (!function_exists('esc_html')) {
     function esc_html($text) {
         return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('wp_kses_post')) {
+    function wp_kses_post($data) {
+        return (string) $data;
     }
 }
 
@@ -414,6 +430,14 @@ if (!function_exists('check_ajax_referer')) {
     }
 }
 
+if (!function_exists('site_url')) {
+    function site_url($path = '', $scheme = null) {
+        unset($path, $scheme);
+
+        return 'https://example.com';
+    }
+}
+
 if (!function_exists('wp_hash')) {
     function wp_hash($data) {
         return md5((string) $data);
@@ -489,6 +513,18 @@ if (!function_exists('update_post_meta')) {
         ];
 
         $GLOBALS['jlg_test_meta'][$post_id][$key] = $value;
+
+        return true;
+    }
+}
+
+if (!function_exists('delete_post_meta')) {
+    function delete_post_meta($post_id, $key, $value = '') {
+        unset($value);
+
+        if (isset($GLOBALS['jlg_test_meta'][$post_id][$key])) {
+            unset($GLOBALS['jlg_test_meta'][$post_id][$key]);
+        }
 
         return true;
     }
