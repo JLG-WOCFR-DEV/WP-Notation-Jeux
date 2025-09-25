@@ -29,7 +29,7 @@ class JLG_Assets {
             return;
         }
 
-        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'reglages';
+        $active_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'reglages';
         if ($active_tab !== 'plateformes') {
             return;
         }

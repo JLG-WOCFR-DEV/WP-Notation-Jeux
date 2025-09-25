@@ -33,25 +33,30 @@ class JLG_Admin_Settings {
         // IMPORTANT: Traiter d'abord les champs select pour les modes de couleur
         // Ces champs doivent être traités spécialement pour conserver leur valeur
         $select_fields = [
-            'visual_theme',
-            'score_layout',
-            'text_glow_color_mode',
-            'circle_glow_color_mode',
-            'table_border_style'
+            'visual_theme' => ['dark', 'light'],
+            'score_layout' => ['text', 'circle'],
+            'text_glow_color_mode' => ['dynamic', 'custom'],
+            'circle_glow_color_mode' => ['dynamic', 'custom'],
+            'table_border_style' => ['none', 'horizontal', 'full'],
         ];
-        
-        foreach ($select_fields as $field) {
+
+        foreach ($select_fields as $field => $allowed_values) {
             if (isset($input[$field])) {
-                $sanitized[$field] = sanitize_text_field($input[$field]);
-            } else {
-                $sanitized[$field] = $defaults[$field] ?? '';
+                $value = sanitize_key(wp_unslash($input[$field]));
+
+                if (in_array($value, $allowed_values, true)) {
+                    $sanitized[$field] = $value;
+                    continue;
+                }
             }
+
+            $sanitized[$field] = $defaults[$field] ?? '';
         }
 
         // Traiter les autres champs
         foreach ($defaults as $key => $default_value) {
             // Skip les champs déjà traités
-            if (in_array($key, $select_fields)) {
+            if (array_key_exists($key, $select_fields)) {
                 continue;
             }
 

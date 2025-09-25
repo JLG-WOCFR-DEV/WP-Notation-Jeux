@@ -38,13 +38,17 @@ class JLG_Admin_Ajax {
 
         // Sécurité basique
         if (!current_user_can('edit_posts')) {
-            wp_send_json_error('Permissions insuffisantes.', 403);
+            wp_send_json_error([
+                'message' => __('Permissions insuffisantes.', 'notation-jlg'),
+            ], 403);
         }
 
         $search_term = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
-        
+
         if (empty($search_term)) {
-            wp_send_json_error('Terme de recherche vide.', 400);
+            wp_send_json_error([
+                'message' => __('Terme de recherche vide.', 'notation-jlg'),
+            ], 400);
         }
 
         // Simulation de réponse (remplacez par vraie API si vous avez une clé)
@@ -75,7 +79,7 @@ class JLG_Admin_Ajax {
 
         wp_send_json_success([
             'games' => $normalized_games,
-            'message' => 'Recherche simulée. Configurez une vraie clé API RAWG dans les réglages pour des résultats réels.'
+            'message' => __('Recherche simulée. Configurez une vraie clé API RAWG dans les réglages pour des résultats réels.', 'notation-jlg'),
         ]);
     }
 }
