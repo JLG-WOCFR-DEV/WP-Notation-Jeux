@@ -302,8 +302,8 @@ class JLG_Helpers {
     /**
      * Clear the cached average score when one of the rating metas is changed.
      */
-    public static function maybe_handle_rating_meta_change($meta_id, $post_id, $meta_key) {
-        unset($meta_id);
+    public static function maybe_handle_rating_meta_change($meta_id, $post_id, $meta_key, $meta_value = null) {
+        unset($meta_id, $meta_value);
 
         if (!is_string($meta_key) || !in_array($meta_key, self::get_rating_meta_keys(), true)) {
             return;
@@ -323,6 +323,7 @@ class JLG_Helpers {
         }
 
         delete_post_meta($post_id, '_jlg_average_score');
+        self::clear_rated_post_ids_cache();
         self::queue_average_score_rebuild($post_id);
     }
 
