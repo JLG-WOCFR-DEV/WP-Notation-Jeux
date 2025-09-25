@@ -250,12 +250,24 @@ class JLG_Dynamic_CSS {
             return '';
         }
 
+        $zebra_base_color = $this->sanitize_color_value($table_zebra_bg_color, true);
+
+        if ($zebra_base_color === '') {
+            return '';
+        }
+
         $css = '.jlg-summary-table tbody tr:nth-child(even){background-color:var(--jlg-table-zebra-bg-color);}';
 
-        if ($table_zebra_bg_color === 'transparent' || $table_zebra_bg_color === '') {
-            $zebra_hover_color = $table_zebra_bg_color;
-        } else {
-            $zebra_hover_color = $this->sanitize_color_value(JLG_Helpers::adjust_hex_brightness($table_zebra_bg_color, 5));
+        if ($zebra_base_color === 'transparent') {
+            return $css;
+        }
+
+        $zebra_hover_color = $this->sanitize_color_value(
+            JLG_Helpers::adjust_hex_brightness($zebra_base_color, 5)
+        );
+
+        if ($zebra_hover_color === '') {
+            return $css;
         }
 
         return $css . '.jlg-summary-table tbody tr:nth-child(even):hover{background-color:' . $zebra_hover_color . ';}';
@@ -271,12 +283,17 @@ class JLG_Dynamic_CSS {
     private function build_table_border_css(array $options, $border_color) {
         $border_style = $options['table_border_style'] ?? '';
         $border_width = intval($options['table_border_width'] ?? 0);
+        $sanitized_border_color = $this->sanitize_color_value($border_color, true);
+
+        if ($sanitized_border_color === '') {
+            return '';
+        }
 
         switch ($border_style) {
             case 'horizontal':
-                return '.jlg-summary-table th,.jlg-summary-table td{border-bottom:' . $border_width . 'px solid ' . $border_color . ';}';
+                return '.jlg-summary-table th,.jlg-summary-table td{border-bottom:' . $border_width . 'px solid ' . $sanitized_border_color . ';}';
             case 'full':
-                return '.jlg-summary-table th,.jlg-summary-table td{border:' . $border_width . 'px solid ' . $border_color . ';}';
+                return '.jlg-summary-table th,.jlg-summary-table td{border:' . $border_width . 'px solid ' . $sanitized_border_color . ';}';
             default:
                 return '';
         }

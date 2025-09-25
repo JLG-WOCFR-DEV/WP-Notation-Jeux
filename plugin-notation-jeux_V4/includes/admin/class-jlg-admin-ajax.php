@@ -64,6 +64,39 @@ class JLG_Admin_Ajax {
         ];
 
         $normalized_games = array_map(function($game) {
+            $sanitize_scalar = static function($value) {
+                if (is_scalar($value)) {
+                    return sanitize_text_field((string) $value);
+                }
+
+                return '';
+            };
+
+            $game['name'] = isset($game['name']) ? $sanitize_scalar($game['name']) : '';
+
+            foreach (['developers', 'publishers'] as $field) {
+                if (!isset($game[$field])) {
+                    $game[$field] = '';
+                    continue;
+                }
+
+                if (is_array($game[$field])) {
+                    $game[$field] = array_values(array_filter(array_map($sanitize_scalar, $game[$field]), 'strlen'));
+                } else {
+                    $game[$field] = $sanitize_scalar($game[$field]);
+                }
+            }
+
+            if (isset($game['platforms'])) {
+                if (is_array($game['platforms'])) {
+                    $game['platforms'] = array_values(array_filter(array_map($sanitize_scalar, $game['platforms']), 'strlen'));
+                } else {
+                    $game['platforms'] = $sanitize_scalar($game['platforms']);
+                }
+            } else {
+                $game['platforms'] = [];
+            }
+
             if (!empty($game['release_date'])) {
                 $sanitized_date = JLG_Validator::sanitize_date($game['release_date']);
                 $game['release_date'] = $sanitized_date !== null ? $sanitized_date : '';
