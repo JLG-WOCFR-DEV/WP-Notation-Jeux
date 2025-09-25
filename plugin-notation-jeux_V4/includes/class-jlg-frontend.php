@@ -1257,21 +1257,49 @@ class JLG_Frontend {
             return '';
         }
 
-        if (empty($parsed_url['path'])) {
+        $site_url = wp_parse_url(home_url('/'));
+        $site_host = is_array($site_url) && isset($site_url['host']) ? strtolower($site_url['host']) : '';
+        $site_scheme = is_array($site_url) && isset($site_url['scheme']) ? $site_url['scheme'] : '';
+
+        $target_host = isset($parsed_url['host']) ? strtolower($parsed_url['host']) : '';
+
+        if ($target_host === '') {
+            return home_url('/');
+        }
+
+        if ($site_host !== '' && $target_host !== $site_host) {
             return '';
         }
 
-        $site_url = wp_parse_url(home_url('/'));
-        if (!empty($parsed_url['host'])) {
-            $site_host = isset($site_url['host']) ? strtolower($site_url['host']) : '';
-            $target_host = strtolower($parsed_url['host']);
-
-            if ($site_host !== '' && $target_host !== $site_host) {
-                return '';
-            }
+        $scheme = $parsed_url['scheme'] ?? $site_scheme;
+        $path = $parsed_url['path'] ?? '';
+        if ($path === '') {
+            $path = '/';
         }
 
-        return $sanitized_url;
+        $normalized_url = '';
+
+        if ($scheme !== '') {
+            $normalized_url .= $scheme . '://';
+        }
+
+        $normalized_url .= $parsed_url['host'];
+
+        if (!empty($parsed_url['port'])) {
+            $normalized_url .= ':' . intval($parsed_url['port']);
+        }
+
+        $normalized_url .= $path;
+
+        if (!empty($parsed_url['query'])) {
+            $normalized_url .= '?' . $parsed_url['query'];
+        }
+
+        if (!empty($parsed_url['fragment'])) {
+            $normalized_url .= '#' . $parsed_url['fragment'];
+        }
+
+        return $normalized_url;
     }
 
     /**

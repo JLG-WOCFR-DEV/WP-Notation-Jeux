@@ -199,6 +199,94 @@ if (!function_exists('esc_html__')) {
     }
 }
 
+if (!function_exists('esc_attr')) {
+    function esc_attr($text) {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('esc_url_raw')) {
+    function esc_url_raw($url) {
+        if (!is_string($url)) {
+            return '';
+        }
+
+        $sanitized = filter_var($url, FILTER_SANITIZE_URL);
+
+        return is_string($sanitized) ? $sanitized : '';
+    }
+}
+
+if (!function_exists('esc_url')) {
+    function esc_url($url) {
+        return esc_url_raw($url);
+    }
+}
+
+if (!function_exists('home_url')) {
+    function home_url($path = '', $scheme = null) {
+        unset($scheme);
+
+        $base = 'https://public.example';
+
+        if (!is_string($path)) {
+            $path = '';
+        }
+
+        if ($path === '' || $path === '/') {
+            return $base . '/';
+        }
+
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+
+        return $base . $path;
+    }
+}
+
+if (!function_exists('wp_parse_url')) {
+    function wp_parse_url($url) {
+        if (!is_string($url) || $url === '') {
+            return false;
+        }
+
+        return parse_url($url);
+    }
+}
+
+if (!function_exists('taxonomy_exists')) {
+    function taxonomy_exists($taxonomy) {
+        unset($taxonomy);
+
+        return false;
+    }
+}
+
+if (!function_exists('is_wp_error')) {
+    function is_wp_error($thing) {
+        unset($thing);
+
+        return false;
+    }
+}
+
+if (!function_exists('get_category')) {
+    function get_category($id) {
+        unset($id);
+
+        return null;
+    }
+}
+
+if (!function_exists('get_term_by')) {
+    function get_term_by($field, $value, $taxonomy, $output = 'OBJECT', $filter = 'raw') {
+        unset($field, $value, $taxonomy, $output, $filter);
+
+        return false;
+    }
+}
+
 if (!function_exists('esc_html_e')) {
     function esc_html_e($text, $domain = 'default') {
         echo esc_html__($text, $domain);
