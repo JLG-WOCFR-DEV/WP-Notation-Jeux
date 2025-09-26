@@ -110,11 +110,17 @@ class MigrationScheduleTest extends TestCase
 
         update_option('jlg_migration_v5_queue', [300, 150]);
 
+        $this->assertSame([], $GLOBALS['jlg_test_scheduled_events']);
+
         $plugin->queue_additional_posts_for_migration([150, 450, 275]);
 
         $this->assertSame([150, 275, 300, 450], get_option('jlg_migration_v5_queue'));
 
-        $this->assertHookScheduled('jlg_process_v5_migration');
+        $events = $GLOBALS['jlg_test_scheduled_events'] ?? [];
+        $this->assertNotEmpty($events, 'Expected a migration event to be scheduled when new posts were enqueued.');
+
+        $scheduled_hooks = array_map(static fn ($event) => $event['hook'] ?? '', $events);
+        $this->assertContains('jlg_process_v5_migration', $scheduled_hooks);
     }
 
     public function testProcessMigrationBatchConsumesQueueAndFinalizes(): void
