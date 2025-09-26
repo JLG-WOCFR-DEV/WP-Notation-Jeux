@@ -92,4 +92,21 @@ class FrontendSummaryBaseUrlTest extends TestCase
             'Sortable header should keep links on the public domain.'
         );
     }
+
+    public function test_www_alias_is_canonicalized_to_home_url()
+    {
+        $frontend = new JLG_Frontend();
+
+        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $method = $reflection->getMethod('sanitize_internal_url');
+        $method->setAccessible(true);
+
+        $base_url = $method->invoke($frontend, 'https://www.public.example/path/?foo=bar');
+
+        $this->assertSame(
+            'https://public.example/path/?foo=bar',
+            $base_url,
+            'Base URL should collapse benign host aliases to the canonical home URL.'
+        );
+    }
 }
