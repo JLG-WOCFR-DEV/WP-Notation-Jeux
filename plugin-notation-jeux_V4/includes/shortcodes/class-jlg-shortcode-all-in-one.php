@@ -45,6 +45,34 @@ class JLG_Shortcode_All_In_One {
                 JLG_NOTATION_VERSION,
                 true
             );
+
+            $script_settings = apply_filters('jlg_all_in_one_script_settings', [
+                'observerThreshold' => 0.2,
+                'visibleClass'      => 'is-visible',
+                'animationClass'    => 'animate-in',
+            ]);
+
+            $inline_settings  = 'window.jlgAllInOneSettings = window.jlgAllInOneSettings || {};' . "\n";
+
+            foreach ($script_settings as $key => $value) {
+                if (!is_string($key) || $key === '') {
+                    continue;
+                }
+
+                $js_key = preg_replace('/[^A-Za-z0-9_]/', '', $key);
+                if ($js_key === '') {
+                    continue;
+                }
+
+                $encoded_value = wp_json_encode($value);
+                $inline_settings .= sprintf(
+                    'if (typeof window.jlgAllInOneSettings.%1$s === "undefined") { window.jlgAllInOneSettings.%1$s = %2$s; }' . "\n",
+                    $js_key,
+                    $encoded_value
+                );
+            }
+
+            wp_add_inline_script('jlg-all-in-one', $inline_settings, 'before');
         }
     }
 

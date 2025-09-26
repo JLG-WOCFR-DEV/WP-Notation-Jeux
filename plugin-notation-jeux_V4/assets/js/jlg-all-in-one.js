@@ -1,15 +1,28 @@
+'use strict';
+
 (function() {
     if (window.jlgAllInOneInit) {
         return;
     }
 
+    const settings = window.jlgAllInOneSettings || {};
+    const visibleClass = typeof settings.visibleClass === 'string' && settings.visibleClass !== ''
+        ? settings.visibleClass
+        : 'is-visible';
+    const animationClass = typeof settings.animationClass === 'string' && settings.animationClass !== ''
+        ? settings.animationClass
+        : 'animate-in';
+    const observerThreshold = typeof settings.observerThreshold === 'number'
+        ? settings.observerThreshold
+        : 0.2;
+
     let observer = null;
-    let blocksInitialized = false;
 
     const observeBlock = (block) => {
-        const animationsEnabled = block.dataset.animationsEnabled === 'true' || block.classList.contains('animate-in');
+        const animationsEnabled = block.dataset.animationsEnabled === 'true' || block.classList.contains(animationClass);
 
         if (!animationsEnabled) {
+            block.classList.add(visibleClass);
             return;
         }
 
@@ -18,18 +31,18 @@
                 observer = new IntersectionObserver((entries) => {
                     entries.forEach((entry) => {
                         if (entry.isIntersecting) {
-                            entry.target.classList.add('is-visible');
+                            entry.target.classList.add(visibleClass);
                             observer.unobserve(entry.target);
                         }
                     });
                 }, {
-                    threshold: 0.2
+                    threshold: observerThreshold
                 });
             }
 
             observer.observe(block);
         } else {
-            block.classList.add('is-visible');
+            block.classList.add(visibleClass);
         }
     };
 
@@ -55,10 +68,14 @@
                 });
 
                 taglines.forEach((tagline) => {
-                    if (tagline.dataset.lang === selectedLang) {
-                        tagline.style.display = 'block';
+                    const matchesSelection = tagline.dataset.lang === selectedLang;
+
+                    tagline.style.display = matchesSelection ? 'block' : 'none';
+
+                    if (matchesSelection) {
+                        tagline.removeAttribute('hidden');
                     } else {
-                        tagline.style.display = 'none';
+                        tagline.setAttribute('hidden', '');
                     }
                 });
             });
@@ -82,34 +99,27 @@
             bindFlagToggle(block);
             observeBlock(block);
         });
-
-        blocksInitialized = true;
     };
 
-    const onReadyStateChange = () => {
-        if (!blocksInitialized) {
-            initBlocks();
-        }
-    };
+    const readyStates = ['interactive', 'complete'];
 
-    const onDOMContentLoaded = () => {
+    if (readyStates.includes(document.readyState)) {
         initBlocks();
-        document.removeEventListener('DOMContentLoaded', onDOMContentLoaded);
-    };
-
-    const onWindowLoad = () => {
-        initBlocks();
-        window.removeEventListener('load', onWindowLoad);
-    };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', onDOMContentLoaded);
     } else {
-        initBlocks();
+        const onDomReady = () => {
+            document.removeEventListener('DOMContentLoaded', onDomReady);
+            initBlocks();
+        };
+
+        document.addEventListener('DOMContentLoaded', onDomReady);
     }
 
+    const onWindowLoad = () => {
+        window.removeEventListener('load', onWindowLoad);
+        initBlocks();
+    };
+
     window.addEventListener('load', onWindowLoad);
-    document.addEventListener('readystatechange', onReadyStateChange);
 
     window.jlgAllInOneInit = initBlocks;
 })();
