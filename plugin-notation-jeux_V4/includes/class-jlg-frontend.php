@@ -1283,7 +1283,7 @@ class JLG_Frontend {
             $normalized_url .= $scheme . '://';
         }
 
-        $normalized_url .= $parsed_url['host'];
+        $normalized_url .= $target_host;
 
         if (!empty($parsed_url['port'])) {
             $normalized_url .= ':' . intval($parsed_url['port']);

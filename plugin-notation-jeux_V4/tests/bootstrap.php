@@ -245,6 +245,31 @@ if (!function_exists('home_url')) {
     }
 }
 
+if (!function_exists('add_query_arg')) {
+    function add_query_arg($args, $url = '') {
+        if (!is_array($args)) {
+            $args = [];
+        }
+
+        $base = $url === '' ? 'https://example.com/' : (string) $url;
+        $query = http_build_query($args);
+
+        if ($query === '') {
+            return $base;
+        }
+
+        return $base . (strpos($base, '?') === false ? '?' : '&') . $query;
+    }
+}
+
+if (!function_exists('remove_query_arg')) {
+    function remove_query_arg($key, $url) {
+        unset($key);
+
+        return (string) $url;
+    }
+}
+
 if (!function_exists('wp_parse_url')) {
     function wp_parse_url($url) {
         if (!is_string($url) || $url === '') {
