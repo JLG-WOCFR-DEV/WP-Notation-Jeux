@@ -104,6 +104,19 @@ class MigrationScheduleTest extends TestCase
         $this->assertHookNotScheduled('jlg_process_v5_migration');
     }
 
+    public function testQueueAdditionalPostsForMigrationMergesAndSchedules(): void
+    {
+        $plugin = $this->bootPlugin();
+
+        update_option('jlg_migration_v5_queue', [300, 150]);
+
+        $plugin->queue_additional_posts_for_migration([150, 450, 275]);
+
+        $this->assertSame([150, 275, 300, 450], get_option('jlg_migration_v5_queue'));
+
+        $this->assertHookScheduled('jlg_process_v5_migration');
+    }
+
     public function testProcessMigrationBatchConsumesQueueAndFinalizes(): void
     {
         $plugin = $this->bootPlugin();

@@ -298,6 +298,8 @@ final class JLG_Plugin_De_Notation_Main {
             return $post_id > 0;
         }));
 
+        sort($queue);
+
         if (empty($queue)) {
             delete_option('jlg_migration_v5_queue');
 
