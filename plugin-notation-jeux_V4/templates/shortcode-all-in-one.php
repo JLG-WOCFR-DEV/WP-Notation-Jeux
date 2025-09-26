@@ -40,7 +40,7 @@ $data_attributes = sprintf(
         <?php endif; ?>
 
         <?php if (!empty($tagline_en)): ?>
-        <div class="jlg-aio-tagline" data-lang="en"<?php echo $has_dual_tagline ? ' style="display:none;"' : ''; ?>>
+        <div class="jlg-aio-tagline" data-lang="en"<?php echo $has_dual_tagline ? ' style="display:none;" hidden' : ''; ?>>
             <?php echo wp_kses_post($tagline_en); ?>
         </div>
         <?php endif; ?>
