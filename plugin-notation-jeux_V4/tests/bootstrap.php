@@ -4,21 +4,136 @@ if (!defined('ABSPATH')) {
     define('ABSPATH', __DIR__);
 }
 
-if (!defined('JLG_NOTATION_VERSION')) {
-    define('JLG_NOTATION_VERSION', 'test');
-}
-
-if (!defined('JLG_NOTATION_PLUGIN_URL')) {
-    define('JLG_NOTATION_PLUGIN_URL', 'https://example.com/plugin/');
-}
-
-if (!defined('JLG_NOTATION_PLUGIN_DIR')) {
-    define('JLG_NOTATION_PLUGIN_DIR', dirname(__DIR__) . '/');
-}
-
 if (!function_exists('add_action')) {
     function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
         // No-op stub for WordPress hook registration in tests.
+    }
+}
+
+if (!function_exists('register_activation_hook')) {
+    function register_activation_hook($file, $callback) {
+        unset($file, $callback);
+        // No-op stub for plugin activation hook registration in tests.
+    }
+}
+
+if (!function_exists('register_deactivation_hook')) {
+    function register_deactivation_hook($file, $callback) {
+        unset($file, $callback);
+        // No-op stub for plugin deactivation hook registration in tests.
+    }
+}
+
+if (!function_exists('load_plugin_textdomain')) {
+    function load_plugin_textdomain($domain, $deprecated = false, $plugin_rel_path = '') {
+        unset($domain, $deprecated, $plugin_rel_path);
+        // No-op stub used during tests.
+    }
+}
+
+if (!function_exists('plugin_dir_path')) {
+    function plugin_dir_path($file) {
+        return rtrim(dirname((string) $file), '/') . '/';
+    }
+}
+
+if (!function_exists('plugin_dir_url')) {
+    function plugin_dir_url($file) {
+        unset($file);
+
+        return 'https://example.com/wp-content/plugins/notation-jlg/';
+    }
+}
+
+if (!function_exists('plugin_basename')) {
+    function plugin_basename($file) {
+        $file = (string) $file;
+        $directory = basename(dirname($file));
+
+        return $directory . '/' . basename($file);
+    }
+}
+
+if (!function_exists('get_bloginfo')) {
+    function get_bloginfo($show = '', $filter = 'raw') {
+        unset($filter);
+
+        if ($show === 'version') {
+            return '6.4';
+        }
+
+        return 'Notation JLG';
+    }
+}
+
+if (!function_exists('is_admin')) {
+    function is_admin() {
+        if (isset($GLOBALS['jlg_test_is_admin'])) {
+            return (bool) $GLOBALS['jlg_test_is_admin'];
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('wp_doing_ajax')) {
+    function wp_doing_ajax() {
+        if (defined('DOING_AJAX')) {
+            return (bool) DOING_AJAX;
+        }
+
+        return !empty($GLOBALS['jlg_test_doing_ajax']);
+    }
+}
+
+if (!function_exists('flush_rewrite_rules')) {
+    function flush_rewrite_rules() {
+        // No-op stub for tests.
+    }
+}
+
+if (!defined('MINUTE_IN_SECONDS')) {
+    define('MINUTE_IN_SECONDS', 60);
+}
+
+/**
+ * WordPress Cron scheduling stubs used by the migration tests.
+ *
+ * Global state used by these helpers:
+ * - $GLOBALS['jlg_test_scheduled_events']: associative array of scheduled hooks.
+ */
+if (!function_exists('wp_schedule_single_event')) {
+    function wp_schedule_single_event($timestamp, $hook, $args = []) {
+        if (!isset($GLOBALS['jlg_test_scheduled_events'])) {
+            $GLOBALS['jlg_test_scheduled_events'] = [];
+        }
+
+        $GLOBALS['jlg_test_scheduled_events'][$hook] = [
+            'timestamp' => (int) $timestamp,
+            'args' => is_array($args) ? $args : [$args],
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('wp_next_scheduled')) {
+    function wp_next_scheduled($hook) {
+        if (!isset($GLOBALS['jlg_test_scheduled_events'][$hook])) {
+            return false;
+        }
+
+        return $GLOBALS['jlg_test_scheduled_events'][$hook]['timestamp'];
+    }
+}
+
+if (!function_exists('wp_clear_scheduled_hook')) {
+    function wp_clear_scheduled_hook($hook) {
+        if (isset($GLOBALS['jlg_test_scheduled_events'][$hook])) {
+            unset($GLOBALS['jlg_test_scheduled_events'][$hook]);
+        }
+
+        return true;
     }
 }
 
@@ -128,6 +243,13 @@ if (!function_exists('do_action')) {
         }
 
         $GLOBALS['jlg_test_actions'][] = [$hook, $args];
+    }
+}
+
+if (!function_exists('register_widget')) {
+    function register_widget($widget_class) {
+        unset($widget_class);
+        // No-op stub used during tests.
     }
 }
 
@@ -644,6 +766,34 @@ if (!class_exists('WP_Post')) {
     }
 }
 
+if (!class_exists('WP_Widget')) {
+    #[\AllowDynamicProperties]
+    class WP_Widget
+    {
+        public function __construct($id_base = '', $name = '', $widget_options = [], $control_options = [])
+        {
+            unset($id_base, $name, $widget_options, $control_options);
+        }
+
+        public function widget($args, $instance)
+        {
+            unset($args, $instance);
+        }
+
+        public function update($new_instance, $old_instance)
+        {
+            unset($old_instance);
+
+            return $new_instance;
+        }
+
+        public function form($instance)
+        {
+            unset($instance);
+        }
+    }
+}
+
 if (!function_exists('get_post')) {
     function get_post($post_id)
     {
@@ -656,6 +806,17 @@ if (!function_exists('get_post')) {
 if (!function_exists('get_post_meta')) {
     function get_post_meta($post_id, $key, $single = false)
     {
+        if (!isset($GLOBALS['jlg_test_meta_calls'])) {
+            $GLOBALS['jlg_test_meta_calls'] = [];
+        }
+
+        $GLOBALS['jlg_test_meta_calls'][] = [
+            'action'  => 'get',
+            'post_id' => $post_id,
+            'key'     => $key,
+            'single'  => $single,
+        ];
+
         $meta = $GLOBALS['jlg_test_meta'] ?? [];
 
         if (!isset($meta[$post_id][$key])) {
@@ -736,6 +897,7 @@ if (!function_exists('wp_send_json_success')) {
     }
 }
 
+require_once __DIR__ . '/../plugin-notation-jeux.php';
 require_once __DIR__ . '/../includes/class-jlg-helpers.php';
 require_once __DIR__ . '/../includes/admin/class-jlg-admin-settings.php';
 require_once __DIR__ . '/../includes/admin/class-jlg-admin-platforms.php';
