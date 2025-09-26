@@ -158,4 +158,25 @@ class AdminPlatformsTest extends TestCase
 
         $this->assertSame(['Steam Deck'], $sanitized);
     }
+
+    public function test_sanitize_platforms_filters_obsolete_defaults_when_manager_unavailable(): void
+    {
+        $instanceProperty = new ReflectionProperty(JLG_Admin_Platforms::class, 'instance');
+        $instanceProperty->setAccessible(true);
+        $originalInstance = $instanceProperty->getValue();
+
+        try {
+            $instanceProperty->setValue(null, false);
+
+            $sanitized = JLG_Validator::sanitize_platforms([
+                'Steam Deck',
+                'Nintendo Switch 2',
+                'Invalid Console',
+            ]);
+        } finally {
+            $instanceProperty->setValue(null, $originalInstance);
+        }
+
+        $this->assertSame(['Steam Deck'], $sanitized);
+    }
 }
