@@ -28,6 +28,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
         ];
         $GLOBALS['jlg_test_options'] = [];
         $GLOBALS['jlg_test_current_post_id'] = 0;
+        $GLOBALS['jlg_test_filters'] = [];
 
         JLG_Helpers::flush_plugin_options_cache();
     }
@@ -41,7 +42,8 @@ class ShortcodeAllInOneRenderTest extends TestCase
             $GLOBALS['jlg_test_meta'],
             $GLOBALS['jlg_test_styles'],
             $GLOBALS['jlg_test_options'],
-            $GLOBALS['jlg_test_current_post_id']
+            $GLOBALS['jlg_test_current_post_id'],
+            $GLOBALS['jlg_test_filters']
         );
     }
 
@@ -107,11 +109,47 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $this->assertMatchesRegularExpression('/--jlg-aio-circle-shadow: [^;]+rgba\(/i', $output);
     }
 
-    private function seedPost(int $post_id): void
+    public function test_render_supports_custom_type_from_filter(): void
+    {
+        add_filter('jlg_rated_post_types', static function ($types) {
+            $types[] = 'jlg_review';
+
+            return $types;
+        });
+
+        $post_id = 2003;
+        $this->seedPost($post_id, 'jlg_review');
+        $this->setPluginOptions([
+            'score_layout'      => 'text',
+            'visual_theme'      => 'dark',
+            'score_gradient_1'  => '#336699',
+            'score_gradient_2'  => '#9933cc',
+            'color_high'        => '#22c55e',
+            'color_low'         => '#ef4444',
+            'tagline_font_size' => 18,
+            'enable_animations' => 0,
+        ]);
+
+        $shortcode = new JLG_Shortcode_All_In_One();
+
+        try {
+            $output = $shortcode->render([
+                'post_id' => (string) $post_id,
+            ]);
+
+            $this->assertNotSame('', $output);
+            $this->assertStringContainsString("Meilleur jeu de l'année", $output);
+            $this->assertStringContainsString('Univers immersif', $output);
+        } finally {
+            unset($GLOBALS['jlg_test_filters']['jlg_rated_post_types']);
+        }
+    }
+
+    private function seedPost(int $post_id, string $post_type = 'post'): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
             'ID'          => $post_id,
-            'post_type'   => 'post',
+            'post_type'   => $post_type,
             'post_status' => 'publish',
         ]);
 
