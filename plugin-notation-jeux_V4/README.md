@@ -52,7 +52,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 
 - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`. Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
 - `[bloc_notation_jeu]` - Bloc de notation principal
-- `[jlg_fiche_technique]` - Fiche technique du jeu
+- `[jlg_fiche_technique]` - Fiche technique du jeu. Attributs : `post_id` (optionnel, ID d'un test publié à afficher, utilise l'article courant sinon), `champs` (liste de champs séparés par des virgules) et `titre`.
 - `[tagline_notation_jlg]` - Phrase d'accroche bilingue
 - `[jlg_points_forts_faibles]` - Points positifs et négatifs
 - `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
