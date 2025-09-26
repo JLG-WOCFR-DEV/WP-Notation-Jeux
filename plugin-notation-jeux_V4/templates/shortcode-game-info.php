@@ -9,20 +9,16 @@ if (!defined('ABSPATH')) exit;
             <dt><?php echo esc_html($data['label']); ?></dt>
             <dd>
                 <?php
-                // Traitement spécial pour les plateformes
-                if ($key === 'plateformes' && is_array($data['value'])) {
-                    echo '<div class="platforms-list">';
-                    foreach($data['value'] as $p) {
-                        echo '<span>' . esc_html($p) . '</span>';
+                if (is_array($data['value'])) {
+                    $wrapper_class = $key === 'plateformes' ? 'platforms-list' : 'jlg-game-info-list';
+                    echo '<div class="' . esc_attr($wrapper_class) . '">';
+                    foreach ($data['value'] as $item) {
+                        echo '<span>' . esc_html($item) . '</span>';
                     }
                     echo '</div>';
-                } 
-                // Traitement spécial pour la date
-                elseif ($key === 'date_sortie') {
+                } elseif ($key === 'date_sortie' && $data['value'] !== '') {
                     echo esc_html(date_i18n(get_option('date_format'), strtotime($data['value'])));
-                } 
-                // Affichage standard pour les autres champs
-                else {
+                } else {
                     echo esc_html($data['value']);
                 }
                 ?>

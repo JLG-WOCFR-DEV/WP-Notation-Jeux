@@ -8,10 +8,6 @@ class JLG_Shortcode_Game_Info {
     }
 
     public function render($atts, $content = '', $shortcode_tag = '') {
-        if (!is_singular('post')) {
-            return '';
-        }
-
         // Définition de tous les champs possibles avec leur libellé
         $all_possible_fields = [
             'developpeur'  => 'Développeur',
@@ -28,21 +24,24 @@ class JLG_Shortcode_Game_Info {
         $atts = shortcode_atts([
             'titre'  => 'Fiche Technique',
             'champs' => $default_fields_order,
+            'post_id' => '',
         ], $atts, 'jlg_fiche_technique');
 
-        $post_id = get_the_ID();
-        
+        $post_id = $this->resolve_target_post_id($atts['post_id']);
+        if (!$post_id) {
+            return '';
+        }
+
         // On transforme la liste de l'attribut en tableau
         $requested_fields = array_map('trim', explode(',', $atts['champs']));
-        
+
         $data_to_display = [];
         foreach ($requested_fields as $field_key) {
             // On vérifie si le champ demandé est valide
             if (array_key_exists($field_key, $all_possible_fields)) {
-                $meta_value = get_post_meta($post_id, '_jlg_' . $field_key, true);
-                
-                // On n'ajoute le champ que s'il a une valeur
-                if (!empty($meta_value)) {
+                $meta_value = $this->sanitize_meta_value(get_post_meta($post_id, '_jlg_' . $field_key, true));
+
+                if ($this->has_displayable_value($meta_value)) {
                     $data_to_display[$field_key] = [
                         'label' => $all_possible_fields[$field_key],
                         'value' => $meta_value,
@@ -61,5 +60,76 @@ class JLG_Shortcode_Game_Info {
             'titre'             => sanitize_text_field($atts['titre']),
             'champs_a_afficher' => $data_to_display,
         ]);
+    }
+
+    private function resolve_target_post_id($post_id_attribute) {
+        $post_id = absint($post_id_attribute);
+        if ($post_id && $this->is_valid_target_post($post_id)) {
+            return $post_id;
+        }
+
+        if ($post_id_attribute !== '' && $post_id === 0) {
+            return 0;
+        }
+
+        $current_post_id = get_the_ID();
+        if (!$current_post_id) {
+            return 0;
+        }
+
+        if (function_exists('is_singular') && !is_singular('post')) {
+            return 0;
+        }
+
+        return $this->is_valid_target_post($current_post_id) ? $current_post_id : 0;
+    }
+
+    private function is_valid_target_post($post_id) {
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post) {
+            return false;
+        }
+
+        if (($post->post_type ?? '') !== 'post') {
+            return false;
+        }
+
+        if (($post->post_status ?? '') !== 'publish') {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function sanitize_meta_value($meta_value) {
+        if (is_array($meta_value)) {
+            $sanitized = array_filter(array_map(static function ($value) {
+                if (is_scalar($value) || (is_object($value) && method_exists($value, '__toString'))) {
+                    $clean_value = sanitize_text_field((string) $value);
+
+                    return wp_strip_all_tags($clean_value);
+                }
+
+                return '';
+            }, $meta_value));
+
+            return array_values(array_filter($sanitized, static function ($value) {
+                return $value !== '';
+            }));
+        }
+
+        if (is_scalar($meta_value) || (is_object($meta_value) && method_exists($meta_value, '__toString'))) {
+            return wp_strip_all_tags(sanitize_text_field((string) $meta_value));
+        }
+
+        return '';
+    }
+
+    private function has_displayable_value($value) {
+        if (is_array($value)) {
+            return !empty($value);
+        }
+
+        return $value !== '';
     }
 }

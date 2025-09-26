@@ -12,6 +12,10 @@ if (!defined('JLG_NOTATION_PLUGIN_URL')) {
     define('JLG_NOTATION_PLUGIN_URL', 'https://example.com/plugin/');
 }
 
+if (!defined('JLG_NOTATION_PLUGIN_DIR')) {
+    define('JLG_NOTATION_PLUGIN_DIR', dirname(__DIR__) . '/');
+}
+
 if (!function_exists('add_action')) {
     function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
         // No-op stub for WordPress hook registration in tests.
@@ -36,7 +40,31 @@ if (!function_exists('shortcode_atts')) {
 
 if (!function_exists('get_the_ID')) {
     function get_the_ID() {
-        return 0;
+        return isset($GLOBALS['jlg_test_current_post_id']) ? (int) $GLOBALS['jlg_test_current_post_id'] : 0;
+    }
+}
+
+if (!function_exists('is_singular')) {
+    function is_singular($post_types = '') {
+        $post_id = get_the_ID();
+        if ($post_id <= 0) {
+            return false;
+        }
+
+        $post = get_post($post_id);
+        if (!$post instanceof WP_Post) {
+            return false;
+        }
+
+        if ($post_types === '') {
+            return true;
+        }
+
+        if (is_array($post_types)) {
+            return in_array($post->post_type ?? '', $post_types, true);
+        }
+
+        return ($post->post_type ?? '') === $post_types;
     }
 }
 
@@ -85,6 +113,14 @@ if (!function_exists('apply_filters')) {
     }
 }
 
+if (!function_exists('did_action')) {
+    function did_action($hook) {
+        unset($hook);
+
+        return 0;
+    }
+}
+
 if (!function_exists('do_action')) {
     function do_action($hook, ...$args) {
         if (!isset($GLOBALS['jlg_test_actions'])) {
@@ -106,6 +142,24 @@ if (!function_exists('get_option')) {
         $options = $GLOBALS['jlg_test_options'] ?? [];
 
         return $options[$option] ?? $default;
+    }
+}
+
+if (!function_exists('date_i18n')) {
+    function date_i18n($format, $timestamp) {
+        if (!is_int($timestamp)) {
+            $timestamp = is_numeric($timestamp) ? (int) $timestamp : strtotime((string) $timestamp);
+        }
+
+        if ($timestamp === false) {
+            return '';
+        }
+
+        if (!is_string($format) || $format === '') {
+            $format = 'F j, Y';
+        }
+
+        return date($format, $timestamp);
     }
 }
 
@@ -314,6 +368,16 @@ if (!function_exists('sanitize_text_field')) {
         $filtered = filter_var($str, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW);
 
         return is_string($filtered) ? trim($filtered) : '';
+    }
+}
+
+if (!function_exists('absint')) {
+    function absint($maybeint) {
+        if (is_numeric($maybeint)) {
+            return (int) abs($maybeint);
+        }
+
+        return 0;
     }
 }
 
