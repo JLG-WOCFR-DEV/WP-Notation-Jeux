@@ -1,0 +1,147 @@
+<?php
+
+use PHPUnit\Framework\TestCase;
+
+require_once __DIR__ . '/../includes/class-jlg-helpers.php';
+require_once __DIR__ . '/../includes/class-jlg-frontend.php';
+require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-all-in-one.php';
+
+if (!function_exists('esc_attr__')) {
+    function esc_attr__($text, $domain = 'default') {
+        unset($domain);
+
+        return esc_attr($text);
+    }
+}
+
+class ShortcodeAllInOneRenderTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $GLOBALS['jlg_test_posts'] = [];
+        $GLOBALS['jlg_test_meta'] = [];
+        $GLOBALS['jlg_test_styles'] = [
+            'registered' => [],
+            'enqueued'   => [],
+        ];
+        $GLOBALS['jlg_test_options'] = [];
+        $GLOBALS['jlg_test_current_post_id'] = 0;
+
+        JLG_Helpers::flush_plugin_options_cache();
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        unset(
+            $GLOBALS['jlg_test_posts'],
+            $GLOBALS['jlg_test_meta'],
+            $GLOBALS['jlg_test_styles'],
+            $GLOBALS['jlg_test_options'],
+            $GLOBALS['jlg_test_current_post_id']
+        );
+    }
+
+    public function test_render_outputs_dual_taglines_and_inline_script(): void
+    {
+        $post_id = 2001;
+        $this->seedPost($post_id);
+        $this->setPluginOptions([
+            'score_layout'      => 'text',
+            'visual_theme'      => 'dark',
+            'score_gradient_1'  => '#336699',
+            'score_gradient_2'  => '#9933cc',
+            'color_high'        => '#22c55e',
+            'color_low'         => '#ef4444',
+            'tagline_font_size' => 18,
+            'enable_animations' => 0,
+        ]);
+
+        $shortcode = new JLG_Shortcode_All_In_One();
+        $output = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertNotSame('', $output);
+        $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag active"[^>]+data-lang="fr"/i', $output);
+        $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag"[^>]+data-lang="en"/i', $output);
+        $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr">/i', $output);
+        $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="en"[^>]*>/', $output);
+        $this->assertStringContainsString("document.addEventListener('DOMContentLoaded'", $output);
+        $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-aio-score-gradient: [^;]+;?/i', $output);
+    }
+
+    public function test_circle_layout_renders_border_and_glow_variables(): void
+    {
+        $post_id = 2002;
+        $this->seedPost($post_id);
+        $this->setPluginOptions([
+            'score_layout'             => 'circle',
+            'visual_theme'             => 'dark',
+            'score_gradient_1'         => '#112233',
+            'score_gradient_2'         => '#445566',
+            'color_high'               => '#22c55e',
+            'color_low'                => '#ef4444',
+            'circle_border_enabled'    => 1,
+            'circle_border_width'      => 4,
+            'circle_border_color'      => '#123456',
+            'circle_glow_enabled'      => 1,
+            'circle_glow_color_mode'   => 'custom',
+            'circle_glow_custom_color' => '#abcdef',
+            'circle_glow_intensity'    => 12,
+            'circle_glow_pulse'        => 1,
+            'circle_glow_speed'        => 1.5,
+        ]);
+
+        $shortcode = new JLG_Shortcode_All_In_One();
+        $output = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertNotSame('', $output);
+        $this->assertMatchesRegularExpression('/--jlg-aio-circle-border: 4px solid #123456/i', $output);
+        $this->assertMatchesRegularExpression('/--jlg-aio-circle-glow-color: #abcdef/i', $output);
+        $this->assertMatchesRegularExpression('/--jlg-aio-circle-shadow: [^;]+rgba\(/i', $output);
+    }
+
+    private function seedPost(int $post_id): void
+    {
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'          => $post_id,
+            'post_type'   => 'post',
+            'post_status' => 'publish',
+        ]);
+
+        $GLOBALS['jlg_test_meta'][$post_id] = [
+            '_jlg_tagline_fr'      => 'Meilleur jeu de l\'année',
+            '_jlg_tagline_en'      => 'Game of the year contender',
+            '_jlg_points_forts'    => "Univers immersif\nCombats dynamiques",
+            '_jlg_points_faibles'  => "Quêtes répétitives\nQuelques bugs",
+            '_note_cat1'           => 8.5,
+            '_note_cat2'           => 7.0,
+            '_note_cat3'           => 9.0,
+            '_note_cat4'           => 8.0,
+        ];
+    }
+
+    private function setPluginOptions(array $overrides): void
+    {
+        $defaults = JLG_Helpers::get_default_settings();
+        $base = array_merge($defaults, [
+            'label_cat1' => 'Gameplay',
+            'label_cat2' => 'Graphismes',
+            'label_cat3' => 'Bande-son',
+            'label_cat4' => 'Durée de vie',
+            'label_cat5' => 'Scénario',
+            'label_cat6' => 'Originalité',
+        ]);
+
+        $options = array_merge($base, $overrides);
+
+        $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $options;
+        JLG_Helpers::flush_plugin_options_cache();
+    }
+}
