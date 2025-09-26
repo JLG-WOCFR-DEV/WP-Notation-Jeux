@@ -299,6 +299,12 @@ class JLG_Shortcode_All_In_One {
         $tag = $shortcode_tag !== '' ? $shortcode_tag : 'jlg_bloc_complet';
         JLG_Frontend::mark_shortcode_rendered($tag);
 
+        $animation_threshold = apply_filters('jlg_all_in_one_animation_threshold', 0.2);
+        if (!is_numeric($animation_threshold)) {
+            $animation_threshold = 0.2;
+        }
+        $animation_threshold = max(0.0, min(1.0, floatval($animation_threshold)));
+
         return JLG_Frontend::get_template_html('shortcode-all-in-one', [
             'options' => $options,
             'average_score' => $average_score,
@@ -313,6 +319,7 @@ class JLG_Shortcode_All_In_One {
             'css_variables' => $css_variables_string,
             'score_layout' => $score_layout,
             'animations_enabled' => !empty($options['enable_animations']),
+            'animation_threshold' => $animation_threshold,
         ]);
     }
 

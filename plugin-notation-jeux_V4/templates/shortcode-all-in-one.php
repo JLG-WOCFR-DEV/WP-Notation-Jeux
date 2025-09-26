@@ -11,9 +11,10 @@ $has_dual_tagline = (!empty($tagline_fr) && !empty($tagline_en));
 $show_rating = ($atts['afficher_notation'] === 'oui' && $average_score !== null);
 $show_points = ($atts['afficher_points'] === 'oui' && (!empty($pros_list) || !empty($cons_list)));
 $data_attributes = sprintf(
-    ' data-animations-enabled="%s" data-has-multiple-taglines="%s"',
+    ' data-animations-enabled="%s" data-has-multiple-taglines="%s" data-animation-threshold="%s"',
     esc_attr($animations_enabled ? 'true' : 'false'),
-    esc_attr($has_dual_tagline ? 'true' : 'false')
+    esc_attr($has_dual_tagline ? 'true' : 'false'),
+    esc_attr($animation_threshold)
 );
 ?>
 

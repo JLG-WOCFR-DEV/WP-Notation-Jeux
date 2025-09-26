@@ -1455,6 +1455,7 @@ class JLG_Frontend {
                 'css_variables'      => '',
                 'score_layout'       => 'text',
                 'animations_enabled' => false,
+                'animation_threshold' => 0.2,
                 'paged'              => 1,
                 'orderby'            => '',
                 'order'              => '',
