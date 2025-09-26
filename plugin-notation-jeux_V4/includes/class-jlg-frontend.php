@@ -1244,44 +1244,66 @@ class JLG_Frontend {
     }
 
     private function sanitize_internal_url($url) {
+        $canonical_home = home_url('/');
+
         if (!is_string($url)) {
-            return '';
+            return $canonical_home;
         }
 
         $url = trim($url);
         if ($url === '') {
-            return '';
+            return $canonical_home;
         }
 
         $sanitized_url = esc_url_raw($url);
         if ($sanitized_url === '') {
-            return '';
+            return $canonical_home;
         }
 
         $parsed_url = wp_parse_url($sanitized_url);
         if ($parsed_url === false) {
-            return '';
+            return $canonical_home;
         }
 
         if (!empty($parsed_url['scheme']) && !in_array($parsed_url['scheme'], ['http', 'https'], true)) {
-            return '';
+            return $canonical_home;
         }
 
-        $site_url = wp_parse_url(home_url('/'));
+        $site_url = wp_parse_url($canonical_home);
         $site_host = is_array($site_url) && isset($site_url['host']) ? strtolower($site_url['host']) : '';
         $site_scheme = is_array($site_url) && isset($site_url['scheme']) ? $site_url['scheme'] : '';
+
+        $normalize_host = static function ($host) {
+            $host = strtolower((string) $host);
+            if ($host === '') {
+                return '';
+            }
+
+            return preg_replace('/^www\./', '', $host);
+        };
 
         $target_host = isset($parsed_url['host']) ? strtolower($parsed_url['host']) : '';
 
         if ($target_host === '') {
-            return home_url('/');
+            $target_host = $site_host;
         }
 
-        if ($site_host !== '' && $target_host !== $site_host) {
-            return '';
+        $normalized_site_host = $normalize_host($site_host);
+        $normalized_target_host = $normalize_host($target_host);
+
+        if ($normalized_site_host === '' || $normalized_target_host === '') {
+            return $canonical_home;
         }
 
-        $scheme = $parsed_url['scheme'] ?? $site_scheme;
+        if ($normalized_target_host !== $normalized_site_host) {
+            return $canonical_home;
+        }
+
+        $scheme = $site_scheme !== '' ? $site_scheme : ($parsed_url['scheme'] ?? '');
+        if ($scheme === '' && isset($parsed_url['scheme'])) {
+            $scheme = $parsed_url['scheme'];
+        }
+
         $path = $parsed_url['path'] ?? '';
         if ($path === '') {
             $path = '/';
@@ -1293,7 +1315,7 @@ class JLG_Frontend {
             $normalized_url .= $scheme . '://';
         }
 
-        $normalized_url .= $target_host;
+        $normalized_url .= $site_host;
 
         if (!empty($parsed_url['port'])) {
             $normalized_url .= ':' . intval($parsed_url['port']);
