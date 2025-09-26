@@ -16,6 +16,163 @@ if (!defined('JLG_NOTATION_PLUGIN_DIR')) {
     define('JLG_NOTATION_PLUGIN_DIR', dirname(__DIR__) . '/');
 }
 
+if (!defined('MINUTE_IN_SECONDS')) {
+    define('MINUTE_IN_SECONDS', 60);
+}
+
+if (!function_exists('plugin_dir_path')) {
+    /**
+     * Lightweight replacement for plugin_dir_path used during tests.
+     *
+     * Ensures plugin bootstrap code can resolve filesystem paths without
+     * requiring the full WordPress stack.
+     */
+    function plugin_dir_path($file) {
+        return rtrim(dirname((string) $file), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    }
+}
+
+if (!function_exists('plugin_dir_url')) {
+    /**
+     * Minimal plugin_dir_url stub that mirrors WordPress behaviour closely
+     * enough for unit tests that only need a deterministic URL string.
+     */
+    function plugin_dir_url($file) {
+        $basename = trim(basename((string) $file));
+
+        return 'https://example.com/wp-content/plugins/' . ($basename !== '' ? $basename . '/' : '');
+    }
+}
+
+if (!function_exists('plugin_basename')) {
+    /**
+     * Provide plugin_basename so activation hooks can register without errors.
+     */
+    function plugin_basename($file) {
+        return trim(basename((string) $file));
+    }
+}
+
+if (!function_exists('register_activation_hook')) {
+    /**
+     * Activation hooks are no-ops in the isolated test environment.
+     */
+    function register_activation_hook($file, $callback) {
+        unset($file, $callback);
+    }
+}
+
+if (!function_exists('register_deactivation_hook')) {
+    /**
+     * Deactivation hooks are safely ignored during unit tests.
+     */
+    function register_deactivation_hook($file, $callback) {
+        unset($file, $callback);
+    }
+}
+
+if (!function_exists('flush_rewrite_rules')) {
+    /**
+     * Flush rewrite rules stub used to satisfy plugin activation logic.
+     */
+    function flush_rewrite_rules() {
+    }
+}
+
+if (!function_exists('load_plugin_textdomain')) {
+    /**
+     * Text domain loading is skipped in tests.
+     */
+    function load_plugin_textdomain($domain, $deprecated = false, $path = '') {
+        unset($domain, $deprecated, $path);
+    }
+}
+
+if (!function_exists('get_bloginfo')) {
+    /**
+     * Simplified get_bloginfo stub returning deterministic values for tests.
+     */
+    function get_bloginfo($show = '', $filter = 'raw') {
+        unset($filter);
+
+        if ($show === 'version') {
+            return '6.4';
+        }
+
+        return 'Notation Test Blog';
+    }
+}
+
+if (!function_exists('is_admin')) {
+    /**
+     * Allow tests to toggle admin context via $GLOBALS['jlg_test_is_admin'].
+     */
+    function is_admin() {
+        return !empty($GLOBALS['jlg_test_is_admin']);
+    }
+}
+
+if (!function_exists('wp_next_scheduled')) {
+    /**
+     * Expose scheduled events for assertions via $GLOBALS['jlg_test_scheduled_events'].
+     * Reset the global between tests to keep scenarios isolated.
+     */
+    function wp_next_scheduled($hook) {
+        $events = $GLOBALS['jlg_test_scheduled_events'] ?? [];
+
+        foreach ($events as $event) {
+            if (($event['hook'] ?? '') === $hook) {
+                return $event['timestamp'];
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('wp_schedule_single_event')) {
+    /**
+     * Capture single-event schedules so tests can validate cron behaviour.
+     */
+    function wp_schedule_single_event($timestamp, $hook, $args = []) {
+        if (!isset($GLOBALS['jlg_test_scheduled_events'])) {
+            $GLOBALS['jlg_test_scheduled_events'] = [];
+        }
+
+        $GLOBALS['jlg_test_scheduled_events'][] = [
+            'timestamp' => (int) $timestamp,
+            'hook' => (string) $hook,
+            'args' => is_array($args) ? $args : [$args],
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('wp_clear_scheduled_hook')) {
+    /**
+     * Remove queued hooks from the shared test registry.
+     */
+    function wp_clear_scheduled_hook($hook) {
+        $events = $GLOBALS['jlg_test_scheduled_events'] ?? [];
+        $retained = [];
+        $removed = 0;
+
+        foreach ($events as $event) {
+            if (($event['hook'] ?? '') === $hook) {
+                $removed++;
+                continue;
+            }
+
+            $retained[] = $event;
+        }
+
+        $GLOBALS['jlg_test_scheduled_events'] = $retained;
+
+        return $removed;
+    }
+}
+
 if (!function_exists('add_action')) {
     function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
         // No-op stub for WordPress hook registration in tests.
@@ -869,6 +1026,37 @@ if (!function_exists('wp_send_json_success')) {
     function wp_send_json_success($data = null, $status_code = null)
     {
         throw new WP_Send_Json_Exception($data, $status_code, true);
+    }
+}
+
+if (!class_exists('WP_Widget')) {
+    /**
+     * Basic stand-in for WP_Widget so widget classes can load in tests.
+     */
+    #[\AllowDynamicProperties]
+    class WP_Widget
+    {
+        public function __construct($id_base = '', $name = '', $widget_options = [], $control_options = [])
+        {
+            unset($id_base, $name, $widget_options, $control_options);
+        }
+
+        public function widget($args, $instance)
+        {
+            unset($args, $instance);
+        }
+
+        public function update($new_instance, $old_instance)
+        {
+            unset($old_instance);
+
+            return $new_instance;
+        }
+
+        public function form($instance)
+        {
+            unset($instance);
+        }
     }
 }
 
