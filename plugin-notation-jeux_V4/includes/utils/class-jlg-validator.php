@@ -84,6 +84,37 @@ class JLG_Validator {
             }
         }
 
+        if (empty($allowed_platforms) && class_exists('JLG_Helpers') && method_exists('JLG_Helpers', 'get_default_platform_definitions')) {
+            $default_definitions = [];
+
+            if (is_callable(['JLG_Helpers', 'get_default_platform_definitions'])) {
+                $default_definitions = JLG_Helpers::get_default_platform_definitions();
+            } else {
+                try {
+                    $reflection = new ReflectionMethod('JLG_Helpers', 'get_default_platform_definitions');
+
+                    if (!$reflection->isPublic()) {
+                        $reflection->setAccessible(true);
+                    }
+
+                    $default_definitions = $reflection->invoke(null);
+                } catch (ReflectionException $exception) {
+                    $default_definitions = [];
+                }
+            }
+
+            if (is_array($default_definitions)) {
+                $allowed_platforms = array_filter(
+                    array_map('sanitize_text_field', array_column($default_definitions, 'name')),
+                    static function ($name) {
+                        return $name !== '';
+                    }
+                );
+
+                $allowed_platforms = array_values(array_unique($allowed_platforms));
+            }
+        }
+
         if (empty($allowed_platforms)) {
             $allowed_platforms = array_map('sanitize_text_field', [
                 'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch',
