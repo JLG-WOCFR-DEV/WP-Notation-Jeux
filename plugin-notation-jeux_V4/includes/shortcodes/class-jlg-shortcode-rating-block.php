@@ -19,7 +19,9 @@ class JLG_Shortcode_Rating_Block {
         }
 
         $post = get_post($post_id);
-        if (!$post instanceof WP_Post || ($post->post_type ?? '') !== 'post') {
+        $allowed_types = JLG_Helpers::get_allowed_post_types();
+
+        if (!$post instanceof WP_Post || !in_array($post->post_type ?? '', $allowed_types, true)) {
             return '';
         }
 
