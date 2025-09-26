@@ -138,4 +138,24 @@ class AdminPlatformsTest extends TestCase
         $this->assertArrayHasKey('mega-drive', $platforms);
         $this->assertFalse($platforms['mega-drive']['custom']);
     }
+
+    public function test_sanitize_platforms_falls_back_to_helper_defaults_when_singleton_missing(): void
+    {
+        $instanceProperty = new ReflectionProperty(JLG_Admin_Platforms::class, 'instance');
+        $instanceProperty->setAccessible(true);
+        $originalInstance = $instanceProperty->getValue();
+
+        try {
+            $instanceProperty->setValue(null, false);
+
+            $sanitized = JLG_Validator::sanitize_platforms([
+                'Steam Deck',
+                'Invalid Console',
+            ]);
+        } finally {
+            $instanceProperty->setValue(null, $originalInstance);
+        }
+
+        $this->assertSame(['Steam Deck'], $sanitized);
+    }
 }

@@ -69,11 +69,26 @@ class JLG_Validator {
             }
         }
 
+        if (empty($allowed_platforms) && class_exists('JLG_Helpers') && method_exists('JLG_Helpers', 'get_registered_platform_labels')) {
+            $default_definitions = JLG_Helpers::get_registered_platform_labels();
+
+            if (is_array($default_definitions)) {
+                $allowed_platforms = array_filter(
+                    array_map('sanitize_text_field', array_column($default_definitions, 'name')),
+                    static function ($name) {
+                        return $name !== '';
+                    }
+                );
+
+                $allowed_platforms = array_values(array_unique($allowed_platforms));
+            }
+        }
+
         if (empty($allowed_platforms)) {
-            $allowed_platforms = [
-                'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch 2',
-                'Nintendo Switch', 'PlayStation 4', 'Xbox One'
-            ];
+            $allowed_platforms = array_map('sanitize_text_field', [
+                'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch',
+                'PlayStation 4', 'Xbox One', 'Steam Deck'
+            ]);
         }
 
         $sanitized = array_map('sanitize_text_field', $platforms);
