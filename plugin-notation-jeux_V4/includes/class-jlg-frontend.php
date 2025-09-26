@@ -360,16 +360,13 @@ class JLG_Frontend {
 
         wp_add_inline_style('jlg-frontend', $inline_css);
 
-        wp_enqueue_style(
-            'jlg-game-explorer',
-            JLG_NOTATION_PLUGIN_URL . 'assets/css/game-explorer.css',
-            ['jlg-frontend'],
-            JLG_NOTATION_VERSION
-        );
-
-        $game_explorer_css = $this->build_game_explorer_css($options, $palette);
-        if (!empty($game_explorer_css)) {
-            wp_add_inline_style('jlg-game-explorer', $game_explorer_css);
+        if (!wp_style_is('jlg-game-explorer', 'registered')) {
+            wp_register_style(
+                'jlg-game-explorer',
+                JLG_NOTATION_PLUGIN_URL . 'assets/css/game-explorer.css',
+                ['jlg-frontend'],
+                JLG_NOTATION_VERSION
+            );
         }
 
         $queried_object = isset($queried_object) ? $queried_object : get_queried_object();
@@ -391,6 +388,19 @@ class JLG_Frontend {
 
         $should_enqueue_summary_script = $summary_shortcode_used || $summary_ajax;
         $should_enqueue_game_explorer_script = $game_explorer_shortcode_used || $game_explorer_ajax;
+        $should_enqueue_game_explorer_assets = $should_enqueue_game_explorer_script || $game_explorer_ajax;
+
+        if ($should_enqueue_game_explorer_assets) {
+            wp_enqueue_style('jlg-game-explorer');
+
+            if (wp_style_is('jlg-game-explorer', 'enqueued')) {
+                $game_explorer_css = $this->build_game_explorer_css($options, $palette);
+
+                if (!empty($game_explorer_css)) {
+                    wp_add_inline_style('jlg-game-explorer', $game_explorer_css);
+                }
+            }
+        }
 
         // Script pour la notation utilisateur
         if (!empty($options['user_rating_enabled'])) {
