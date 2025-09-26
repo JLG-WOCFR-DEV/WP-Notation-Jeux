@@ -10,9 +10,14 @@ $has_tagline = ($atts['afficher_tagline'] === 'oui' && (!empty($tagline_fr) || !
 $has_dual_tagline = (!empty($tagline_fr) && !empty($tagline_en));
 $show_rating = ($atts['afficher_notation'] === 'oui' && $average_score !== null);
 $show_points = ($atts['afficher_points'] === 'oui' && (!empty($pros_list) || !empty($cons_list)));
+$data_attributes = sprintf(
+    ' data-animations-enabled="%s" data-has-multiple-taglines="%s"',
+    esc_attr($animations_enabled ? 'true' : 'false'),
+    esc_attr($has_dual_tagline ? 'true' : 'false')
+);
 ?>
 
-<div class="<?php echo esc_attr($block_classes); ?>"<?php echo $style_attribute; ?>>
+<div class="<?php echo esc_attr($block_classes); ?>"<?php echo $style_attribute; ?><?php echo $data_attributes; ?>>
     <?php if ($has_tagline): ?>
     <div class="jlg-aio-header">
         <?php if ($has_dual_tagline): ?>
@@ -106,52 +111,3 @@ $show_points = ($atts['afficher_points'] === 'oui' && (!empty($pros_list) || !em
     </div>
     <?php endif; ?>
 </div>
-
-<?php if (!empty($tagline_fr) && !empty($tagline_en)): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const allFlags = document.querySelectorAll('.jlg-aio-flag');
-
-    allFlags.forEach(flag => {
-        const block = flag.closest('.jlg-all-in-one-block');
-        if (!block) {
-            return;
-        }
-
-        const blockFlags = block.querySelectorAll('.jlg-aio-flag');
-        const blockTaglines = block.querySelectorAll('.jlg-aio-tagline');
-
-        flag.addEventListener('click', function() {
-            const selectedLang = this.dataset.lang;
-
-            blockFlags.forEach(f => f.classList.remove('active'));
-            this.classList.add('active');
-
-            blockTaglines.forEach(t => {
-                if (t.dataset.lang === selectedLang) {
-                    t.style.display = 'block';
-                } else {
-                    t.style.display = 'none';
-                }
-            });
-        });
-    });
-
-    <?php if ($animations_enabled): ?>
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, {
-        threshold: 0.2
-    });
-
-    const animatedBlocks = document.querySelectorAll('.jlg-all-in-one-block.animate-in');
-    animatedBlocks.forEach(block => observer.observe(block));
-    <?php endif; ?>
-});
-</script>
-<?php endif; ?>

@@ -36,6 +36,16 @@ class JLG_Shortcode_All_In_One {
                 JLG_NOTATION_VERSION
             );
         }
+
+        if (!wp_script_is('jlg-all-in-one', 'registered')) {
+            wp_register_script(
+                'jlg-all-in-one',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-all-in-one.js',
+                [],
+                JLG_NOTATION_VERSION,
+                true
+            );
+        }
     }
 
     public function render($atts, $content = '', $shortcode_tag = '') {
@@ -139,10 +149,11 @@ class JLG_Shortcode_All_In_One {
         $cons_list = !empty($cons) ? array_filter(array_map('trim', explode("\n", $cons))) : [];
 
         // Enregistrer/charger la feuille de style
-        if (!wp_style_is($this->style_handle, 'registered')) {
+        if (!wp_style_is($this->style_handle, 'registered') || !wp_script_is('jlg-all-in-one', 'registered')) {
             $this->register_assets();
         }
         wp_enqueue_style($this->style_handle);
+        wp_enqueue_script('jlg-all-in-one');
 
         $tagline_font_size = isset($options['tagline_font_size']) ? absint($options['tagline_font_size']) : 16;
         if ($tagline_font_size <= 0) {
