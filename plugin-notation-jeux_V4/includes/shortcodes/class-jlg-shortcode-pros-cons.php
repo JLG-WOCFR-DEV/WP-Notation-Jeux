@@ -8,8 +8,10 @@ class JLG_Shortcode_Pros_Cons {
     }
 
     public function render($atts = [], $content = '', $shortcode_tag = '') {
-        // Sécurité : ne s'exécute que sur les articles ('post') ou pages singulières
-        if (!is_singular('post')) {
+        $allowed_types = JLG_Helpers::get_allowed_post_types();
+
+        // Sécurité : ne s'exécute que sur les contenus autorisés
+        if (!is_singular($allowed_types)) {
             return '';
         }
 

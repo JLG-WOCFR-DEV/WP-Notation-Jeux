@@ -64,7 +64,9 @@ class JLG_Shortcode_Game_Info {
 
     private function resolve_target_post_id($post_id_attribute) {
         $post_id = absint($post_id_attribute);
-        if ($post_id && $this->is_valid_target_post($post_id)) {
+        $allowed_types = JLG_Helpers::get_allowed_post_types();
+
+        if ($post_id && $this->is_valid_target_post($post_id, $allowed_types)) {
             return $post_id;
         }
 
@@ -77,20 +79,24 @@ class JLG_Shortcode_Game_Info {
             return 0;
         }
 
-        if (function_exists('is_singular') && !is_singular('post')) {
+        if (function_exists('is_singular') && !is_singular($allowed_types)) {
             return 0;
         }
 
-        return $this->is_valid_target_post($current_post_id) ? $current_post_id : 0;
+        return $this->is_valid_target_post($current_post_id, $allowed_types) ? $current_post_id : 0;
     }
 
-    private function is_valid_target_post($post_id) {
+    private function is_valid_target_post($post_id, ?array $allowed_types = null) {
+        if ($allowed_types === null) {
+            $allowed_types = JLG_Helpers::get_allowed_post_types();
+        }
+
         $post = get_post($post_id);
         if (!$post instanceof WP_Post) {
             return false;
         }
 
-        if (($post->post_type ?? '') !== 'post') {
+        if (!in_array($post->post_type ?? '', $allowed_types, true)) {
             return false;
         }
 

@@ -178,6 +178,27 @@ class JLG_Helpers {
         return self::$options_cache;
     }
 
+    /**
+     * Retrieve the post types allowed for ratings and shortcodes.
+     *
+     * @return string[] List of sanitized post type identifiers.
+     */
+    public static function get_allowed_post_types() {
+        $post_types = apply_filters('jlg_rated_post_types', ['post']);
+
+        if (!is_array($post_types)) {
+            $post_types = ['post'];
+        }
+
+        $post_types = array_values(array_filter(array_map('sanitize_key', $post_types)));
+
+        if (empty($post_types)) {
+            $post_types = ['post'];
+        }
+
+        return array_values(array_unique($post_types));
+    }
+
     public static function flush_plugin_options_cache() {
         self::$options_cache = null;
     }
@@ -372,11 +393,7 @@ class JLG_Helpers {
             return '_note_' . $key;
         }, self::$category_keys);
 
-        $post_types = apply_filters('jlg_rated_post_types', ['post']);
-        if (!is_array($post_types) || empty($post_types)) {
-            $post_types = ['post'];
-        }
-        $post_types = array_values(array_filter(array_map('sanitize_key', $post_types)));
+        $post_types = self::get_allowed_post_types();
 
         $post_statuses = apply_filters('jlg_rated_post_statuses', ['publish']);
         if (!is_array($post_statuses) || empty($post_statuses)) {

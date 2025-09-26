@@ -260,13 +260,72 @@ if (!function_exists('get_the_title')) {
 
 if (!function_exists('add_filter')) {
     function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
-        // No-op stub for WordPress filter registration in tests.
+        if (!isset($GLOBALS['jlg_test_filters'])) {
+            $GLOBALS['jlg_test_filters'] = [];
+        }
+
+        if (!isset($GLOBALS['jlg_test_filters'][$hook])) {
+            $GLOBALS['jlg_test_filters'][$hook] = [];
+        }
+
+        if (!isset($GLOBALS['jlg_test_filters'][$hook][$priority])) {
+            $GLOBALS['jlg_test_filters'][$hook][$priority] = [];
+        }
+
+        $GLOBALS['jlg_test_filters'][$hook][$priority][] = [
+            'callback'      => $callback,
+            'accepted_args' => (int) $accepted_args,
+        ];
+
+        return true;
     }
 }
 
 if (!function_exists('apply_filters')) {
     function apply_filters($hook, $value) {
+        $args = func_get_args();
+
+        if (empty($GLOBALS['jlg_test_filters'][$hook])) {
+            return $value;
+        }
+
+        ksort($GLOBALS['jlg_test_filters'][$hook]);
+
+        foreach ($GLOBALS['jlg_test_filters'][$hook] as $callbacks) {
+            foreach ($callbacks as $data) {
+                if (!is_callable($data['callback'] ?? null)) {
+                    continue;
+                }
+
+                $accepted_args = max(1, (int) ($data['accepted_args'] ?? 1));
+                $call_args = array_slice($args, 1);
+                if (empty($call_args)) {
+                    $call_args = [$value];
+                } else {
+                    $call_args[0] = $value;
+                }
+
+                $call_args = array_slice($call_args, 0, $accepted_args);
+                if (count($call_args) < $accepted_args) {
+                    $call_args = array_pad($call_args, $accepted_args, null);
+                }
+
+                $value = call_user_func_array($data['callback'], $call_args);
+                $args[1] = $value;
+            }
+        }
+
         return $value;
+    }
+}
+
+if (!function_exists('remove_all_filters')) {
+    function remove_all_filters($hook) {
+        if (isset($GLOBALS['jlg_test_filters'][$hook])) {
+            unset($GLOBALS['jlg_test_filters'][$hook]);
+        }
+
+        return true;
     }
 }
 

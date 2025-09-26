@@ -605,10 +605,7 @@ class JLG_Shortcode_Game_Explorer {
             $paged = 1;
         }
 
-        $post_types = apply_filters('jlg_rated_post_types', ['post']);
-        if (!is_array($post_types) || empty($post_types)) {
-            $post_types = ['post'];
-        }
+        $post_types = JLG_Helpers::get_allowed_post_types();
         $post_statuses = apply_filters('jlg_rated_post_statuses', ['publish']);
         if (!is_array($post_statuses) || empty($post_statuses)) {
             $post_statuses = ['publish'];

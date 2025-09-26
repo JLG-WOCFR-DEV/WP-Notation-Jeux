@@ -8,7 +8,9 @@ class JLG_Shortcode_User_Rating {
     }
 
     public function render($atts = [], $content = '', $shortcode_tag = '') {
-        if (!is_singular('post')) {
+        $allowed_types = JLG_Helpers::get_allowed_post_types();
+
+        if (!is_singular($allowed_types)) {
             return '';
         }
 
