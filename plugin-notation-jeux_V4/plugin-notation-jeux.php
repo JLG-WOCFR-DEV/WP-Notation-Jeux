@@ -81,6 +81,7 @@ final class JLG_Plugin_De_Notation_Main {
         add_action('added_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
         add_action('updated_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
         add_action('deleted_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
+        add_action('transition_post_status', ['JLG_Helpers', 'maybe_clear_rated_post_ids_cache_for_status_change'], 20, 3);
 
         if (class_exists('JLG_Shortcode_Game_Explorer')) {
             add_action('added_post_meta', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta'], 20, 4);
