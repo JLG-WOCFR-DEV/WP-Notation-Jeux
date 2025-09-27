@@ -137,4 +137,30 @@ class ShortcodeSummarySortingTest extends TestCase
         $this->assertSame('meta_value_num', $context['query']->args['orderby']);
         $this->assertSame('average_score', $context['orderby']);
     }
+
+    public function test_render_context_uses_filtered_post_types()
+    {
+        $previous_filters = $GLOBALS['jlg_test_filters'] ?? null;
+
+        add_filter('jlg_rated_post_types', function ($types) {
+            $types[] = 'game_review';
+            $types[] = 'post';
+            $types[] = 'game_review';
+
+            return $types;
+        });
+
+        try {
+            $context = JLG_Shortcode_Summary_Display::get_render_context([], []);
+        } finally {
+            if ($previous_filters === null) {
+                unset($GLOBALS['jlg_test_filters']);
+            } else {
+                $GLOBALS['jlg_test_filters'] = $previous_filters;
+            }
+        }
+
+        $this->assertInstanceOf(WP_Query::class, $context['query']);
+        $this->assertSame(['post', 'game_review'], $context['query']->args['post_type']);
+    }
 }

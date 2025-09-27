@@ -90,13 +90,21 @@ class JLG_Shortcode_Summary_Display {
         $orderby = $sorting['key'];
 
         $rated_post_ids = JLG_Helpers::get_rated_post_ids();
+        $allowed_post_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_post_types = array_values(array_unique(array_filter($allowed_post_types, static function ($type) {
+            return is_string($type) && $type !== '';
+        })));
+
+        if (empty($allowed_post_types)) {
+            $allowed_post_types = ['post'];
+        }
 
         if (!empty($rated_post_ids) && isset($sorting['meta_key']) && $sorting['meta_key'] === '_jlg_average_score') {
             $max_sync = apply_filters('jlg_summary_max_sync_average_rebuilds', self::MAX_SYNC_AVERAGE_REBUILDS, $atts);
             $max_sync = max(0, intval($max_sync));
 
             $posts_missing_average = get_posts([
-                'post_type'      => 'post',
+                'post_type'      => $allowed_post_types,
                 'post__in'       => $rated_post_ids,
                 'fields'         => 'ids',
                 'posts_per_page' => $max_sync + 1,
@@ -151,7 +159,7 @@ class JLG_Shortcode_Summary_Display {
         }
 
         $args = [
-            'post_type'      => 'post',
+            'post_type'      => $allowed_post_types,
             'posts_per_page' => $posts_per_page,
             'paged'          => $paged,
             'order'          => $order,
