@@ -28,7 +28,7 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
         }
 
         $query_args = [
-            'post_type' => 'post',
+            'post_type' => JLG_Helpers::get_allowed_post_types(),
             'posts_per_page' => $number,
             'post__in' => $rated_post_ids,
             'orderby' => 'date',
