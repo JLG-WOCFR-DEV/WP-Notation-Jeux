@@ -89,7 +89,7 @@ class JLG_Admin_Menu {
     }
 
     private function get_posts_list_tab_content() {
-        $rated_posts = JLG_Helpers::get_rated_post_ids();
+        $rated_posts = array_values(array_unique(array_filter(array_map('intval', JLG_Helpers::get_rated_post_ids()))));
         $empty_state = [
             'create_post_url' => admin_url('post-new.php'),
         ];
@@ -107,7 +107,7 @@ class JLG_Admin_Menu {
         $order = isset($_GET['order']) && in_array(strtoupper($_GET['order']), ['ASC', 'DESC'], true) ? strtoupper($_GET['order']) : 'DESC';
 
         $args = [
-            'post_type' => 'post',
+            'post_type' => JLG_Helpers::get_allowed_post_types(),
             'post__in' => $rated_posts,
             'posts_per_page' => $per_page,
             'paged' => $current_page,
