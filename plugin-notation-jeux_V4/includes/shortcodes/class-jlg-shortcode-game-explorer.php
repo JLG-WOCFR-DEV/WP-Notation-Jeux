@@ -215,8 +215,40 @@ class JLG_Shortcode_Game_Explorer {
             ];
         }
 
-        $timestamp = strtotime($date_iso . ' 00:00:00');
-        if ($timestamp && $timestamp > current_time('timestamp')) {
+        $timezone = null;
+
+        if (function_exists('wp_timezone')) {
+            $timezone = wp_timezone();
+        }
+
+        if (!$timezone instanceof DateTimeZone) {
+            $timezone_string = function_exists('wp_timezone_string') ? wp_timezone_string() : 'UTC';
+
+            try {
+                $timezone = new DateTimeZone(is_string($timezone_string) && $timezone_string !== '' ? $timezone_string : 'UTC');
+            } catch (Exception $exception) {
+                $timezone = new DateTimeZone('UTC');
+            }
+        }
+
+        $release_date = DateTimeImmutable::createFromFormat('!Y-m-d', $date_iso, $timezone);
+
+        if (!$release_date instanceof DateTimeImmutable) {
+            return [
+                'status' => 'unknown',
+                'label'  => esc_html__('À confirmer', 'notation-jlg'),
+            ];
+        }
+
+        $parse_errors = DateTimeImmutable::getLastErrors();
+        if (is_array($parse_errors) && (($parse_errors['warning_count'] ?? 0) > 0 || ($parse_errors['error_count'] ?? 0) > 0)) {
+            return [
+                'status' => 'unknown',
+                'label'  => esc_html__('À confirmer', 'notation-jlg'),
+            ];
+        }
+
+        if ($release_date->getTimestamp() > (int) current_time('timestamp')) {
             return [
                 'status' => 'upcoming',
                 'label'  => esc_html__('À venir', 'notation-jlg'),
