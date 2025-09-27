@@ -109,4 +109,28 @@ class FrontendSummaryBaseUrlTest extends TestCase
             'Base URL should collapse benign host aliases to the canonical home URL.'
         );
     }
+
+    public function test_home_url_with_custom_port_is_preserved()
+    {
+        $frontend = new JLG_Frontend();
+
+        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $method = $reflection->getMethod('sanitize_internal_url');
+        $method->setAccessible(true);
+
+        $previous_base = $GLOBALS['wp_test_home_url_base'];
+        $GLOBALS['wp_test_home_url_base'] = 'https://public.example:8443';
+
+        try {
+            $base_url = $method->invoke($frontend, 'https://public.example:8443/custom/path');
+        } finally {
+            $GLOBALS['wp_test_home_url_base'] = $previous_base;
+        }
+
+        $this->assertSame(
+            'https://public.example:8443/custom/path',
+            $base_url,
+            'Base URL should keep the custom port defined in the home URL.'
+        );
+    }
 }

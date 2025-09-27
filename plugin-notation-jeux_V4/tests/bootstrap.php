@@ -524,10 +524,12 @@ if (!function_exists('esc_url')) {
 }
 
 if (!function_exists('home_url')) {
+    $GLOBALS['wp_test_home_url_base'] = $GLOBALS['wp_test_home_url_base'] ?? 'https://public.example';
+
     function home_url($path = '', $scheme = null) {
         unset($scheme);
 
-        $base = 'https://public.example';
+        $base = isset($GLOBALS['wp_test_home_url_base']) ? (string) $GLOBALS['wp_test_home_url_base'] : 'https://public.example';
 
         if (!is_string($path)) {
             $path = '';

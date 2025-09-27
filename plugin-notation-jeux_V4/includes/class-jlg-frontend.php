@@ -1274,6 +1274,7 @@ class JLG_Frontend {
         $site_url = wp_parse_url($canonical_home);
         $site_host = is_array($site_url) && isset($site_url['host']) ? strtolower($site_url['host']) : '';
         $site_scheme = is_array($site_url) && isset($site_url['scheme']) ? $site_url['scheme'] : '';
+        $site_port = is_array($site_url) && isset($site_url['port']) ? intval($site_url['port']) : null;
 
         $normalize_host = static function ($host) {
             $host = strtolower((string) $host);
@@ -1319,8 +1320,15 @@ class JLG_Frontend {
 
         $normalized_url .= $site_host;
 
-        if (!empty($parsed_url['port'])) {
-            $normalized_url .= ':' . intval($parsed_url['port']);
+        $target_port = null;
+        if (isset($parsed_url['port'])) {
+            $target_port = intval($parsed_url['port']);
+        } elseif ($site_port !== null) {
+            $target_port = $site_port;
+        }
+
+        if ($target_port !== null) {
+            $normalized_url .= ':' . $target_port;
         }
 
         $normalized_url .= $path;
