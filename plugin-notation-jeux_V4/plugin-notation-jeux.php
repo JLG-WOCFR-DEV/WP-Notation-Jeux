@@ -333,7 +333,7 @@ final class JLG_Plugin_De_Notation_Main {
 
         return [
             'last_post_id' => isset($state['last_post_id']) ? (int) $state['last_post_id'] : 0,
-            'complete' => $has_complete_flag ? !empty($state['complete']) : true,
+            'complete' => $has_complete_flag ? !empty($state['complete']) : false,
         ];
     }
 

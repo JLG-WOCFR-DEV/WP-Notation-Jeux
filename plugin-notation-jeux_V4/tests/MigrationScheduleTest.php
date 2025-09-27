@@ -75,6 +75,19 @@ class MigrationScheduleTest extends TestCase
         $this->assertHookScheduled('jlg_process_v5_migration');
     }
 
+    public function testEnsureMigrationScheduleQueuesEventWhenCompleteFlagMissing(): void
+    {
+        $plugin = $this->bootPlugin();
+
+        update_option('jlg_migration_v5_scan_state', [
+            'last_post_id' => 123,
+        ]);
+
+        $plugin->ensure_migration_schedule();
+
+        $this->assertHookScheduled('jlg_process_v5_migration');
+    }
+
     public function testEnsureMigrationScheduleQueuesEventWhenQueueHasEntries(): void
     {
         $plugin = $this->bootPlugin();
