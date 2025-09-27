@@ -142,6 +142,46 @@ class FrontendUserRatingTest extends TestCase
         }
     }
 
+    public function test_handle_user_rating_accepts_vote_on_custom_post_type(): void
+    {
+        add_filter('jlg_rated_post_types', static function ($types) {
+            $types[] = 'jlg_review';
+
+            return $types;
+        });
+
+        $post_id = 789;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'jlg_review',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.99';
+
+        $frontend = new JLG_Frontend();
+
+        $_POST = [
+            'token'   => str_repeat('d', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '3',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+            $this->assertNull($exception->status);
+            $this->assertSame('3.00', $exception->data['new_average']);
+            $this->assertSame(1, $exception->data['new_count']);
+        } finally {
+            remove_all_filters('jlg_rated_post_types');
+        }
+    }
+
     private function resetShortcodeTracking(): void
     {
         $reflection = new \ReflectionClass(JLG_Frontend::class);
