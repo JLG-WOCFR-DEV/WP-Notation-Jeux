@@ -57,6 +57,28 @@ class JLG_Validator {
             return [];
         }
 
+        $extract_labels = static function ($definitions) {
+            if (!is_array($definitions)) {
+                return [];
+            }
+
+            $labels = [];
+
+            foreach ($definitions as $definition) {
+                if (is_string($definition)) {
+                    $labels[] = sanitize_text_field($definition);
+                } elseif (is_array($definition) && isset($definition['name']) && is_string($definition['name'])) {
+                    $labels[] = sanitize_text_field($definition['name']);
+                }
+            }
+
+            $labels = array_filter($labels, static function ($label) {
+                return $label !== '';
+            });
+
+            return array_values(array_unique($labels));
+        };
+
         $allowed_platforms = [];
 
         if (class_exists('JLG_Admin_Platforms')) {
@@ -72,16 +94,7 @@ class JLG_Validator {
         if (empty($allowed_platforms) && class_exists('JLG_Helpers') && method_exists('JLG_Helpers', 'get_registered_platform_labels')) {
             $default_definitions = JLG_Helpers::get_registered_platform_labels();
 
-            if (is_array($default_definitions)) {
-                $allowed_platforms = array_filter(
-                    array_map('sanitize_text_field', array_column($default_definitions, 'name')),
-                    static function ($name) {
-                        return $name !== '';
-                    }
-                );
-
-                $allowed_platforms = array_values(array_unique($allowed_platforms));
-            }
+            $allowed_platforms = $extract_labels($default_definitions);
         }
 
         if (empty($allowed_platforms) && class_exists('JLG_Helpers') && method_exists('JLG_Helpers', 'get_default_platform_definitions')) {
@@ -103,16 +116,7 @@ class JLG_Validator {
                 }
             }
 
-            if (is_array($default_definitions)) {
-                $allowed_platforms = array_filter(
-                    array_map('sanitize_text_field', array_column($default_definitions, 'name')),
-                    static function ($name) {
-                        return $name !== '';
-                    }
-                );
-
-                $allowed_platforms = array_values(array_unique($allowed_platforms));
-            }
+            $allowed_platforms = $extract_labels($default_definitions);
         }
 
         if (empty($allowed_platforms)) {
