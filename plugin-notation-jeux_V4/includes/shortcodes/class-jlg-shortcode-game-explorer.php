@@ -4,9 +4,169 @@ if (!defined('ABSPATH')) exit;
 class JLG_Shortcode_Game_Explorer {
 
     private const SNAPSHOT_TRANSIENT_KEY = 'jlg_game_explorer_snapshot_v1';
+    private const SNAPSHOT_RELEVANT_META_KEYS = [
+        '_jlg_game_title',
+        '_jlg_developpeur',
+        '_jlg_editeur',
+        '_jlg_plateformes',
+        '_jlg_date_sortie',
+    ];
 
     /** @var array<string, mixed>|null */
     private static $filters_snapshot = null;
+
+    public static function clear_filters_snapshot() {
+        delete_transient(self::SNAPSHOT_TRANSIENT_KEY);
+        self::$filters_snapshot = null;
+    }
+
+    public static function maybe_clear_filters_snapshot_for_meta($meta_id, $post_id, $meta_key, $meta_value = null) {
+        unset($meta_id, $meta_value);
+
+        if (!is_string($meta_key) || $meta_key === '') {
+            return;
+        }
+
+        if (!self::is_snapshot_relevant_meta_key($meta_key)) {
+            return;
+        }
+
+        $post = self::resolve_post($post_id);
+        if (!self::should_invalidate_for_post($post)) {
+            return;
+        }
+
+        self::clear_filters_snapshot();
+    }
+
+    public static function maybe_clear_filters_snapshot_for_post($post_id, $post, $update) {
+        unset($post_id, $update);
+
+        if (!self::should_invalidate_for_post($post)) {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (function_exists('wp_is_post_autosave') && wp_is_post_autosave($post->ID ?? 0)) {
+            return;
+        }
+
+        if (function_exists('wp_is_post_revision') && wp_is_post_revision($post->ID ?? 0)) {
+            return;
+        }
+
+        self::clear_filters_snapshot();
+    }
+
+    public static function maybe_clear_filters_snapshot_for_status_change($new_status, $old_status, $post) {
+        if (!self::is_snapshot_supported_post($post)) {
+            return;
+        }
+
+        if ($new_status === $old_status) {
+            return;
+        }
+
+        if ($new_status === 'publish' || $old_status === 'publish') {
+            self::clear_filters_snapshot();
+        }
+    }
+
+    public static function maybe_clear_filters_snapshot_for_terms($object_id, $terms, $tt_ids, $taxonomy) {
+        unset($terms, $tt_ids);
+
+        if (!is_string($taxonomy) || $taxonomy !== 'category') {
+            return;
+        }
+
+        $post = self::resolve_post($object_id);
+        if (!self::should_invalidate_for_post($post)) {
+            return;
+        }
+
+        self::clear_filters_snapshot();
+    }
+
+    public static function maybe_clear_filters_snapshot_for_term_event($term, $tt_id = null, $taxonomy = '', $deleted_term = null) {
+        unset($tt_id, $deleted_term);
+
+        $resolved_taxonomy = self::resolve_taxonomy_from_term_event($term, $taxonomy, $deleted_term);
+
+        if ($resolved_taxonomy !== 'category') {
+            return;
+        }
+
+        self::clear_filters_snapshot();
+    }
+
+    private static function is_snapshot_relevant_meta_key($meta_key) {
+        return in_array($meta_key, self::SNAPSHOT_RELEVANT_META_KEYS, true);
+    }
+
+    private static function resolve_post($post) {
+        if ($post instanceof WP_Post) {
+            return $post;
+        }
+
+        $post_id = is_numeric($post) ? (int) $post : 0;
+        if ($post_id <= 0) {
+            return null;
+        }
+
+        $resolved = get_post($post_id);
+
+        return $resolved instanceof WP_Post ? $resolved : null;
+    }
+
+    private static function should_invalidate_for_post($post) {
+        if (!$post instanceof WP_Post) {
+            return false;
+        }
+
+        if (!self::is_snapshot_supported_post($post)) {
+            return false;
+        }
+
+        return ($post->post_status ?? '') === 'publish';
+    }
+
+    private static function is_snapshot_supported_post($post) {
+        if (!$post instanceof WP_Post) {
+            return false;
+        }
+
+        $post_type = isset($post->post_type) ? (string) $post->post_type : '';
+        if ($post_type === '') {
+            return false;
+        }
+
+        if (!class_exists('JLG_Helpers')) {
+            return false;
+        }
+
+        $allowed_types = JLG_Helpers::get_allowed_post_types();
+
+        return in_array($post_type, $allowed_types, true);
+    }
+
+    private static function resolve_taxonomy_from_term_event($term, $taxonomy, $deleted_term) {
+        if (is_object($term) && isset($term->taxonomy)) {
+            return (string) $term->taxonomy;
+        }
+
+        if (is_object($deleted_term) && isset($deleted_term->taxonomy)) {
+            return (string) $deleted_term->taxonomy;
+        }
+
+        if (is_string($taxonomy) && $taxonomy !== '') {
+            return $taxonomy;
+        }
+
+        return '';
+    }
 
     public function __construct() {
         add_shortcode('jlg_game_explorer', [$this, 'render']);

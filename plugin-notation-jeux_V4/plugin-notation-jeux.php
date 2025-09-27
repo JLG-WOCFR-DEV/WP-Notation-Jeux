@@ -73,6 +73,7 @@ final class JLG_Plugin_De_Notation_Main {
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-helpers.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-assets.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
+        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/shortcodes/class-jlg-shortcode-game-explorer.php';
 
         add_action('update_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
         add_action('add_option_notation_jlg_settings', ['JLG_Helpers', 'flush_plugin_options_cache'], 10, 0);
@@ -80,6 +81,18 @@ final class JLG_Plugin_De_Notation_Main {
         add_action('added_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
         add_action('updated_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
         add_action('deleted_post_meta', ['JLG_Helpers', 'maybe_handle_rating_meta_change'], 10, 4);
+
+        if (class_exists('JLG_Shortcode_Game_Explorer')) {
+            add_action('added_post_meta', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta'], 20, 4);
+            add_action('updated_post_meta', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta'], 20, 4);
+            add_action('deleted_post_meta', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta'], 20, 4);
+            add_action('save_post', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_post'], 20, 3);
+            add_action('transition_post_status', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_status_change'], 20, 3);
+            add_action('set_object_terms', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_terms'], 20, 4);
+            add_action('created_term', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_term_event'], 20, 3);
+            add_action('edited_term', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_term_event'], 20, 3);
+            add_action('delete_term', ['JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_term_event'], 20, 4);
+        }
 
         // Frontend (toujours)
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-dynamic-css.php';
