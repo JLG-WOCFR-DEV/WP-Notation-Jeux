@@ -1042,7 +1042,9 @@ class JLG_Frontend {
             return false;
         }
 
-        if ($post->post_type !== 'post') {
+        $allowed_post_types = JLG_Helpers::get_allowed_post_types();
+
+        if (!in_array($post->post_type, $allowed_post_types, true)) {
             return false;
         }
 
