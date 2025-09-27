@@ -100,11 +100,13 @@ class JLG_Shortcode_Game_Info {
             return false;
         }
 
-        if (($post->post_status ?? '') !== 'publish') {
-            return false;
+        $status = $post->post_status ?? '';
+
+        if ($status === 'publish') {
+            return true;
         }
 
-        return true;
+        return current_user_can('read_post', $post_id);
     }
 
     private function sanitize_meta_value($meta_value) {

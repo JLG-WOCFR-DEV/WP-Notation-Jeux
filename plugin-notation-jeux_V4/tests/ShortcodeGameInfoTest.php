@@ -13,6 +13,16 @@ class ShortcodeGameInfoTest extends TestCase
         $GLOBALS['jlg_test_posts'] = [];
         $GLOBALS['jlg_test_meta'] = [];
         $GLOBALS['jlg_test_current_post_id'] = 0;
+        $GLOBALS['jlg_test_current_user_can'] = static function () {
+            return false;
+        };
+    }
+
+    protected function tearDown(): void
+    {
+        unset($GLOBALS['jlg_test_current_user_can']);
+
+        parent::tearDown();
     }
 
     public function test_render_with_valid_post_id_returns_template(): void
@@ -50,6 +60,33 @@ class ShortcodeGameInfoTest extends TestCase
         $output = $shortcode->render(['post_id' => $post_id]);
 
         $this->assertSame('', $output);
+    }
+
+    public function test_render_with_draft_post_and_authorized_user_returns_template(): void
+    {
+        $post_id = 987;
+        $this->register_post($post_id, 'draft');
+        $GLOBALS['jlg_test_meta'][$post_id] = [
+            '_jlg_developpeur' => 'Studio Draft',
+        ];
+
+        $previous_user_can = $GLOBALS['jlg_test_current_user_can'];
+        $GLOBALS['jlg_test_current_user_can'] = static function ($capability, $target_post_id = null) use ($post_id) {
+            return $capability === 'read_post' && (int) $target_post_id === $post_id;
+        };
+
+        try {
+            $shortcode = new JLG_Shortcode_Game_Info();
+            $output = $shortcode->render([
+                'post_id' => (string) $post_id,
+                'champs'  => 'developpeur',
+            ]);
+
+            $this->assertNotSame('', $output);
+            $this->assertStringContainsString('Studio Draft', $output);
+        } finally {
+            $GLOBALS['jlg_test_current_user_can'] = $previous_user_can;
+        }
     }
 
     public function test_render_uses_current_context_when_valid(): void
