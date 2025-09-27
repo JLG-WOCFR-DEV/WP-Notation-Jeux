@@ -367,6 +367,30 @@ if (!function_exists('get_option')) {
     }
 }
 
+if (!function_exists('wp_timezone_string')) {
+    function wp_timezone_string() {
+        $timezone_string = get_option('timezone_string');
+
+        if (is_string($timezone_string) && $timezone_string !== '') {
+            return $timezone_string;
+        }
+
+        return 'UTC';
+    }
+}
+
+if (!function_exists('wp_timezone')) {
+    function wp_timezone() {
+        $timezone_string = wp_timezone_string();
+
+        try {
+            return new DateTimeZone($timezone_string);
+        } catch (Exception $exception) {
+            return new DateTimeZone('UTC');
+        }
+    }
+}
+
 if (!function_exists('date_i18n')) {
     function date_i18n($format, $timestamp) {
         if (!is_int($timestamp)) {
@@ -678,25 +702,21 @@ if (!function_exists('number_format_i18n')) {
 
 if (!function_exists('current_time')) {
     function current_time($type, $gmt = 0) {
-        $timestamp = time();
+        $timezone = $gmt ? new DateTimeZone('UTC') : (function_exists('wp_timezone') ? wp_timezone() : new DateTimeZone(date_default_timezone_get()));
+        $now = new DateTimeImmutable('now', $timezone);
 
         if ($type === 'timestamp' || $type === 'U') {
-            return $timestamp;
+            return $now->getTimestamp();
         }
 
-        if ($gmt) {
-            return gmdate($type === 'mysql' ? 'Y-m-d H:i:s' : (is_string($type) && $type !== '' ? $type : 'Y-m-d H:i:s'), $timestamp);
-        }
-
+        $format = 'Y-m-d H:i:s';
         if ($type === 'mysql') {
-            return date('Y-m-d H:i:s', $timestamp);
+            $format = 'Y-m-d H:i:s';
+        } elseif (is_string($type) && $type !== '') {
+            $format = $type;
         }
 
-        if (is_string($type) && $type !== '') {
-            return date($type, $timestamp);
-        }
-
-        return $timestamp;
+        return $now->format($format);
     }
 }
 
