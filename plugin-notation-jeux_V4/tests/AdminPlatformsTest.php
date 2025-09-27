@@ -179,4 +179,24 @@ class AdminPlatformsTest extends TestCase
 
         $this->assertSame(['Steam Deck'], $sanitized);
     }
+
+    public function test_sanitize_platforms_preserves_custom_platforms(): void
+    {
+        $admin = JLG_Admin_Platforms::get_instance();
+
+        $_POST['new_platform_name'] = 'Amiga 600';
+        $_POST['new_platform_icon'] = '🕹️';
+
+        $storage = $this->invokePrivateMethod($admin, 'get_stored_platform_data');
+        $result = $this->invokePrivateMethod($admin, 'add_platform', [&$storage]);
+
+        $this->assertTrue($result['success']);
+
+        $sanitized = JLG_Validator::sanitize_platforms([
+            'Amiga 600',
+            'Imaginary Console',
+        ]);
+
+        $this->assertSame(['Amiga 600'], $sanitized);
+    }
 }
