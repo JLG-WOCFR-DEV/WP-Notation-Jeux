@@ -284,6 +284,25 @@ class FrontendGameExplorerAjaxTest extends TestCase
         }
     }
 
+    public function test_snapshot_cleared_after_relevant_meta_update(): void
+    {
+        $this->configureOptions();
+        $this->registerPost(777, 'Gamma Horizon', 'Content body', '2023-01-10 09:00:00');
+
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+        set_transient('jlg_game_explorer_snapshot_v1', ['cached' => true]);
+
+        JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_meta(0, 777, '_jlg_developpeur', 'Studio Gamma');
+
+        $this->assertFalse(get_transient('jlg_game_explorer_snapshot_v1'), 'Transient cache should be cleared after meta update.');
+
+        $reflection = new ReflectionClass(JLG_Shortcode_Game_Explorer::class);
+        $property = $reflection->getProperty('filters_snapshot');
+        $property->setAccessible(true);
+
+        $this->assertNull($property->getValue(), 'Static snapshot cache should be reset after meta update.');
+    }
+
     private function configureOptions(): void
     {
         $defaults = JLG_Helpers::get_default_settings();
