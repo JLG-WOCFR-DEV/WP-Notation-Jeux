@@ -54,4 +54,23 @@ class HelpersRatingCacheTest extends TestCase
         $this->assertArrayHasKey('_jlg_average_score', $GLOBALS['jlg_test_meta'][$post_id] ?? []);
         $this->assertSame([88], get_transient('jlg_rated_post_ids_v1'));
     }
+
+    public function test_status_transition_from_publish_clears_rated_cache(): void
+    {
+        $post_id = 987;
+
+        $post = new WP_Post([
+            'ID' => $post_id,
+            'post_type' => 'post',
+        ]);
+
+        $GLOBALS['jlg_test_posts'][$post_id] = $post;
+        $GLOBALS['jlg_test_meta'][$post_id]['_note_cat1'] = '9.0';
+
+        set_transient('jlg_rated_post_ids_v1', [123, 456]);
+
+        JLG_Helpers::maybe_clear_rated_post_ids_cache_for_status_change('draft', 'publish', $post);
+
+        $this->assertFalse(get_transient('jlg_rated_post_ids_v1'));
+    }
 }

@@ -454,6 +454,81 @@ class JLG_Helpers {
         return self::get_rated_post_ids_batch(0, -1);
     }
 
+    private static function resolve_post_id_from_mixed($post) {
+        if (is_object($post) && isset($post->ID)) {
+            return (int) $post->ID;
+        }
+
+        if (is_array($post) && isset($post['ID'])) {
+            return (int) $post['ID'];
+        }
+
+        if (is_numeric($post)) {
+            return (int) $post;
+        }
+
+        return 0;
+    }
+
+    private static function post_has_rating_values($post_id) {
+        foreach (self::get_rating_meta_keys() as $meta_key) {
+            $value = get_post_meta($post_id, $meta_key, true);
+
+            if ($value !== '' && $value !== null && $value !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function maybe_clear_rated_post_ids_cache_for_status_change($new_status, $old_status, $post) {
+        $new_status = is_string($new_status) ? strtolower($new_status) : '';
+        $old_status = is_string($old_status) ? strtolower($old_status) : '';
+
+        if ($new_status === $old_status) {
+            return;
+        }
+
+        if ($new_status !== 'publish' && $old_status !== 'publish') {
+            return;
+        }
+
+        $post_id = self::resolve_post_id_from_mixed($post);
+
+        if ($post_id <= 0) {
+            return;
+        }
+
+        $post_type = null;
+
+        if (function_exists('get_post_type')) {
+            $post_type = get_post_type($post);
+        }
+
+        if (!is_string($post_type) || $post_type === '') {
+            if (is_object($post) && isset($post->post_type)) {
+                $post_type = (string) $post->post_type;
+            } elseif (is_array($post) && isset($post['post_type'])) {
+                $post_type = (string) $post['post_type'];
+            }
+        }
+
+        if (is_string($post_type) && $post_type !== '') {
+            $allowed_types = self::get_allowed_post_types();
+
+            if (!in_array($post_type, $allowed_types, true)) {
+                return;
+            }
+        }
+
+        if (!self::post_has_rating_values($post_id)) {
+            return;
+        }
+
+        self::clear_rated_post_ids_cache();
+    }
+
     public static function queue_average_score_rebuild($post_ids) {
         if (empty($post_ids)) {
             return;
