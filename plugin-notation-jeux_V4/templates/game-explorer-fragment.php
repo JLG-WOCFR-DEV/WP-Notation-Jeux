@@ -102,7 +102,7 @@ if ($total_pages > 1) :
                 $is_active = ($page === $current_page);
                 ?>
                 <li>
-                    <button type="button" data-page="<?php echo esc_attr($page); ?>" class="<?php echo $is_active ? 'is-active' : ''; ?>">
+                    <button type="button" data-page="<?php echo esc_attr($page); ?>" class="<?php echo esc_attr($is_active ? 'is-active' : ''); ?>">
                         <?php echo esc_html($page); ?>
                     </button>
                 </li>

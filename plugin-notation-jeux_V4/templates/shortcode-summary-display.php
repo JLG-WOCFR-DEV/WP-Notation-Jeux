@@ -62,15 +62,33 @@ $letters = range('A', 'Z');
         <!-- Filtres -->
         <div class="jlg-summary-filters">
             <div class="jlg-summary-letter-filter" role="group" aria-label="<?php esc_attr_e('Filtrer par lettre', 'notation-jlg'); ?>">
-                <button type="button" class="<?php echo $current_letter_filter === '' ? 'is-active' : ''; ?>" data-letter="">
+                <?php
+                $all_letters_classes = [];
+                if ($current_letter_filter === '') {
+                    $all_letters_classes[] = 'is-active';
+                }
+                ?>
+                <button type="button" class="<?php echo esc_attr(implode(' ', array_map('sanitize_html_class', $all_letters_classes))); ?>" data-letter="">
                     <?php esc_html_e('Tous', 'notation-jlg'); ?>
                 </button>
                 <?php foreach ($letters as $letter) : ?>
-                    <button type="button" data-letter="<?php echo esc_attr($letter); ?>" class="<?php echo ($current_letter_filter === $letter) ? 'is-active' : ''; ?>">
+                    <?php
+                    $letter_button_classes = [];
+                    if ($current_letter_filter === $letter) {
+                        $letter_button_classes[] = 'is-active';
+                    }
+                    ?>
+                    <button type="button" data-letter="<?php echo esc_attr($letter); ?>" class="<?php echo esc_attr(implode(' ', array_map('sanitize_html_class', $letter_button_classes))); ?>">
                         <?php echo esc_html($letter); ?>
                     </button>
                 <?php endforeach; ?>
-                <button type="button" data-letter="#" class="<?php echo ($current_letter_filter === '#') ? 'is-active' : ''; ?>">
+                <?php
+                $numeric_button_classes = [];
+                if ($current_letter_filter === '#') {
+                    $numeric_button_classes[] = 'is-active';
+                }
+                ?>
+                <button type="button" data-letter="#" class="<?php echo esc_attr(implode(' ', array_map('sanitize_html_class', $numeric_button_classes))); ?>">
                     <?php esc_html_e('0-9', 'notation-jlg'); ?>
                 </button>
             </div>
