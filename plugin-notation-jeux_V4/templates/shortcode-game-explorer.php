@@ -99,9 +99,11 @@ $availability_active = isset($current_filters['availability']) ? $current_filter
             </div>
             <div class="jlg-ge-count">
                 <?php
+                $formatted_total_items = number_format_i18n($total_items);
+
                 printf(
-                    esc_html(_n('%d jeu', '%d jeux', $total_items, 'notation-jlg')),
-                    $total_items
+                    esc_html(_n('%s jeu', '%s jeux', $total_items, 'notation-jlg')),
+                    $formatted_total_items
                 );
                 ?>
             </div>
