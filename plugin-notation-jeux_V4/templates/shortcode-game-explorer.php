@@ -49,11 +49,17 @@ $availability_active = isset($current_filters['availability']) ? $current_filter
                 <nav class="jlg-ge-letter-nav" aria-label="<?php esc_attr_e('Filtrer par lettre', 'notation-jlg'); ?>">
                     <ul>
                         <li>
+                            <?php
+                            $all_letters_classes = [];
+                            if ($letter_active === '') {
+                                $all_letters_classes[] = 'is-active';
+                            }
+                            ?>
                             <button
                                 type="button"
-                                class="<?php echo $letter_active === '' ? 'is-active' : ''; ?>"
+                                class="<?php echo esc_attr(implode(' ', array_map('sanitize_html_class', $all_letters_classes))); ?>"
                                 data-letter=""
-                                aria-pressed="<?php echo $letter_active === '' ? 'true' : 'false'; ?>"
+                                aria-pressed="<?php echo esc_attr($letter_active === '' ? 'true' : 'false'); ?>"
                             >
                                 <?php esc_html_e('Tous', 'notation-jlg'); ?>
                             </button>
@@ -64,12 +70,18 @@ $availability_active = isset($current_filters['availability']) ? $current_filter
                             $is_active = ($value !== '' && $value === $letter_active);
                             ?>
                             <li>
+                                <?php
+                                $letter_button_classes = [];
+                                if ($is_active) {
+                                    $letter_button_classes[] = 'is-active';
+                                }
+                                ?>
                                 <button
                                     type="button"
                                     data-letter="<?php echo esc_attr($value); ?>"
-                                    class="<?php echo $is_active ? 'is-active' : ''; ?>"
+                                    class="<?php echo esc_attr(implode(' ', array_map('sanitize_html_class', $letter_button_classes))); ?>"
                                     <?php disabled(!$enabled); ?>
-                                    aria-pressed="<?php echo $is_active ? 'true' : 'false'; ?>"
+                                    aria-pressed="<?php echo esc_attr($is_active ? 'true' : 'false'); ?>"
                                 >
                                     <?php echo esc_html($letter_item['label'] ?? $value); ?>
                                 </button>
