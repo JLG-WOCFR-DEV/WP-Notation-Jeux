@@ -52,6 +52,15 @@ class JLG_Assets {
             'placeholderClass' => 'jlg-sortable-placeholder',
         ]);
 
+        wp_localize_script($handle, 'jlgPlatformsOrderL10n', [
+            'confirmReset'  => esc_html__('Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?', 'notation-jlg'),
+            'confirmDelete' => esc_html__('Êtes-vous sûr de vouloir supprimer la plateforme "%s" ?', 'notation-jlg'),
+            'nonce'         => wp_create_nonce('jlg_platform_action'),
+            'nonceField'    => 'jlg_platform_nonce',
+            'actionField'   => 'jlg_platform_action',
+            'deleteAction'  => 'delete',
+        ]);
+
         wp_enqueue_script($handle);
     }
 
