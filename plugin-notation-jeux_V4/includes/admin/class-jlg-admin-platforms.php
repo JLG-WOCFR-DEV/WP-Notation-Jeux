@@ -682,7 +682,7 @@ class JLG_Admin_Platforms {
                 <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                     <h3>⚙️ Actions</h3>
 
-                    <form method="post" action="" onsubmit="return confirm('Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?');">
+                    <form method="post" action="" class="jlg-reset-platforms-form">
                         <?php wp_nonce_field('jlg_platform_action', 'jlg_platform_nonce'); ?>
                         <input type="hidden" name="jlg_platform_action" value="reset">
 
@@ -709,43 +709,6 @@ class JLG_Admin_Platforms {
             </div>
         </div>
 
-        <!-- JavaScript pour la suppression -->
-        <script>
-        jQuery(document).ready(function($) {
-            $('.delete-platform').on('click', function() {
-                var key = $(this).data('key');
-                var name = $(this).data('name');
-                
-                if (confirm('Êtes-vous sûr de vouloir supprimer la plateforme "' + name + '" ?')) {
-                    var form = $('<form>', {
-                        method: 'POST',
-                        action: ''
-                    });
-                    
-                    form.append($('<input>', {
-                        type: 'hidden',
-                        name: 'jlg_platform_action',
-                        value: 'delete'
-                    }));
-                    
-                    form.append($('<input>', {
-                        type: 'hidden',
-                        name: 'platform_key',
-                        value: key
-                    }));
-                    
-                    form.append($('<input>', {
-                        type: 'hidden',
-                        name: 'jlg_platform_nonce',
-                        value: '<?php echo wp_create_nonce('jlg_platform_action'); ?>'
-                    }));
-                    
-                    $('body').append(form);
-                    form.submit();
-                }
-            });
-        });
-        </script>
         <?php
     }
 

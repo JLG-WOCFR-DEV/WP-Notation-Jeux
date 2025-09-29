@@ -16,6 +16,35 @@
         };
     }
 
+    function getL10n() {
+        var defaults = {
+            confirmReset: 'Are you sure you want to reset all platforms?',
+            confirmDelete: 'Are you sure you want to delete the "%s" platform?',
+            nonce: '',
+            nonceField: 'jlg_platform_nonce',
+            actionField: 'jlg_platform_action',
+            deleteAction: 'delete'
+        };
+
+        if (window.jlgPlatformsOrderL10n && typeof window.jlgPlatformsOrderL10n === 'object') {
+            return $.extend({}, defaults, window.jlgPlatformsOrderL10n);
+        }
+
+        return defaults;
+    }
+
+    function formatConfirmationMessage(template, replacement) {
+        if (typeof template !== 'string') {
+            return '';
+        }
+
+        if (typeof replacement === 'undefined') {
+            return template;
+        }
+
+        return template.replace('%s', replacement);
+    }
+
     function ensurePlaceholderStyle(className) {
         if (!className) {
             return;
@@ -75,6 +104,7 @@
 
     $(function () {
         var settings = getSettings();
+        var l10n = getL10n();
         var $list = $(settings.listSelector);
 
         if (!$list.length || typeof $list.sortable !== 'function') {
@@ -121,5 +151,61 @@
         }
 
         syncOrder($list, settings);
+
+        $('.jlg-reset-platforms-form').on('submit', function (event) {
+            var message = l10n.confirmReset || '';
+
+            if (message && !window.confirm(message)) {
+                event.preventDefault();
+            }
+        });
+
+        $('.delete-platform').on('click', function (event) {
+            event.preventDefault();
+
+            var $button = $(this);
+            var key = $button.data('key');
+            var name = $button.data('name');
+            var messageTemplate = l10n.confirmDelete || '';
+            var message = formatConfirmationMessage(messageTemplate, name);
+
+            if (!message) {
+                message = 'Are you sure you want to delete this platform?';
+            }
+
+            if (!window.confirm(message)) {
+                return;
+            }
+
+            if (!key) {
+                return;
+            }
+
+            var form = $('<form>', {
+                method: 'POST',
+                action: ''
+            });
+
+            form.append($('<input>', {
+                type: 'hidden',
+                name: l10n.actionField,
+                value: l10n.deleteAction
+            }));
+
+            form.append($('<input>', {
+                type: 'hidden',
+                name: 'platform_key',
+                value: key
+            }));
+
+            form.append($('<input>', {
+                type: 'hidden',
+                name: l10n.nonceField,
+                value: l10n.nonce
+            }));
+
+            $('body').append(form);
+            form.submit();
+        });
     });
 })(jQuery);
