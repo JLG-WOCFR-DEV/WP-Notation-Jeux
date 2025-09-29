@@ -284,6 +284,44 @@ class FrontendGameExplorerAjaxTest extends TestCase
         }
     }
 
+    public function test_get_render_context_provides_filters_when_no_matches(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $atts = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $request = [
+            'orderby'      => 'date',
+            'order'        => 'DESC',
+            'letter'       => 'Z',
+            'category'     => '',
+            'platform'     => '',
+            'availability' => '',
+            'search'       => '',
+            'paged'        => 1,
+        ];
+
+        $context = JLG_Shortcode_Game_Explorer::get_render_context($atts, $request);
+
+        $this->assertSame([], $context['games'], 'No games should be returned for an unmatched letter filter.');
+        $this->assertSame(0, $context['total_items'], 'Total items should be zero when no posts match.');
+        $this->assertNotEmpty($context['categories_list'], 'Categories should still be provided when no games match.');
+        $this->assertSame([
+            ['value' => '11', 'label' => 'Action'],
+        ], $context['categories_list'], 'Categories list should reflect snapshot data.');
+        $this->assertNotEmpty($context['platforms_list'], 'Platforms should still be provided when no games match.');
+        $this->assertSame([
+            ['value' => 'pc', 'label' => 'PC'],
+            ['value' => 'playstation-5', 'label' => 'PlayStation 5'],
+        ], $context['platforms_list'], 'Platforms list should reflect snapshot data.');
+        $this->assertSame([
+            'available'  => esc_html__('Disponible', 'notation-jlg'),
+            'upcoming'   => esc_html__('À venir', 'notation-jlg'),
+            'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
+        ], $context['availability_options'], 'Availability options should remain available for the filters.');
+        $this->assertSame('<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>', $context['message']);
+    }
+
     public function test_snapshot_cleared_after_relevant_meta_update(): void
     {
         $this->configureOptions();
