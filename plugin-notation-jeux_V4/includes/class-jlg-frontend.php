@@ -564,6 +564,36 @@ class JLG_Frontend {
     }
 
     /**
+     * Récupère et valide l'adresse IP associée à la requête courante.
+     *
+     * @return string Adresse IP valide ou chaîne vide.
+     */
+    private function get_request_ip_address() {
+        $ip_address = '';
+
+        if (function_exists('rest_get_ip_address')) {
+            $ip_address = rest_get_ip_address();
+        } elseif (isset($_SERVER['REMOTE_ADDR'])) {
+            $ip_address = $_SERVER['REMOTE_ADDR'];
+        }
+
+        if (!is_string($ip_address)) {
+            $ip_address = '';
+        }
+
+        $ip_address = apply_filters('jlg_user_rating_request_ip', $ip_address);
+
+        if (!is_string($ip_address)) {
+            $ip_address = '';
+        }
+
+        $ip_address = trim($ip_address);
+        $validated = $ip_address !== '' ? filter_var($ip_address, FILTER_VALIDATE_IP) : false;
+
+        return $validated ? $validated : '';
+    }
+
+    /**
      * Gère la notation AJAX des utilisateurs
      */
     public function handle_user_rating() {
@@ -622,7 +652,7 @@ class JLG_Frontend {
             wp_send_json_error(['message' => esc_html__('Données invalides.', 'notation-jlg')], 422);
         }
 
-        $user_ip = filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP);
+        $user_ip = $this->get_request_ip_address();
         $user_ip_hash = $user_ip ? self::hash_user_ip($user_ip) : '';
         $ip_log = [];
 
