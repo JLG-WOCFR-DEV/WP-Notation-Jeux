@@ -109,6 +109,67 @@ class FrontendUserRatingTest extends TestCase
         $this->assertSame($first_updates_count, count($GLOBALS['jlg_test_meta_updates']));
     }
 
+    public function test_handle_user_rating_blocks_second_vote_when_ip_filtered(): void
+    {
+        $post_id = 654321;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        add_filter('jlg_user_rating_request_ip', static function () {
+            return '203.0.113.200';
+        });
+
+        $_SERVER['REMOTE_ADDR'] = '192.0.2.10';
+
+        $frontend = new JLG_Frontend();
+
+        $_POST = [
+            'token'   => str_repeat('e', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '4',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+            $this->assertNull($exception->status);
+        }
+
+        $ip_hash = hash('sha256', '203.0.113.200|https://example.com');
+        $this->assertArrayHasKey($post_id, $GLOBALS['jlg_test_meta']);
+        $this->assertArrayHasKey('_jlg_user_rating_ips', $GLOBALS['jlg_test_meta'][$post_id]);
+        $this->assertArrayHasKey($ip_hash, $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_ips']);
+
+        $_POST = [
+            'token'   => str_repeat('f', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '5',
+        ];
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.21';
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(409, $exception->status);
+            $this->assertSame(
+                'Un vote depuis cette adresse IP a déjà été enregistré.',
+                $exception->data['message']
+            );
+        } finally {
+            remove_all_filters('jlg_user_rating_request_ip');
+        }
+    }
+
     public function test_handle_user_rating_accepts_vote_when_shortcode_rendered_outside_content(): void
     {
         $post_id = 654;
