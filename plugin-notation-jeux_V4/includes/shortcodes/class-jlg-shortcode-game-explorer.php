@@ -698,6 +698,53 @@ class JLG_Shortcode_Game_Explorer {
             ];
         }
 
+        $letters_map = isset($snapshot['letters_map']) && is_array($snapshot['letters_map']) ? $snapshot['letters_map'] : [];
+        $letters = self::build_letter_navigation($letters_map);
+
+        $categories_map = isset($snapshot['categories_map']) && is_array($snapshot['categories_map']) ? $snapshot['categories_map'] : [];
+        $categories_list = [];
+        if (!empty($categories_map)) {
+            asort($categories_map, SORT_NATURAL | SORT_FLAG_CASE);
+            foreach ($categories_map as $id => $name) {
+                $categories_list[] = [
+                    'value' => (string) $id,
+                    'label' => $name,
+                ];
+            }
+        }
+
+        $platforms_map = isset($snapshot['platforms_map']) && is_array($snapshot['platforms_map']) ? $snapshot['platforms_map'] : [];
+        $platforms_list = [];
+        if (!empty($platforms_map)) {
+            $registered_platforms = JLG_Helpers::get_registered_platform_labels();
+            foreach ($registered_platforms as $slug => $label) {
+                $normalized_slug = self::resolve_platform_slug($label);
+                if ($normalized_slug !== '' && isset($platforms_map[$normalized_slug])) {
+                    $platforms_list[$normalized_slug] = $platforms_map[$normalized_slug];
+                }
+            }
+            foreach ($platforms_map as $slug => $label) {
+                if (!isset($platforms_list[$slug])) {
+                    $platforms_list[$slug] = $label;
+                }
+            }
+            natcasesort($platforms_list);
+        }
+
+        $platform_entries = [];
+        foreach ($platforms_list as $slug => $label) {
+            $platform_entries[] = [
+                'value' => $slug,
+                'label' => $label,
+            ];
+        }
+
+        $availability_options = [
+            'available'  => esc_html__('Disponible', 'notation-jlg'),
+            'upcoming'   => esc_html__('À venir', 'notation-jlg'),
+            'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
+        ];
+
         $category_filter_id = 0;
         $category_filter_slug = '';
         if ($category_filter !== '') {
@@ -725,16 +772,16 @@ class JLG_Shortcode_Game_Explorer {
 
         $category_filter_value = $category_filter_id > 0 ? (string) $category_filter_id : $category_filter_slug;
 
-        if (empty($matched_post_ids)) {
-            $message = '<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>';
+        $no_results_message = '<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>';
 
+        if (empty($matched_post_ids)) {
             return [
                 'atts'               => array_merge($atts, [
                     'posts_per_page' => $posts_per_page,
                     'columns'        => $columns,
                 ]),
                 'games'              => [],
-                'letters'            => self::build_letter_navigation($snapshot['letters_map']),
+                'letters'            => $letters,
                 'filters_enabled'    => $filters_enabled,
                 'current_filters'    => [
                     'letter'       => $letter_filter,
@@ -750,15 +797,11 @@ class JLG_Shortcode_Game_Explorer {
                     'current' => 1,
                     'total'   => 0,
                 ],
-                'categories_list'    => [],
-                'platforms_list'     => [],
-                'availability_options' => [
-                    'available'  => esc_html__('Disponible', 'notation-jlg'),
-                    'upcoming'   => esc_html__('À venir', 'notation-jlg'),
-                    'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
-                ],
+                'categories_list'    => $categories_list,
+                'platforms_list'     => $platform_entries,
+                'availability_options' => $availability_options,
                 'total_items'        => 0,
-                'message'            => $message,
+                'message'            => $no_results_message,
                 'config_payload'     => [
                     'atts' => [
                         'id'             => $atts['id'],
@@ -917,53 +960,7 @@ class JLG_Shortcode_Game_Explorer {
             $paged = 1;
         }
 
-        $letters = self::build_letter_navigation($snapshot['letters_map']);
-        $categories_map = isset($snapshot['categories_map']) && is_array($snapshot['categories_map']) ? $snapshot['categories_map'] : [];
-        $platforms_map = isset($snapshot['platforms_map']) && is_array($snapshot['platforms_map']) ? $snapshot['platforms_map'] : [];
-
-        $categories_list = [];
-        if (!empty($categories_map)) {
-            asort($categories_map, SORT_NATURAL | SORT_FLAG_CASE);
-            foreach ($categories_map as $id => $name) {
-                $categories_list[] = [
-                    'value' => (string) $id,
-                    'label' => $name,
-                ];
-            }
-        }
-
-        $platforms_list = [];
-        if (!empty($platforms_map)) {
-            $registered_platforms = JLG_Helpers::get_registered_platform_labels();
-            foreach ($registered_platforms as $slug => $label) {
-                $normalized_slug = self::resolve_platform_slug($label);
-                if ($normalized_slug !== '' && isset($platforms_map[$normalized_slug])) {
-                    $platforms_list[$normalized_slug] = $platforms_map[$normalized_slug];
-                }
-            }
-            foreach ($platforms_map as $slug => $label) {
-                if (!isset($platforms_list[$slug])) {
-                    $platforms_list[$slug] = $label;
-                }
-            }
-            natcasesort($platforms_list);
-        }
-
-        $platform_entries = [];
-        foreach ($platforms_list as $slug => $label) {
-            $platform_entries[] = [
-                'value' => $slug,
-                'label' => $label,
-            ];
-        }
-
-        $availability_options = [
-            'available'  => esc_html__('Disponible', 'notation-jlg'),
-            'upcoming'   => esc_html__('À venir', 'notation-jlg'),
-            'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
-        ];
-
-        $message = '<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>';
+        $message = $no_results_message;
 
         $config_payload = [
             'atts' => [

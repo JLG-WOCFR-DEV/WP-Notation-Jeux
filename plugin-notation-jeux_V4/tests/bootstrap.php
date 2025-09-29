@@ -677,6 +677,21 @@ if (!function_exists('sanitize_title')) {
     }
 }
 
+if (!function_exists('remove_accents')) {
+    function remove_accents($string) {
+        if (!is_string($string)) {
+            return '';
+        }
+
+        $transliterated = @iconv('UTF-8', 'ASCII//TRANSLIT', $string);
+        if (is_string($transliterated) && $transliterated !== '') {
+            return $transliterated;
+        }
+
+        return $string;
+    }
+}
+
 if (!function_exists('sanitize_html_class')) {
     function sanitize_html_class($class, $fallback = '') {
         if (!is_string($class)) {
