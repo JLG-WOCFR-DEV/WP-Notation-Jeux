@@ -1246,6 +1246,12 @@ class JLG_Frontend {
             'categorie'      => isset( $_POST['categorie'] ) ? sanitize_text_field( wp_unslash( $_POST['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
             'plateforme'     => isset( $_POST['plateforme'] ) ? sanitize_text_field( wp_unslash( $_POST['plateforme'] ) ) : ( $default_atts['plateforme'] ?? '' ),
             'lettre'         => isset( $_POST['lettre'] ) ? sanitize_text_field( wp_unslash( $_POST['lettre'] ) ) : ( $default_atts['lettre'] ?? '' ),
+            'excerpt_mode'   => ( isset( $_POST['excerpt_mode'] ) && is_string( $_POST['excerpt_mode'] ) )
+                ? sanitize_key( wp_unslash( $_POST['excerpt_mode'] ) )
+                : ( $default_atts['excerpt_mode'] ?? 'short' ),
+            'excerpt_length' => isset( $_POST['excerpt_length'] )
+                ? intval( is_array( $_POST['excerpt_length'] ) ? reset( $_POST['excerpt_length'] ) : wp_unslash( $_POST['excerpt_length'] ) )
+                : ( $default_atts['excerpt_length'] ?? 24 ),
         );
 
         if ( $atts['posts_per_page'] < 1 ) {
@@ -1254,6 +1260,10 @@ class JLG_Frontend {
 
         if ( $atts['columns'] < 1 ) {
             $atts['columns'] = $default_atts['columns'] ?? 3;
+        }
+
+        if ( $atts['excerpt_length'] < 1 ) {
+            $atts['excerpt_length'] = $default_atts['excerpt_length'] ?? 24;
         }
 
         $raw_request = isset( $_POST ) ? wp_unslash( $_POST ) : array();

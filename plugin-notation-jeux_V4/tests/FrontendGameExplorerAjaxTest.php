@@ -285,6 +285,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'availability'   => ['<script>'],
             'search'         => ['Alpha'],
             'paged'          => '-5',
+            'excerpt_mode'   => ['<invalid>'],
+            'excerpt_length' => '0',
         ];
 
         $frontend = new JLG_Frontend();
@@ -308,6 +310,10 @@ class FrontendGameExplorerAjaxTest extends TestCase
             $this->assertSame(1, $state['paged'], 'Negative paged values should resolve to page 1.');
             $this->assertSame(1, $state['total_pages'], 'Total pages should reflect sanitized pagination.');
             $this->assertSame(2, $state['total_items'], 'Total items should match the prepared snapshot.');
+
+            $this->assertArrayHasKey('html', $exception->data);
+            $this->assertStringContainsString('jlg-ge-card--excerpt-short', $exception->data['html']);
+            $this->assertStringContainsString('jlg-ge-card__excerpt--short', $exception->data['html']);
         }
     }
 
@@ -384,6 +390,52 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
         ], $context['availability_options'], 'Availability options should remain available for the filters.');
         $this->assertSame('<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>', $context['message']);
+    }
+
+    public function test_get_render_context_applies_excerpt_preferences(): void
+    {
+        $this->configureOptions();
+        $GLOBALS['jlg_test_options']['notation_jlg_settings']['game_explorer_excerpt_mode'] = 'short';
+        $GLOBALS['jlg_test_options']['notation_jlg_settings']['game_explorer_excerpt_length'] = 5;
+        JLG_Helpers::flush_plugin_options_cache();
+
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $alphaContent = 'Alpha quest delivers action packed adventures beyond imagination with secrets everywhere';
+        $betaContent  = 'Beta strike follows heroes into mysterious worlds filled with challenges and exciting twists';
+
+        $this->registerPost(101, 'Alpha Quest', $alphaContent, '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', $betaContent, '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'] = [
+            101 => [
+                '_jlg_average_score'   => 8.6,
+                '_jlg_cover_image_url' => '',
+                '_jlg_date_sortie'     => '2023-02-14',
+                '_jlg_excerpt'         => $alphaContent,
+            ],
+            202 => [
+                '_jlg_average_score'   => 7.4,
+                '_jlg_cover_image_url' => '',
+                '_jlg_date_sortie'     => '2022-11-10',
+                '_jlg_excerpt'         => $betaContent,
+            ],
+        ];
+
+        $atts = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $contextShort = JLG_Shortcode_Game_Explorer::get_render_context($atts, []);
+        $this->assertNotEmpty($contextShort['games']);
+        $this->assertStringContainsString('…', $contextShort['games'][0]['excerpt'], 'Short excerpts should be trimmed with an ellipsis.');
+
+        $atts['excerpt_mode'] = 'full';
+        $contextFull = JLG_Shortcode_Game_Explorer::get_render_context($atts, []);
+        $this->assertNotEmpty($contextFull['games']);
+        $this->assertStringNotContainsString('…', $contextFull['games'][0]['excerpt'], 'Full excerpts should not be trimmed.');
+
+        $atts['excerpt_mode'] = 'none';
+        $contextHidden = JLG_Shortcode_Game_Explorer::get_render_context($atts, []);
+        $this->assertNotEmpty($contextHidden['games']);
+        $this->assertSame('', $contextHidden['games'][0]['excerpt'], 'Excerpt should be empty when mode is none.');
     }
 
     public function test_namespaced_request_parameters_are_isolated_between_instances(): void

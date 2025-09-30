@@ -241,6 +241,25 @@
     font-size: 0.9rem;
 }
 
+.jlg-ge-card__title + .jlg-ge-card__excerpt,
+.jlg-ge-card__title + .jlg-ge-card__meta {
+    margin-top: 0.5rem;
+}
+
+.jlg-ge-card__excerpt + .jlg-ge-card__meta,
+.jlg-ge-card--excerpt-empty .jlg-ge-card__meta {
+    margin-top: 0.75rem;
+}
+
+.jlg-ge-card__excerpt--short {
+    word-break: break-word;
+}
+
+.jlg-ge-card__excerpt--full {
+    white-space: normal;
+    word-break: break-word;
+}
+
 .jlg-ge-card__meta {
     margin: 0;
     display: grid;

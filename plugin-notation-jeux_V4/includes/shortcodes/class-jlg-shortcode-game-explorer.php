@@ -104,7 +104,7 @@ class JLG_Shortcode_Game_Explorer {
     }
 
     public static function maybe_clear_filters_snapshot_for_term_event( $term, $tt_id = null, $taxonomy = '', $deleted_term = null ) {
-        unset( $tt_id, $deleted_term );
+        unset( $tt_id );
 
         $resolved_taxonomy = self::resolve_taxonomy_from_term_event( $term, $taxonomy, $deleted_term );
 
@@ -211,6 +211,12 @@ class JLG_Shortcode_Game_Explorer {
 
         $filters = isset( $options['game_explorer_filters'] ) ? $options['game_explorer_filters'] : 'letter,category,platform,availability';
 
+        $excerpt_mode_option   = isset( $options['game_explorer_excerpt_mode'] ) ? $options['game_explorer_excerpt_mode'] : 'short';
+        $excerpt_length_option = isset( $options['game_explorer_excerpt_length'] ) ? $options['game_explorer_excerpt_length'] : 24;
+
+        $excerpt_mode   = self::normalize_excerpt_mode( $excerpt_mode_option );
+        $excerpt_length = self::normalize_excerpt_length( $excerpt_length_option, 24 );
+
         return array(
             'id'             => 'jlg-game-explorer-' . uniqid(),
             'posts_per_page' => $posts_per_page,
@@ -219,6 +225,8 @@ class JLG_Shortcode_Game_Explorer {
             'categorie'      => '',
             'plateforme'     => '',
             'lettre'         => '',
+            'excerpt_mode'   => $excerpt_mode,
+            'excerpt_length' => $excerpt_length,
         );
     }
 
@@ -294,6 +302,35 @@ class JLG_Shortcode_Game_Explorer {
         }
 
         return $normalized;
+    }
+
+    protected static function normalize_excerpt_mode( $mode ) {
+        if ( ! is_string( $mode ) ) {
+            return 'short';
+        }
+
+        $mode     = strtolower( trim( $mode ) );
+        $allowed  = array( 'full', 'short', 'none' );
+        $fallback = 'short';
+
+        if ( in_array( $mode, $allowed, true ) ) {
+            return $mode;
+        }
+
+        return $fallback;
+    }
+
+    protected static function normalize_excerpt_length( $length, $fallback = 24 ) {
+        if ( ! is_numeric( $length ) ) {
+            $length = $fallback;
+        }
+
+        $length = (int) $length;
+        if ( $length < 1 ) {
+            $length = $fallback;
+        }
+
+        return max( 1, min( $length, 120 ) );
     }
 
     protected static function normalize_letter( $value ) {
@@ -760,6 +797,9 @@ class JLG_Shortcode_Game_Explorer {
 
         $filters_enabled = self::normalize_filters( $atts['filters'] );
 
+        $excerpt_mode   = self::normalize_excerpt_mode( $atts['excerpt_mode'] ?? $defaults['excerpt_mode'] );
+        $excerpt_length = self::normalize_excerpt_length( $atts['excerpt_length'] ?? $defaults['excerpt_length'], $defaults['excerpt_length'] );
+
         $orderby = ( isset( $request['orderby'] ) && is_string( $request['orderby'] ) ) ? sanitize_key( $request['orderby'] ) : 'date';
         $order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
         if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
@@ -1050,9 +1090,19 @@ class JLG_Shortcode_Game_Explorer {
                 $category_slugs = isset( $post_info['category_slugs'] ) ? $post_info['category_slugs'] : array();
                 $primary_genre  = isset( $post_info['primary_genre'] ) ? $post_info['primary_genre'] : '';
 
-                $excerpt = get_the_excerpt( $post_id );
-                if ( ! is_string( $excerpt ) || $excerpt === '' ) {
-                    $excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 24, '…' );
+                $excerpt = '';
+                if ( $excerpt_mode !== 'none' ) {
+                    $raw_excerpt = get_the_excerpt( $post_id );
+                    if ( ! is_string( $raw_excerpt ) || $raw_excerpt === '' ) {
+                        $raw_excerpt = $post instanceof WP_Post ? $post->post_content : '';
+                    }
+
+                    $excerpt = is_string( $raw_excerpt ) ? wp_strip_all_tags( $raw_excerpt ) : '';
+                    $excerpt = trim( preg_replace( '/\s+/u', ' ', $excerpt ) );
+
+                    if ( $excerpt_mode === 'short' && $excerpt !== '' ) {
+                        $excerpt = wp_trim_words( $excerpt, $excerpt_length, '…' );
+                    }
                 }
 
                 $letter = isset( $post_info['letter'] ) && $post_info['letter'] !== '' ? $post_info['letter'] : self::normalize_letter( $title );
@@ -1098,6 +1148,8 @@ class JLG_Shortcode_Game_Explorer {
                 'id'             => $atts['id'],
                 'posts_per_page' => $posts_per_page,
                 'columns'        => $columns,
+                'excerpt_mode'   => $excerpt_mode,
+                'excerpt_length' => $excerpt_length,
                 'filters'        => implode( ',', array_keys( array_filter( $filters_enabled ) ) ),
                 'categorie'      => $atts['categorie'],
                 'plateforme'     => $atts['plateforme'],
@@ -1123,9 +1175,11 @@ class JLG_Shortcode_Game_Explorer {
             'atts'                 => array_merge(
                 $atts,
                 array(
-					'posts_per_page' => $posts_per_page,
-					'columns'        => $columns,
-				)
+                    'posts_per_page' => $posts_per_page,
+                    'columns'        => $columns,
+                    'excerpt_mode'   => $excerpt_mode,
+                    'excerpt_length' => $excerpt_length,
+                )
             ),
             'games'                => array_values( $games ),
             'letters'              => $letters,

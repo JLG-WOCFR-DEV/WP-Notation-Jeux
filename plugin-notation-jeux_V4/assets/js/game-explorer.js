@@ -80,6 +80,22 @@
         parsed.atts.categorie = parsed.atts.categorie || '';
         parsed.atts.plateforme = parsed.atts.plateforme || '';
         parsed.atts.lettre = parsed.atts.lettre || '';
+        parsed.atts.excerpt_mode = parsed.atts.excerpt_mode || container.dataset.excerptMode || 'short';
+        if (['full', 'short', 'none'].indexOf(parsed.atts.excerpt_mode) === -1) {
+            parsed.atts.excerpt_mode = 'short';
+        }
+        var excerptLengthDataset = parseInt(container.dataset.excerptLength || '24', 10);
+        var resolvedExcerptLength = parsed.atts.excerpt_length;
+        if (!Number.isInteger(resolvedExcerptLength)) {
+            resolvedExcerptLength = parseInt(resolvedExcerptLength, 10);
+        }
+        if (Number.isInteger(resolvedExcerptLength) && resolvedExcerptLength > 0) {
+            parsed.atts.excerpt_length = resolvedExcerptLength;
+        } else if (Number.isInteger(excerptLengthDataset) && excerptLengthDataset > 0) {
+            parsed.atts.excerpt_length = excerptLengthDataset;
+        } else {
+            parsed.atts.excerpt_length = 24;
+        }
 
         const totalItems = parseInt(container.dataset.totalItems || '0', 10);
         if (Number.isInteger(totalItems)) {
@@ -219,6 +235,8 @@
         payload.set('categorie', config.atts.categorie || '');
         payload.set('plateforme', config.atts.plateforme || '');
         payload.set('lettre', config.atts.lettre || '');
+        payload.set('excerpt_mode', config.atts.excerpt_mode || 'short');
+        payload.set('excerpt_length', config.atts.excerpt_length || 24);
         payload.set(getRequestKey(config, 'orderby'), config.state.orderby);
         payload.set(getRequestKey(config, 'order'), config.state.order);
         payload.set(getRequestKey(config, 'letter'), config.state.letter);

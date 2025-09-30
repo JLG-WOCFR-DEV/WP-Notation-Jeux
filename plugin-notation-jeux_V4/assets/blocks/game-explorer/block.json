@@ -41,6 +41,14 @@
     "sort": {
       "type": "string",
       "default": "date|DESC"
+    },
+    "excerptMode": {
+      "type": "string",
+      "default": "short"
+    },
+    "excerptLength": {
+      "type": "integer",
+      "default": 24
     }
   },
   "editorScript": "notation-jlg-game-explorer-editor",

@@ -6,10 +6,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 $games       = is_array( $games ) ? $games : array();
 $message     = isset( $message ) ? $message : '';
 $pagination  = is_array( $pagination ) ? $pagination : array(
-	'current' => 1,
-	'total'   => 0,
+        'current' => 1,
+        'total'   => 0,
 );
 $total_items = isset( $total_items ) ? (int) $total_items : 0;
+$atts        = isset( $atts ) && is_array( $atts ) ? $atts : array();
+$excerpt_mode = isset( $atts['excerpt_mode'] ) ? $atts['excerpt_mode'] : 'short';
+if ( ! in_array( $excerpt_mode, array( 'full', 'short', 'none' ), true ) ) {
+    $excerpt_mode = 'short';
+}
 
 if ( empty( $games ) ) {
     echo wp_kses_post( $message );
@@ -32,8 +37,12 @@ if ( empty( $games ) ) {
         $availability_label  = isset( $game['availability_label'] ) ? $game['availability_label'] : '';
         $availability_status = isset( $game['availability'] ) ? $game['availability'] : '';
         $excerpt             = isset( $game['excerpt'] ) ? $game['excerpt'] : '';
+        $card_classes        = array( 'jlg-ge-card', 'jlg-ge-card--excerpt-' . sanitize_html_class( $excerpt_mode ) );
+        if ( $excerpt === '' ) {
+            $card_classes[] = 'jlg-ge-card--excerpt-empty';
+        }
         ?>
-        <article class="jlg-ge-card" data-post-id="<?php echo esc_attr( $game['post_id'] ); ?>">
+        <article class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $card_classes ) ) ); ?>" data-post-id="<?php echo esc_attr( $game['post_id'] ); ?>">
             <a class="jlg-ge-card__media" href="<?php echo esc_url( $permalink ); ?>">
                 <?php if ( $cover_url ) : ?>
                     <img src="<?php echo esc_url( $cover_url ); ?>" alt="<?php echo esc_attr( $title ); ?>" loading="lazy">
@@ -51,8 +60,8 @@ if ( empty( $games ) ) {
                 <h3 class="jlg-ge-card__title">
                     <a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a>
                 </h3>
-                <?php if ( $excerpt !== '' ) : ?>
-                    <p class="jlg-ge-card__excerpt"><?php echo esc_html( $excerpt ); ?></p>
+                <?php if ( $excerpt_mode !== 'none' && $excerpt !== '' ) : ?>
+                    <p class="jlg-ge-card__excerpt jlg-ge-card__excerpt--<?php echo esc_attr( $excerpt_mode ); ?>"><?php echo esc_html( $excerpt ); ?></p>
                 <?php endif; ?>
                 <dl class="jlg-ge-card__meta">
                     <?php if ( $release_display !== '' ) : ?>

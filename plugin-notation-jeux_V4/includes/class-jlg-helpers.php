@@ -170,6 +170,8 @@ class JLG_Helpers {
             'game_explorer_columns'        => 3,
             'game_explorer_posts_per_page' => 12,
             'game_explorer_filters'        => 'letter,category,platform,availability',
+            'game_explorer_excerpt_mode'   => 'short',
+            'game_explorer_excerpt_length' => 24,
 
             // Libellés
             'label_cat1'                   => 'Gameplay',

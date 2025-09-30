@@ -120,6 +120,40 @@
                     ),
                     createElement(
                         PanelBody,
+                        { title: __('Extrait', 'notation-jlg'), initialOpen: false },
+                        createElement(SelectControl, {
+                            label: __('Mode d\'extrait', 'notation-jlg'),
+                            value: attributes.excerptMode || 'short',
+                            options: [
+                                { value: 'short', label: __('Extrait court', 'notation-jlg') },
+                                { value: 'full', label: __('Extrait complet', 'notation-jlg') },
+                                { value: 'none', label: __('Masquer l\'extrait', 'notation-jlg') },
+                            ],
+                            help: __('Choisissez comment afficher le résumé des tests dans chaque carte.', 'notation-jlg'),
+                            onChange: function (value) {
+                                var normalized = typeof value === 'string' && value ? value : 'short';
+                                setAttributes({ excerptMode: normalized });
+                            },
+                        }),
+                        (attributes.excerptMode || 'short') === 'short'
+                            ? createElement(RangeControl, {
+                                  label: __('Longueur (mots)', 'notation-jlg'),
+                                  value: attributes.excerptLength || 24,
+                                  min: 5,
+                                  max: 80,
+                                  step: 1,
+                                  onChange: function (value) {
+                                      var parsed = parseInt(value, 10);
+                                      if (isNaN(parsed) || parsed < 1) {
+                                          parsed = 24;
+                                      }
+                                      setAttributes({ excerptLength: parsed });
+                                  },
+                              })
+                            : null
+                    ),
+                    createElement(
+                        PanelBody,
                         { title: __('Filtres disponibles', 'notation-jlg'), initialOpen: false },
                         filterOptions.map(function (option) {
                             var checked = filters.indexOf(option.value) !== -1;
@@ -172,6 +206,8 @@
                             platform: attributes.platform || '',
                             letter: attributes.letter || '',
                             sort: attributes.sort || 'date|DESC',
+                            excerptMode: attributes.excerptMode || 'short',
+                            excerptLength: attributes.excerptLength || 24,
                         },
                         label: __('Game Explorer', 'notation-jlg'),
                     })

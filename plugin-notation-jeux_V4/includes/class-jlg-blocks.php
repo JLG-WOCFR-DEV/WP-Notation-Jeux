@@ -440,6 +440,20 @@ class JLG_Blocks {
             $atts['lettre'] = sanitize_text_field( $attributes['letter'] );
         }
 
+        if ( isset( $attributes['excerptMode'] ) && is_string( $attributes['excerptMode'] ) ) {
+            $mode = sanitize_key( $attributes['excerptMode'] );
+            if ( in_array( $mode, array( 'full', 'short', 'none' ), true ) ) {
+                $atts['excerpt_mode'] = $mode;
+            }
+        }
+
+        if ( isset( $attributes['excerptLength'] ) ) {
+            $length = absint( $attributes['excerptLength'] );
+            if ( $length > 0 ) {
+                $atts['excerpt_length'] = $length;
+            }
+        }
+
         $sort_override = null;
         if ( ! empty( $attributes['sort'] ) && is_string( $attributes['sort'] ) ) {
             $sort    = sanitize_text_field( $attributes['sort'] );

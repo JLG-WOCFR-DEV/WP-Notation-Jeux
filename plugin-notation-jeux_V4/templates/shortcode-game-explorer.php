@@ -21,14 +21,20 @@ $total_items          = isset( $total_items ) ? (int) $total_items : 0;
 $sort_key             = isset( $sort_key ) ? $sort_key : 'date';
 $sort_order           = isset( $sort_order ) ? $sort_order : 'DESC';
 $pagination           = is_array( $pagination ) ? $pagination : array(
-	'current' => 1,
-	'total'   => 0,
+        'current' => 1,
+        'total'   => 0,
 );
 $config_payload       = is_array( $config_payload ) ? $config_payload : array();
 $request_prefix       = isset( $request_prefix ) ? (string) $request_prefix : '';
 $config_json          = wp_json_encode( $config_payload );
 if ( $config_json === false ) {
     $config_json = '{}';
+}
+
+$excerpt_mode_attr   = isset( $atts['excerpt_mode'] ) ? sanitize_html_class( $atts['excerpt_mode'] ) : 'short';
+$excerpt_length_attr = isset( $atts['excerpt_length'] ) ? (int) $atts['excerpt_length'] : 24;
+if ( $excerpt_length_attr < 1 ) {
+    $excerpt_length_attr = 24;
 }
 
 $has_category_filter     = ! empty( $filters_enabled['category'] ) && ! empty( $categories_list );
@@ -49,6 +55,8 @@ $availability_active     = isset( $current_filters['availability'] ) ? $current_
     data-posts-per-page="<?php echo esc_attr( $atts['posts_per_page'] ); ?>"
     data-total-items="<?php echo esc_attr( $total_items ); ?>"
     data-request-prefix="<?php echo esc_attr( $request_prefix ); ?>"
+    data-excerpt-mode="<?php echo esc_attr( $excerpt_mode_attr ); ?>"
+    data-excerpt-length="<?php echo esc_attr( $excerpt_length_attr ); ?>"
 >
     <div class="jlg-ge-toolbar">
         <div class="jlg-ge-toolbar__left">

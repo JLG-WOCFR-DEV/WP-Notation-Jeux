@@ -40,6 +40,7 @@ class JLG_Admin_Settings {
             'text_glow_color_mode'   => array( 'dynamic', 'custom' ),
             'circle_glow_color_mode' => array( 'dynamic', 'custom' ),
             'table_border_style'     => array( 'none', 'horizontal', 'full' ),
+            'game_explorer_excerpt_mode' => array( 'full', 'short', 'none' ),
         );
 
         foreach ( $select_fields as $field => $allowed_values ) {
@@ -128,7 +129,8 @@ class JLG_Admin_Settings {
         // Nombres
         if ( strpos( $key, 'size' ) !== false || strpos( $key, 'width' ) !== false ||
             strpos( $key, 'padding' ) !== false || strpos( $key, 'radius' ) !== false ||
-            strpos( $key, 'intensity' ) !== false || strpos( $key, 'speed' ) !== false ) {
+            strpos( $key, 'intensity' ) !== false || strpos( $key, 'speed' ) !== false ||
+            strpos( $key, 'length' ) !== false ) {
             return is_numeric( $value ) ? floatval( $value ) : ( is_numeric( $default_value ) ? floatval( $default_value ) : 0 );
         }
 
@@ -979,6 +981,43 @@ class JLG_Admin_Settings {
                 'desc'        => __( 'Liste séparée par des virgules. Options disponibles : letter, category, platform, availability.', 'notation-jlg' ),
             )
         );
+
+        add_settings_field(
+            'game_explorer_excerpt_mode',
+            __( 'Affichage de l\'extrait', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_game_explorer',
+            array(
+                'id'      => 'game_explorer_excerpt_mode',
+                'type'    => 'select',
+                'options' => array(
+                    'short' => __( 'Extrait court', 'notation-jlg' ),
+                    'full'  => __( 'Extrait complet', 'notation-jlg' ),
+                    'none'  => __( 'Masquer l\'extrait', 'notation-jlg' ),
+                ),
+                'desc'    => __( 'Détermine si l\'extrait des tests est tronqué, affiché intégralement ou masqué.', 'notation-jlg' ),
+            )
+        );
+
+        $game_explorer_excerpt_length_args = array(
+            'id'    => 'game_explorer_excerpt_length',
+            'type'  => 'number',
+            'min'   => 5,
+            'max'   => 80,
+            'step'  => 1,
+            'desc'  => __( 'Nombre de mots à conserver lorsque l\'extrait court est sélectionné.', 'notation-jlg' ),
+        );
+
+        add_settings_field(
+            'game_explorer_excerpt_length',
+            __( 'Longueur de l\'extrait court', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_game_explorer',
+            $game_explorer_excerpt_length_args
+        );
+        $this->store_field_constraints( $game_explorer_excerpt_length_args );
     }
 
     public function render_field( $args ) {
