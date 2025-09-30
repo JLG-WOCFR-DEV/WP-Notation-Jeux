@@ -1,0 +1,39 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/game-info",
+  "title": "Fiche technique",
+  "category": "widgets",
+  "icon": "portfolio",
+  "description": "Affiche la fiche technique personnalisable d'un test.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "html": false
+  },
+  "attributes": {
+    "postId": {
+      "type": "integer",
+      "default": 0
+    },
+    "title": {
+      "type": "string",
+      "default": "Fiche Technique"
+    },
+    "fields": {
+      "type": "array",
+      "default": [
+        "developpeur",
+        "editeur",
+        "date_sortie",
+        "version",
+        "pegi",
+        "temps_de_jeu",
+        "plateformes"
+      ],
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "editorScript": "notation-jlg-game-info-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

@@ -1,0 +1,44 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/summary-display",
+  "title": "Tableau récapitulatif",
+  "category": "widgets",
+  "icon": "table-col-after",
+  "description": "Affiche le tableau ou la grille récapitulant vos tests notés.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false
+  },
+  "attributes": {
+    "postsPerPage": {
+      "type": "integer",
+      "default": 12
+    },
+    "layout": {
+      "type": "string",
+      "default": "table"
+    },
+    "columns": {
+      "type": "array",
+      "default": ["titre", "date", "note"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "category": {
+      "type": "string",
+      "default": ""
+    },
+    "letterFilter": {
+      "type": "string",
+      "default": ""
+    },
+    "genreFilter": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "notation-jlg-summary-display-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

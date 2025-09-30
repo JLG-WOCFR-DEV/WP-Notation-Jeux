@@ -1,0 +1,15 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/tagline",
+  "title": "Tagline bilingue",
+  "category": "widgets",
+  "icon": "format-status",
+  "description": "Affiche la tagline bilingue associée au test en cours.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "html": false
+  },
+  "attributes": {},
+  "editorScript": "notation-jlg-tagline-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

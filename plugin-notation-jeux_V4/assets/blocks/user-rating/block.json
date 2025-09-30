@@ -1,0 +1,15 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/user-rating",
+  "title": "Notation utilisateurs",
+  "category": "widgets",
+  "icon": "thumbs-up",
+  "description": "Affiche le module de notation des lecteurs.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "html": false
+  },
+  "attributes": {},
+  "editorScript": "notation-jlg-user-rating-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

@@ -1,0 +1,48 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/game-explorer",
+  "title": "Game Explorer",
+  "category": "widgets",
+  "icon": "grid-view",
+  "description": "Affiche le Game Explorer interactif avec filtres.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false
+  },
+  "attributes": {
+    "postsPerPage": {
+      "type": "integer",
+      "default": 12
+    },
+    "columns": {
+      "type": "integer",
+      "default": 3
+    },
+    "filters": {
+      "type": "array",
+      "default": ["letter", "category", "platform", "availability"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "category": {
+      "type": "string",
+      "default": ""
+    },
+    "platform": {
+      "type": "string",
+      "default": ""
+    },
+    "letter": {
+      "type": "string",
+      "default": ""
+    },
+    "sort": {
+      "type": "string",
+      "default": "date|DESC"
+    }
+  },
+  "editorScript": "notation-jlg-game-explorer-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}
