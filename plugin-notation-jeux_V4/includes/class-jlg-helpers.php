@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class JLG_Helpers {
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
+    private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
 
     private static $option_name                   = 'notation_jlg_settings';
     private static $category_keys                 = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
@@ -908,6 +909,96 @@ class JLG_Helpers {
         }
 
         return $labels;
+    }
+
+    /**
+     * Récupère les tags associés à une plateforme donnée.
+     *
+     * @param string $platform_key Identifiant de la plateforme.
+     *
+     * @return WP_Term[]
+     */
+    public static function get_platform_tags( $platform_key ) {
+        $platform_key = sanitize_key( $platform_key );
+
+        if ( $platform_key === '' ) {
+            return array();
+        }
+
+        $map = get_option( self::PLATFORM_TAG_OPTION, array() );
+
+        if ( ! is_array( $map ) || ! isset( $map[ $platform_key ] ) ) {
+            return array();
+        }
+
+        $stored_tags = $map[ $platform_key ];
+
+        if ( ! is_array( $stored_tags ) ) {
+            $stored_tags = $stored_tags === '' ? array() : array( $stored_tags );
+        }
+
+        $ids   = array();
+        $slugs = array();
+
+        foreach ( $stored_tags as $value ) {
+            if ( is_numeric( $value ) ) {
+                $tag_id = (int) $value;
+
+                if ( $tag_id > 0 ) {
+                    $ids[] = $tag_id;
+                }
+            } else {
+                $slug = sanitize_title( $value );
+
+                if ( $slug !== '' ) {
+                    $slugs[] = $slug;
+                }
+            }
+        }
+
+        $terms = array();
+
+        if ( ! empty( $ids ) ) {
+            $terms_by_id = get_terms(
+                array(
+                    'taxonomy'   => 'post_tag',
+                    'hide_empty' => false,
+                    'include'    => $ids,
+                )
+            );
+
+            if ( ! is_wp_error( $terms_by_id ) ) {
+                $terms = array_merge( $terms, $terms_by_id );
+            }
+        }
+
+        if ( ! empty( $slugs ) ) {
+            $terms_by_slug = get_terms(
+                array(
+                    'taxonomy'   => 'post_tag',
+                    'hide_empty' => false,
+                    'slug'       => $slugs,
+                )
+            );
+
+            if ( ! is_wp_error( $terms_by_slug ) ) {
+                $terms = array_merge( $terms, $terms_by_slug );
+            }
+        }
+
+        if ( empty( $terms ) ) {
+            return array();
+        }
+
+        $unique_terms = array();
+
+        foreach ( $terms as $term ) {
+            if ( $term instanceof WP_Term ) {
+                $unique_terms[ $term->term_id ] = $term;
+            }
+        }
+
+        return array_values( $unique_terms );
     }
 
     /**
