@@ -294,8 +294,22 @@ class JLG_Shortcode_Game_Explorer {
         }
 
         $value = remove_accents($value);
-        $first = mb_substr($value, 0, 1, 'UTF-8');
-        $first_upper = mb_strtoupper($first, 'UTF-8');
+
+        if (function_exists('mb_substr')) {
+            $first = mb_substr($value, 0, 1, 'UTF-8');
+        } elseif (function_exists('iconv_substr')) {
+            $first = iconv_substr($value, 0, 1, 'UTF-8');
+        } else {
+            $first = substr($value, 0, 1);
+        }
+
+        if (function_exists('mb_strtoupper')) {
+            $first_upper = mb_strtoupper($first, 'UTF-8');
+        } elseif (function_exists('wp_strtoupper')) {
+            $first_upper = wp_strtoupper($first);
+        } else {
+            $first_upper = strtoupper($first);
+        }
 
         if (preg_match('/[A-Z]/u', $first_upper)) {
             return $first_upper;
