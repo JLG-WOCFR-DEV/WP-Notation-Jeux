@@ -1243,6 +1243,9 @@ class JLG_Frontend {
             'posts_per_page' => isset( $_POST['posts_per_page'] ) ? intval( wp_unslash( $_POST['posts_per_page'] ) ) : ( $default_atts['posts_per_page'] ?? 12 ),
             'columns'        => isset( $_POST['columns'] ) ? intval( wp_unslash( $_POST['columns'] ) ) : ( $default_atts['columns'] ?? 3 ),
             'filters'        => isset( $_POST['filters'] ) ? sanitize_text_field( wp_unslash( $_POST['filters'] ) ) : ( $default_atts['filters'] ?? '' ),
+            'score_position' => isset( $_POST['score_position'] )
+                ? JLG_Helpers::normalize_game_explorer_score_position( wp_unslash( $_POST['score_position'] ) )
+                : ( $default_atts['score_position'] ?? '' ),
             'categorie'      => isset( $_POST['categorie'] ) ? sanitize_text_field( wp_unslash( $_POST['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
             'plateforme'     => isset( $_POST['plateforme'] ) ? sanitize_text_field( wp_unslash( $_POST['plateforme'] ) ) : ( $default_atts['plateforme'] ?? '' ),
             'lettre'         => isset( $_POST['lettre'] ) ? sanitize_text_field( wp_unslash( $_POST['lettre'] ) ) : ( $default_atts['lettre'] ?? '' ),
@@ -1279,8 +1282,9 @@ class JLG_Frontend {
         if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
             wp_send_json_success(
                 array(
-					'html'  => $context['message'],
-					'state' => $state,
+                    'html'  => $context['message'],
+                    'state' => $state,
+                    'config' => $context['config_payload'] ?? array(),
                 )
             );
         }
@@ -1289,8 +1293,9 @@ class JLG_Frontend {
 
         wp_send_json_success(
             array(
-				'html'  => $html,
-				'state' => $state,
+                'html'   => $html,
+                'state'  => $state,
+                'config' => $context['config_payload'] ?? array(),
             )
         );
     }
@@ -1615,6 +1620,7 @@ class JLG_Frontend {
                 'total_items'          => 0,
                 'config_payload'       => array(),
                 'message'              => '',
+                'score_position'       => JLG_Helpers::normalize_game_explorer_score_position( '' ),
             );
 
             // Fusionner les arguments fournis avec les valeurs par défaut.

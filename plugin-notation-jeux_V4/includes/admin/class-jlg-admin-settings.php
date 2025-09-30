@@ -35,11 +35,12 @@ class JLG_Admin_Settings {
         // IMPORTANT: Traiter d'abord les champs select pour les modes de couleur
         // Ces champs doivent être traités spécialement pour conserver leur valeur
         $select_fields = array(
-            'visual_theme'           => array( 'dark', 'light' ),
-            'score_layout'           => array( 'text', 'circle' ),
-            'text_glow_color_mode'   => array( 'dynamic', 'custom' ),
-            'circle_glow_color_mode' => array( 'dynamic', 'custom' ),
-            'table_border_style'     => array( 'none', 'horizontal', 'full' ),
+            'visual_theme'                 => array( 'dark', 'light' ),
+            'score_layout'                 => array( 'text', 'circle' ),
+            'text_glow_color_mode'         => array( 'dynamic', 'custom' ),
+            'circle_glow_color_mode'       => array( 'dynamic', 'custom' ),
+            'table_border_style'           => array( 'none', 'horizontal', 'full' ),
+            'game_explorer_score_position' => JLG_Helpers::get_game_explorer_score_positions(),
         );
 
         foreach ( $select_fields as $field => $allowed_values ) {
@@ -977,6 +978,28 @@ class JLG_Admin_Settings {
                 'type'        => 'text',
                 'placeholder' => 'letter,category,platform,availability',
                 'desc'        => __( 'Liste séparée par des virgules. Options disponibles : letter, category, platform, availability.', 'notation-jlg' ),
+            )
+        );
+
+        $score_position_options = array(
+            'top-left'      => __( 'En haut à gauche', 'notation-jlg' ),
+            'top-right'     => __( 'En haut à droite', 'notation-jlg' ),
+            'middle-left'   => __( 'Au centre à gauche', 'notation-jlg' ),
+            'middle-right'  => __( 'Au centre à droite', 'notation-jlg' ),
+            'bottom-left'   => __( 'En bas à gauche', 'notation-jlg' ),
+            'bottom-right'  => __( 'En bas à droite', 'notation-jlg' ),
+        );
+
+        add_settings_field(
+            'game_explorer_score_position',
+            __( 'Position de la note', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_game_explorer',
+            array(
+                'id'      => 'game_explorer_score_position',
+                'type'    => 'select',
+                'options' => $score_position_options,
             )
         );
     }

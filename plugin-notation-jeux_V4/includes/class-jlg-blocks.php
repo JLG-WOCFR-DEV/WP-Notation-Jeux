@@ -421,6 +421,10 @@ class JLG_Blocks {
             $atts['columns'] = $columns;
         }
 
+        if ( ! empty( $attributes['scorePosition'] ) && is_string( $attributes['scorePosition'] ) ) {
+            $atts['score_position'] = JLG_Helpers::normalize_game_explorer_score_position( $attributes['scorePosition'] );
+        }
+
         if ( ! empty( $attributes['filters'] ) && is_array( $attributes['filters'] ) ) {
             $filters = array_map( 'sanitize_key', array_filter( $attributes['filters'] ) );
             if ( ! empty( $filters ) ) {

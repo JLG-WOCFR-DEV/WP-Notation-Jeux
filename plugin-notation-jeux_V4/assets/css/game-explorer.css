@@ -183,8 +183,6 @@
 
 .jlg-ge-card__score {
     position: absolute;
-    bottom: 0.75rem;
-    right: 0.75rem;
     background: linear-gradient(135deg, var(--jlg-ge-accent), var(--jlg-ge-accent-alt));
     color: #0f172a;
     font-weight: 700;
@@ -192,6 +190,51 @@
     border-radius: 9999px;
     font-size: 1rem;
     box-shadow: 0 0 25px rgba(96, 165, 250, 0.3);
+    transform: none;
+    max-width: calc(100% - 1.5rem);
+    text-align: center;
+}
+
+.jlg-ge-card__score--top-left,
+.jlg-ge-card__score--middle-left,
+.jlg-ge-card__score--bottom-left {
+    left: 0.75rem;
+    right: auto;
+}
+
+.jlg-ge-card__score--top-right,
+.jlg-ge-card__score--middle-right,
+.jlg-ge-card__score--bottom-right {
+    right: 0.75rem;
+    left: auto;
+}
+
+.jlg-ge-card__score--top-left,
+.jlg-ge-card__score--top-right {
+    top: 0.75rem;
+    bottom: auto;
+    transform: none;
+}
+
+.jlg-ge-card__score--bottom-left,
+.jlg-ge-card__score--bottom-right {
+    bottom: 0.75rem;
+    top: auto;
+    transform: none;
+}
+
+.jlg-ge-card__score--middle-left,
+.jlg-ge-card__score--middle-right {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+}
+
+@media (max-width: 640px) {
+    .jlg-ge-card__score {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.65rem;
+    }
 }
 
 .jlg-ge-card__score::before {

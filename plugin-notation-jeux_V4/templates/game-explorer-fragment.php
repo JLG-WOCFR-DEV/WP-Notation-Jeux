@@ -6,10 +6,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 $games       = is_array( $games ) ? $games : array();
 $message     = isset( $message ) ? $message : '';
 $pagination  = is_array( $pagination ) ? $pagination : array(
-	'current' => 1,
-	'total'   => 0,
+        'current' => 1,
+        'total'   => 0,
 );
 $total_items = isset( $total_items ) ? (int) $total_items : 0;
+$score_position = isset( $score_position )
+    ? JLG_Helpers::normalize_game_explorer_score_position( $score_position )
+    : JLG_Helpers::normalize_game_explorer_score_position( '' );
+$score_classes = array(
+    'jlg-ge-card__score',
+    'jlg-ge-card__score--' . sanitize_html_class( $score_position ),
+);
 
 if ( empty( $games ) ) {
     echo wp_kses_post( $message );
@@ -41,7 +48,7 @@ if ( empty( $games ) ) {
                     <span class="jlg-ge-card__placeholder"><?php esc_html_e( 'Visuel indisponible', 'notation-jlg' ); ?></span>
                 <?php endif; ?>
                 <?php if ( $score_display !== '' ) : ?>
-                    <span class="jlg-ge-card__score" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
+                    <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
                         <?php echo esc_html( $score_display ); ?>
                         <span class="jlg-ge-card__score-outof">/10</span>
                     </span>

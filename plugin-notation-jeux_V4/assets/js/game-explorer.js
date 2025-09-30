@@ -80,6 +80,7 @@
         parsed.atts.categorie = parsed.atts.categorie || '';
         parsed.atts.plateforme = parsed.atts.plateforme || '';
         parsed.atts.lettre = parsed.atts.lettre || '';
+        parsed.atts.score_position = parsed.atts.score_position || 'bottom-right';
 
         const totalItems = parseInt(container.dataset.totalItems || '0', 10);
         if (Number.isInteger(totalItems)) {
@@ -216,6 +217,7 @@
         payload.set('posts_per_page', config.atts.posts_per_page);
         payload.set('columns', config.atts.columns);
         payload.set('filters', config.atts.filters || '');
+        payload.set('score_position', config.atts.score_position || 'bottom-right');
         payload.set('categorie', config.atts.categorie || '');
         payload.set('plateforme', config.atts.plateforme || '');
         payload.set('lettre', config.atts.lettre || '');
@@ -251,9 +253,20 @@
 
                 if (responseData.state) {
                     config.state = Object.assign({}, config.state, responseData.state);
-                    writeConfig(container, config);
-                    updateCount(container, responseData.state);
                 }
+
+                if (responseData.config && typeof responseData.config === 'object') {
+                    if (responseData.config.atts && typeof responseData.config.atts === 'object') {
+                        config.atts = Object.assign({}, config.atts, responseData.config.atts);
+                    }
+
+                    if (responseData.config.request && typeof responseData.config.request === 'object') {
+                        config.request = Object.assign({}, config.request, responseData.config.request);
+                    }
+                }
+
+                writeConfig(container, config);
+                updateCount(container, config.state);
 
                 updateActiveFilters(container, config, refs);
                 bindPagination(container, config, refs);

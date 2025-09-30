@@ -210,12 +210,16 @@ class JLG_Shortcode_Game_Explorer {
         }
 
         $filters = isset( $options['game_explorer_filters'] ) ? $options['game_explorer_filters'] : 'letter,category,platform,availability';
+        $score_position = JLG_Helpers::normalize_game_explorer_score_position(
+            $options['game_explorer_score_position'] ?? ''
+        );
 
         return array(
             'id'             => 'jlg-game-explorer-' . uniqid(),
             'posts_per_page' => $posts_per_page,
             'columns'        => $columns,
             'filters'        => $filters,
+            'score_position' => $score_position,
             'categorie'      => '',
             'plateforme'     => '',
             'lettre'         => '',
@@ -759,6 +763,7 @@ class JLG_Shortcode_Game_Explorer {
         $columns = max( 1, min( $columns, 4 ) );
 
         $filters_enabled = self::normalize_filters( $atts['filters'] );
+        $score_position  = JLG_Helpers::normalize_game_explorer_score_position( $atts['score_position'] ?? '' );
 
         $orderby = ( isset( $request['orderby'] ) && is_string( $request['orderby'] ) ) ? sanitize_key( $request['orderby'] ) : 'date';
         $order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
@@ -1098,6 +1103,7 @@ class JLG_Shortcode_Game_Explorer {
                 'id'             => $atts['id'],
                 'posts_per_page' => $posts_per_page,
                 'columns'        => $columns,
+                'score_position' => $score_position,
                 'filters'        => implode( ',', array_keys( array_filter( $filters_enabled ) ) ),
                 'categorie'      => $atts['categorie'],
                 'plateforme'     => $atts['plateforme'],
@@ -1123,9 +1129,10 @@ class JLG_Shortcode_Game_Explorer {
             'atts'                 => array_merge(
                 $atts,
                 array(
-					'posts_per_page' => $posts_per_page,
-					'columns'        => $columns,
-				)
+                    'posts_per_page' => $posts_per_page,
+                    'columns'        => $columns,
+                    'score_position' => $score_position,
+                )
             ),
             'games'                => array_values( $games ),
             'letters'              => $letters,
@@ -1152,6 +1159,7 @@ class JLG_Shortcode_Game_Explorer {
             'config_payload'       => $config_payload,
             'request_prefix'       => $request_prefix,
             'request_keys'         => $request_keys,
+            'score_position'       => $score_position,
         );
     }
 

@@ -49,6 +49,15 @@
         { value: 'title|DESC', label: __('Titre (Z-A)', 'notation-jlg') },
     ];
 
+    var scorePositionOptions = [
+        { value: 'top-left', label: __('En haut à gauche', 'notation-jlg') },
+        { value: 'top-right', label: __('En haut à droite', 'notation-jlg') },
+        { value: 'middle-left', label: __('Au centre à gauche', 'notation-jlg') },
+        { value: 'middle-right', label: __('Au centre à droite', 'notation-jlg') },
+        { value: 'bottom-left', label: __('En bas à gauche', 'notation-jlg') },
+        { value: 'bottom-right', label: __('En bas à droite', 'notation-jlg') },
+    ];
+
     registerBlockType('notation-jlg/game-explorer', {
         edit: function (props) {
             var attributes = props.attributes || {};
@@ -107,6 +116,15 @@
                                     parsed = 3;
                                 }
                                 setAttributes({ columns: parsed });
+                            },
+                        }),
+                        createElement(SelectControl, {
+                            label: __('Position de la note', 'notation-jlg'),
+                            value: attributes.scorePosition || 'bottom-right',
+                            options: scorePositionOptions,
+                            onChange: function (value) {
+                                var normalized = value || 'bottom-right';
+                                setAttributes({ scorePosition: normalized });
                             },
                         }),
                         createElement(SelectControl, {
@@ -171,6 +189,7 @@
                             category: attributes.category || '',
                             platform: attributes.platform || '',
                             letter: attributes.letter || '',
+                            scorePosition: attributes.scorePosition || 'bottom-right',
                             sort: attributes.sort || 'date|DESC',
                         },
                         label: __('Game Explorer', 'notation-jlg'),
