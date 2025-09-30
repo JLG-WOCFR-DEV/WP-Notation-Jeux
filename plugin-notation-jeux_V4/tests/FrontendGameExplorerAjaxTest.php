@@ -419,6 +419,90 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame('DESC', $contextTwo['sort_order']);
     }
 
+    public function test_score_position_modifier_reflects_configuration(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the position test.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the position test.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'] = [
+            101 => [
+                '_jlg_average_score'   => 8.5,
+                '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+                '_jlg_date_sortie'     => '2023-02-14',
+                '_jlg_developpeur'     => 'Studio Alpha',
+                '_jlg_editeur'         => 'Publisher A',
+                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+            ],
+            202 => [
+                '_jlg_average_score'   => 7.2,
+                '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
+                '_jlg_date_sortie'     => '2022-11-10',
+                '_jlg_developpeur'     => 'Studio Beta',
+                '_jlg_editeur'         => 'Publisher B',
+                '_jlg_plateformes'     => ['PC'],
+            ],
+        ];
+
+        $basePost = [
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'position-test',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => 'letter,category,platform,availability,search',
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'paged'          => '1',
+        ];
+
+        $defaultResponse = $this->dispatchExplorerAjax($basePost);
+        $this->assertArrayHasKey('html', $defaultResponse);
+        $this->assertStringContainsString('jlg-ge-card__score--bottom-right', $defaultResponse['html']);
+        $this->assertSame('bottom-right', $defaultResponse['config']['atts']['score_position'] ?? null);
+
+        $GLOBALS['jlg_test_options']['notation_jlg_settings']['game_explorer_score_position'] = 'top-left';
+        JLG_Helpers::flush_plugin_options_cache();
+
+        $topLeftResponse = $this->dispatchExplorerAjax($basePost);
+        $this->assertArrayHasKey('html', $topLeftResponse);
+        $this->assertStringContainsString('jlg-ge-card__score--top-left', $topLeftResponse['html']);
+        $this->assertSame('top-left', $topLeftResponse['config']['atts']['score_position'] ?? null);
+
+        $overridePost = $basePost;
+        $overridePost['score_position'] = 'middle-right';
+
+        $overrideResponse = $this->dispatchExplorerAjax($overridePost);
+        $this->assertArrayHasKey('html', $overrideResponse);
+        $this->assertStringContainsString('jlg-ge-card__score--middle-right', $overrideResponse['html']);
+        $this->assertSame('middle-right', $overrideResponse['config']['atts']['score_position'] ?? null);
+    }
+
+    private function dispatchExplorerAjax(array $post): array
+    {
+        $_POST = $post;
+        $frontend = new JLG_Frontend();
+        $payload = null;
+
+        try {
+            $frontend->handle_game_explorer_sort();
+            $this->fail('Expected WP_Send_Json_Exception to be thrown.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success, 'Ajax handler should respond with success payload.');
+            $this->assertIsArray($exception->data, 'Ajax payload should be an array.');
+            $payload = $exception->data;
+        } finally {
+            $_POST = [];
+        }
+
+        $this->assertIsArray($payload, 'Ajax payload should not be null.');
+        $this->assertArrayHasKey('config', $payload);
+        $this->assertIsArray($payload['config']);
+
+        return $payload;
+    }
+
     public function test_snapshot_cleared_after_relevant_meta_update(): void
     {
         $this->configureOptions();
@@ -502,6 +586,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $defaults = JLG_Helpers::get_default_settings();
         $defaults['game_explorer_posts_per_page'] = 2;
         $defaults['game_explorer_filters'] = 'letter,category,platform,availability,search';
+        $defaults['game_explorer_score_position'] = JLG_Helpers::normalize_game_explorer_score_position('');
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $defaults;
         $GLOBALS['jlg_test_options']['jlg_platforms_list'] = [];

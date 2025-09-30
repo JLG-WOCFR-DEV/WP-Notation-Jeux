@@ -10,10 +10,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class JLG_Helpers {
 
-    private static $option_name            = 'notation_jlg_settings';
-    private static $category_keys          = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
-    private static $options_cache          = null;
-    private static $default_settings_cache = null;
+    private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
+
+    private static $option_name                   = 'notation_jlg_settings';
+    private static $category_keys                 = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
+    private static $options_cache                 = null;
+    private static $default_settings_cache        = null;
+    private static $game_explorer_score_positions = array(
+        'top-left',
+        'top-right',
+        'middle-left',
+        'middle-right',
+        'bottom-left',
+        'bottom-right',
+    );
 
     private static function get_rating_meta_keys() {
         static $meta_keys = null;
@@ -170,6 +180,7 @@ class JLG_Helpers {
             'game_explorer_columns'        => 3,
             'game_explorer_posts_per_page' => 12,
             'game_explorer_filters'        => 'letter,category,platform,availability',
+            'game_explorer_score_position' => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés
             'label_cat1'                   => 'Gameplay',
@@ -198,7 +209,31 @@ class JLG_Helpers {
         $saved_options       = get_option( self::$option_name, $defaults );
         self::$options_cache = wp_parse_args( $saved_options, $defaults );
 
+        $score_position = isset( self::$options_cache['game_explorer_score_position'] )
+            ? self::$options_cache['game_explorer_score_position']
+            : self::GAME_EXPLORER_DEFAULT_SCORE_POSITION;
+
+        self::$options_cache['game_explorer_score_position'] = self::normalize_game_explorer_score_position( $score_position );
+
         return self::$options_cache;
+    }
+
+    public static function get_game_explorer_score_positions() {
+        return self::$game_explorer_score_positions;
+    }
+
+    public static function normalize_game_explorer_score_position( $position ) {
+        if ( is_string( $position ) ) {
+            $position = strtolower( trim( $position ) );
+        } else {
+            $position = '';
+        }
+
+        if ( in_array( $position, self::$game_explorer_score_positions, true ) ) {
+            return $position;
+        }
+
+        return self::GAME_EXPLORER_DEFAULT_SCORE_POSITION;
     }
 
     /**

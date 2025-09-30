@@ -38,6 +38,10 @@
       "type": "string",
       "default": ""
     },
+    "scorePosition": {
+      "type": "string",
+      "default": "bottom-right"
+    },
     "sort": {
       "type": "string",
       "default": "date|DESC"
