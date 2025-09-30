@@ -87,6 +87,18 @@ Le plugin expose huit blocs dynamiques prêts à l'emploi :
 Chaque bloc délègue le rendu à la logique PHP historique (shortcodes) tout en appelant `JLG_Frontend::mark_shortcode_rendered()`
 afin de charger automatiquement les scripts et feuilles de style requis dans l'éditeur.
 
+== Surcharge des templates ==
+
+Pour modifier le HTML rendu, copiez le fichier souhaité depuis `plugin-notation-jeux/templates/` vers votre thème (ou thème
+enfant) sous `notation-jlg/{template}.php`. Le plugin tente d'abord de charger cette version (par exemple
+`notation-jlg/shortcode-rating-block.php`, `notation-jlg/widget-latest-reviews.php`) via `locate_template()` avant de revenir à la
+version interne. Deux filtres permettent des personnalisations supplémentaires :
+
+* `jlg_frontend_template_candidates` pour ajuster la liste des chemins passés à `locate_template()` ;
+* `jlg_frontend_template_path` pour modifier le chemin final inclus.
+
+Ces points d'extension facilitent la conservation de vos surcharges lors des mises à jour du plugin.
+
 == Installation ==
 
 1. Téléchargez le plugin et décompressez l'archive
