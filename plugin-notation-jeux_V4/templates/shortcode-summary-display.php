@@ -26,6 +26,15 @@ $columns_attr = !empty($columns) ? implode(',', array_map('sanitize_key', $colum
 $genre_taxonomy = apply_filters('jlg_summary_genre_taxonomy', 'jlg_game_genre');
 $has_genre_taxonomy = !empty($genre_taxonomy) && taxonomy_exists($genre_taxonomy);
 $genre_terms = [];
+$request_prefix = isset($request_prefix) ? (string) $request_prefix : '';
+$request_keys = isset($request_keys) && is_array($request_keys) ? $request_keys : [];
+$resolve_request_key = static function ($key) use ($request_prefix, $request_keys) {
+    if (isset($request_keys[$key]) && is_string($request_keys[$key])) {
+        return $request_keys[$key];
+    }
+
+    return $request_prefix !== '' ? $key . '__' . $request_prefix : $key;
+};
 
 if ($show_filters && $has_genre_taxonomy) {
     $genre_terms = get_terms([
@@ -56,6 +65,7 @@ $letters = range('A', 'Z');
     data-cat-filter="<?php echo esc_attr($current_cat_filter); ?>"
     data-letter-filter="<?php echo esc_attr($current_letter_filter); ?>"
     data-genre-filter="<?php echo esc_attr($current_genre_filter); ?>"
+    data-request-prefix="<?php echo esc_attr($request_prefix); ?>"
 >
 
     <?php if ($show_filters) : ?>
@@ -94,15 +104,15 @@ $letters = range('A', 'Z');
             </div>
 
             <form method="get" action="" class="jlg-summary-filters-form">
-                <input type="hidden" name="orderby" value="<?php echo esc_attr($current_orderby); ?>">
-                <input type="hidden" name="order" value="<?php echo esc_attr($current_order); ?>">
-                <input type="hidden" name="letter_filter" value="<?php echo esc_attr($current_letter_filter); ?>">
+                <input type="hidden" name="<?php echo esc_attr($resolve_request_key('orderby')); ?>" value="<?php echo esc_attr($current_orderby); ?>">
+                <input type="hidden" name="<?php echo esc_attr($resolve_request_key('order')); ?>" value="<?php echo esc_attr($current_order); ?>">
+                <input type="hidden" name="<?php echo esc_attr($resolve_request_key('letter_filter')); ?>" value="<?php echo esc_attr($current_letter_filter); ?>">
                 <?php
                 wp_dropdown_categories([
                     'show_option_all' => __('Toutes les catégories', 'notation-jlg'),
                     'orderby' => 'name',
                     'hide_empty' => 1,
-                    'name' => 'cat_filter',
+                    'name' => $resolve_request_key('cat_filter'),
                     'id' => $table_id . '_cat_filter',
                     'selected' => $current_cat_filter,
                     'hierarchical' => true,
@@ -113,7 +123,7 @@ $letters = range('A', 'Z');
                     <label for="<?php echo esc_attr($table_id . '_genre_filter'); ?>" class="screen-reader-text">
                         <?php esc_html_e('Filtrer par genre', 'notation-jlg'); ?>
                     </label>
-                    <select name="genre_filter" id="<?php echo esc_attr($table_id . '_genre_filter'); ?>" class="jlg-genre-filter-select">
+                    <select name="<?php echo esc_attr($resolve_request_key('genre_filter')); ?>" id="<?php echo esc_attr($table_id . '_genre_filter'); ?>" class="jlg-genre-filter-select">
                         <option value="" <?php selected($current_genre_filter, ''); ?>><?php esc_html_e('Tous les genres', 'notation-jlg'); ?></option>
                         <?php foreach ($genre_terms as $term) : ?>
                             <option value="<?php echo esc_attr($term->slug); ?>" <?php selected($current_genre_filter, $term->slug); ?>>
@@ -122,7 +132,7 @@ $letters = range('A', 'Z');
                         <?php endforeach; ?>
                     </select>
                 <?php else : ?>
-                    <input type="hidden" name="genre_filter" value="<?php echo esc_attr($current_genre_filter); ?>">
+                    <input type="hidden" name="<?php echo esc_attr($resolve_request_key('genre_filter')); ?>" value="<?php echo esc_attr($current_genre_filter); ?>">
                 <?php endif; ?>
                 <input type="submit" value="<?php echo esc_attr__('Filtrer', 'notation-jlg'); ?>">
             </form>

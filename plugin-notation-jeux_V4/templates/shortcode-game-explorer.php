@@ -20,6 +20,7 @@ $sort_key = isset($sort_key) ? $sort_key : 'date';
 $sort_order = isset($sort_order) ? $sort_order : 'DESC';
 $pagination = is_array($pagination) ? $pagination : ['current' => 1, 'total' => 0];
 $config_payload = is_array($config_payload) ? $config_payload : [];
+$request_prefix = isset($request_prefix) ? (string) $request_prefix : '';
 $config_json = wp_json_encode($config_payload);
 if ($config_json === false) {
     $config_json = '{}';
@@ -42,6 +43,7 @@ $availability_active = isset($current_filters['availability']) ? $current_filter
     data-config="<?php echo esc_attr($config_json); ?>"
     data-posts-per-page="<?php echo esc_attr($atts['posts_per_page']); ?>"
     data-total-items="<?php echo esc_attr($total_items); ?>"
+    data-request-prefix="<?php echo esc_attr($request_prefix); ?>"
 >
     <div class="jlg-ge-toolbar">
         <div class="jlg-ge-toolbar__left">

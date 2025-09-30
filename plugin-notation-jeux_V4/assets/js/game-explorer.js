@@ -4,6 +4,42 @@
     const nonce = l10n.nonce || '';
     const strings = l10n.strings || {};
 
+    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
+
+    function computeRequestKey(prefix, key) {
+        return prefix ? key + '__' + prefix : key;
+    }
+
+    function ensureRequestConfig(container, config) {
+        const datasetPrefix = (container.dataset.requestPrefix || '').toString();
+        const request = (config.request && typeof config.request === 'object') ? config.request : {};
+        const prefix = (typeof request.prefix === 'string' && request.prefix !== '')
+            ? request.prefix
+            : (datasetPrefix || '');
+        const keys = (request.keys && typeof request.keys === 'object') ? { ...request.keys } : {};
+
+        REQUEST_KEYS.forEach((key) => {
+            if (typeof keys[key] !== 'string' || keys[key] === '') {
+                keys[key] = computeRequestKey(prefix, key);
+            }
+        });
+
+        config.request = {
+            prefix,
+            keys,
+        };
+
+        container.dataset.requestPrefix = prefix;
+    }
+
+    function getRequestKey(config, key) {
+        if (!config.request || !config.request.keys) {
+            return key;
+        }
+
+        return config.request.keys[key] || key;
+    }
+
     function parseConfig(container) {
         const raw = container.dataset.config || '{}';
         let parsed;
@@ -49,6 +85,8 @@
         if (Number.isInteger(totalItems)) {
             parsed.state.total_items = totalItems;
         }
+
+        ensureRequestConfig(container, parsed);
 
         return parsed;
     }
@@ -162,6 +200,8 @@
             return;
         }
 
+        ensureRequestConfig(container, config);
+
         const loadingText = strings.loading || 'Loading…';
         if (refs.resultsNode) {
             refs.resultsNode.dataset.loadingText = loadingText;
@@ -170,23 +210,23 @@
         container.classList.add('is-loading');
 
         const payload = new FormData();
-        payload.append('action', 'jlg_game_explorer_sort');
-        payload.append('nonce', nonce);
-        payload.append('container_id', config.atts.id || container.id);
-        payload.append('posts_per_page', config.atts.posts_per_page);
-        payload.append('columns', config.atts.columns);
-        payload.append('filters', config.atts.filters || '');
-        payload.append('categorie', config.atts.categorie || '');
-        payload.append('plateforme', config.atts.plateforme || '');
-        payload.append('lettre', config.atts.lettre || '');
-        payload.append('orderby', config.state.orderby);
-        payload.append('order', config.state.order);
-        payload.append('letter', config.state.letter);
-        payload.append('category', config.state.category);
-        payload.append('platform', config.state.platform);
-        payload.append('availability', config.state.availability);
-        payload.append('search', config.state.search);
-        payload.append('paged', config.state.paged);
+        payload.set('action', 'jlg_game_explorer_sort');
+        payload.set('nonce', nonce);
+        payload.set('container_id', config.atts.id || container.id);
+        payload.set('posts_per_page', config.atts.posts_per_page);
+        payload.set('columns', config.atts.columns);
+        payload.set('filters', config.atts.filters || '');
+        payload.set('categorie', config.atts.categorie || '');
+        payload.set('plateforme', config.atts.plateforme || '');
+        payload.set('lettre', config.atts.lettre || '');
+        payload.set(getRequestKey(config, 'orderby'), config.state.orderby);
+        payload.set(getRequestKey(config, 'order'), config.state.order);
+        payload.set(getRequestKey(config, 'letter'), config.state.letter);
+        payload.set(getRequestKey(config, 'category'), config.state.category);
+        payload.set(getRequestKey(config, 'platform'), config.state.platform);
+        payload.set(getRequestKey(config, 'availability'), config.state.availability);
+        payload.set(getRequestKey(config, 'search'), config.state.search);
+        payload.set(getRequestKey(config, 'paged'), config.state.paged);
 
         fetch(ajaxUrl, {
             method: 'POST',

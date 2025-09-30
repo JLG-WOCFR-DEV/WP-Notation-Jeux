@@ -1131,29 +1131,40 @@ class JLG_Frontend {
             'categorie'      => isset($_POST['categorie']) ? sanitize_text_field(wp_unslash($_POST['categorie'])) : '',
             'colonnes'       => isset($_POST['colonnes']) ? sanitize_text_field(wp_unslash($_POST['colonnes'])) : 'titre,date,note',
             'id'             => isset($_POST['table_id']) ? sanitize_html_class(wp_unslash($_POST['table_id'])) : 'jlg-table-' . uniqid(),
-            'letter_filter'  => isset($_POST['letter_filter']) ? JLG_Shortcode_Summary_Display::normalize_letter_filter(wp_unslash($_POST['letter_filter'])) : '',
-            'genre_filter'   => isset($_POST['genre_filter']) ? sanitize_text_field(wp_unslash($_POST['genre_filter'])) : '',
+            'letter_filter'  => '',
+            'genre_filter'   => '',
         ];
 
-        $allowed_sorts = JLG_Shortcode_Summary_Display::get_allowed_sort_keys();
-        $requested_orderby = isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date';
-        if (!in_array($requested_orderby, $allowed_sorts, true)) {
-            $requested_orderby = 'date';
+        $raw_request = isset($_POST) ? wp_unslash($_POST) : [];
+        if (!is_array($raw_request)) {
+            $raw_request = [];
         }
 
-        $requested_order = isset($_POST['order']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['order']))) : 'DESC';
-        if (!in_array($requested_order, ['ASC', 'DESC'], true)) {
-            $requested_order = 'DESC';
+        $request_prefix = sanitize_title($atts['id']);
+        $letter_keys = [];
+        $genre_keys = [];
+
+        if ($request_prefix !== '') {
+            $letter_keys[] = 'letter_filter__' . $request_prefix;
+            $genre_keys[] = 'genre_filter__' . $request_prefix;
         }
 
-        $request = [
-            'orderby'       => $requested_orderby,
-            'order'         => $requested_order,
-            'cat_filter'    => isset($_POST['cat_filter']) ? intval($_POST['cat_filter']) : 0,
-            'paged'         => isset($_POST['paged']) ? intval($_POST['paged']) : 1,
-            'letter_filter' => isset($_POST['letter_filter']) ? JLG_Shortcode_Summary_Display::normalize_letter_filter(wp_unslash($_POST['letter_filter'])) : '',
-            'genre_filter'  => isset($_POST['genre_filter']) ? sanitize_text_field(wp_unslash($_POST['genre_filter'])) : '',
-        ];
+        $letter_keys[] = 'letter_filter';
+        $genre_keys[] = 'genre_filter';
+
+        foreach ($letter_keys as $key) {
+            if (isset($raw_request[$key]) && !is_array($raw_request[$key])) {
+                $atts['letter_filter'] = JLG_Shortcode_Summary_Display::normalize_letter_filter($raw_request[$key]);
+                break;
+            }
+        }
+
+        foreach ($genre_keys as $key) {
+            if (isset($raw_request[$key]) && !is_array($raw_request[$key])) {
+                $atts['genre_filter'] = sanitize_text_field($raw_request[$key]);
+                break;
+            }
+        }
 
         $current_url = isset($_POST['current_url']) ? wp_unslash($_POST['current_url']) : '';
         $base_url = $this->sanitize_internal_url($current_url);
@@ -1162,7 +1173,7 @@ class JLG_Frontend {
             $base_url = $this->sanitize_internal_url(wp_get_referer());
         }
 
-        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, $request, false);
+        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, $raw_request, false);
         $context['base_url'] = $base_url;
 
         $state = [
@@ -1223,33 +1234,16 @@ class JLG_Frontend {
             $atts['columns'] = $default_atts['columns'] ?? 3;
         }
 
-        $allowed_sorts = JLG_Shortcode_Game_Explorer::get_allowed_sort_keys();
-        $requested_orderby = isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'date';
-        if (!in_array($requested_orderby, $allowed_sorts, true)) {
-            $requested_orderby = 'date';
+        $raw_request = isset($_POST) ? wp_unslash($_POST) : [];
+        if (!is_array($raw_request)) {
+            $raw_request = [];
         }
 
-        $requested_order = isset($_POST['order']) ? strtoupper(sanitize_text_field(wp_unslash($_POST['order']))) : 'DESC';
-        if (!in_array($requested_order, ['ASC', 'DESC'], true)) {
-            $requested_order = 'DESC';
-        }
-
-        $request = [
-            'orderby'      => $requested_orderby,
-            'order'        => $requested_order,
-            'letter'       => isset($_POST['letter']) ? sanitize_text_field(wp_unslash($_POST['letter'])) : '',
-            'category'     => isset($_POST['category']) ? sanitize_text_field(wp_unslash($_POST['category'])) : '',
-            'platform'     => isset($_POST['platform']) ? sanitize_text_field(wp_unslash($_POST['platform'])) : '',
-            'availability' => isset($_POST['availability']) ? sanitize_key(wp_unslash($_POST['availability'])) : '',
-            'search'       => isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '',
-            'paged'        => isset($_POST['paged']) ? intval(wp_unslash($_POST['paged'])) : 1,
-        ];
-
-        $context = JLG_Shortcode_Game_Explorer::get_render_context($atts, $request);
+        $context = JLG_Shortcode_Game_Explorer::get_render_context($atts, $raw_request);
 
         $state = [
-            'orderby'      => $context['sort_key'] ?? $request['orderby'],
-            'order'        => $context['sort_order'] ?? $request['order'],
+            'orderby'      => $context['sort_key'] ?? 'date',
+            'order'        => $context['sort_order'] ?? 'DESC',
             'letter'       => $context['current_filters']['letter'] ?? '',
             'category'     => $context['current_filters']['category'] ?? '',
             'platform'     => $context['current_filters']['platform'] ?? '',

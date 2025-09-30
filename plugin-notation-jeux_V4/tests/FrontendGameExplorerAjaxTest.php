@@ -386,6 +386,39 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame('<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>', $context['message']);
     }
 
+    public function test_namespaced_request_parameters_are_isolated_between_instances(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $attsOne = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $attsOne['id'] = 'first-explorer';
+
+        $attsTwo = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $attsTwo['id'] = 'second-explorer';
+
+        $request = [
+            'letter__first-explorer'   => 'A',
+            'orderby__first-explorer'  => 'title',
+            'order__first-explorer'    => 'ASC',
+            'letter__second-explorer'  => 'B',
+            'category__second-explorer'=> '11',
+        ];
+
+        $contextOne = JLG_Shortcode_Game_Explorer::get_render_context($attsOne, $request);
+        $contextTwo = JLG_Shortcode_Game_Explorer::get_render_context($attsTwo, $request);
+
+        $this->assertSame('A', $contextOne['current_filters']['letter']);
+        $this->assertSame('', $contextOne['current_filters']['category']);
+        $this->assertSame('title', $contextOne['sort_key']);
+        $this->assertSame('ASC', $contextOne['sort_order']);
+
+        $this->assertSame('B', $contextTwo['current_filters']['letter']);
+        $this->assertSame('11', $contextTwo['current_filters']['category']);
+        $this->assertSame('date', $contextTwo['sort_key']);
+        $this->assertSame('DESC', $contextTwo['sort_order']);
+    }
+
     public function test_snapshot_cleared_after_relevant_meta_update(): void
     {
         $this->configureOptions();
