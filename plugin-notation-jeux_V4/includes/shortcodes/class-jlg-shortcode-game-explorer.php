@@ -104,7 +104,7 @@ class JLG_Shortcode_Game_Explorer {
     }
 
     public static function maybe_clear_filters_snapshot_for_term_event( $term, $tt_id = null, $taxonomy = '', $deleted_term = null ) {
-        unset( $tt_id, $deleted_term );
+        unset( $tt_id );
 
         $resolved_taxonomy = self::resolve_taxonomy_from_term_event( $term, $taxonomy, $deleted_term );
 
