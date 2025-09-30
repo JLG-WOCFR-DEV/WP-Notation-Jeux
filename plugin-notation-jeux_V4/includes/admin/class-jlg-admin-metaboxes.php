@@ -12,6 +12,28 @@ class JLG_Admin_Metaboxes {
         add_action( 'admin_notices', array( $this, 'display_validation_errors' ) );
     }
 
+    private function get_allowed_post_types() {
+        if ( class_exists( 'JLG_Helpers' ) && method_exists( 'JLG_Helpers', 'get_allowed_post_types' ) ) {
+            $post_types = JLG_Helpers::get_allowed_post_types();
+
+            if ( is_array( $post_types ) ) {
+                $post_types = array_values(
+                    array_unique(
+                        array_filter(
+                            array_map( 'sanitize_key', $post_types )
+                        )
+                    )
+                );
+
+                if ( ! empty( $post_types ) ) {
+                    return $post_types;
+                }
+            }
+        }
+
+        return array( 'post' );
+    }
+
     private function get_error_transient_key() {
         if ( $this->error_transient_key === '' ) {
             $user_id                   = get_current_user_id();
@@ -39,7 +61,9 @@ class JLG_Admin_Metaboxes {
 
     public function register_metaboxes( $post_type, $post = null ) {
         // Vérifier qu'on est bien sur un post
-        if ( $post_type !== 'post' ) {
+        $allowed_post_types = $this->get_allowed_post_types();
+
+        if ( ! in_array( $post_type, $allowed_post_types, true ) ) {
             return;
         }
 
@@ -64,7 +88,13 @@ class JLG_Admin_Metaboxes {
 
     public function render_notation_metabox( $post ) {
         // Vérification de sécurité
-        if ( ! $post || $post->post_type !== 'post' ) {
+        if ( ! $post ) {
+            return;
+        }
+
+        $allowed_post_types = $this->get_allowed_post_types();
+
+        if ( ! in_array( $post->post_type, $allowed_post_types, true ) ) {
             return;
         }
 
@@ -115,7 +145,13 @@ class JLG_Admin_Metaboxes {
 
     public function render_details_metabox( $post ) {
         // Vérification de sécurité
-        if ( ! $post || $post->post_type !== 'post' ) {
+        if ( ! $post ) {
+            return;
+        }
+
+        $allowed_post_types = $this->get_allowed_post_types();
+
+        if ( ! in_array( $post->post_type, $allowed_post_types, true ) ) {
             return;
         }
 
@@ -240,7 +276,10 @@ class JLG_Admin_Metaboxes {
         }
 
         // Vérifier le type de post
-        if ( get_post_type( $post_id ) !== 'post' ) {
+        $allowed_post_types = $this->get_allowed_post_types();
+        $post_type          = get_post_type( $post_id );
+
+        if ( ! in_array( $post_type, $allowed_post_types, true ) ) {
             return;
         }
 

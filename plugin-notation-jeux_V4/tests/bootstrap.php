@@ -179,6 +179,24 @@ if (!function_exists('add_action')) {
     }
 }
 
+if (!function_exists('add_meta_box')) {
+    function add_meta_box($id, $title, $callback, $screen, $context = 'advanced', $priority = 'default', $callback_args = null) {
+        if (!isset($GLOBALS['jlg_test_meta_boxes'])) {
+            $GLOBALS['jlg_test_meta_boxes'] = [];
+        }
+
+        $GLOBALS['jlg_test_meta_boxes'][] = [
+            'id'            => $id,
+            'title'         => $title,
+            'callback'      => $callback,
+            'screen'        => $screen,
+            'context'       => $context,
+            'priority'      => $priority,
+            'callback_args' => $callback_args,
+        ];
+    }
+}
+
 if (!function_exists('add_shortcode')) {
     function add_shortcode($tag, $callback) {
         // No-op stub for shortcode registration during tests.
@@ -789,6 +807,12 @@ if (!function_exists('sanitize_text_field')) {
         $filtered = filter_var($str, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW);
 
         return is_string($filtered) ? trim($filtered) : '';
+    }
+}
+
+if (!function_exists('sanitize_textarea_field')) {
+    function sanitize_textarea_field($str) {
+        return sanitize_text_field($str);
     }
 }
 
