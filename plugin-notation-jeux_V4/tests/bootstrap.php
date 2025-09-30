@@ -390,6 +390,37 @@ if (!function_exists('add_filter')) {
     }
 }
 
+if (!function_exists('remove_filter')) {
+    function remove_filter($hook, $callback, $priority = 10) {
+        if (empty($GLOBALS['jlg_test_filters'][$hook][$priority])) {
+            return false;
+        }
+
+        $removed = false;
+
+        foreach ($GLOBALS['jlg_test_filters'][$hook][$priority] as $index => $data) {
+            if (($data['callback'] ?? null) === $callback) {
+                unset($GLOBALS['jlg_test_filters'][$hook][$priority][$index]);
+                $removed = true;
+            }
+        }
+
+        if ($removed) {
+            $GLOBALS['jlg_test_filters'][$hook][$priority] = array_values($GLOBALS['jlg_test_filters'][$hook][$priority]);
+
+            if (empty($GLOBALS['jlg_test_filters'][$hook][$priority])) {
+                unset($GLOBALS['jlg_test_filters'][$hook][$priority]);
+            }
+
+            if (empty($GLOBALS['jlg_test_filters'][$hook])) {
+                unset($GLOBALS['jlg_test_filters'][$hook]);
+            }
+        }
+
+        return $removed;
+    }
+}
+
 if (!function_exists('apply_filters')) {
     function apply_filters($hook, $value) {
         $args = func_get_args();

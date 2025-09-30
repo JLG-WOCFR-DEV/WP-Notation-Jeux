@@ -182,7 +182,7 @@ class ShortcodeSummarySortingTest extends TestCase
         $contextOne = JLG_Shortcode_Summary_Display::get_render_context($attsOne, $request);
         $contextTwo = JLG_Shortcode_Summary_Display::get_render_context($attsTwo, $request);
 
-        $this->assertSame('note', $contextOne['orderby']);
+        $this->assertSame('average_score', $contextOne['orderby']);
         $this->assertSame('ASC', $contextOne['order']);
         $this->assertSame('', $contextOne['letter_filter']);
         $this->assertSame(0, $contextOne['cat_filter']);
