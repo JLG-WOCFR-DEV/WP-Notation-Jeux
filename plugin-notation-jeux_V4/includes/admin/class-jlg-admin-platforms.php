@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class JLG_Admin_Platforms {
 
     private $option_name           = 'jlg_platforms_list';
+    private $tag_map_option        = 'jlg_platform_tag_map';
     private $default_platforms     = array(
         'pc'              => array(
 			'name'   => 'PC',
@@ -128,6 +129,86 @@ class JLG_Admin_Platforms {
         }
 
         return $ordered_platforms;
+    }
+
+    /**
+     * Retourne la carte des associations plateforme -> tags.
+     */
+    public function get_platform_tag_map() {
+        $stored_map = get_option( $this->tag_map_option, array() );
+
+        if ( ! is_array( $stored_map ) ) {
+            $stored_map = array();
+        }
+
+        $platforms  = $this->get_platforms();
+        $normalized = array();
+
+        foreach ( $platforms as $key => $platform ) {
+            $tags = array();
+
+            if ( isset( $stored_map[ $key ] ) ) {
+                $raw_tags = is_array( $stored_map[ $key ] ) ? $stored_map[ $key ] : array( $stored_map[ $key ] );
+
+                foreach ( $raw_tags as $tag_value ) {
+                    if ( is_numeric( $tag_value ) ) {
+                        $tag_id = (int) $tag_value;
+                        if ( $tag_id > 0 ) {
+                            $tags[] = $tag_id;
+                        }
+                    } else {
+                        $tag_slug = sanitize_title( $tag_value );
+
+                        if ( $tag_slug === '' ) {
+                            continue;
+                        }
+
+                        $term = term_exists( $tag_slug, 'post_tag' );
+
+                        if ( is_array( $term ) && isset( $term['term_id'] ) ) {
+                            $tags[] = (int) $term['term_id'];
+                        } elseif ( is_numeric( $term ) ) {
+                            $tags[] = (int) $term;
+                        }
+                    }
+                }
+            }
+
+            $normalized[ $key ] = array_values( array_unique( $tags ) );
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Sauvegarde la carte plateforme -> tags.
+     *
+     * @param array $map Carte des tags par plateforme.
+     */
+    public function save_platform_tag_map( $map ) {
+        if ( ! is_array( $map ) ) {
+            $map = array();
+        }
+
+        $normalized = array();
+
+        foreach ( $this->get_platforms() as $key => $platform ) {
+            $values = isset( $map[ $key ] ) && is_array( $map[ $key ] ) ? $map[ $key ] : array();
+
+            $values = array_filter(
+                array_map(
+                    static function ( $tag_id ) {
+                        $tag_id = (int) $tag_id;
+                        return $tag_id > 0 ? $tag_id : 0;
+                    },
+                    $values
+                )
+            );
+
+            $normalized[ $key ] = array_values( array_unique( $values ) );
+        }
+
+        return update_option( $this->tag_map_option, $normalized );
     }
 
     private function get_default_platform_definitions() {
@@ -284,8 +365,15 @@ class JLG_Admin_Platforms {
                 $message = $result['message'];
                 break;
 
+            case 'update_tag_links':
+                $result  = $this->update_platform_tag_links();
+                $success = $result['success'];
+                $message = $result['message'];
+                break;
+
             case 'reset':
                 delete_option( $this->option_name );
+                delete_option( $this->tag_map_option );
                 $success = true;
                 $message = esc_html__( 'Plateformes réinitialisées avec succès !', 'notation-jlg' );
                 $this->log_debug( '🔄 Option supprimée de la DB' );
@@ -570,6 +658,93 @@ class JLG_Admin_Platforms {
     }
 
     /**
+     * Met à jour les liens plateformes -> tags.
+     */
+    private function update_platform_tag_links() {
+        $this->log_debug( '🔗 Mise à jour des associations plateforme -> tags' );
+
+        $raw_map = isset( $_POST['platform_tags'] ) ? wp_unslash( $_POST['platform_tags'] ) : array();
+
+        $sanitized_map = $this->sanitize_platform_tag_map_input( $raw_map );
+        $this->log_debug( '📊 Carte tags normalisée : ' . wp_json_encode( $sanitized_map ) );
+
+        $saved       = $this->save_platform_tag_map( $sanitized_map );
+        $current_map = $this->get_platform_tag_map();
+        $success     = $saved || $current_map === $sanitized_map;
+
+        if ( $success ) {
+            return array(
+                'success' => true,
+                'message' => esc_html__( 'Associations de tags mises à jour avec succès !', 'notation-jlg' ),
+            );
+        }
+
+        return array(
+            'success' => false,
+            'message' => esc_html__( 'Erreur lors de la mise à jour des tags.', 'notation-jlg' ),
+        );
+    }
+
+    /**
+     * Nettoie et valide les données envoyées pour les associations de tags.
+     *
+     * @param mixed $raw_map Données brutes issues du formulaire.
+     *
+     * @return array
+     */
+    private function sanitize_platform_tag_map_input( $raw_map ) {
+        if ( ! is_array( $raw_map ) ) {
+            $raw_map = array();
+        }
+
+        $platforms = $this->get_platforms();
+        $sanitized = array();
+
+        foreach ( $platforms as $key => $platform ) {
+            $submitted_tags = array();
+
+            if ( isset( $raw_map[ $key ] ) ) {
+                $candidate_tags = $raw_map[ $key ];
+
+                if ( ! is_array( $candidate_tags ) ) {
+                    $candidate_tags = $candidate_tags === '' ? array() : array( $candidate_tags );
+                }
+
+                foreach ( $candidate_tags as $tag_value ) {
+                    if ( is_numeric( $tag_value ) ) {
+                        $tag_id = (int) $tag_value;
+
+                        if ( $tag_id > 0 && term_exists( $tag_id, 'post_tag' ) ) {
+                            $submitted_tags[] = $tag_id;
+                        }
+                    } else {
+                        $tag_slug = sanitize_title( $tag_value );
+
+                        if ( $tag_slug === '' ) {
+                            continue;
+                        }
+
+                        $term = term_exists( $tag_slug, 'post_tag' );
+
+                        if ( is_array( $term ) && isset( $term['term_id'] ) ) {
+                            $submitted_tags[] = (int) $term['term_id'];
+                        } elseif ( is_numeric( $term ) ) {
+                            $submitted_tags[] = (int) $term;
+                        }
+                    }
+                }
+            }
+
+            $submitted_tags = array_values( array_unique( array_filter( $submitted_tags ) ) );
+            sort( $submitted_tags );
+
+            $sanitized[ $key ] = $submitted_tags;
+        }
+
+        return $sanitized;
+    }
+
+    /**
      * Afficher la page de gestion
      */
     public function render_platforms_page() {
@@ -582,6 +757,7 @@ class JLG_Admin_Platforms {
         }
 
         $platforms = $this->get_platforms();
+        $tag_map   = $this->get_platform_tag_map();
         ?>
 
         <!-- ZONE DE DEBUG AMÉLIORÉE -->
@@ -666,7 +842,27 @@ class JLG_Admin_Platforms {
                             </tr>
                         </thead>
                         <tbody id="platforms-list" class="jlg-sortable-list">
-                            <?php $position = 1; foreach ( $platforms as $key => $platform ) : ?>
+                            <?php
+                            $position = 1;
+                            foreach ( $platforms as $key => $platform ) :
+                                $linked_tag_terms = array();
+
+                                if ( class_exists( 'JLG_Helpers' ) ) {
+                                    $linked_tag_terms = JLG_Helpers::get_platform_tags( $key );
+                                } elseif ( isset( $tag_map[ $key ] ) && ! empty( $tag_map[ $key ] ) ) {
+                                    $fallback_terms = get_terms(
+                                        array(
+                                            'taxonomy'   => 'post_tag',
+                                            'hide_empty' => false,
+                                            'include'    => $tag_map[ $key ],
+                                        )
+                                    );
+
+                                    if ( ! is_wp_error( $fallback_terms ) ) {
+                                        $linked_tag_terms = $fallback_terms;
+                                    }
+                                }
+                                ?>
                             <tr class="jlg-platform-row" data-key="<?php echo esc_attr( $key ); ?>">
                                 <td class="jlg-sort-handle" style="cursor: move; text-align: center;" title="Glissez pour réordonner">
                                     <span class="dashicons dashicons-menu" aria-hidden="true"></span>
@@ -683,6 +879,15 @@ class JLG_Admin_Platforms {
                                     <?php if ( isset( $platform['custom'] ) && $platform['custom'] ) : ?>
                                         <span style="color: #666; font-size: 12px;">(Personnalisée)</span>
                                     <?php endif; ?>
+                                    <?php if ( ! empty( $linked_tag_terms ) ) : ?>
+                                        <ul class="jlg-platform-tags" style="margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px;">
+                                            <?php foreach ( $linked_tag_terms as $term ) : if ( $term instanceof WP_Term ) : ?>
+                                                <li style="background: #f0f6fc; border: 1px solid #d0e3f3; color: #1d4f73; padding: 2px 8px; border-radius: 999px; font-size: 11px;">
+                                                    <?php echo esc_html( $term->name ); ?>
+                                                </li>
+                                            <?php endif; endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ( isset( $platform['custom'] ) && $platform['custom'] ) : ?>
@@ -698,10 +903,10 @@ class JLG_Admin_Platforms {
                                     <input type="hidden" name="platform_order[]" value="<?php echo esc_attr( $key ); ?>">
                                 </td>
                             </tr>
-								<?php
-								++$position;
-endforeach;
-							?>
+                            <?php
+                                ++$position;
+                            endforeach;
+                            ?>
                         </tbody>
                     </table>
 
@@ -715,8 +920,60 @@ endforeach;
                 </form>
             </div>
 
-            <!-- Formulaire d'ajout -->
+            <!-- Formulaires et actions complémentaires -->
             <div>
+                <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                    <h3>🏷️ Associer des tags aux plateformes</h3>
+                    <p class="description" style="margin-bottom: 15px;">
+                        Reliez vos plateformes aux tags WordPress pour alimenter vos filtres et contenus dynamiques.
+                    </p>
+
+                    <form method="post" action="">
+                        <?php wp_nonce_field( 'jlg_platform_action', 'jlg_platform_nonce' ); ?>
+                        <input type="hidden" name="jlg_platform_action" value="update_tag_links">
+
+                        <table class="form-table">
+                            <?php
+                            foreach ( $platforms as $key => $platform ) :
+                                $preselected = isset( $tag_map[ $key ] ) ? array_map( 'intval', (array) $tag_map[ $key ] ) : array();
+                                $dropdown    = wp_dropdown_categories(
+                                    array(
+                                        'taxonomy'         => 'post_tag',
+                                        'hide_empty'       => false,
+                                        'name'             => 'platform_tags[' . $key . '][]',
+                                        'id'               => 'platform_tags_' . $key,
+                                        'selected'         => $preselected,
+                                        'echo'             => false,
+                                        'multiple'         => true,
+                                        'show_option_none' => false,
+                                        'value_field'      => 'term_id',
+                                        'class'            => 'widefat',
+                                        'orderby'          => 'name',
+                                    )
+                                );
+                                ?>
+                            <tr>
+                                <th scope="row"><?php echo esc_html( $platform['name'] ); ?></th>
+                                <td>
+                                    <?php echo $dropdown; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                    <p class="description" style="margin-top: 6px;">
+                                        <?php esc_html_e( 'Utilisez Ctrl/Cmd pour sélectionner plusieurs tags.', 'notation-jlg' ); ?>
+                                    </p>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </table>
+
+                        <p class="description" style="margin-top: 10px;">
+                            <?php esc_html_e( 'Les associations sauvegardées pourront être exploitées dans vos templates front-office.', 'notation-jlg' ); ?>
+                        </p>
+
+                        <p>
+                            <input type="submit" class="button button-primary" value="💾 Enregistrer les associations de tags">
+                        </p>
+                    </form>
+                </div>
+
                 <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
                     <h3>➕ Ajouter une plateforme</h3>
 

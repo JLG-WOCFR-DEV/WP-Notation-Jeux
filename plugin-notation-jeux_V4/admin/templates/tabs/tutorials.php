@@ -119,10 +119,12 @@ if (have_posts()) : while (have_posts()) : the_post(); ?&gt;
     <ul style="margin-left:20px;">
         <li>Ajoutez vos propres plateformes depuis l'onglet "Plateformes"</li>
         <li>Réorganisez l'ordre d'affichage par glisser-déposer</li>
+        <li>Associez des tags WordPress à chaque plateforme pour créer des passerelles éditoriales</li>
         <li>Les plateformes personnalisées apparaissent automatiquement dans les metaboxes</li>
         <li>Supprimez les plateformes obsolètes en un clic</li>
         <li>Compatibilité totale avec le shortcode [jlg_fiche_technique]</li>
     </ul>
+    <p style="margin-top:10px;">Une nouvelle section "Tags liés" est disponible sur la page d'administration pour connecter vos plateformes aux bons contenus.</p>
     <p style="margin-top:15px;">
         <a href="<?php echo esc_url($platforms_url); ?>" class="button button-primary">Gérer les plateformes →</a>
     </p>
