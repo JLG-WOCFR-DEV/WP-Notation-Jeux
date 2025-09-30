@@ -114,6 +114,18 @@ if (!function_exists('get_the_post_thumbnail_url')) {
     }
 }
 
+if (!function_exists('get_the_terms')) {
+    function get_the_terms($post_id, $taxonomy)
+    {
+        $taxonomy = is_string($taxonomy) ? $taxonomy : '';
+        if ($taxonomy === '') {
+            return false;
+        }
+
+        return $GLOBALS['jlg_test_terms'][$taxonomy][$post_id] ?? false;
+    }
+}
+
 if (!function_exists('get_post_time')) {
     function get_post_time($format, $gmt = 0, $post = null)
     {
@@ -341,6 +353,113 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertNull($property->getValue(), 'Static snapshot cache should be reset after meta update.');
     }
 
+    public function test_custom_status_posts_are_included_when_filter_allows_it(): void
+    {
+        $this->configureOptions();
+
+        $this->registerPost(303, 'Custom Rated Game', 'Content body for custom status.', '2023-04-01 09:00:00', 'jlg-reviewed');
+        $this->registerPost(909, 'Published Rated Game', 'Standard published content.', '2023-04-02 10:00:00');
+
+        $GLOBALS['jlg_test_meta'][303] = [
+            '_jlg_game_title'      => 'Custom Rated Game',
+            '_jlg_average_score'   => 8.2,
+            '_jlg_cover_image_url' => 'https://example.com/custom-rated.jpg',
+            '_jlg_date_sortie'     => '2023-06-01',
+            '_jlg_developpeur'     => 'Studio Custom',
+            '_jlg_editeur'         => 'Publisher Custom',
+            '_jlg_plateformes'     => ['PC'],
+            '_jlg_excerpt'         => 'Custom status excerpt.',
+        ];
+        $GLOBALS['jlg_test_meta'][909] = [
+            '_jlg_game_title'      => 'Published Rated Game',
+            '_jlg_average_score'   => 7.5,
+            '_jlg_cover_image_url' => 'https://example.com/published-rated.jpg',
+            '_jlg_date_sortie'     => '2023-05-15',
+            '_jlg_developpeur'     => 'Studio Published',
+            '_jlg_editeur'         => 'Publisher Published',
+            '_jlg_plateformes'     => ['PlayStation 5'],
+            '_jlg_excerpt'         => 'Published status excerpt.',
+        ];
+
+        $GLOBALS['jlg_test_terms'] = [
+            'category' => [
+                303 => [
+                    (object) [
+                        'term_id' => 21,
+                        'name'    => 'Action',
+                        'slug'    => 'action',
+                    ],
+                ],
+                909 => [
+                    (object) [
+                        'term_id' => 21,
+                        'name'    => 'Action',
+                        'slug'    => 'action',
+                    ],
+                ],
+            ],
+        ];
+
+        set_transient('jlg_rated_post_ids_v1', [303, 909]);
+        delete_transient('jlg_game_explorer_snapshot_v1');
+        JLG_Shortcode_Game_Explorer::clear_filters_snapshot();
+
+        $previous_filters = $GLOBALS['jlg_test_filters']['jlg_rated_post_statuses'] ?? null;
+
+        add_filter('jlg_rated_post_statuses', static function ($statuses) {
+            $statuses[] = 'jlg-reviewed';
+
+            return $statuses;
+        });
+
+        try {
+            $reflection = new ReflectionClass(JLG_Shortcode_Game_Explorer::class);
+            $method = $reflection->getMethod('get_filters_snapshot');
+            $method->setAccessible(true);
+            $snapshot = $method->invoke(null);
+
+            $this->assertArrayHasKey(303, $snapshot['posts'], 'Custom status post should be part of the snapshot.');
+            $this->assertArrayHasKey(909, $snapshot['posts'], 'Published post should remain part of the snapshot.');
+            $this->assertStringContainsString(
+                'custom rated game',
+                $snapshot['posts'][303]['search_haystack'] ?? '',
+                'The snapshot search haystack should contain the custom title.'
+            );
+
+            $_POST = [
+                'nonce'          => 'nonce-jlg_game_explorer',
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+                'paged'          => '1',
+                'filters'        => 'letter,category,platform,availability,search',
+                'posts_per_page' => '4',
+                'columns'        => '2',
+            ];
+
+            $frontend = new JLG_Frontend();
+
+            try {
+                $frontend->handle_game_explorer_sort();
+                $this->fail('Expected WP_Send_Json_Exception to be thrown.');
+            } catch (WP_Send_Json_Exception $exception) {
+                $this->assertTrue($exception->success, 'Ajax handler should respond with success payload.');
+                $this->assertIsArray($exception->data, 'Ajax payload should be an array.');
+                $this->assertArrayHasKey('html', $exception->data);
+                $this->assertStringContainsString(
+                    'Custom Rated Game',
+                    $exception->data['html'],
+                    'The custom status title should be rendered in the AJAX fragment.'
+                );
+            }
+        } finally {
+            if ($previous_filters === null) {
+                unset($GLOBALS['jlg_test_filters']['jlg_rated_post_statuses']);
+            } else {
+                $GLOBALS['jlg_test_filters']['jlg_rated_post_statuses'] = $previous_filters;
+            }
+        }
+    }
+
     private function configureOptions(): void
     {
         $defaults = JLG_Helpers::get_default_settings();
@@ -352,12 +471,12 @@ class FrontendGameExplorerAjaxTest extends TestCase
         JLG_Helpers::flush_plugin_options_cache();
     }
 
-    private function registerPost(int $post_id, string $title, string $content, string $post_date): void
+    private function registerPost(int $post_id, string $title, string $content, string $post_date, string $status = 'publish'): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
             'ID'            => $post_id,
             'post_type'     => 'post',
-            'post_status'   => 'publish',
+            'post_status'   => $status,
             'post_title'    => $title,
             'post_content'  => $content,
             'post_date'     => $post_date,
@@ -408,6 +527,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $GLOBALS['jlg_test_meta'] = [];
         $GLOBALS['jlg_test_options'] = [];
         $GLOBALS['jlg_test_transients'] = [];
+        $GLOBALS['jlg_test_terms'] = [];
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $_POST = [];
         $_REQUEST = [];

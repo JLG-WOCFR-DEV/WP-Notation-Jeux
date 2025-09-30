@@ -539,6 +539,31 @@ class JLG_Shortcode_Game_Explorer {
     }
 
     protected static function build_filters_snapshot() {
+        $allowed_statuses = apply_filters('jlg_rated_post_statuses', ['publish']);
+        if (!is_array($allowed_statuses)) {
+            $allowed_statuses = is_object($allowed_statuses) ? [] : (array) $allowed_statuses;
+        }
+
+        $normalized_statuses = [];
+        foreach ($allowed_statuses as $status) {
+            if (!is_string($status) && !is_numeric($status)) {
+                continue;
+            }
+
+            $status_key = sanitize_key((string) $status);
+            if ($status_key === '') {
+                continue;
+            }
+
+            $normalized_statuses[$status_key] = true;
+        }
+
+        $allowed_statuses = array_keys($normalized_statuses);
+
+        if (empty($allowed_statuses)) {
+            $allowed_statuses = ['publish'];
+        }
+
         $snapshot = [
             'posts' => [],
             'letters_map' => [],
@@ -558,7 +583,8 @@ class JLG_Shortcode_Game_Explorer {
             }
 
             $post = get_post($post_id);
-            if (!$post || $post->post_status !== 'publish') {
+            $post_status = $post instanceof WP_Post ? sanitize_key((string) ($post->post_status ?? '')) : '';
+            if (!$post || !in_array($post_status, $allowed_statuses, true)) {
                 continue;
             }
 
