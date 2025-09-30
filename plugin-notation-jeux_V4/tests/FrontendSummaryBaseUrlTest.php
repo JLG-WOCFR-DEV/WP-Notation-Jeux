@@ -133,4 +133,21 @@ class FrontendSummaryBaseUrlTest extends TestCase
             'Base URL should keep the custom port defined in the home URL.'
         );
     }
+
+    public function test_relative_paths_are_normalized_with_leading_slash()
+    {
+        $frontend = new JLG_Frontend();
+
+        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $method = $reflection->getMethod('sanitize_internal_url');
+        $method->setAccessible(true);
+
+        $base_url = $method->invoke($frontend, 'games/');
+
+        $this->assertSame(
+            'https://public.example/games/',
+            $base_url,
+            'Relative paths should be normalized against the public home URL.'
+        );
+    }
 }

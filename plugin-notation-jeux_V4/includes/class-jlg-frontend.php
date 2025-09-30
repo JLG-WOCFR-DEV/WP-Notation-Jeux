@@ -1340,6 +1340,9 @@ class JLG_Frontend {
         $path = $parsed_url['path'] ?? '';
         if ($path === '') {
             $path = '/';
+        } else {
+            $path = '/' . ltrim($path, '/');
+            $path = preg_replace('#/+#', '/', $path);
         }
 
         $normalized_url = '';
