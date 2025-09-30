@@ -45,7 +45,7 @@ if ($delete_data) {
         '_jlg_cover_image_url', '_jlg_version',
         '_jlg_pegi', '_jlg_temps_de_jeu',
         '_jlg_user_ratings', '_jlg_user_rating_avg',
-        '_jlg_user_rating_count'
+        '_jlg_user_rating_count', '_jlg_user_rating_ips'
     ];
     
     foreach ($meta_keys as $meta_key) {
