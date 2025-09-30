@@ -1,188 +1,201 @@
 <?php
-if (!defined('ABSPATH')) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 class JLG_Validator {
-    private static $allowed_pegi_values = ['3', '7', '12', '16', '18'];
+    private static $allowed_pegi_values = array( '3', '7', '12', '16', '18' );
 
-    public static function is_valid_score($score, $allow_empty = true) {
-        if (($score === '' || $score === null) && $allow_empty) {
+    public static function is_valid_score( $score, $allow_empty = true ) {
+        if ( ( $score === '' || $score === null ) && $allow_empty ) {
             return true;
         }
-        
-        if (!is_numeric($score)) {
+
+        if ( ! is_numeric( $score ) ) {
             return false;
         }
-        
-        $numeric_score = floatval($score);
+
+        $numeric_score = floatval( $score );
         return $numeric_score >= 0 && $numeric_score <= 10;
     }
 
-    public static function sanitize_score($score) {
-        if (!self::is_valid_score($score)) {
+    public static function sanitize_score( $score ) {
+        if ( ! self::is_valid_score( $score ) ) {
             return null;
         }
-        
-        if ($score === '' || $score === null) {
+
+        if ( $score === '' || $score === null ) {
             return '';
         }
-        
-        return round(floatval($score), 1);
+
+        return round( floatval( $score ), 1 );
     }
 
-    public static function validate_notation_data($post_data) {
-        $sanitized_data = [];
-        $errors = [];
+    public static function validate_notation_data( $post_data ) {
+        $sanitized_data = array();
+        $errors         = array();
 
-        foreach (['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'] as $key) {
+        foreach ( array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' ) as $key ) {
             $field_key = '_note_' . $key;
-            if (isset($post_data[$field_key])) {
-                $score = $post_data[$field_key];
-                if (self::is_valid_score($score)) {
-                    $sanitized_data[$field_key] = self::sanitize_score($score);
+            if ( isset( $post_data[ $field_key ] ) ) {
+                $score = $post_data[ $field_key ];
+                if ( self::is_valid_score( $score ) ) {
+                    $sanitized_data[ $field_key ] = self::sanitize_score( $score );
                 } else {
-                    $errors[$field_key] = 'Score invalide';
+                    $errors[ $field_key ] = 'Score invalide';
                 }
             }
         }
 
-        return [
-            'is_valid' => empty($errors),
-            'errors' => $errors,
-            'sanitized_data' => $sanitized_data
-        ];
+        return array(
+            'is_valid'       => empty( $errors ),
+            'errors'         => $errors,
+            'sanitized_data' => $sanitized_data,
+        );
     }
 
-    public static function sanitize_platforms($platforms) {
-        if (!is_array($platforms)) {
-            return [];
+    public static function sanitize_platforms( $platforms ) {
+        if ( ! is_array( $platforms ) ) {
+            return array();
         }
 
-        $extract_labels = static function ($definitions) {
-            if (!is_array($definitions)) {
-                return [];
+        $extract_labels = static function ( $definitions ) {
+            if ( ! is_array( $definitions ) ) {
+                return array();
             }
 
-            $labels = [];
+            $labels = array();
 
-            foreach ($definitions as $definition) {
-                if (is_string($definition)) {
-                    $labels[] = sanitize_text_field($definition);
-                } elseif (is_array($definition) && isset($definition['name']) && is_string($definition['name'])) {
-                    $labels[] = sanitize_text_field($definition['name']);
+            foreach ( $definitions as $definition ) {
+                if ( is_string( $definition ) ) {
+                    $labels[] = sanitize_text_field( $definition );
+                } elseif ( is_array( $definition ) && isset( $definition['name'] ) && is_string( $definition['name'] ) ) {
+                    $labels[] = sanitize_text_field( $definition['name'] );
                 }
             }
 
-            $labels = array_filter($labels, static function ($label) {
-                return $label !== '';
-            });
+            $labels = array_filter(
+                $labels,
+                static function ( $label ) {
+					return $label !== '';
+				}
+            );
 
-            return array_values(array_unique($labels));
+            return array_values( array_unique( $labels ) );
         };
 
-        $allowed_platforms = [];
+        $allowed_platforms = array();
 
-        if (class_exists('JLG_Admin_Platforms')) {
+        if ( class_exists( 'JLG_Admin_Platforms' ) ) {
             $platform_manager = JLG_Admin_Platforms::get_instance();
-            if ($platform_manager && method_exists($platform_manager, 'get_platform_names')) {
+            if ( $platform_manager && method_exists( $platform_manager, 'get_platform_names' ) ) {
                 $platform_names = $platform_manager->get_platform_names();
-                if (is_array($platform_names)) {
-                    $allowed_platforms = array_map('sanitize_text_field', array_values($platform_names));
+                if ( is_array( $platform_names ) ) {
+                    $allowed_platforms = array_map( 'sanitize_text_field', array_values( $platform_names ) );
                 }
             }
         }
 
-        if (empty($allowed_platforms) && class_exists('JLG_Helpers') && method_exists('JLG_Helpers', 'get_registered_platform_labels')) {
+        if ( empty( $allowed_platforms ) && class_exists( 'JLG_Helpers' ) && method_exists( 'JLG_Helpers', 'get_registered_platform_labels' ) ) {
             $default_definitions = JLG_Helpers::get_registered_platform_labels();
 
-            $allowed_platforms = $extract_labels($default_definitions);
+            $allowed_platforms = $extract_labels( $default_definitions );
         }
 
-        if (empty($allowed_platforms) && class_exists('JLG_Helpers') && method_exists('JLG_Helpers', 'get_default_platform_definitions')) {
-            $default_definitions = [];
+        if ( empty( $allowed_platforms ) && class_exists( 'JLG_Helpers' ) && method_exists( 'JLG_Helpers', 'get_default_platform_definitions' ) ) {
+            $default_definitions = array();
 
-            if (is_callable(['JLG_Helpers', 'get_default_platform_definitions'])) {
+            if ( is_callable( array( 'JLG_Helpers', 'get_default_platform_definitions' ) ) ) {
                 $default_definitions = JLG_Helpers::get_default_platform_definitions();
             } else {
                 try {
-                    $reflection = new ReflectionMethod('JLG_Helpers', 'get_default_platform_definitions');
+                    $reflection = new ReflectionMethod( 'JLG_Helpers', 'get_default_platform_definitions' );
 
-                    if (!$reflection->isPublic()) {
-                        $reflection->setAccessible(true);
+                    if ( ! $reflection->isPublic() ) {
+                        $reflection->setAccessible( true );
                     }
 
-                    $default_definitions = $reflection->invoke(null);
-                } catch (ReflectionException $exception) {
-                    $default_definitions = [];
+                    $default_definitions = $reflection->invoke( null );
+                } catch ( ReflectionException $exception ) {
+                    $default_definitions = array();
                 }
             }
 
-            $allowed_platforms = $extract_labels($default_definitions);
+            $allowed_platforms = $extract_labels( $default_definitions );
         }
 
-        if (empty($allowed_platforms)) {
-            $allowed_platforms = array_map('sanitize_text_field', [
-                'PC', 'PlayStation 5', 'Xbox Series S/X', 'Nintendo Switch',
-                'PlayStation 4', 'Xbox One', 'Steam Deck'
-            ]);
+        if ( empty( $allowed_platforms ) ) {
+            $allowed_platforms = array_map(
+                'sanitize_text_field',
+                array(
+					'PC',
+					'PlayStation 5',
+					'Xbox Series S/X',
+					'Nintendo Switch',
+					'PlayStation 4',
+					'Xbox One',
+					'Steam Deck',
+				)
+            );
         }
 
-        $sanitized = array_map('sanitize_text_field', $platforms);
-        return array_values(array_intersect($sanitized, $allowed_platforms));
+        $sanitized = array_map( 'sanitize_text_field', $platforms );
+        return array_values( array_intersect( $sanitized, $allowed_platforms ) );
     }
 
-    public static function validate_date($date, $allow_empty = true) {
-        if ($date === '' || $date === null) {
+    public static function validate_date( $date, $allow_empty = true ) {
+        if ( $date === '' || $date === null ) {
             return $allow_empty;
         }
 
-        $date_time = DateTime::createFromFormat('Y-m-d', $date);
+        $date_time = DateTime::createFromFormat( 'Y-m-d', $date );
 
-        return $date_time instanceof DateTime && $date_time->format('Y-m-d') === $date;
+        return $date_time instanceof DateTime && $date_time->format( 'Y-m-d' ) === $date;
     }
 
-    public static function sanitize_date($date) {
-        if (!self::validate_date($date, false)) {
+    public static function sanitize_date( $date ) {
+        if ( ! self::validate_date( $date, false ) ) {
             return null;
         }
 
-        $date_time = DateTime::createFromFormat('Y-m-d', $date);
+        $date_time = DateTime::createFromFormat( 'Y-m-d', $date );
 
-        return $date_time ? $date_time->format('Y-m-d') : null;
+        return $date_time ? $date_time->format( 'Y-m-d' ) : null;
     }
 
     public static function get_allowed_pegi_values() {
         return self::$allowed_pegi_values;
     }
 
-    private static function normalize_pegi_value($pegi) {
-        if ($pegi === '' || $pegi === null) {
+    private static function normalize_pegi_value( $pegi ) {
+        if ( $pegi === '' || $pegi === null ) {
             return null;
         }
 
-        $normalized = strtoupper(trim($pegi));
-        $normalized = str_replace('PEGI', '', $normalized);
-        $normalized = str_replace('+', '', $normalized);
-        $normalized = preg_replace('/[^0-9]/', '', $normalized);
+        $normalized = strtoupper( trim( $pegi ) );
+        $normalized = str_replace( 'PEGI', '', $normalized );
+        $normalized = str_replace( '+', '', $normalized );
+        $normalized = preg_replace( '/[^0-9]/', '', $normalized );
 
-        if ($normalized === '') {
+        if ( $normalized === '' ) {
             return null;
         }
 
-        return in_array($normalized, self::$allowed_pegi_values, true) ? $normalized : null;
+        return in_array( $normalized, self::$allowed_pegi_values, true ) ? $normalized : null;
     }
 
-    public static function validate_pegi($pegi, $allow_empty = true) {
-        if ($pegi === '' || $pegi === null) {
+    public static function validate_pegi( $pegi, $allow_empty = true ) {
+        if ( $pegi === '' || $pegi === null ) {
             return $allow_empty;
         }
 
-        return self::normalize_pegi_value($pegi) !== null;
+        return self::normalize_pegi_value( $pegi ) !== null;
     }
 
-    public static function sanitize_pegi($pegi) {
-        $normalized = self::normalize_pegi_value($pegi);
+    public static function sanitize_pegi( $pegi ) {
+        $normalized = self::normalize_pegi_value( $pegi );
 
-        if ($normalized === null) {
+        if ( $normalized === null ) {
             return null;
         }
 
