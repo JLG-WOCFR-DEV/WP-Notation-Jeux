@@ -453,10 +453,12 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame($this->buildSnapshotWithPosts(), $snapshot, 'Primed snapshot should match expected output.');
 
         $this->assertNotEmpty($GLOBALS['jlg_test_meta_cache_calls'], 'Meta cache priming should occur before building the snapshot.');
+        $this->assertCount(1, $GLOBALS['jlg_test_meta_cache_calls'], 'Meta cache priming should occur in a single batched call for two posts.');
         $this->assertSame('post', $GLOBALS['jlg_test_meta_cache_calls'][0][0]);
         $this->assertSame([101, 202], $GLOBALS['jlg_test_meta_cache_calls'][0][1]);
 
         $this->assertNotEmpty($GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur before building the snapshot.');
+        $this->assertCount(1, $GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur in a single batched call for two posts.');
         $this->assertSame([101, 202], $GLOBALS['jlg_test_term_cache_calls'][0][0]);
         $this->assertSame('post', $GLOBALS['jlg_test_term_cache_calls'][0][1]);
         $this->assertSame(['category'], $GLOBALS['jlg_test_term_cache_calls'][0][2]);

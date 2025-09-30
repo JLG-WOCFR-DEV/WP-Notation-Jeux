@@ -559,15 +559,21 @@ class JLG_Shortcode_Game_Explorer {
             return $snapshot;
         }
 
+        $post_id_chunks = count($rated_posts) > 100 ? array_chunk($rated_posts, 100) : [$rated_posts];
+
         if (function_exists('update_meta_cache')) {
-            foreach (array_chunk($rated_posts, 100) as $post_id_chunk) {
-                update_meta_cache('post', $post_id_chunk);
+            foreach ($post_id_chunks as $post_id_chunk) {
+                if (!empty($post_id_chunk)) {
+                    update_meta_cache('post', $post_id_chunk);
+                }
             }
         }
 
         if (function_exists('update_object_term_cache')) {
-            foreach (array_chunk($rated_posts, 100) as $post_id_chunk) {
-                update_object_term_cache($post_id_chunk, 'post', ['category']);
+            foreach ($post_id_chunks as $post_id_chunk) {
+                if (!empty($post_id_chunk)) {
+                    update_object_term_cache($post_id_chunk, 'post', ['category']);
+                }
             }
         }
 
