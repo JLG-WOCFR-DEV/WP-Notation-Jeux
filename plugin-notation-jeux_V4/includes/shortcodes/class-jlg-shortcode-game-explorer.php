@@ -551,6 +551,8 @@ class JLG_Shortcode_Game_Explorer {
             return $snapshot;
         }
 
+        update_post_meta_cache($rated_posts);
+
         foreach ($rated_posts as $post_id) {
             $post_id = (int) $post_id;
             if ($post_id <= 0) {
@@ -562,6 +564,8 @@ class JLG_Shortcode_Game_Explorer {
                 continue;
             }
 
+            $all_meta = get_post_meta($post_id, '', true);
+
             $title = JLG_Helpers::get_game_title($post_id);
             if ($title === '') {
                 $title = get_the_title($post_id);
@@ -572,16 +576,16 @@ class JLG_Shortcode_Game_Explorer {
                 $snapshot['letters_map'][$letter] = true;
             }
 
-            $release_raw = get_post_meta($post_id, '_jlg_date_sortie', true);
+            $release_raw = self::get_meta_value_from_cache($all_meta, '_jlg_date_sortie');
             $release_iso = self::normalize_date($release_raw);
             $availability = self::determine_availability($release_iso);
 
-            $developer = get_post_meta($post_id, '_jlg_developpeur', true);
+            $developer = self::get_meta_value_from_cache($all_meta, '_jlg_developpeur');
             $developer = is_string($developer) ? sanitize_text_field($developer) : '';
-            $publisher = get_post_meta($post_id, '_jlg_editeur', true);
+            $publisher = self::get_meta_value_from_cache($all_meta, '_jlg_editeur');
             $publisher = is_string($publisher) ? sanitize_text_field($publisher) : '';
 
-            $platform_meta = get_post_meta($post_id, '_jlg_plateformes', true);
+            $platform_meta = self::get_meta_value_from_cache($all_meta, '_jlg_plateformes');
             $platform_labels = [];
             $platform_slugs = [];
 
@@ -653,6 +657,27 @@ class JLG_Shortcode_Game_Explorer {
         }
 
         return $snapshot;
+    }
+
+    /**
+     * Safely fetch a single metadata value from a preloaded cache entry.
+     *
+     * @param mixed[] $meta_cache Associative array of meta values keyed by meta key.
+     * @param string  $key        The meta key to extract.
+     *
+     * @return mixed The resolved value or an empty string when unavailable.
+     */
+    protected static function get_meta_value_from_cache($meta_cache, $key)
+    {
+        if (!is_array($meta_cache) || $key === '') {
+            return '';
+        }
+
+        if (!array_key_exists($key, $meta_cache)) {
+            return '';
+        }
+
+        return $meta_cache[$key];
     }
 
     protected static function filter_snapshot_post_ids($snapshot, $letter, $category_id, $category_slug, $platform_slug, $availability, $search) {

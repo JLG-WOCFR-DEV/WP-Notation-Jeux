@@ -731,6 +731,19 @@ if (!function_exists('get_term_by')) {
     }
 }
 
+if (!function_exists('get_the_terms')) {
+    function get_the_terms($post_id, $taxonomy)
+    {
+        $terms = $GLOBALS['jlg_test_terms'][$post_id][$taxonomy] ?? [];
+
+        if (empty($terms)) {
+            return false;
+        }
+
+        return $terms;
+    }
+}
+
 if (!function_exists('esc_html_e')) {
     function esc_html_e($text, $domain = 'default') {
         echo esc_html__($text, $domain);
@@ -1198,15 +1211,29 @@ if (!function_exists('get_queried_object_id')) {
 }
 
 if (!function_exists('get_post_meta')) {
-    function get_post_meta($post_id, $key, $single = false)
+    function get_post_meta($post_id, $key = '', $single = false)
     {
         $meta = $GLOBALS['jlg_test_meta'] ?? [];
+        $post_meta = $meta[$post_id] ?? [];
 
-        if (!isset($meta[$post_id][$key])) {
+        if ($key === '') {
+            if ($single) {
+                return $post_meta;
+            }
+
+            $normalized = [];
+            foreach ($post_meta as $meta_key => $value) {
+                $normalized[$meta_key] = is_array($value) ? $value : [$value];
+            }
+
+            return $normalized;
+        }
+
+        if (!isset($post_meta[$key])) {
             return $single ? '' : [];
         }
 
-        $value = $meta[$post_id][$key];
+        $value = $post_meta[$key];
 
         if ($single) {
             return $value;
@@ -1217,6 +1244,15 @@ if (!function_exists('get_post_meta')) {
         }
 
         return [$value];
+    }
+}
+
+if (!function_exists('update_post_meta_cache')) {
+    function update_post_meta_cache($post_ids)
+    {
+        unset($post_ids);
+
+        return true;
     }
 }
 
