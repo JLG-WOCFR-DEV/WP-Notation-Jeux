@@ -295,21 +295,9 @@ class JLG_Shortcode_Game_Explorer {
 
         $value = remove_accents($value);
 
-        if (function_exists('mb_substr')) {
-            $first = mb_substr($value, 0, 1, 'UTF-8');
-        } elseif (function_exists('iconv_substr')) {
-            $first = iconv_substr($value, 0, 1, 'UTF-8');
-        } else {
-            $first = substr($value, 0, 1);
-        }
+        $first = self::substr_unicode($value, 0, 1);
 
-        if (function_exists('mb_strtoupper')) {
-            $first_upper = mb_strtoupper($first, 'UTF-8');
-        } elseif (function_exists('wp_strtoupper')) {
-            $first_upper = wp_strtoupper($first);
-        } else {
-            $first_upper = strtoupper($first);
-        }
+        $first_upper = self::strtoupper_unicode($first);
 
         if (preg_match('/[A-Z]/u', $first_upper)) {
             return $first_upper;
@@ -320,6 +308,78 @@ class JLG_Shortcode_Game_Explorer {
         }
 
         return '#';
+    }
+
+    private static function substr_unicode($string, $start, $length = null, $encoding = 'UTF-8') {
+        $string = (string) $string;
+
+        if (function_exists('mb_substr')) {
+            $result = $length === null
+                ? mb_substr($string, $start, null, $encoding)
+                : mb_substr($string, $start, $length, $encoding);
+
+            return $result === false ? '' : $result;
+        }
+
+        if (function_exists('iconv_substr')) {
+            if ($length === null) {
+                $iconv_length = null;
+                if (function_exists('iconv_strlen')) {
+                    $computed_length = iconv_strlen($string, $encoding);
+                    if ($computed_length !== false) {
+                        $iconv_length = $computed_length;
+                    }
+                }
+                $result = $iconv_length === null
+                    ? iconv_substr($string, $start, strlen($string), $encoding)
+                    : iconv_substr($string, $start, $iconv_length, $encoding);
+            } else {
+                $result = iconv_substr($string, $start, $length, $encoding);
+            }
+
+            if ($result !== false && $result !== null) {
+                return $result;
+            }
+        }
+
+        if ($string === '') {
+            return '';
+        }
+
+        if (function_exists('wp_strlen')) {
+            $chars = preg_split('//u', $string, -1, PREG_SPLIT_NO_EMPTY);
+            if (is_array($chars)) {
+                $slice = $length === null ? array_slice($chars, $start) : array_slice($chars, $start, $length);
+                return implode('', $slice);
+            }
+        }
+
+        if ($length === null) {
+            return substr($string, $start);
+        }
+
+        return substr($string, $start, $length);
+    }
+
+    private static function strtoupper_unicode($string, $encoding = 'UTF-8') {
+        $string = (string) $string;
+
+        if (function_exists('mb_strtoupper')) {
+            return mb_strtoupper($string, $encoding);
+        }
+
+        if (function_exists('wp_strtoupper')) {
+            return wp_strtoupper($string);
+        }
+
+        if (function_exists('iconv')) {
+            $converted = @iconv($encoding, 'UTF-8//TRANSLIT', $string);
+            if ($converted !== false) {
+                $string = $converted;
+            }
+        }
+
+        return strtoupper($string);
     }
 
     protected static function resolve_category_id($value) {
