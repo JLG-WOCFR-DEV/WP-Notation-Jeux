@@ -1379,16 +1379,36 @@ class JLG_Frontend {
      */
     public function inject_review_schema() {
         $options = JLG_Helpers::get_plugin_options();
-        
-        if (empty($options['seo_schema_enabled']) || !is_singular('post')) { 
-            return; 
+
+        $allowed_post_types = array_filter(
+            JLG_Helpers::get_allowed_post_types(),
+            static function ($post_type) {
+                if (!is_string($post_type) || $post_type === '') {
+                    return false;
+                }
+
+                if (function_exists('post_type_exists')) {
+                    return post_type_exists($post_type);
+                }
+
+                return true;
+            }
+        );
+
+        if (empty($allowed_post_types)) {
+            $allowed_post_types = ['post'];
         }
-        
+
+        if (empty($options['seo_schema_enabled']) || !is_singular($allowed_post_types)) {
+            return;
+        }
+
         $post_id = get_the_ID();
-        $average_score = JLG_Helpers::get_average_score_for_post($post_id);
-        
-        if ($average_score === null) { 
-            return; 
+        $score_data = JLG_Helpers::get_resolved_average_score($post_id);
+        $average_score = is_array($score_data) ? ($score_data['value'] ?? null) : null;
+
+        if ($average_score === null) {
+            return;
         }
         
         $review_rating_bounds = apply_filters(

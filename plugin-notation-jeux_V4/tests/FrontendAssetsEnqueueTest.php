@@ -84,6 +84,7 @@ class FrontendAssetsEnqueueTest extends TestCase
             'registered' => [],
             'enqueued'   => [],
             'localized'  => [],
+            'inline'     => [],
         ];
         $GLOBALS['jlg_test_posts'] = [];
         $GLOBALS['jlg_test_meta'] = [];

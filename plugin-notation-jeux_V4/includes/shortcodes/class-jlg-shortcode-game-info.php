@@ -7,7 +7,7 @@ class JLG_Shortcode_Game_Info {
         add_shortcode('jlg_fiche_technique', [$this, 'render']);
     }
 
-    public function render($atts, $content = '', $shortcode_tag = '') {
+    public function render($atts = [], $content = '', $shortcode_tag = '') {
         // Définition de tous les champs possibles avec leur libellé
         $all_possible_fields = [
             'developpeur'  => 'Développeur',

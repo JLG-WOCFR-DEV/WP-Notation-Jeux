@@ -72,7 +72,16 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag"[^>]+data-lang="en"/i', $output);
         $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr">/i', $output);
         $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="en"[^>]*>/', $output);
-        $this->assertStringContainsString("document.addEventListener('DOMContentLoaded'", $output);
+        $scripts = $GLOBALS['jlg_test_scripts'] ?? [];
+        $this->assertArrayHasKey('jlg-all-in-one', $scripts['enqueued'] ?? [], 'Main All-in-One script should be enqueued.');
+        $this->assertArrayHasKey('jlg-all-in-one', $scripts['registered'] ?? [], 'All-in-One script should be registered.');
+
+        $registered_src = $scripts['registered']['jlg-all-in-one']['src'] ?? '';
+        $this->assertStringContainsString('assets/js/jlg-all-in-one.js', $registered_src, 'Registered script should point to the all-in-one asset.');
+
+        $inline_scripts = $scripts['inline']['jlg-all-in-one'] ?? [];
+        $this->assertNotEmpty($inline_scripts, 'Inline settings should be attached to the All-in-One script handle.');
+        $this->assertStringContainsString('window.jlgAllInOneSettings', $inline_scripts[0]['code'] ?? '', 'Inline settings should initialize the global settings object.');
         $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-aio-score-gradient: [^;]+;?/i', $output);
     }
 
