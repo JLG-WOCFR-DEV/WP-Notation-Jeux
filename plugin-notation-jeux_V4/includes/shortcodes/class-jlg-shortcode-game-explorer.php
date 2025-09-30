@@ -551,8 +551,27 @@ class JLG_Shortcode_Game_Explorer {
             return $snapshot;
         }
 
+        $rated_posts = array_values(array_filter(array_map('intval', $rated_posts), static function ($post_id) {
+            return $post_id > 0;
+        }));
+
+        if (empty($rated_posts)) {
+            return $snapshot;
+        }
+
+        if (function_exists('update_meta_cache')) {
+            foreach (array_chunk($rated_posts, 100) as $post_id_chunk) {
+                update_meta_cache('post', $post_id_chunk);
+            }
+        }
+
+        if (function_exists('update_object_term_cache')) {
+            foreach (array_chunk($rated_posts, 100) as $post_id_chunk) {
+                update_object_term_cache($post_id_chunk, 'post', ['category']);
+            }
+        }
+
         foreach ($rated_posts as $post_id) {
-            $post_id = (int) $post_id;
             if ($post_id <= 0) {
                 continue;
             }

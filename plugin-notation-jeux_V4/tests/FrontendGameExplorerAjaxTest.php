@@ -137,6 +137,70 @@ if (!function_exists('get_post_time')) {
     }
 }
 
+if (!function_exists('update_meta_cache')) {
+    function update_meta_cache($meta_type, $object_ids)
+    {
+        if (!isset($GLOBALS['jlg_test_meta_cache_calls'])) {
+            $GLOBALS['jlg_test_meta_cache_calls'] = [];
+        }
+
+        $GLOBALS['jlg_test_meta_cache_calls'][] = [
+            (string) $meta_type,
+            array_values(array_map('intval', (array) $object_ids)),
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('update_object_term_cache')) {
+    function update_object_term_cache($object_ids, $object_type, $taxonomies = null)
+    {
+        if (!isset($GLOBALS['jlg_test_term_cache_calls'])) {
+            $GLOBALS['jlg_test_term_cache_calls'] = [];
+        }
+
+        if ($taxonomies === null) {
+            $taxonomies = [];
+        }
+
+        if (!is_array($taxonomies)) {
+            $taxonomies = [$taxonomies];
+        }
+
+        $GLOBALS['jlg_test_term_cache_calls'][] = [
+            array_values(array_map('intval', (array) $object_ids)),
+            (string) $object_type,
+            array_values(array_map('strval', $taxonomies)),
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('get_the_terms')) {
+    function get_the_terms($post_id, $taxonomy)
+    {
+        $post_id = (int) $post_id;
+        $taxonomy = (string) $taxonomy;
+        $terms_store = $GLOBALS['jlg_test_terms'][$post_id][$taxonomy] ?? [];
+
+        $terms = [];
+
+        foreach ($terms_store as $term) {
+            if (is_array($term)) {
+                $term = (object) $term;
+            }
+
+            if (is_object($term)) {
+                $terms[] = $term;
+            }
+        }
+
+        return $terms;
+    }
+}
+
 if (!function_exists('wp_reset_postdata')) {
     function wp_reset_postdata()
     {
@@ -341,6 +405,63 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertNull($property->getValue(), 'Static snapshot cache should be reset after meta update.');
     }
 
+    public function test_build_filters_snapshot_preloads_caches_without_changing_output(): void
+    {
+        $this->configureOptions();
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the first test post.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the second test post.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'][101] = [
+            '_jlg_game_title'    => 'Alpha Quest',
+            '_jlg_developpeur'   => 'Studio Alpha',
+            '_jlg_editeur'       => 'Publisher A',
+            '_jlg_date_sortie'   => '2023-02-14',
+            '_jlg_plateformes'   => ['PC', 'PlayStation 5'],
+        ];
+
+        $GLOBALS['jlg_test_meta'][202] = [
+            '_jlg_game_title'    => 'Beta Strike',
+            '_jlg_developpeur'   => 'Studio Beta',
+            '_jlg_editeur'       => 'Publisher B',
+            '_jlg_date_sortie'   => '2022-11-10',
+            '_jlg_plateformes'   => ['PC'],
+        ];
+
+        $GLOBALS['jlg_test_terms'] = [
+            101 => [
+                'category' => [
+                    ['term_id' => 11, 'name' => 'Action', 'slug' => 'action'],
+                ],
+            ],
+            202 => [
+                'category' => [
+                    ['term_id' => 11, 'name' => 'Action', 'slug' => 'action'],
+                ],
+            ],
+        ];
+
+        $GLOBALS['jlg_test_meta_cache_calls'] = [];
+        $GLOBALS['jlg_test_term_cache_calls'] = [];
+
+        set_transient('jlg_rated_post_ids_v1', [101, '202', 'not-a-number']);
+
+        $reflection = new ReflectionMethod(JLG_Shortcode_Game_Explorer::class, 'build_filters_snapshot');
+        $reflection->setAccessible(true);
+
+        $snapshot = $reflection->invoke(null);
+
+        $this->assertSame($this->buildSnapshotWithPosts(), $snapshot, 'Primed snapshot should match expected output.');
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_meta_cache_calls'], 'Meta cache priming should occur before building the snapshot.');
+        $this->assertSame('post', $GLOBALS['jlg_test_meta_cache_calls'][0][0]);
+        $this->assertSame([101, 202], $GLOBALS['jlg_test_meta_cache_calls'][0][1]);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur before building the snapshot.');
+        $this->assertSame([101, 202], $GLOBALS['jlg_test_term_cache_calls'][0][0]);
+        $this->assertSame('post', $GLOBALS['jlg_test_term_cache_calls'][0][1]);
+        $this->assertSame(['category'], $GLOBALS['jlg_test_term_cache_calls'][0][2]);
+    }
+
     private function configureOptions(): void
     {
         $defaults = JLG_Helpers::get_default_settings();
@@ -406,9 +527,12 @@ class FrontendGameExplorerAjaxTest extends TestCase
     {
         $GLOBALS['jlg_test_posts'] = [];
         $GLOBALS['jlg_test_meta'] = [];
+        $GLOBALS['jlg_test_terms'] = [];
         $GLOBALS['jlg_test_options'] = [];
         $GLOBALS['jlg_test_transients'] = [];
         $GLOBALS['jlg_test_current_post_id'] = 0;
+        $GLOBALS['jlg_test_meta_cache_calls'] = [];
+        $GLOBALS['jlg_test_term_cache_calls'] = [];
         $_POST = [];
         $_REQUEST = [];
         $this->resetFrontendStatics();
