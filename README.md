@@ -51,3 +51,8 @@ Assurez-vous que ces commandes passent en local avant de soumettre une contribut
 La documentation WordPress (`plugin-notation-jeux_V4/README.txt`) doit rester alignée avec ce README Markdown. Toute modification de l’un doit être répercutée sur l’autre pour garantir des informations cohérentes dans l’interface WordPress.org.
 
 Bonne contribution ! Pensez à suivre les scripts Composer avant toute PR et à conserver la parité de contenu entre les deux README.
+
+### Vérification du style
+- Exécutez `composer install` pour récupérer les dépendances de développement (WordPress Coding Standards).
+- Lancez `composer cs` avant chaque commit afin de vérifier que vos modifications respectent le standard défini dans `phpcs.xml.dist`.
+- Si besoin, `composer cs-fix` peut corriger automatiquement une partie des avertissements avant un passage manuel.

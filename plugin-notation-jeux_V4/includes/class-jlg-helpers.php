@@ -4,21 +4,23 @@
  * Contient toutes les fonctions logiques réutilisables du plugin.
  */
 
-if (!defined('ABSPATH')) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 class JLG_Helpers {
 
-    private static $option_name = 'notation_jlg_settings';
-    private static $category_keys = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'];
-    private static $options_cache = null;
+    private static $option_name            = 'notation_jlg_settings';
+    private static $category_keys          = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
+    private static $options_cache          = null;
     private static $default_settings_cache = null;
 
     private static function get_rating_meta_keys() {
         static $meta_keys = null;
 
-        if ($meta_keys === null) {
+        if ( $meta_keys === null ) {
             $meta_keys = array_map(
-                static function ($key) {
+                static function ( $key ) {
                     return '_note_' . $key;
                 },
                 self::$category_keys
@@ -29,119 +31,140 @@ class JLG_Helpers {
     }
 
     private static function get_theme_defaults() {
-        return [
-            'light' => [
-                'bg_color'          => '#ffffff',
-                'bg_color_secondary'=> '#f9fafb',
-                'border_color'      => '#e5e7eb',
-                'text_color'        => '#111827',
+        return array(
+            'light' => array(
+                'bg_color'             => '#ffffff',
+                'bg_color_secondary'   => '#f9fafb',
+                'border_color'         => '#e5e7eb',
+                'text_color'           => '#111827',
                 'text_color_secondary' => '#6b7280',
-                'tagline_bg_color'  => '#f3f4f6',
-                'tagline_text_color'=> '#4b5563',
-            ],
-            'dark' => [
-                'bg_color'          => '#18181b',
-                'bg_color_secondary'=> '#27272a',
-                'border_color'      => '#3f3f46',
-                'text_color'        => '#fafafa',
+                'tagline_bg_color'     => '#f3f4f6',
+                'tagline_text_color'   => '#4b5563',
+            ),
+            'dark'  => array(
+                'bg_color'             => '#18181b',
+                'bg_color_secondary'   => '#27272a',
+                'border_color'         => '#3f3f46',
+                'text_color'           => '#fafafa',
                 'text_color_secondary' => '#a1a1aa',
-                'tagline_bg_color'  => '#1f2937',
-                'tagline_text_color'=> '#d1d5db',
-            ]
-        ];
+                'tagline_bg_color'     => '#1f2937',
+                'tagline_text_color'   => '#d1d5db',
+            ),
+        );
     }
 
     private static function get_default_platform_definitions() {
-        return [
-            'pc' => ['name' => 'PC', 'order' => 1],
-            'playstation-5' => ['name' => 'PlayStation 5', 'order' => 2],
-            'xbox-series-x' => ['name' => 'Xbox Series S/X', 'order' => 3],
-            'nintendo-switch' => ['name' => 'Nintendo Switch', 'order' => 4],
-            'playstation-4' => ['name' => 'PlayStation 4', 'order' => 5],
-            'xbox-one' => ['name' => 'Xbox One', 'order' => 6],
-            'steam-deck' => ['name' => 'Steam Deck', 'order' => 7],
-        ];
+        return array(
+            'pc'              => array(
+				'name'  => 'PC',
+				'order' => 1,
+			),
+            'playstation-5'   => array(
+				'name'  => 'PlayStation 5',
+				'order' => 2,
+			),
+            'xbox-series-x'   => array(
+				'name'  => 'Xbox Series S/X',
+				'order' => 3,
+			),
+            'nintendo-switch' => array(
+				'name'  => 'Nintendo Switch',
+				'order' => 4,
+			),
+            'playstation-4'   => array(
+				'name'  => 'PlayStation 4',
+				'order' => 5,
+			),
+            'xbox-one'        => array(
+				'name'  => 'Xbox One',
+				'order' => 6,
+			),
+            'steam-deck'      => array(
+				'name'  => 'Steam Deck',
+				'order' => 7,
+			),
+        );
     }
 
     public static function get_default_settings() {
-        if (is_array(self::$default_settings_cache)) {
+        if ( is_array( self::$default_settings_cache ) ) {
             return self::$default_settings_cache;
         }
 
-        $themes = self::get_theme_defaults();
-        $dark_defaults = $themes['dark'];
+        $themes         = self::get_theme_defaults();
+        $dark_defaults  = $themes['dark'];
         $light_defaults = $themes['light'];
 
-        self::$default_settings_cache = [
+        self::$default_settings_cache = array(
             // Options générales
-            'visual_theme'      => 'dark',
-            'score_layout'      => 'text',
-            'enable_animations' => 1,
-            'tagline_font_size' => 16,
-            
+            'visual_theme'                 => 'dark',
+            'score_layout'                 => 'text',
+            'enable_animations'            => 1,
+            'tagline_font_size'            => 16,
+
             // Couleurs de Thème Sombre personnalisables
-            'dark_bg_color'           => $dark_defaults['bg_color'],
-            'dark_bg_color_secondary' => $dark_defaults['bg_color_secondary'],
-            'dark_border_color'       => $dark_defaults['border_color'],
-            'dark_text_color'         => $dark_defaults['text_color'],
-            'dark_text_color_secondary' => $dark_defaults['text_color_secondary'],
-            'tagline_bg_color'        => $dark_defaults['tagline_bg_color'],
-            'tagline_text_color'      => $dark_defaults['tagline_text_color'],
+            'dark_bg_color'                => $dark_defaults['bg_color'],
+            'dark_bg_color_secondary'      => $dark_defaults['bg_color_secondary'],
+            'dark_border_color'            => $dark_defaults['border_color'],
+            'dark_text_color'              => $dark_defaults['text_color'],
+            'dark_text_color_secondary'    => $dark_defaults['text_color_secondary'],
+            'tagline_bg_color'             => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'           => $dark_defaults['tagline_text_color'],
 
             // Couleurs de Thème Clair personnalisables
-            'light_bg_color'           => $light_defaults['bg_color'],
-            'light_bg_color_secondary' => $light_defaults['bg_color_secondary'],
-            'light_border_color'       => $light_defaults['border_color'],
-            'light_text_color'         => $light_defaults['text_color'],
-            'light_text_color_secondary' => $light_defaults['text_color_secondary'],
+            'light_bg_color'               => $light_defaults['bg_color'],
+            'light_bg_color_secondary'     => $light_defaults['bg_color_secondary'],
+            'light_border_color'           => $light_defaults['border_color'],
+            'light_text_color'             => $light_defaults['text_color'],
+            'light_text_color_secondary'   => $light_defaults['text_color_secondary'],
 
             // Couleurs sémantiques et de marque
-            'score_gradient_1'      => '#60a5fa',
-            'score_gradient_2'      => '#c084fc',
-            'color_low'             => '#ef4444',
-            'color_mid'             => '#f97316',
-            'color_high'            => '#22c55e',
-            'user_rating_star_color'=> '#f59e0b',
-            'user_rating_text_color'=> '#a1a1aa',
-            'user_rating_title_color' => '#fafafa',
-            
+            'score_gradient_1'             => '#60a5fa',
+            'score_gradient_2'             => '#c084fc',
+            'color_low'                    => '#ef4444',
+            'color_mid'                    => '#f97316',
+            'color_high'                   => '#22c55e',
+            'user_rating_star_color'       => '#f59e0b',
+            'user_rating_text_color'       => '#a1a1aa',
+            'user_rating_title_color'      => '#fafafa',
+
             // Options cercle
-            'circle_dynamic_bg_enabled' => 0,
-            'circle_border_enabled' => 1,
-            'circle_border_width' => 5,
-            'circle_border_color' => '#60a5fa',
-            
+            'circle_dynamic_bg_enabled'    => 0,
+            'circle_border_enabled'        => 1,
+            'circle_border_width'          => 5,
+            'circle_border_color'          => '#60a5fa',
+
             // Options glow pour mode texte
-            'text_glow_enabled' => 0,
-            'text_glow_color_mode' => 'dynamic',
-            'text_glow_custom_color' => '#ffffff',
-            'text_glow_intensity' => 15,
-            'text_glow_pulse' => 0,
-            'text_glow_speed' => 2.5,
-            
+            'text_glow_enabled'            => 0,
+            'text_glow_color_mode'         => 'dynamic',
+            'text_glow_custom_color'       => '#ffffff',
+            'text_glow_intensity'          => 15,
+            'text_glow_pulse'              => 0,
+            'text_glow_speed'              => 2.5,
+
             // Options glow pour mode cercle
-            'circle_glow_enabled' => 0,
-            'circle_glow_color_mode' => 'dynamic',
-            'circle_glow_custom_color' => '#ffffff',
-            'circle_glow_intensity' => 15,
-            'circle_glow_pulse' => 0,
-            'circle_glow_speed' => 2.5,
-            
+            'circle_glow_enabled'          => 0,
+            'circle_glow_color_mode'       => 'dynamic',
+            'circle_glow_custom_color'     => '#ffffff',
+            'circle_glow_intensity'        => 15,
+            'circle_glow_pulse'            => 0,
+            'circle_glow_speed'            => 2.5,
+
             // Options des modules
-            'tagline_enabled'      => 1,
-            'user_rating_enabled'  => 1,
-            'table_zebra_striping' => 0,
-            'table_border_style'   => 'horizontal',
-            'table_border_width'   => 1,
-            'table_header_bg_color'   => '#3f3f46',
-            'table_header_text_color' => '#ffffff',
-            'table_row_bg_color'      => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
-            'table_row_text_color'    => '#a1a1aa',
-            'table_zebra_bg_color'    => '#27272a',
-            'thumb_text_color'      => '#ffffff',
-            'thumb_font_size'       => 14,
-            'thumb_padding'         => 8,
-            'thumb_border_radius'   => 4,
+            'tagline_enabled'              => 1,
+            'user_rating_enabled'          => 1,
+            'table_zebra_striping'         => 0,
+            'table_border_style'           => 'horizontal',
+            'table_border_width'           => 1,
+            'table_header_bg_color'        => '#3f3f46',
+            'table_header_text_color'      => '#ffffff',
+            'table_row_bg_color'           => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
+            'table_row_text_color'         => '#a1a1aa',
+            'table_zebra_bg_color'         => '#27272a',
+            'thumb_text_color'             => '#ffffff',
+            'thumb_font_size'              => 14,
+            'thumb_padding'                => 8,
+            'thumb_border_radius'          => 4,
 
             // Options Game Explorer
             'game_explorer_columns'        => 3,
@@ -149,31 +172,31 @@ class JLG_Helpers {
             'game_explorer_filters'        => 'letter,category,platform,availability',
 
             // Libellés
-            'label_cat1' => 'Gameplay',
-            'label_cat2' => 'Graphismes',
-            'label_cat3' => 'Bande-son',
-            'label_cat4' => 'Durée de vie',
-            'label_cat5' => 'Scénario',
-            'label_cat6' => 'Originalité',
+            'label_cat1'                   => 'Gameplay',
+            'label_cat2'                   => 'Graphismes',
+            'label_cat3'                   => 'Bande-son',
+            'label_cat4'                   => 'Durée de vie',
+            'label_cat5'                   => 'Scénario',
+            'label_cat6'                   => 'Originalité',
 
             // Options techniques et diverses
-            'custom_css' => '',
-            'seo_schema_enabled' => 1,
-            'debug_mode_enabled' => 0,
-            'rawg_api_key' => '',
-        ];
+            'custom_css'                   => '',
+            'seo_schema_enabled'           => 1,
+            'debug_mode_enabled'           => 0,
+            'rawg_api_key'                 => '',
+        );
 
         return self::$default_settings_cache;
     }
 
-    public static function get_plugin_options($force_refresh = false) {
-        if (!$force_refresh && is_array(self::$options_cache)) {
+    public static function get_plugin_options( $force_refresh = false ) {
+        if ( ! $force_refresh && is_array( self::$options_cache ) ) {
             return self::$options_cache;
         }
 
-        $defaults = self::get_default_settings();
-        $saved_options = get_option(self::$option_name, $defaults);
-        self::$options_cache = wp_parse_args($saved_options, $defaults);
+        $defaults            = self::get_default_settings();
+        $saved_options       = get_option( self::$option_name, $defaults );
+        self::$options_cache = wp_parse_args( $saved_options, $defaults );
 
         return self::$options_cache;
     }
@@ -184,19 +207,19 @@ class JLG_Helpers {
      * @return string[] List of sanitized post type identifiers.
      */
     public static function get_allowed_post_types() {
-        $post_types = apply_filters('jlg_rated_post_types', ['post']);
+        $post_types = apply_filters( 'jlg_rated_post_types', array( 'post' ) );
 
-        if (!is_array($post_types)) {
-            $post_types = ['post'];
+        if ( ! is_array( $post_types ) ) {
+            $post_types = array( 'post' );
         }
 
-        $post_types = array_values(array_filter(array_map('sanitize_key', $post_types)));
+        $post_types = array_values( array_filter( array_map( 'sanitize_key', $post_types ) ) );
 
-        if (empty($post_types)) {
-            $post_types = ['post'];
+        if ( empty( $post_types ) ) {
+            $post_types = array( 'post' );
         }
 
-        return array_values(array_unique($post_types));
+        return array_values( array_unique( $post_types ) );
     }
 
     public static function flush_plugin_options_cache() {
@@ -209,58 +232,58 @@ class JLG_Helpers {
      * @param int $post_id The post identifier.
      * @return string The stored game title if available, otherwise the WordPress post title.
      */
-    public static function get_game_title($post_id) {
+    public static function get_game_title( $post_id ) {
         $post_id = (int) $post_id;
 
-        if ($post_id <= 0) {
+        if ( $post_id <= 0 ) {
             return '';
         }
 
-        $raw_meta_title = get_post_meta($post_id, '_jlg_game_title', true);
+        $raw_meta_title = get_post_meta( $post_id, '_jlg_game_title', true );
         $resolved_title = '';
 
-        if (is_string($raw_meta_title)) {
-            $meta_title = sanitize_text_field($raw_meta_title);
-            if ($meta_title !== '') {
+        if ( is_string( $raw_meta_title ) ) {
+            $meta_title = sanitize_text_field( $raw_meta_title );
+            if ( $meta_title !== '' ) {
                 $resolved_title = $meta_title;
             }
         }
 
-        if ($resolved_title === '') {
-            $fallback_title = get_the_title($post_id);
-            if (is_string($fallback_title)) {
+        if ( $resolved_title === '' ) {
+            $fallback_title = get_the_title( $post_id );
+            if ( is_string( $fallback_title ) ) {
                 $resolved_title = $fallback_title;
             }
         }
 
-        return apply_filters('jlg_game_title', (string) $resolved_title, $post_id, $raw_meta_title);
+        return apply_filters( 'jlg_game_title', (string) $resolved_title, $post_id, $raw_meta_title );
     }
 
     public static function get_color_palette() {
-        $options = self::get_plugin_options();
-        $theme = $options['visual_theme'] ?? 'dark';
+        $options        = self::get_plugin_options();
+        $theme          = $options['visual_theme'] ?? 'dark';
         $theme_defaults = self::get_theme_defaults();
-        $palette = ($theme === 'light') ? $theme_defaults['light'] : $theme_defaults['dark'];
-        
-        if ($theme === 'light') {
-            $palette['bg_color']           = $options['light_bg_color'] ?? $theme_defaults['light']['bg_color'];
-            $palette['bg_color_secondary'] = $options['light_bg_color_secondary'] ?? $theme_defaults['light']['bg_color_secondary'];
-            $palette['border_color']       = $options['light_border_color'] ?? $theme_defaults['light']['border_color'];
-            $palette['text_color']         = $options['light_text_color'] ?? $theme_defaults['light']['text_color'];
+        $palette        = ( $theme === 'light' ) ? $theme_defaults['light'] : $theme_defaults['dark'];
+
+        if ( $theme === 'light' ) {
+            $palette['bg_color']             = $options['light_bg_color'] ?? $theme_defaults['light']['bg_color'];
+            $palette['bg_color_secondary']   = $options['light_bg_color_secondary'] ?? $theme_defaults['light']['bg_color_secondary'];
+            $palette['border_color']         = $options['light_border_color'] ?? $theme_defaults['light']['border_color'];
+            $palette['text_color']           = $options['light_text_color'] ?? $theme_defaults['light']['text_color'];
             $palette['text_color_secondary'] = $options['light_text_color_secondary'] ?? $theme_defaults['light']['text_color_secondary'];
         } else {
-            $palette['bg_color']           = $options['dark_bg_color'] ?? $theme_defaults['dark']['bg_color'];
-            $palette['bg_color_secondary'] = $options['dark_bg_color_secondary'] ?? $theme_defaults['dark']['bg_color_secondary'];
-            $palette['border_color']       = $options['dark_border_color'] ?? $theme_defaults['dark']['border_color'];
-            $palette['text_color']         = $options['dark_text_color'] ?? $theme_defaults['dark']['text_color'];
+            $palette['bg_color']             = $options['dark_bg_color'] ?? $theme_defaults['dark']['bg_color'];
+            $palette['bg_color_secondary']   = $options['dark_bg_color_secondary'] ?? $theme_defaults['dark']['bg_color_secondary'];
+            $palette['border_color']         = $options['dark_border_color'] ?? $theme_defaults['dark']['border_color'];
+            $palette['text_color']           = $options['dark_text_color'] ?? $theme_defaults['dark']['text_color'];
             $palette['text_color_secondary'] = $options['dark_text_color_secondary'] ?? $theme_defaults['dark']['text_color_secondary'];
         }
 
-        $tagline_bg_option = isset($options['tagline_bg_color']) ? (string) $options['tagline_bg_color'] : '';
-        $tagline_text_option = isset($options['tagline_text_color']) ? (string) $options['tagline_text_color'] : '';
+        $tagline_bg_option   = isset( $options['tagline_bg_color'] ) ? (string) $options['tagline_bg_color'] : '';
+        $tagline_text_option = isset( $options['tagline_text_color'] ) ? (string) $options['tagline_text_color'] : '';
 
-        $palette['tagline_bg_color']     = $tagline_bg_option !== '' ? $tagline_bg_option : ($theme === 'light' ? $theme_defaults['light']['tagline_bg_color'] : $theme_defaults['dark']['tagline_bg_color']);
-        $palette['tagline_text_color']   = $tagline_text_option !== '' ? $tagline_text_option : ($theme === 'light' ? $theme_defaults['light']['tagline_text_color'] : $theme_defaults['dark']['tagline_text_color']);
+        $palette['tagline_bg_color']     = $tagline_bg_option !== '' ? $tagline_bg_option : ( $theme === 'light' ? $theme_defaults['light']['tagline_bg_color'] : $theme_defaults['dark']['tagline_bg_color'] );
+        $palette['tagline_text_color']   = $tagline_text_option !== '' ? $tagline_text_option : ( $theme === 'light' ? $theme_defaults['light']['tagline_text_color'] : $theme_defaults['dark']['tagline_text_color'] );
         $palette['table_zebra_color']    = $palette['bg_color_secondary'];
         $palette['main_text_color']      = $palette['text_color'];
         $palette['secondary_text_color'] = $palette['text_color_secondary'];
@@ -269,19 +292,19 @@ class JLG_Helpers {
         return $palette;
     }
 
-    public static function get_average_score_for_post($post_id) {
+    public static function get_average_score_for_post( $post_id ) {
         $total_score = 0;
-        $count = 0;
+        $count       = 0;
 
-        foreach (self::$category_keys as $key) {
-            $score = get_post_meta($post_id, '_note_' . $key, true);
-            if ($score !== '' && is_numeric($score)) {
-                $total_score += floatval($score);
-                $count++;
+        foreach ( self::$category_keys as $key ) {
+            $score = get_post_meta( $post_id, '_note_' . $key, true );
+            if ( $score !== '' && is_numeric( $score ) ) {
+                $total_score += floatval( $score );
+                ++$count;
             }
         }
 
-        return ($count > 0) ? round($total_score / $count, 1) : null;
+        return ( $count > 0 ) ? round( $total_score / $count, 1 ) : null;
     }
 
     /**
@@ -290,146 +313,150 @@ class JLG_Helpers {
      * @param int $post_id The post ID.
      * @return array{value: float|null, formatted: string|null}
      */
-    public static function get_resolved_average_score($post_id) {
-        $stored_score = get_post_meta($post_id, '_jlg_average_score', true);
+    public static function get_resolved_average_score( $post_id ) {
+        $stored_score = get_post_meta( $post_id, '_jlg_average_score', true );
 
-        if ($stored_score !== '' && $stored_score !== null && is_numeric($stored_score)) {
+        if ( $stored_score !== '' && $stored_score !== null && is_numeric( $stored_score ) ) {
             $score_value = (float) $stored_score;
 
-            return [
-                'value' => $score_value,
-                'formatted' => number_format_i18n($score_value, 1),
-            ];
+            return array(
+                'value'     => $score_value,
+                'formatted' => number_format_i18n( $score_value, 1 ),
+            );
         }
 
-        $fallback_score = self::get_average_score_for_post($post_id);
+        $fallback_score = self::get_average_score_for_post( $post_id );
 
-        if ($fallback_score !== null && is_numeric($fallback_score)) {
-            update_post_meta($post_id, '_jlg_average_score', $fallback_score);
+        if ( $fallback_score !== null && is_numeric( $fallback_score ) ) {
+            update_post_meta( $post_id, '_jlg_average_score', $fallback_score );
             $fallback_value = (float) $fallback_score;
 
-            return [
-                'value' => $fallback_value,
-                'formatted' => number_format_i18n($fallback_value, 1),
-            ];
+            return array(
+                'value'     => $fallback_value,
+                'formatted' => number_format_i18n( $fallback_value, 1 ),
+            );
         }
 
-        return [
-            'value' => null,
+        return array(
+            'value'     => null,
             'formatted' => null,
-        ];
+        );
     }
 
     /**
      * Clear the cached average score when one of the rating metas is changed.
      */
-    public static function maybe_handle_rating_meta_change($meta_id, $post_id, $meta_key, $meta_value = null) {
-        unset($meta_id, $meta_value);
+    public static function maybe_handle_rating_meta_change( $meta_id, $post_id, $meta_key, $meta_value = null ) {
+        unset( $meta_id, $meta_value );
 
-        if (!is_string($meta_key) || !in_array($meta_key, self::get_rating_meta_keys(), true)) {
+        if ( ! is_string( $meta_key ) || ! in_array( $meta_key, self::get_rating_meta_keys(), true ) ) {
             return;
         }
 
-        self::invalidate_average_score_cache($post_id);
+        self::invalidate_average_score_cache( $post_id );
     }
 
     /**
      * Delete the stored average and queue a rebuild for the provided post.
      */
-    public static function invalidate_average_score_cache($post_id) {
+    public static function invalidate_average_score_cache( $post_id ) {
         $post_id = (int) $post_id;
 
-        if ($post_id <= 0) {
+        if ( $post_id <= 0 ) {
             return;
         }
 
-        delete_post_meta($post_id, '_jlg_average_score');
+        delete_post_meta( $post_id, '_jlg_average_score' );
         self::clear_rated_post_ids_cache();
-        self::queue_average_score_rebuild($post_id);
+        self::queue_average_score_rebuild( $post_id );
     }
 
     public static function get_rating_categories() {
-        $options = self::get_plugin_options();
-        $categories = [];
-        
-        foreach (self::$category_keys as $key) {
-            $label_key = 'label_' . $key;
-            $categories[$key] = !empty($options[$label_key]) ? $options[$label_key] : 'Catégorie';
+        $options    = self::get_plugin_options();
+        $categories = array();
+
+        foreach ( self::$category_keys as $key ) {
+            $label_key          = 'label_' . $key;
+            $categories[ $key ] = ! empty( $options[ $label_key ] ) ? $options[ $label_key ] : 'Catégorie';
         }
-        
+
         return $categories;
     }
-    
-    public static function get_rated_post_ids() {
-        $transient_key = 'jlg_rated_post_ids_v1';
-        $cached_post_ids = get_transient($transient_key);
 
-        if ($cached_post_ids !== false && is_array($cached_post_ids)) {
-            return array_map('intval', $cached_post_ids);
+    public static function get_rated_post_ids() {
+        $transient_key   = 'jlg_rated_post_ids_v1';
+        $cached_post_ids = get_transient( $transient_key );
+
+        if ( $cached_post_ids !== false && is_array( $cached_post_ids ) ) {
+            return array_map( 'intval', $cached_post_ids );
         }
 
         $post_ids = self::query_rated_post_ids();
 
-        $expiration = apply_filters('jlg_rated_post_ids_cache_ttl', 15 * (defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60));
+        $expiration = apply_filters( 'jlg_rated_post_ids_cache_ttl', 15 * ( defined( 'MINUTE_IN_SECONDS' ) ? MINUTE_IN_SECONDS : 60 ) );
 
-        if ($expiration > 0) {
-            set_transient($transient_key, $post_ids, $expiration);
+        if ( $expiration > 0 ) {
+            set_transient( $transient_key, $post_ids, $expiration );
         }
 
         return $post_ids;
     }
 
-    public static function get_rated_post_ids_batch($after_post_id = 0, $limit = 200) {
-        $after_post_id = max(0, (int) $after_post_id);
-        $limit = (int) $limit;
+    public static function get_rated_post_ids_batch( $after_post_id = 0, $limit = 200 ) {
+        $after_post_id = max( 0, (int) $after_post_id );
+        $limit         = (int) $limit;
 
-        if ($limit === 0) {
+        if ( $limit === 0 ) {
             $limit = 200;
         }
 
         global $wpdb;
 
-        $meta_keys = array_map(static function ($key) {
-            return '_note_' . $key;
-        }, self::$category_keys);
+        $meta_keys = array_map(
+            static function ( $key ) {
+				return '_note_' . $key;
+			},
+            self::$category_keys
+        );
 
         $post_types = self::get_allowed_post_types();
 
-        $post_statuses = apply_filters('jlg_rated_post_statuses', ['publish']);
-        if (!is_array($post_statuses) || empty($post_statuses)) {
-            $post_statuses = ['publish'];
+        $post_statuses = apply_filters( 'jlg_rated_post_statuses', array( 'publish' ) );
+        if ( ! is_array( $post_statuses ) || empty( $post_statuses ) ) {
+            $post_statuses = array( 'publish' );
         }
-        $post_statuses = array_values(array_filter(array_map('sanitize_key', $post_statuses)));
+        $post_statuses = array_values( array_filter( array_map( 'sanitize_key', $post_statuses ) ) );
 
-        $meta_placeholders = implode(', ', array_fill(0, count($meta_keys), '%s'));
-        $type_placeholders = implode(', ', array_fill(0, count($post_types), '%s'));
-        $status_clause = '';
-        $prepare_args = array_merge($meta_keys, $post_types);
+        $meta_placeholders = implode( ', ', array_fill( 0, count( $meta_keys ), '%s' ) );
+        $type_placeholders = implode( ', ', array_fill( 0, count( $post_types ), '%s' ) );
+        $status_clause     = '';
+        $prepare_args      = array_merge( $meta_keys, $post_types );
 
-        if (!empty($post_statuses)) {
-            $status_placeholders = implode(', ', array_fill(0, count($post_statuses), '%s'));
-            $status_clause = " AND p.post_status IN ($status_placeholders)";
-            $prepare_args = array_merge($prepare_args, $post_statuses);
+        if ( ! empty( $post_statuses ) ) {
+            $status_placeholders = implode( ', ', array_fill( 0, count( $post_statuses ), '%s' ) );
+            $status_clause       = " AND p.post_status IN ($status_placeholders)";
+            $prepare_args        = array_merge( $prepare_args, $post_statuses );
         }
 
-        $postmeta_table = isset($wpdb->postmeta) ? $wpdb->postmeta : (isset($wpdb->prefix) ? $wpdb->prefix . 'postmeta' : 'wp_postmeta');
-        $posts_table = isset($wpdb->posts) ? $wpdb->posts : (isset($wpdb->prefix) ? $wpdb->prefix . 'posts' : 'wp_posts');
+        $postmeta_table = isset( $wpdb->postmeta ) ? $wpdb->postmeta : ( isset( $wpdb->prefix ) ? $wpdb->prefix . 'postmeta' : 'wp_postmeta' );
+        $posts_table    = isset( $wpdb->posts ) ? $wpdb->posts : ( isset( $wpdb->prefix ) ? $wpdb->prefix . 'posts' : 'wp_posts' );
 
-        $postmeta_table = preg_match('/^[A-Za-z0-9_]+$/', (string) $postmeta_table) ? $postmeta_table : 'wp_postmeta';
-        $posts_table = preg_match('/^[A-Za-z0-9_]+$/', (string) $posts_table) ? $posts_table : 'wp_posts';
+        $postmeta_table = preg_match( '/^[A-Za-z0-9_]+$/', (string) $postmeta_table ) ? $postmeta_table : 'wp_postmeta';
+        $posts_table    = preg_match( '/^[A-Za-z0-9_]+$/', (string) $posts_table ) ? $posts_table : 'wp_posts';
 
         $after_clause = '';
-        if ($after_post_id > 0) {
+        if ( $after_post_id > 0 ) {
             $after_clause = 'AND pm.post_id > %d';
-            array_splice($prepare_args, count($meta_keys), 0, [$after_post_id]);
+            array_splice( $prepare_args, count( $meta_keys ), 0, array( $after_post_id ) );
         }
 
         $limit_clause = '';
-        if ($limit > 0 && $limit < PHP_INT_MAX) {
-            $limit_clause = 'LIMIT %d';
+        if ( $limit > 0 && $limit < PHP_INT_MAX ) {
+            $limit_clause   = 'LIMIT %d';
             $prepare_args[] = $limit;
         }
 
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Table names are validated earlier.
         $query = "SELECT DISTINCT pm.post_id
             FROM {$postmeta_table} pm
             INNER JOIN {$posts_table} p ON p.ID = pm.post_id
@@ -441,40 +468,41 @@ class JLG_Helpers {
                 $status_clause
             ORDER BY pm.post_id ASC";
 
-        if ($limit_clause !== '') {
+        if ( $limit_clause !== '' ) {
             $query .= "\n            $limit_clause";
         }
 
-        $prepared = $wpdb->prepare($query, ...$prepare_args);
+        $prepared = $wpdb->prepare( $query, ...$prepare_args );
 
-        return array_map('intval', $wpdb->get_col($prepared));
+        return array_map( 'intval', $wpdb->get_col( $prepared ) );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
     }
 
     private static function query_rated_post_ids() {
-        return self::get_rated_post_ids_batch(0, -1);
+        return self::get_rated_post_ids_batch( 0, -1 );
     }
 
-    private static function resolve_post_id_from_mixed($post) {
-        if (is_object($post) && isset($post->ID)) {
+    private static function resolve_post_id_from_mixed( $post ) {
+        if ( is_object( $post ) && isset( $post->ID ) ) {
             return (int) $post->ID;
         }
 
-        if (is_array($post) && isset($post['ID'])) {
+        if ( is_array( $post ) && isset( $post['ID'] ) ) {
             return (int) $post['ID'];
         }
 
-        if (is_numeric($post)) {
+        if ( is_numeric( $post ) ) {
             return (int) $post;
         }
 
         return 0;
     }
 
-    private static function post_has_rating_values($post_id) {
-        foreach (self::get_rating_meta_keys() as $meta_key) {
-            $value = get_post_meta($post_id, $meta_key, true);
+    private static function post_has_rating_values( $post_id ) {
+        foreach ( self::get_rating_meta_keys() as $meta_key ) {
+            $value = get_post_meta( $post_id, $meta_key, true );
 
-            if ($value !== '' && $value !== null && $value !== false) {
+            if ( $value !== '' && $value !== null && $value !== false ) {
                 return true;
             }
         }
@@ -482,70 +510,70 @@ class JLG_Helpers {
         return false;
     }
 
-    public static function maybe_clear_rated_post_ids_cache_for_status_change($new_status, $old_status, $post) {
-        $new_status = is_string($new_status) ? strtolower($new_status) : '';
-        $old_status = is_string($old_status) ? strtolower($old_status) : '';
+    public static function maybe_clear_rated_post_ids_cache_for_status_change( $new_status, $old_status, $post ) {
+        $new_status = is_string( $new_status ) ? strtolower( $new_status ) : '';
+        $old_status = is_string( $old_status ) ? strtolower( $old_status ) : '';
 
-        if ($new_status === $old_status) {
+        if ( $new_status === $old_status ) {
             return;
         }
 
-        if ($new_status !== 'publish' && $old_status !== 'publish') {
+        if ( $new_status !== 'publish' && $old_status !== 'publish' ) {
             return;
         }
 
-        $post_id = self::resolve_post_id_from_mixed($post);
+        $post_id = self::resolve_post_id_from_mixed( $post );
 
-        if ($post_id <= 0) {
+        if ( $post_id <= 0 ) {
             return;
         }
 
         $post_type = null;
 
-        if (function_exists('get_post_type')) {
-            $post_type = get_post_type($post);
+        if ( function_exists( 'get_post_type' ) ) {
+            $post_type = get_post_type( $post );
         }
 
-        if (!is_string($post_type) || $post_type === '') {
-            if (is_object($post) && isset($post->post_type)) {
+        if ( ! is_string( $post_type ) || $post_type === '' ) {
+            if ( is_object( $post ) && isset( $post->post_type ) ) {
                 $post_type = (string) $post->post_type;
-            } elseif (is_array($post) && isset($post['post_type'])) {
+            } elseif ( is_array( $post ) && isset( $post['post_type'] ) ) {
                 $post_type = (string) $post['post_type'];
             }
         }
 
-        if (is_string($post_type) && $post_type !== '') {
+        if ( is_string( $post_type ) && $post_type !== '' ) {
             $allowed_types = self::get_allowed_post_types();
 
-            if (!in_array($post_type, $allowed_types, true)) {
+            if ( ! in_array( $post_type, $allowed_types, true ) ) {
                 return;
             }
         }
 
-        if (!self::post_has_rating_values($post_id)) {
+        if ( ! self::post_has_rating_values( $post_id ) ) {
             return;
         }
 
         self::clear_rated_post_ids_cache();
     }
 
-    public static function queue_average_score_rebuild($post_ids) {
-        if (empty($post_ids)) {
+    public static function queue_average_score_rebuild( $post_ids ) {
+        if ( empty( $post_ids ) ) {
             return;
         }
 
-        if (!is_array($post_ids)) {
-            $post_ids = [$post_ids];
+        if ( ! is_array( $post_ids ) ) {
+            $post_ids = array( $post_ids );
         }
 
         $post_ids = array_filter(
-            array_map('intval', $post_ids),
-            static function ($post_id) {
+            array_map( 'intval', $post_ids ),
+            static function ( $post_id ) {
                 return $post_id > 0;
             }
         );
 
-        if (empty($post_ids)) {
+        if ( empty( $post_ids ) ) {
             return;
         }
 
@@ -554,284 +582,292 @@ class JLG_Helpers {
          *
          * @param int[] $post_ids Liste des IDs d'articles.
          */
-        do_action('jlg_queue_average_rebuild', $post_ids);
+        do_action( 'jlg_queue_average_rebuild', $post_ids );
     }
 
     public static function clear_rated_post_ids_cache() {
-        delete_transient('jlg_rated_post_ids_v1');
-    }
-    
-    public static function adjust_hex_brightness($hex, $steps) {
-        $hex = str_replace('#', '', $hex);
-        
-        if (strlen($hex) == 3) {
-            $hex = str_repeat(substr($hex,0,1), 2) . 
-                   str_repeat(substr($hex,1,1), 2) . 
-                   str_repeat(substr($hex,2,1), 2);
-        }
-        
-        $r = max(0, min(255, hexdec(substr($hex,0,2)) + $steps));
-        $g = max(0, min(255, hexdec(substr($hex,2,2)) + $steps));
-        $b = max(0, min(255, hexdec(substr($hex,4,2)) + $steps));
-        
-        return '#' . str_pad(dechex($r), 2, '0', STR_PAD_LEFT) . 
-               str_pad(dechex($g), 2, '0', STR_PAD_LEFT) . 
-               str_pad(dechex($b), 2, '0', STR_PAD_LEFT);
+        delete_transient( 'jlg_rated_post_ids_v1' );
     }
 
-    public static function calculate_color_from_note($note, $options = null) {
-        if ($options === null) {
+    public static function adjust_hex_brightness( $hex, $steps ) {
+        $hex = str_replace( '#', '', $hex );
+
+        if ( strlen( $hex ) == 3 ) {
+            $hex = str_repeat( substr( $hex, 0, 1 ), 2 ) .
+                    str_repeat( substr( $hex, 1, 1 ), 2 ) .
+                    str_repeat( substr( $hex, 2, 1 ), 2 );
+        }
+
+        $r = max( 0, min( 255, hexdec( substr( $hex, 0, 2 ) ) + $steps ) );
+        $g = max( 0, min( 255, hexdec( substr( $hex, 2, 2 ) ) + $steps ) );
+        $b = max( 0, min( 255, hexdec( substr( $hex, 4, 2 ) ) + $steps ) );
+
+        return '#' . str_pad( dechex( $r ), 2, '0', STR_PAD_LEFT ) .
+                str_pad( dechex( $g ), 2, '0', STR_PAD_LEFT ) .
+                str_pad( dechex( $b ), 2, '0', STR_PAD_LEFT );
+    }
+
+    public static function calculate_color_from_note( $note, $options = null ) {
+        if ( $options === null ) {
             $options = self::get_plugin_options();
         }
-        
+
         // S'assurer que la note est un nombre
-        $note = floatval($note);
-        
+        $note = floatval( $note );
+
         // Récupérer les couleurs définies dans les options
-        $color_low = $options['color_low'] ?? '#ef4444';
-        $color_mid = $options['color_mid'] ?? '#f97316';
+        $color_low  = $options['color_low'] ?? '#ef4444';
+        $color_mid  = $options['color_mid'] ?? '#f97316';
         $color_high = $options['color_high'] ?? '#22c55e';
-        
+
         // Parser les couleurs hexadécimales
-        $parsed_low = sscanf($color_low, "#%02x%02x%02x");
-        $parsed_mid = sscanf($color_mid, "#%02x%02x%02x");
-        $parsed_high = sscanf($color_high, "#%02x%02x%02x");
-        
+        $parsed_low  = sscanf( $color_low, '#%02x%02x%02x' );
+        $parsed_mid  = sscanf( $color_mid, '#%02x%02x%02x' );
+        $parsed_high = sscanf( $color_high, '#%02x%02x%02x' );
+
         // Vérifier que le parsing a fonctionné
-        if (!$parsed_low || count($parsed_low) !== 3) $parsed_low = [239, 68, 68];
-        if (!$parsed_mid || count($parsed_mid) !== 3) $parsed_mid = [249, 115, 22];
-        if (!$parsed_high || count($parsed_high) !== 3) $parsed_high = [34, 197, 94];
-        
+        if ( ! $parsed_low || count( $parsed_low ) !== 3 ) {
+			$parsed_low = array( 239, 68, 68 );
+        }
+        if ( ! $parsed_mid || count( $parsed_mid ) !== 3 ) {
+			$parsed_mid = array( 249, 115, 22 );
+        }
+        if ( ! $parsed_high || count( $parsed_high ) !== 3 ) {
+			$parsed_high = array( 34, 197, 94 );
+        }
+
         // Calculer l'interpolation selon la note
-        if ($note <= 5) {
+        if ( $note <= 5 ) {
             // Entre 0 et 5 : interpolation entre low et mid
             $ratio = $note / 5.0;
-            $r = round($parsed_low[0] + ($parsed_mid[0] - $parsed_low[0]) * $ratio);
-            $g = round($parsed_low[1] + ($parsed_mid[1] - $parsed_low[1]) * $ratio);
-            $b = round($parsed_low[2] + ($parsed_mid[2] - $parsed_low[2]) * $ratio);
+            $r     = round( $parsed_low[0] + ( $parsed_mid[0] - $parsed_low[0] ) * $ratio );
+            $g     = round( $parsed_low[1] + ( $parsed_mid[1] - $parsed_low[1] ) * $ratio );
+            $b     = round( $parsed_low[2] + ( $parsed_mid[2] - $parsed_low[2] ) * $ratio );
         } else {
             // Entre 5 et 10 : interpolation entre mid et high
-            $ratio = ($note - 5.0) / 5.0;
-            $r = round($parsed_mid[0] + ($parsed_high[0] - $parsed_mid[0]) * $ratio);
-            $g = round($parsed_mid[1] + ($parsed_high[1] - $parsed_mid[1]) * $ratio);
-            $b = round($parsed_mid[2] + ($parsed_high[2] - $parsed_mid[2]) * $ratio);
+            $ratio = ( $note - 5.0 ) / 5.0;
+            $r     = round( $parsed_mid[0] + ( $parsed_high[0] - $parsed_mid[0] ) * $ratio );
+            $g     = round( $parsed_mid[1] + ( $parsed_high[1] - $parsed_mid[1] ) * $ratio );
+            $b     = round( $parsed_mid[2] + ( $parsed_high[2] - $parsed_mid[2] ) * $ratio );
         }
-        
+
         // S'assurer que les valeurs sont dans les limites
-        $r = max(0, min(255, $r));
-        $g = max(0, min(255, $g));
-        $b = max(0, min(255, $b));
-        
-        return sprintf("#%02x%02x%02x", $r, $g, $b);
+        $r = max( 0, min( 255, $r ) );
+        $g = max( 0, min( 255, $g ) );
+        $b = max( 0, min( 255, $b ) );
+
+        return sprintf( '#%02x%02x%02x', $r, $g, $b );
     }
 
-    public static function get_glow_css($type, $average_score, $options = null) {
-        if ($options === null) {
+    public static function get_glow_css( $type, $average_score, $options = null ) {
+        if ( $options === null ) {
             $options = self::get_plugin_options();
         }
-        
+
         // Vérifier si l'effet est activé pour ce type
         $enabled_key = "{$type}_glow_enabled";
-        if (empty($options[$enabled_key])) {
+        if ( empty( $options[ $enabled_key ] ) ) {
             return '';
         }
-        
+
         // Déterminer la couleur du glow
-        $color_mode_key = "{$type}_glow_color_mode";
+        $color_mode_key   = "{$type}_glow_color_mode";
         $custom_color_key = "{$type}_glow_custom_color";
-        
+
         // Vérifier explicitement si on est en mode dynamique
-        $is_dynamic = isset($options[$color_mode_key]) && $options[$color_mode_key] === 'dynamic';
-        
-        if ($is_dynamic) {
+        $is_dynamic = isset( $options[ $color_mode_key ] ) && $options[ $color_mode_key ] === 'dynamic';
+
+        if ( $is_dynamic ) {
             // Mode dynamique : calculer la couleur selon la note
-            $glow_color = self::calculate_color_from_note($average_score, $options);
+            $glow_color = self::calculate_color_from_note( $average_score, $options );
         } else {
             // Mode personnalisé : utiliser la couleur définie
-            $glow_color = $options[$custom_color_key] ?? '#ffffff';
+            $glow_color = $options[ $custom_color_key ] ?? '#ffffff';
         }
-        
+
         // Paramètres d'intensité et de vitesse
         $intensity_key = "{$type}_glow_intensity";
-        $pulse_key = "{$type}_glow_pulse";
-        $speed_key = "{$type}_glow_speed";
-        
-        $intensity = isset($options[$intensity_key]) ? intval($options[$intensity_key]) : 15;
-        $has_pulse = !empty($options[$pulse_key]);
-        $speed = isset($options[$speed_key]) ? floatval($options[$speed_key]) : 2.5;
-        
+        $pulse_key     = "{$type}_glow_pulse";
+        $speed_key     = "{$type}_glow_speed";
+
+        $intensity = isset( $options[ $intensity_key ] ) ? intval( $options[ $intensity_key ] ) : 15;
+        $has_pulse = ! empty( $options[ $pulse_key ] );
+        $speed     = isset( $options[ $speed_key ] ) ? floatval( $options[ $speed_key ] ) : 2.5;
+
         // Calculer les tailles de shadow
-        $s1 = round($intensity * 0.5);
+        $s1 = round( $intensity * 0.5 );
         $s2 = $intensity;
-        $s3 = round($intensity * 1.5);
-        
+        $s3 = round( $intensity * 1.5 );
+
         // Pour la pulsation
-        $ps1 = round($intensity * 0.7);
-        $ps2 = round($intensity * 1.5);
-        $ps3 = round($intensity * 2.5);
-        
+        $ps1 = round( $intensity * 0.7 );
+        $ps2 = round( $intensity * 1.5 );
+        $ps3 = round( $intensity * 2.5 );
+
         $css = '';
-        
-        if ($type === 'text') {
+
+        if ( $type === 'text' ) {
             // CSS pour le mode texte
-            $css .= ".review-box-jlg .score-value { ";
-            $css .= "text-shadow: ";
+            $css .= '.review-box-jlg .score-value { ';
+            $css .= 'text-shadow: ';
             $css .= "0 0 {$s1}px {$glow_color}, ";
             $css .= "0 0 {$s2}px {$glow_color}, ";
             $css .= "0 0 {$s3}px {$glow_color}";
-            $css .= " !important; "; // Force l'application
-            $css .= "} ";
-            
+            $css .= ' !important; '; // Force l'application
+            $css .= '} ';
+
             // Animation de pulsation si activée
-            if ($has_pulse) {
-                $css .= "@keyframes jlg-text-glow-pulse { ";
-                $css .= "0%, 100% { ";
+            if ( $has_pulse ) {
+                $css .= '@keyframes jlg-text-glow-pulse { ';
+                $css .= '0%, 100% { ';
                 $css .= "text-shadow: 0 0 {$s1}px {$glow_color}, 0 0 {$s2}px {$glow_color}, 0 0 {$s3}px {$glow_color}; ";
-                $css .= "} ";
-                $css .= "50% { ";
+                $css .= '} ';
+                $css .= '50% { ';
                 $css .= "text-shadow: 0 0 {$ps1}px {$glow_color}, 0 0 {$ps2}px {$glow_color}, 0 0 {$ps3}px {$glow_color}; ";
-                $css .= "} ";
-                $css .= "} ";
-                $css .= ".review-box-jlg .score-value { ";
+                $css .= '} ';
+                $css .= '} ';
+                $css .= '.review-box-jlg .score-value { ';
                 $css .= "animation: jlg-text-glow-pulse {$speed}s infinite ease-in-out !important; ";
-                $css .= "} ";
+                $css .= '} ';
             }
-            
-        } elseif ($type === 'circle') {
+		} elseif ( $type === 'circle' ) {
             // CSS pour le mode cercle
-            $css .= ".review-box-jlg .score-circle { ";
-            $css .= "box-shadow: ";
+            $css .= '.review-box-jlg .score-circle { ';
+            $css .= 'box-shadow: ';
             $css .= "0 0 {$s1}px {$glow_color}, ";
             $css .= "0 0 {$s2}px {$glow_color}, ";
             $css .= "0 0 {$s3}px {$glow_color}, ";
             $css .= "inset 0 0 {$s1}px rgba(255,255,255,0.1)";
-            $css .= " !important; "; // Force l'application
-            $css .= "} ";
-            
+            $css .= ' !important; '; // Force l'application
+            $css .= '} ';
+
             // Animation de pulsation si activée
-            if ($has_pulse) {
-                $css .= "@keyframes jlg-circle-glow-pulse { ";
-                $css .= "0%, 100% { ";
-                $css .= "box-shadow: ";
+            if ( $has_pulse ) {
+                $css .= '@keyframes jlg-circle-glow-pulse { ';
+                $css .= '0%, 100% { ';
+                $css .= 'box-shadow: ';
                 $css .= "0 0 {$s1}px {$glow_color}, ";
                 $css .= "0 0 {$s2}px {$glow_color}, ";
                 $css .= "0 0 {$s3}px {$glow_color}, ";
                 $css .= "inset 0 0 {$s1}px rgba(255,255,255,0.1); ";
-                $css .= "} ";
-                $css .= "50% { ";
-                $css .= "box-shadow: ";
+                $css .= '} ';
+                $css .= '50% { ';
+                $css .= 'box-shadow: ';
                 $css .= "0 0 {$ps1}px {$glow_color}, ";
                 $css .= "0 0 {$ps2}px {$glow_color}, ";
                 $css .= "0 0 {$ps3}px {$glow_color}, ";
                 $css .= "inset 0 0 {$ps1}px rgba(255,255,255,0.15); ";
-                $css .= "} ";
-                $css .= "} ";
-                $css .= ".review-box-jlg .score-circle { ";
+                $css .= '} ';
+                $css .= '} ';
+                $css .= '.review-box-jlg .score-circle { ';
                 $css .= "animation: jlg-circle-glow-pulse {$speed}s infinite ease-in-out !important; ";
-                $css .= "} ";
-            }
+                $css .= '} ';
+			}
         }
-        
+
         // Mode debug (optionnel) - décommentez pour voir les valeurs
-        if (!empty($options['debug_mode_enabled'])) {
-            $css .= "/* DEBUG GLOW: ";
+        if ( ! empty( $options['debug_mode_enabled'] ) ) {
+            $css .= '/* DEBUG GLOW: ';
             $css .= "Type: {$type}, ";
-            $css .= "Mode: " . ($is_dynamic ? 'dynamic' : 'custom') . ", ";
+            $css .= 'Mode: ' . ( $is_dynamic ? 'dynamic' : 'custom' ) . ', ';
             $css .= "Score: {$average_score}, ";
             $css .= "Color: {$glow_color}, ";
             $css .= "Intensity: {$intensity}, ";
-            $css .= "Pulse: " . ($has_pulse ? 'yes' : 'no');
-            $css .= " */ ";
+            $css .= 'Pulse: ' . ( $has_pulse ? 'yes' : 'no' );
+            $css .= ' */ ';
         }
-        
+
         return $css;
     }
-    
+
     public static function get_registered_platform_labels() {
-        $defaults = self::get_default_platform_definitions();
-        $stored = get_option('jlg_platforms_list', []);
+        $defaults  = self::get_default_platform_definitions();
+        $stored    = get_option( 'jlg_platforms_list', array() );
         $platforms = $defaults;
-        $order_map = [];
+        $order_map = array();
 
-        if (is_array($stored)) {
-            if (isset($stored['custom_platforms']) || isset($stored['order'])) {
-                $custom_platforms = isset($stored['custom_platforms']) && is_array($stored['custom_platforms'])
+        if ( is_array( $stored ) ) {
+            if ( isset( $stored['custom_platforms'] ) || isset( $stored['order'] ) ) {
+                $custom_platforms = isset( $stored['custom_platforms'] ) && is_array( $stored['custom_platforms'] )
                     ? $stored['custom_platforms']
-                    : [];
+                    : array();
 
-                foreach ($custom_platforms as $key => $platform) {
-                    if (!is_array($platform)) {
+                foreach ( $custom_platforms as $key => $platform ) {
+                    if ( ! is_array( $platform ) ) {
                         continue;
                     }
 
-                    $name = isset($platform['name']) ? sanitize_text_field($platform['name']) : '';
+                    $name = isset( $platform['name'] ) ? sanitize_text_field( $platform['name'] ) : '';
 
-                    if ($name === '') {
+                    if ( $name === '' ) {
                         continue;
                     }
 
-                    $platforms[$key] = [
+                    $platforms[ $key ] = array(
                         'name'  => $name,
-                        'order' => isset($platform['order']) ? (int) $platform['order'] : (int) (($platforms[$key]['order'] ?? count($platforms) + 1)),
-                    ];
+                        'order' => isset( $platform['order'] ) ? (int) $platform['order'] : (int) ( ( $platforms[ $key ]['order'] ?? count( $platforms ) + 1 ) ),
+                    );
                 }
 
-                if (isset($stored['order']) && is_array($stored['order'])) {
-                    $order_map = array_map('intval', $stored['order']);
+                if ( isset( $stored['order'] ) && is_array( $stored['order'] ) ) {
+                    $order_map = array_map( 'intval', $stored['order'] );
                 }
             } else {
-                foreach ($stored as $key => $platform) {
-                    if (!is_array($platform)) {
+                foreach ( $stored as $key => $platform ) {
+                    if ( ! is_array( $platform ) ) {
                         continue;
                     }
 
-                    $name = isset($platform['name']) ? sanitize_text_field($platform['name']) : '';
+                    $name = isset( $platform['name'] ) ? sanitize_text_field( $platform['name'] ) : '';
 
-                    if ($name === '') {
+                    if ( $name === '' ) {
                         continue;
                     }
 
-                    $platforms[$key] = [
+                    $platforms[ $key ] = array(
                         'name'  => $name,
-                        'order' => isset($platform['order']) ? (int) $platform['order'] : (int) (($defaults[$key]['order'] ?? count($platforms) + 1)),
-                    ];
+                        'order' => isset( $platform['order'] ) ? (int) $platform['order'] : (int) ( ( $defaults[ $key ]['order'] ?? count( $platforms ) + 1 ) ),
+                    );
 
-                    if (isset($platform['order'])) {
-                        $order_map[$key] = (int) $platform['order'];
+                    if ( isset( $platform['order'] ) ) {
+                        $order_map[ $key ] = (int) $platform['order'];
                     }
                 }
             }
         }
 
-        $keys = array_keys($platforms);
+        $keys = array_keys( $platforms );
 
-        usort($keys, function($a, $b) use ($order_map, $platforms) {
-            $order_a = isset($order_map[$a]) ? $order_map[$a] : (int) ($platforms[$a]['order'] ?? PHP_INT_MAX);
-            $order_b = isset($order_map[$b]) ? $order_map[$b] : (int) ($platforms[$b]['order'] ?? PHP_INT_MAX);
+        usort(
+            $keys,
+            function ( $a, $b ) use ( $order_map, $platforms ) {
+				$order_a = isset( $order_map[ $a ] ) ? $order_map[ $a ] : (int) ( $platforms[ $a ]['order'] ?? PHP_INT_MAX );
+				$order_b = isset( $order_map[ $b ] ) ? $order_map[ $b ] : (int) ( $platforms[ $b ]['order'] ?? PHP_INT_MAX );
 
-            if ($order_a === $order_b) {
-                return strcmp((string) $a, (string) $b);
-            }
+				if ( $order_a === $order_b ) {
+					return strcmp( (string) $a, (string) $b );
+				}
 
-            return $order_a <=> $order_b;
-        });
+				return $order_a <=> $order_b;
+			}
+        );
 
-        $labels = [];
+        $labels = array();
 
-        foreach ($keys as $key) {
-            $name = isset($platforms[$key]['name']) ? (string) $platforms[$key]['name'] : '';
+        foreach ( $keys as $key ) {
+            $name = isset( $platforms[ $key ]['name'] ) ? (string) $platforms[ $key ]['name'] : '';
 
-            if ($name === '') {
+            if ( $name === '' ) {
                 continue;
             }
 
-            $labels[$key] = $name;
+            $labels[ $key ] = $name;
         }
 
-        if (empty($labels)) {
-            foreach ($defaults as $key => $platform) {
-                if (isset($platform['name']) && $platform['name'] !== '') {
-                    $labels[$key] = $platform['name'];
+        if ( empty( $labels ) ) {
+            foreach ( $defaults as $key => $platform ) {
+                if ( isset( $platform['name'] ) && $platform['name'] !== '' ) {
+                    $labels[ $key ] = $platform['name'];
                 }
             }
         }
@@ -843,7 +879,7 @@ class JLG_Helpers {
      * Réinitialise toutes les options du plugin
      */
     public static function reset_all_settings() {
-        delete_option(self::$option_name);
+        delete_option( self::$option_name );
         return true;
     }
 }
