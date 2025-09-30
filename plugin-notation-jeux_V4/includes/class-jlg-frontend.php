@@ -1481,7 +1481,11 @@ class JLG_Frontend {
 
     /**
      * Charge un fichier template en lui passant des variables.
-     * 
+     *
+     * Cherche en priorité une surcharge dans le thème actif (`notation-jlg/{template}.php`) avant de
+     * revenir au template fourni par le plugin. Deux filtres (`jlg_frontend_template_candidates` et
+     * `jlg_frontend_template_path`) permettent aux intégrateurs d'ajuster le chemin utilisé.
+     *
      * @param string $template_name Le nom du fichier template.
      * @param array $args Les variables à passer au template.
      * @return string Le contenu HTML du template.
@@ -1492,8 +1496,46 @@ class JLG_Frontend {
             $args = [];
         }
 
-        // Construire le chemin du template
-        $template_path = JLG_NOTATION_PLUGIN_DIR . 'templates/' . $template_name . '.php';
+        // Construire le chemin du template du plugin et rechercher une éventuelle surcharge dans le thème.
+        $plugin_template_path = JLG_NOTATION_PLUGIN_DIR . 'templates/' . $template_name . '.php';
+
+        $template_candidates = [
+            'notation-jlg/' . $template_name . '.php',
+        ];
+
+        /**
+         * Permet d'ajouter ou de modifier les chemins de surcharge cherchés dans le thème.
+         *
+         * @param string[] $template_candidates  Liste de chemins passés à locate_template().
+         * @param string   $template_name        Nom du template demandé par le plugin.
+         * @param array    $args                 Arguments transmis au rendu du template.
+         */
+        $template_candidates = apply_filters('jlg_frontend_template_candidates', $template_candidates, $template_name, $args);
+
+        if (!is_array($template_candidates)) {
+            $template_candidates = (array) $template_candidates;
+        }
+
+        $template_candidates = array_values(array_filter(array_map('strval', $template_candidates)));
+
+        $located_template = '';
+
+        if (!empty($template_candidates) && function_exists('locate_template')) {
+            $located_template = locate_template($template_candidates);
+        }
+
+        $template_path = $located_template !== '' ? $located_template : $plugin_template_path;
+
+        /**
+         * Filtre le chemin final du template à inclure.
+         *
+         * @param string $template_path        Chemin absolu du template retenu.
+         * @param string $template_name        Nom du template demandé par le plugin.
+         * @param array  $args                 Arguments transmis au rendu du template.
+         * @param string $located_template     Chemin localisé via locate_template() si une surcharge a été trouvée.
+         * @param string $plugin_template_path Chemin par défaut fourni par le plugin.
+         */
+        $template_path = (string) apply_filters('jlg_frontend_template_path', $template_path, $template_name, $args, $located_template, $plugin_template_path);
 
         // Démarrer la capture de sortie
         ob_start();
