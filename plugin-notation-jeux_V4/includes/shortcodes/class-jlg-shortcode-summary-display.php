@@ -11,6 +11,14 @@ if (!defined('ABSPATH')) exit;
 class JLG_Shortcode_Summary_Display {
 
     private const MAX_SYNC_AVERAGE_REBUILDS = 10;
+    private const REQUEST_KEYS = [
+        'orderby',
+        'order',
+        'cat_filter',
+        'letter_filter',
+        'genre_filter',
+        'paged',
+    ];
     
     public function __construct() {
         add_shortcode('jlg_tableau_recap', [$this, 'render']);
@@ -31,6 +39,12 @@ class JLG_Shortcode_Summary_Display {
     public static function get_render_context($atts, $request = [], $use_global_paged = false) {
         $default_atts = self::get_default_atts();
         $atts = shortcode_atts($default_atts, $atts, 'jlg_tableau_recap');
+
+        $atts['id'] = self::normalize_table_id($atts['id'] ?? '');
+        $request_prefix = self::get_request_prefix($atts['id']);
+        $request_keys = self::build_request_keys($request_prefix);
+
+        $request = self::extract_request_params($request, $request_keys);
 
         $default_posts_per_page = isset($default_atts['posts_per_page']) ? intval($default_atts['posts_per_page']) : 12;
         if ($default_posts_per_page < 1) {
@@ -155,6 +169,8 @@ class JLG_Shortcode_Summary_Display {
                 'colonnes'     => self::prepare_columns($atts),
                 'colonnes_disponibles' => self::get_available_columns(),
                 'error_message' => $no_results,
+                'request_prefix' => $request_prefix,
+                'request_keys'   => $request_keys,
             ];
         }
 
@@ -260,7 +276,11 @@ class JLG_Shortcode_Summary_Display {
             'genre_filter'         => $genre_filter,
             'colonnes'             => self::prepare_columns($atts),
             'colonnes_disponibles' => self::get_available_columns(),
+            'error'                => false,
             'error_message'        => '',
+            'atts_defaults'        => $default_atts,
+            'request_prefix'       => $request_prefix,
+            'request_keys'         => $request_keys,
         ];
     }
 
@@ -488,4 +508,61 @@ class JLG_Shortcode_Summary_Display {
 
     private static $active_letter_filter = '';
     private static $letter_filter_hooked = false;
+
+    private static function normalize_table_id($raw_id) {
+        $raw_id = is_string($raw_id) ? $raw_id : '';
+        $sanitized = sanitize_html_class($raw_id);
+
+        if ($sanitized === '') {
+            $sanitized = 'jlg-table-' . uniqid();
+        }
+
+        return $sanitized;
+    }
+
+    private static function get_request_prefix($table_id) {
+        $table_id = is_string($table_id) ? $table_id : '';
+        $prefix = sanitize_title($table_id);
+
+        if ($prefix === '') {
+            $prefix = 'jlg-table';
+        }
+
+        return $prefix;
+    }
+
+    private static function build_request_keys($prefix) {
+        $keys = [];
+
+        foreach (self::REQUEST_KEYS as $key) {
+            $keys[$key] = $prefix !== '' ? $key . '__' . $prefix : $key;
+        }
+
+        return $keys;
+    }
+
+    private static function extract_request_params($request, array $request_keys) {
+        if (!is_array($request)) {
+            return [];
+        }
+
+        if (function_exists('wp_unslash')) {
+            $request = wp_unslash($request);
+        }
+
+        $normalized = [];
+
+        foreach ($request_keys as $key => $namespaced_key) {
+            if (array_key_exists($namespaced_key, $request)) {
+                $normalized[$key] = $request[$namespaced_key];
+                continue;
+            }
+
+            if (array_key_exists($key, $request)) {
+                $normalized[$key] = $request[$key];
+            }
+        }
+
+        return $normalized;
+    }
 }

@@ -163,4 +163,33 @@ class ShortcodeSummarySortingTest extends TestCase
         $this->assertInstanceOf(WP_Query::class, $context['query']);
         $this->assertSame(['post', 'game_review'], $context['query']->args['post_type']);
     }
+
+    public function test_namespaced_request_parameters_are_scoped_to_each_table()
+    {
+        $attsOne = JLG_Shortcode_Summary_Display::get_default_atts();
+        $attsOne['id'] = 'table-one';
+
+        $attsTwo = JLG_Shortcode_Summary_Display::get_default_atts();
+        $attsTwo['id'] = 'table-two';
+
+        $request = [
+            'orderby__table-one'      => 'note',
+            'order__table-one'        => 'ASC',
+            'letter_filter__table-two'=> 'C',
+            'cat_filter__table-two'   => '123',
+        ];
+
+        $contextOne = JLG_Shortcode_Summary_Display::get_render_context($attsOne, $request);
+        $contextTwo = JLG_Shortcode_Summary_Display::get_render_context($attsTwo, $request);
+
+        $this->assertSame('note', $contextOne['orderby']);
+        $this->assertSame('ASC', $contextOne['order']);
+        $this->assertSame('', $contextOne['letter_filter']);
+        $this->assertSame(0, $contextOne['cat_filter']);
+
+        $this->assertSame('C', $contextTwo['letter_filter']);
+        $this->assertSame(123, $contextTwo['cat_filter']);
+        $this->assertSame('date', $contextTwo['orderby']);
+        $this->assertSame('DESC', $contextTwo['order']);
+    }
 }

@@ -12,6 +12,17 @@ class JLG_Shortcode_Game_Explorer {
         '_jlg_date_sortie',
     ];
 
+    private const REQUEST_KEYS = [
+        'orderby',
+        'order',
+        'letter',
+        'category',
+        'platform',
+        'availability',
+        'search',
+        'paged',
+    ];
+
     /** @var array<string, mixed>|null */
     private static $filters_snapshot = null;
 
@@ -721,6 +732,12 @@ class JLG_Shortcode_Game_Explorer {
         $defaults = self::get_default_atts();
         $atts = shortcode_atts($defaults, $atts, 'jlg_game_explorer');
 
+        $atts['id'] = self::normalize_container_id($atts['id'] ?? '');
+        $request_prefix = self::get_request_prefix($atts['id']);
+        $request_keys = self::build_request_keys($request_prefix);
+
+        $request = self::extract_request_params($request, $request_keys);
+
         $options = JLG_Helpers::get_plugin_options();
         $posts_per_page = isset($atts['posts_per_page']) ? (int) $atts['posts_per_page'] : $defaults['posts_per_page'];
         if ($posts_per_page < 1) {
@@ -736,7 +753,6 @@ class JLG_Shortcode_Game_Explorer {
 
         $filters_enabled = self::normalize_filters($atts['filters']);
 
-        $request = is_array($request) ? $request : [];
         $orderby = (isset($request['orderby']) && is_string($request['orderby'])) ? sanitize_key($request['orderby']) : 'date';
         $order = isset($request['order']) ? strtoupper(sanitize_text_field($request['order'])) : 'DESC';
         if (!in_array($order, ['ASC', 'DESC'], true)) {
@@ -921,7 +937,13 @@ class JLG_Shortcode_Game_Explorer {
                         'search'       => $search_filter,
                         'paged'        => 1,
                     ],
+                    'request' => [
+                        'prefix' => $request_prefix,
+                        'keys'   => $request_keys,
+                    ],
                 ],
+                'request_prefix'     => $request_prefix,
+                'request_keys'       => $request_keys,
             ];
         }
 
@@ -1081,6 +1103,10 @@ class JLG_Shortcode_Game_Explorer {
                 'search'       => $search_filter,
                 'paged'        => $paged,
             ],
+            'request' => [
+                'prefix' => $request_prefix,
+                'keys'   => $request_keys,
+            ],
         ];
 
         return [
@@ -1111,6 +1137,65 @@ class JLG_Shortcode_Game_Explorer {
             'total_items'        => $total_items,
             'message'            => $message,
             'config_payload'     => $config_payload,
+            'request_prefix'     => $request_prefix,
+            'request_keys'       => $request_keys,
         ];
+    }
+
+    private static function normalize_container_id($raw_id) {
+        $raw_id = is_string($raw_id) ? $raw_id : '';
+        $sanitized = sanitize_html_class($raw_id);
+
+        if ($sanitized === '') {
+            $sanitized = 'jlg-game-explorer-' . uniqid();
+        }
+
+        return $sanitized;
+    }
+
+    private static function get_request_prefix($container_id) {
+        $container_id = is_string($container_id) ? $container_id : '';
+        $prefix = sanitize_title($container_id);
+
+        if ($prefix === '') {
+            $prefix = 'jlg-game-explorer';
+        }
+
+        return $prefix;
+    }
+
+    private static function build_request_keys($prefix) {
+        $keys = [];
+
+        foreach (self::REQUEST_KEYS as $key) {
+            $keys[$key] = $prefix !== '' ? $key . '__' . $prefix : $key;
+        }
+
+        return $keys;
+    }
+
+    private static function extract_request_params($request, array $request_keys) {
+        if (!is_array($request)) {
+            return [];
+        }
+
+        if (function_exists('wp_unslash')) {
+            $request = wp_unslash($request);
+        }
+
+        $normalized = [];
+
+        foreach ($request_keys as $key => $namespaced_key) {
+            if (array_key_exists($namespaced_key, $request)) {
+                $normalized[$key] = $request[$namespaced_key];
+                continue;
+            }
+
+            if (array_key_exists($key, $request)) {
+                $normalized[$key] = $request[$key];
+            }
+        }
+
+        return $normalized;
     }
 }

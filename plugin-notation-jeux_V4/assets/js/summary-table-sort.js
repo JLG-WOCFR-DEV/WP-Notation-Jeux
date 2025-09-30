@@ -3,15 +3,63 @@ jQuery(document).ready(function($) {
         return;
     }
 
-    function parseUrlParameters(href) {
-        var url = new URL(href, window.location.href);
-        var params = {};
+    var REQUEST_KEYS = ['orderby', 'order', 'paged', 'cat_filter', 'letter_filter', 'genre_filter'];
 
-        url.searchParams.forEach(function(value, key) {
-            params[key] = value;
+    function getRequestPrefix($wrapper) {
+        return ($wrapper.attr('data-request-prefix') || '').toString();
+    }
+
+    function getRequestKey($wrapper, key) {
+        var prefix = getRequestPrefix($wrapper);
+
+        return prefix ? key + '__' + prefix : key;
+    }
+
+    function resolveBaseKey($wrapper, key) {
+        if (!key) {
+            return null;
+        }
+
+        var prefix = getRequestPrefix($wrapper);
+
+        if (prefix) {
+            var suffix = '__' + prefix;
+            if (key.slice(-suffix.length) === suffix) {
+                return key.slice(0, -suffix.length);
+            }
+
+            if (key.indexOf('__') !== -1) {
+                return null;
+            }
+        }
+
+        return key;
+    }
+
+    function normalizeParams($wrapper, params) {
+        var normalized = {};
+
+        Object.keys(params || {}).forEach(function(name) {
+            var baseKey = resolveBaseKey($wrapper, name);
+            if (!baseKey) {
+                return;
+            }
+
+            normalized[baseKey] = params[name];
         });
 
-        return { url: url, params: params };
+        return normalized;
+    }
+
+    function parseUrlParameters($wrapper, href) {
+        var url = new URL(href, window.location.href);
+        var rawParams = {};
+
+        url.searchParams.forEach(function(value, key) {
+            rawParams[key] = value;
+        });
+
+        return { url: url, params: normalizeParams($wrapper, rawParams) };
     }
 
     function updateHistory(url) {
@@ -43,14 +91,16 @@ jQuery(document).ready(function($) {
         };
     }
 
-    function applyStateToUrl(url, state) {
-        var keys = ['orderby', 'order', 'paged', 'cat_filter', 'letter_filter', 'genre_filter'];
-
-        keys.forEach(function(key) {
+    function applyStateToUrl($wrapper, url, state) {
+        REQUEST_KEYS.forEach(function(key) {
             url.searchParams.delete(key);
+            var namespaced = getRequestKey($wrapper, key);
+            if (namespaced !== key) {
+                url.searchParams.delete(namespaced);
+            }
         });
 
-        keys.forEach(function(key) {
+        REQUEST_KEYS.forEach(function(key) {
             if (!state) {
                 return;
             }
@@ -73,7 +123,7 @@ jQuery(document).ready(function($) {
                 return;
             }
 
-            url.searchParams.set(key, value);
+            url.searchParams.set(getRequestKey($wrapper, key), value);
         });
 
         return url;
@@ -82,7 +132,7 @@ jQuery(document).ready(function($) {
     function buildUrlFromState($wrapper, state) {
         var url = new URL(window.location.href);
         url.hash = '';
-        applyStateToUrl(url, state);
+        applyStateToUrl($wrapper, url, state);
 
         if ($wrapper.attr('id')) {
             url.hash = $wrapper.attr('id');
@@ -144,16 +194,35 @@ jQuery(document).ready(function($) {
         var $form = $wrapper.find('.jlg-summary-filters form');
         if ($form.length) {
             if (state.orderby) {
+                var orderbyName = getRequestKey($wrapper, 'orderby');
                 $form.find('input[name="orderby"]').val(state.orderby);
+                if (orderbyName !== 'orderby') {
+                    $form.find('input[name="' + orderbyName + '"]').val(state.orderby);
+                }
             }
             if (state.order) {
-                $form.find('input[name="order"]').val(state.order.toString().toUpperCase());
+                var orderName = getRequestKey($wrapper, 'order');
+                var resolvedOrder = state.order.toString().toUpperCase();
+                $form.find('input[name="order"]').val(resolvedOrder);
+                if (orderName !== 'order') {
+                    $form.find('input[name="' + orderName + '"]').val(resolvedOrder);
+                }
             }
             if (typeof state.cat_filter !== 'undefined') {
-                $form.find('select[name="cat_filter"]').val($wrapper.attr('data-cat-filter'));
+                var catName = getRequestKey($wrapper, 'cat_filter');
+                var catValueAttr = $wrapper.attr('data-cat-filter');
+                $form.find('select[name="cat_filter"]').val(catValueAttr);
+                if (catName !== 'cat_filter') {
+                    $form.find('select[name="' + catName + '"]').val(catValueAttr);
+                }
             }
             if (typeof state.letter_filter !== 'undefined') {
-                $form.find('input[name="letter_filter"]').val($wrapper.attr('data-letter-filter'));
+                var letterName = getRequestKey($wrapper, 'letter_filter');
+                var letterValueAttr = $wrapper.attr('data-letter-filter');
+                $form.find('input[name="letter_filter"]').val(letterValueAttr);
+                if (letterName !== 'letter_filter') {
+                    $form.find('input[name="' + letterName + '"]').val(letterValueAttr);
+                }
             }
             if (typeof state.genre_filter !== 'undefined') {
                 var genreValueAttr = $wrapper.attr('data-genre-filter');
@@ -163,6 +232,12 @@ jQuery(document).ready(function($) {
                     $genreSelect.val(genreValueAttr);
                 } else {
                     $form.find('input[name="genre_filter"]').val(genreValueAttr);
+                }
+
+                var genreName = getRequestKey($wrapper, 'genre_filter');
+                if (genreName !== 'genre_filter') {
+                    $form.find('select[name="' + genreName + '"]').val(genreValueAttr);
+                    $form.find('input[name="' + genreName + '"]').val(genreValueAttr);
                 }
             }
         }
@@ -260,7 +335,7 @@ jQuery(document).ready(function($) {
             try {
                 var normalizedUrl = new URL(historyUrl, window.location.href);
                 normalizedUrl.hash = '';
-                applyStateToUrl(normalizedUrl, targetState);
+                applyStateToUrl($wrapper, normalizedUrl, targetState);
                 if ($wrapper.attr('id')) {
                     normalizedUrl.hash = $wrapper.attr('id');
                 }
@@ -286,18 +361,22 @@ jQuery(document).ready(function($) {
             colonnes: $wrapper.data('colonnes') || '',
             table_id: $wrapper.attr('id'),
             current_url: targetUrl,
-            orderby: orderby,
-            order: order,
-            paged: paged,
-            cat_filter: 0,
-            letter_filter: letterFilter,
-            genre_filter: genreFilter,
         };
 
+        requestData[getRequestKey($wrapper, 'orderby')] = orderby;
+        requestData[getRequestKey($wrapper, 'order')] = order;
+        requestData[getRequestKey($wrapper, 'paged')] = paged;
+
+        var catFilterKey = getRequestKey($wrapper, 'cat_filter');
         var catFilterInt = parseInt(catFilter, 10);
         if (!isNaN(catFilterInt)) {
-            requestData.cat_filter = catFilterInt;
+            requestData[catFilterKey] = catFilterInt;
+        } else if (catFilter !== '') {
+            requestData[catFilterKey] = catFilter;
         }
+
+        requestData[getRequestKey($wrapper, 'letter_filter')] = letterFilter;
+        requestData[getRequestKey($wrapper, 'genre_filter')] = genreFilter;
 
         $wrapper.addClass('jlg-summary-loading');
 
@@ -353,7 +432,7 @@ jQuery(document).ready(function($) {
                 return;
             }
 
-            var parsed = parseUrlParameters(href);
+            var parsed = parseUrlParameters($wrapper, href);
             var nextState = $.extend({}, getCurrentState($wrapper), parsed.params);
             performAjax($wrapper, nextState, parsed.url.href);
         });
@@ -369,6 +448,8 @@ jQuery(document).ready(function($) {
                     params[field.name] = field.value;
                 }
             });
+
+            params = normalizeParams($wrapper, params);
 
             params.paged = 1;
 
@@ -396,6 +477,10 @@ jQuery(document).ready(function($) {
             var $form = $wrapper.find('.jlg-summary-filters form');
             if ($form.length) {
                 $form.find('input[name="letter_filter"]').val(letter);
+                var letterInput = getRequestKey($wrapper, 'letter_filter');
+                if (letterInput !== 'letter_filter') {
+                    $form.find('input[name="' + letterInput + '"]').val(letter);
+                }
             }
 
             var url = buildUrlFromState($wrapper, nextState);
@@ -403,7 +488,7 @@ jQuery(document).ready(function($) {
             performAjax($wrapper, nextState, url);
         });
 
-        $wrapper.on('change', 'select[name="genre_filter"]', function() {
+        $wrapper.on('change', 'select[name^="genre_filter"]', function() {
             var genre = $(this).val() || '';
             var currentState = getCurrentState($wrapper);
 
@@ -420,8 +505,8 @@ jQuery(document).ready(function($) {
 
     window.addEventListener('popstate', function() {
         var href = window.location.href;
-        var parsed = parseUrlParameters(href);
-        var hash = parsed.url.hash || '';
+        var url = new URL(href, window.location.href);
+        var hash = url.hash || '';
         var $wrapper;
 
         if (hash) {
@@ -446,6 +531,8 @@ jQuery(document).ready(function($) {
         if (!$wrapper || !$wrapper.length) {
             return;
         }
+
+        var parsed = parseUrlParameters($wrapper, href);
 
         var currentRequest = $wrapper.data('ajaxRequest');
         if (currentRequest) {
