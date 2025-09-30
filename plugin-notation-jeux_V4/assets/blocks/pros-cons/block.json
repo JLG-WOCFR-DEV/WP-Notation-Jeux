@@ -1,0 +1,15 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/pros-cons",
+  "title": "Points forts / faibles",
+  "category": "widgets",
+  "icon": "list-view",
+  "description": "Affiche les points forts et points faibles du test courant.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "html": false
+  },
+  "attributes": {},
+  "editorScript": "notation-jlg-pros-cons-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

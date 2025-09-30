@@ -69,6 +69,27 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
   avec `[jlg_tableau_recap]`, puis affichez une page ou une archive : les assets `jlg-frontend` et `jlg-user-rating`
   sont maintenant chargés dès le rendu du bloc, garantissant le même affichage que dans le contenu principal.
 
+### Blocs Gutenberg
+
+Le plugin propose désormais une collection complète de blocs dynamiques pour l'éditeur moderne :
+
+- **Bloc de notation** (`notation-jlg/rating-block`) : sélectionnez un test publié ou laissez vide pour utiliser l'article
+  courant.
+- **Points forts / faibles** (`notation-jlg/pros-cons`) et **Tagline bilingue** (`notation-jlg/tagline`) : affichent
+  automatiquement les métadonnées du test.
+- **Fiche technique** (`notation-jlg/game-info`) : choisissez les champs à afficher, personnalisez le titre et ciblez un
+  autre article via le sélecteur de contenu.
+- **Notation utilisateurs** (`notation-jlg/user-rating`) : insère le module de vote interactif.
+- **Tableau récapitulatif** (`notation-jlg/summary-display`) : contrôlez le nombre d'éléments, la disposition (table ou
+  grille), les colonnes et les filtres par défaut.
+- **Bloc tout-en-un** (`notation-jlg/all-in-one`) : activez ou non chaque sous-section, choisissez le style et la couleur
+  d'accent pour un rendu cohérent.
+- **Game Explorer** (`notation-jlg/game-explorer`) : définissez le tri initial, les filtres disponibles et les paramètres de
+  préfiltrage (catégorie, plateforme, lettre).
+
+Chaque bloc repose sur le rendu PHP historique (shortcodes) et marque automatiquement l'exécution via
+`JLG_Frontend::mark_shortcode_rendered()` afin que les assets nécessaires soient chargés, y compris dans l'éditeur.
+
 ## Installation
 
 1. Téléchargez le plugin et décompressez l'archive

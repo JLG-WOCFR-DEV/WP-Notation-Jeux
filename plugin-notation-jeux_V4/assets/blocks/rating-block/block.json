@@ -1,0 +1,21 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/rating-block",
+  "title": "Bloc de notation",
+  "category": "widgets",
+  "icon": "star-filled",
+  "description": "Affiche le bloc de notation principal d'un test JLG.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false
+  },
+  "attributes": {
+    "postId": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "editorScript": "notation-jlg-rating-block-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

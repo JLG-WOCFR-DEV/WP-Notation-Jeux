@@ -1,0 +1,49 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/all-in-one",
+  "title": "Bloc tout-en-un",
+  "category": "widgets",
+  "icon": "feedback",
+  "description": "Combine notation, points forts/faibles et tagline dans un seul bloc.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false
+  },
+  "attributes": {
+    "postId": {
+      "type": "integer",
+      "default": 0
+    },
+    "showRating": {
+      "type": "boolean",
+      "default": true
+    },
+    "showProsCons": {
+      "type": "boolean",
+      "default": true
+    },
+    "showTagline": {
+      "type": "boolean",
+      "default": true
+    },
+    "style": {
+      "type": "string",
+      "default": "moderne"
+    },
+    "accentColor": {
+      "type": "string",
+      "default": ""
+    },
+    "prosTitle": {
+      "type": "string",
+      "default": "Points Forts"
+    },
+    "consTitle": {
+      "type": "string",
+      "default": "Points Faibles"
+    }
+  },
+  "editorScript": "notation-jlg-all-in-one-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}
