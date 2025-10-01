@@ -164,6 +164,10 @@
         if (refs.availabilitySelect) {
             refs.availabilitySelect.value = state.availability || '';
         }
+
+        if (refs.searchInput) {
+            refs.searchInput.value = state.search || '';
+        }
     }
 
     function setResultsBusyState(resultsNode, isBusy) {
@@ -348,6 +352,7 @@
             categorySelect: container.querySelector('[data-role="category"]'),
             platformSelect: container.querySelector('[data-role="platform"]'),
             availabilitySelect: container.querySelector('[data-role="availability"]'),
+            searchInput: container.querySelector('[data-role="search"]'),
             resetButton: container.querySelector('[data-role="reset"]'),
         };
 
@@ -421,6 +426,23 @@
                 writeConfig(container, config);
                 refreshResults(container, config, refs);
             });
+        }
+
+        if (refs.searchInput) {
+            const handleSearchUpdate = () => {
+                const newValue = refs.searchInput.value || '';
+                if (newValue === config.state.search) {
+                    return;
+                }
+
+                config.state.search = newValue;
+                config.state.paged = 1;
+                writeConfig(container, config);
+                refreshResults(container, config, refs);
+            };
+
+            refs.searchInput.addEventListener('input', handleSearchUpdate);
+            refs.searchInput.addEventListener('change', handleSearchUpdate);
         }
 
         if (refs.resetButton) {
