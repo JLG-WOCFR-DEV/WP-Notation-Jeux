@@ -33,7 +33,7 @@
 }
 
 .jlg-all-in-one-block.style-compact .jlg-aio-score-value {
-    font-size: 3rem;
+    font-size: clamp(2.2rem, 7vw, 3rem);
 }
 
 .jlg-aio-header {
@@ -112,7 +112,7 @@
 }
 
 .jlg-aio-score-value {
-    font-size: 4rem;
+    font-size: clamp(2.5rem, 9vw, 4rem);
     font-weight: 800;
     background: var(--jlg-aio-score-gradient, none);
     -webkit-background-clip: text;
@@ -140,7 +140,7 @@
 }
 
 .jlg-aio-score-circle .jlg-aio-score-value {
-    font-size: 3rem;
+    font-size: clamp(2rem, 6.5vw, 3rem);
     color: #ffffff;
     background: none;
     -webkit-text-fill-color: #ffffff;
