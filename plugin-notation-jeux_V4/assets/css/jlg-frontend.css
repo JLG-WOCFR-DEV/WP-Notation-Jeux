@@ -13,7 +13,7 @@
 .review-box-jlg hr { border:0; height:1px; background-color: var(--jlg-border-color); margin:24px 0; }
 .review-box-jlg .global-score-wrapper { text-align:center; margin-bottom:24px; }
 .review-box-jlg .score-value {
-    font-size:4.5rem; font-weight:800; line-height:1;
+    font-size:clamp(2.5rem, 10vw, 4.5rem); font-weight:800; line-height:1;
     color: var(--jlg-main-text-color);
     background: linear-gradient(45deg, var(--jlg-score-gradient-1), var(--jlg-score-gradient-2));
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-fill-color:transparent;
@@ -27,7 +27,7 @@
 .review-box-jlg .rating-bar-container { background-color: var(--jlg-bar-bg-color); border-radius:9999px; height:10px; width:100%; overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,.2);}
 .review-box-jlg .rating-bar { height:100%; border-radius:9999px; transition:width .6s cubic-bezier(.25,1,.5,1), background-color .3s ease; background-color: var(--bar-color, var(--jlg-score-gradient-1)); width:var(--rating-percent,0%); }
 .review-box-jlg .score-circle { width:150px; height:150px; border-radius:50%; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-.review-box-jlg .score-circle .score-value { font-size:3.5rem; background: var(--jlg-main-text-color); -webkit-background-clip:text; background-clip:text; text-shadow:none !important; -webkit-text-fill-color:transparent; color: var(--jlg-main-text-color); }
+.review-box-jlg .score-circle .score-value { font-size:clamp(2.25rem, 8vw, 3.5rem); background: var(--jlg-main-text-color); -webkit-background-clip:text; background-clip:text; text-shadow:none !important; -webkit-text-fill-color:transparent; color: var(--jlg-main-text-color); }
 .review-box-jlg .score-circle .score-label { font-size:0.8rem; color: var(--jlg-secondary-text-color); }
 .review-box-jlg.jlg-animate .rating-bar{width:0;}
 .review-box-jlg.jlg-animate.is-in-view .rating-bar{width:var(--rating-percent,0%);}
