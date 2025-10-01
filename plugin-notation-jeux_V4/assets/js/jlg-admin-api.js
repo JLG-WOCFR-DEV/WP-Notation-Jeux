@@ -1,5 +1,18 @@
 jQuery(document).ready(function($) {
     var adminStrings = (typeof jlgAdminApiL10n !== 'undefined') ? jlgAdminApiL10n : {};
+
+    function isValidHttpUrl(value) {
+        if (typeof value !== 'string') {
+            return false;
+        }
+
+        try {
+            var parsed = new URL(value);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (error) {
+            return false;
+        }
+    }
     function getString(key, fallback) {
         if (adminStrings && Object.prototype.hasOwnProperty.call(adminStrings, key)) {
             return adminStrings[key];
@@ -155,7 +168,11 @@ jQuery(document).ready(function($) {
             $('#jlg_developpeur').val(gameData.developers);
             $('#jlg_editeur').val(gameData.publishers);
             $('#jlg_date_sortie').val(gameData.release_date);
-            $('#jlg_cover_image_url').val(gameData.cover_image);
+            var coverInput = $('#jlg_cover_image_url');
+            var coverUrl = (typeof gameData.cover_image === 'string') ? gameData.cover_image.trim() : '';
+            if (coverUrl && isValidHttpUrl(coverUrl)) {
+                coverInput.val(coverUrl);
+            }
             if (gameData.pegi) {
                 $('#jlg_pegi').val(gameData.pegi);
             }
