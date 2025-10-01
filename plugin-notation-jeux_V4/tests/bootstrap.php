@@ -671,6 +671,59 @@ if (!function_exists('esc_attr')) {
     }
 }
 
+if (!function_exists('esc_attr_e')) {
+    function esc_attr_e($text, $domain = 'default') {
+        echo esc_attr(__($text, $domain));
+    }
+}
+
+if (!function_exists('esc_attr__')) {
+    function esc_attr__($text, $domain = 'default') {
+        return esc_attr(__($text, $domain));
+    }
+}
+
+if (!function_exists('wp_dropdown_categories')) {
+    function wp_dropdown_categories($args = []) {
+        $defaults = [
+            'show_option_all' => '',
+            'name'            => 'cat',
+            'id'              => '',
+            'selected'        => 0,
+            'class'           => '',
+            'echo'            => 1,
+        ];
+
+        if (!is_array($args)) {
+            $args = [];
+        }
+
+        $parsed = array_merge($defaults, $args);
+
+        $id_attr = $parsed['id'] !== ''
+            ? ' id="' . esc_attr($parsed['id']) . '"'
+            : '';
+
+        $options = [];
+
+        if ($parsed['show_option_all'] !== '') {
+            $options[] = '<option value="">' . esc_html($parsed['show_option_all']) . '</option>';
+        }
+
+        $selected_value = (int) $parsed['selected'];
+        $selected_attr  = $selected_value > 0 ? ' selected="selected"' : '';
+        $options[]      = '<option value="' . esc_attr((string) $selected_value) . '"' . $selected_attr . '>' . esc_html((string) $selected_value) . '</option>';
+
+        $select = '<select name="' . esc_attr($parsed['name']) . '"' . $id_attr . ' class="' . esc_attr($parsed['class']) . '">' . implode('', $options) . '</select>';
+
+        if (!empty($parsed['echo'])) {
+            echo $select;
+        }
+
+        return $select;
+    }
+}
+
 if (!function_exists('esc_url_raw')) {
     function esc_url_raw($url) {
         if (!is_string($url)) {
@@ -745,6 +798,12 @@ if (!function_exists('wp_parse_url')) {
         }
 
         return parse_url($url);
+    }
+}
+
+if (!function_exists('wp_reset_postdata')) {
+    function wp_reset_postdata() {
+        // No-op stub for tests.
     }
 }
 
