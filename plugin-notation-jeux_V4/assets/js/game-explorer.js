@@ -7,6 +7,20 @@
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+    function debounce(fn, delay = 250) {
+        let timeoutId;
+        return function debounced(...args) {
+            const context = this;
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            timeoutId = setTimeout(() => {
+                timeoutId = null;
+                fn.apply(context, args);
+            }, delay);
+        };
+    }
+
     function computeRequestKey(prefix, key) {
         return prefix ? key + '__' + prefix : key;
     }
@@ -429,6 +443,9 @@
         }
 
         if (refs.searchInput) {
+            const scheduleSearchRefresh = debounce(() => {
+                refreshResults(container, config, refs);
+            });
             const handleSearchUpdate = () => {
                 const newValue = refs.searchInput.value || '';
                 if (newValue === config.state.search) {
@@ -438,7 +455,7 @@
                 config.state.search = newValue;
                 config.state.paged = 1;
                 writeConfig(container, config);
-                refreshResults(container, config, refs);
+                scheduleSearchRefresh();
             };
 
             refs.searchInput.addEventListener('input', handleSearchUpdate);
