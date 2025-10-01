@@ -1,6 +1,7 @@
 jQuery(document).ready(function($) {
     var KEY_ENTER = 13;
     var KEY_SPACE = 32;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var toggleTagline = function($trigger) {
         var selectedLang = $trigger.data('lang');
@@ -21,7 +22,13 @@ jQuery(document).ready(function($) {
             $tagline.stop(true, true);
 
             if (matchesSelection) {
-                $tagline.attr('aria-hidden', 'false').removeAttr('hidden').hide().fadeIn(300);
+                $tagline.attr('aria-hidden', 'false').removeAttr('hidden');
+
+                if (reduceMotion) {
+                    $tagline.show();
+                } else {
+                    $tagline.hide().fadeIn(300);
+                }
             } else {
                 $tagline.attr('aria-hidden', 'true').attr('hidden', 'hidden').hide();
             }
