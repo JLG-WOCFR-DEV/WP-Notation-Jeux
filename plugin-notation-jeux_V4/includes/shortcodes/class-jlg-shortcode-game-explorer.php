@@ -739,6 +739,24 @@ class JLG_Shortcode_Game_Explorer {
         return $matched_ids;
     }
 
+    /**
+     * Builds the render context used by the [jlg_game_explorer] shortcode.
+     *
+     * Supported request parameters (optionally namespaced with the container prefix):
+     * - orderby: Sorting key (date, score or title).
+     * - order: Sorting direction (ASC or DESC).
+     * - letter: Letter filter applied to the list.
+     * - category: Category identifier or slug filter.
+     * - platform: Platform slug filter.
+     * - availability: Availability status filter.
+     * - search: Search query string.
+     * - paged: Current page number.
+     *
+     * @param array<string, mixed> $atts    Shortcode attributes.
+     * @param array<string, mixed> $request Raw request data (e.g. $_GET).
+     *
+     * @return array<string, mixed>
+     */
     public static function get_render_context( $atts, $request = array() ) {
         $defaults = self::get_default_atts();
         $atts     = shortcode_atts( $defaults, $atts, 'jlg_game_explorer' );

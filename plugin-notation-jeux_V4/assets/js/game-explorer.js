@@ -5,10 +5,237 @@
     const strings = l10n.strings || {};
 
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
-    let activeRequestController = null;
+    const activeRequestControllers = new WeakMap();
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
     const DEFAULT_DEBOUNCE_DELAY = 250;
+
+    function cloneState(state) {
+        if (!state || typeof state !== 'object') {
+            return {};
+        }
+
+        try {
+            return JSON.parse(JSON.stringify(state));
+        } catch (error) {
+            return { ...state };
+        }
+    }
+
+    function getRequestKeys(config) {
+        if (!config || !config.request || !config.request.keys) {
+            return {};
+        }
+
+        return config.request.keys;
+    }
+
+    function buildBaseState(config) {
+        const initialState = (config && config.initialState && typeof config.initialState === 'object')
+            ? config.initialState
+            : {};
+        const baseState = Object.assign({}, initialState);
+
+        if (typeof baseState.orderby !== 'string' || baseState.orderby === '') {
+            baseState.orderby = 'date';
+        }
+
+        if (typeof baseState.order !== 'string' || baseState.order === '') {
+            baseState.order = 'DESC';
+        }
+        baseState.order = baseState.order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+        if (typeof baseState.paged !== 'number' || baseState.paged < 1) {
+            baseState.paged = 1;
+        }
+
+        REQUEST_KEYS.forEach((key) => {
+            if (typeof baseState[key] === 'undefined') {
+                baseState[key] = '';
+            }
+        });
+
+        return baseState;
+    }
+
+    function normalizeStateValue(key, value, baseState) {
+        if (value === null || typeof value === 'undefined') {
+            return baseState[key];
+        }
+
+        if (key === 'paged') {
+            const parsed = parseInt(value, 10);
+            if (!Number.isInteger(parsed) || parsed < 1) {
+                return baseState.paged || 1;
+            }
+            return parsed;
+        }
+
+        if (key === 'order') {
+            const upperValue = value.toString().toUpperCase();
+            return upperValue === 'ASC' ? 'ASC' : 'DESC';
+        }
+
+        if (key === 'orderby') {
+            const normalized = value.toString().trim().toLowerCase();
+            const allowed = ['date', 'score', 'title'];
+            if (allowed.includes(normalized)) {
+                return normalized;
+            }
+
+            return typeof baseState.orderby === 'string' && baseState.orderby !== ''
+                ? baseState.orderby
+                : 'date';
+        }
+
+        return value.toString();
+    }
+
+    function parseStateFromUrl(config, url) {
+        let resolvedUrl = url;
+        if (!resolvedUrl) {
+            try {
+                resolvedUrl = new URL(window.location.href);
+            } catch (error) {
+                return {};
+            }
+        }
+
+        const params = {};
+        resolvedUrl.searchParams.forEach((paramValue, paramKey) => {
+            params[paramKey] = paramValue;
+        });
+
+        const keys = getRequestKeys(config);
+        const normalized = {};
+
+        REQUEST_KEYS.forEach((key) => {
+            const namespaced = keys[key];
+            if (namespaced && namespaced !== key && Object.prototype.hasOwnProperty.call(params, namespaced)) {
+                normalized[key] = params[namespaced];
+                return;
+            }
+
+            if (Object.prototype.hasOwnProperty.call(params, key)) {
+                normalized[key] = params[key];
+            }
+        });
+
+        return normalized;
+    }
+
+    function applyStateFromUrl(config, urlState) {
+        const baseState = buildBaseState(config);
+        const nextState = Object.assign({}, config.state || {});
+        let changed = false;
+
+        REQUEST_KEYS.forEach((key) => {
+            const hasUrlValue = urlState && Object.prototype.hasOwnProperty.call(urlState, key);
+            const nextValue = hasUrlValue
+                ? normalizeStateValue(key, urlState[key], baseState)
+                : baseState[key];
+
+            if (typeof nextValue === 'undefined') {
+                return;
+            }
+
+            if (nextState[key] !== nextValue) {
+                changed = true;
+                nextState[key] = nextValue;
+            } else if (key === 'paged' || key === 'order' || key === 'orderby') {
+                nextState[key] = normalizeStateValue(key, nextValue, baseState);
+            }
+        });
+
+        config.state = nextState;
+
+        return changed;
+    }
+
+    function applyStateToUrl(config, url, state) {
+        if (!url || typeof url.searchParams === 'undefined') {
+            return url;
+        }
+
+        const keys = getRequestKeys(config);
+
+        REQUEST_KEYS.forEach((key) => {
+            url.searchParams.delete(key);
+            const namespaced = keys[key];
+            if (namespaced && namespaced !== key) {
+                url.searchParams.delete(namespaced);
+            }
+        });
+
+        REQUEST_KEYS.forEach((key) => {
+            if (!state) {
+                return;
+            }
+
+            let value = state[key];
+
+            if (key === 'paged') {
+                const parsed = parseInt(value, 10);
+                if (!Number.isInteger(parsed) || parsed <= 1) {
+                    return;
+                }
+                value = parsed;
+            }
+
+            if (value === null || typeof value === 'undefined' || value === '') {
+                return;
+            }
+
+            const paramName = keys[key] || key;
+            url.searchParams.set(paramName, value);
+        });
+
+        return url;
+    }
+
+    function buildUrlFromState(container, config) {
+        let url;
+        try {
+            url = new URL(window.location.href);
+        } catch (error) {
+            return null;
+        }
+
+        url.hash = '';
+        applyStateToUrl(config, url, config.state);
+
+        if (container && container.id) {
+            url.hash = container.id;
+        }
+
+        return url.href;
+    }
+
+    function updateHistoryState(url, options = {}) {
+        if (!url) {
+            return;
+        }
+
+        const history = window.history;
+        if (!history) {
+            return;
+        }
+
+        const href = typeof url === 'string' ? url : (url && url.href);
+        if (typeof href !== 'string' || href === '' || href === window.location.href) {
+            return;
+        }
+
+        const replace = options.replace === true;
+        if (replace && typeof history.replaceState === 'function') {
+            history.replaceState({}, '', href);
+            return;
+        }
+
+        if (typeof history.pushState === 'function') {
+            history.pushState({}, '', href);
+        }
+    }
 
     function debounce(fn, delay = DEFAULT_DEBOUNCE_DELAY) {
         let timeoutId;
@@ -258,12 +485,18 @@
         });
     }
 
-    function refreshResults(container, config, refs) {
+    function refreshResults(container, config, refs, options = {}) {
         if (!ajaxUrl) {
             return;
         }
 
         ensureRequestConfig(container, config);
+
+        const refreshOptions = (options && typeof options === 'object') ? options : {};
+        const shouldUpdateHistory = refreshOptions.updateHistory !== false;
+        const replaceHistory = refreshOptions.replace === true
+            || refreshOptions.replaceState === true
+            || refreshOptions.replaceHistory === true;
 
         const loadingText = strings.loading || 'Loading…';
         if (refs.resultsNode) {
@@ -293,10 +526,13 @@
         payload.set(getRequestKey(config, 'search'), config.state.search);
         payload.set(getRequestKey(config, 'paged'), config.state.paged);
 
-        activeRequestController?.abort();
+        const previousController = activeRequestControllers.get(container);
+        if (previousController) {
+            previousController.abort();
+        }
 
         const requestController = new AbortController();
-        activeRequestController = requestController;
+        activeRequestControllers.set(container, requestController);
 
         fetch(ajaxUrl, {
             method: 'POST',
@@ -344,6 +580,11 @@
                 updateActiveFilters(container, config, refs);
                 bindPagination(container, config, refs);
 
+                if (shouldUpdateHistory) {
+                    const url = buildUrlFromState(container, config);
+                    updateHistoryState(url, { replace: replaceHistory });
+                }
+
                 const focusHandler = () => {
                     focusUpdatedResults(refs);
                 };
@@ -368,8 +609,9 @@
                 }
             })
             .finally(() => {
-                if (activeRequestController === requestController) {
-                    activeRequestController = null;
+                const storedController = activeRequestControllers.get(container);
+                if (storedController === requestController) {
+                    activeRequestControllers.delete(container);
                 }
                 if (refs.resultsNode) {
                     setResultsBusyState(refs.resultsNode, false);
@@ -380,6 +622,16 @@
 
     function initExplorer(container) {
         const config = parseConfig(container);
+        ensureRequestConfig(container, config);
+
+        const hasInitialState = config.initialState && typeof config.initialState === 'object';
+        config.initialState = hasInitialState ? cloneState(config.initialState) : cloneState(config.state);
+
+        const defaultState = cloneState(config.initialState);
+
+        const initialUrlState = parseStateFromUrl(config);
+        const stateChangedFromUrl = applyStateFromUrl(config, initialUrlState);
+
         writeConfig(container, config);
 
         const refs = {
@@ -392,6 +644,8 @@
             resetButton: container.querySelector('[data-role="reset"]'),
         };
 
+        container.__jlgGameExplorer = { config, refs };
+
         if (refs.resultsNode && strings.loading) {
             refs.resultsNode.dataset.loadingText = strings.loading;
         }
@@ -399,8 +653,6 @@
         if (refs.resetButton && strings.reset) {
             refs.resetButton.textContent = strings.reset;
         }
-
-        const defaultState = JSON.parse(JSON.stringify(config.state));
 
         if (refs.sortSelect) {
             refs.sortSelect.addEventListener('change', () => {
@@ -497,12 +749,44 @@
         updateActiveFilters(container, config, refs);
         updateCount(container, config.state);
         bindPagination(container, config, refs);
+
+        if (stateChangedFromUrl) {
+            refreshResults(container, config, refs, { updateHistory: false, replace: true });
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         const explorers = document.querySelectorAll('.jlg-game-explorer');
         explorers.forEach((container) => {
             initExplorer(container);
+        });
+    });
+
+    window.addEventListener('popstate', () => {
+        let url;
+        try {
+            url = new URL(window.location.href);
+        } catch (error) {
+            return;
+        }
+
+        const explorers = document.querySelectorAll('.jlg-game-explorer');
+        explorers.forEach((container) => {
+            if (!container || !container.__jlgGameExplorer) {
+                return;
+            }
+
+            const { config, refs } = container.__jlgGameExplorer;
+            ensureRequestConfig(container, config);
+            const urlState = parseStateFromUrl(config, url);
+            const stateChanged = applyStateFromUrl(config, urlState);
+
+            writeConfig(container, config);
+            updateActiveFilters(container, config, refs);
+
+            if (stateChanged) {
+                refreshResults(container, config, refs, { updateHistory: false, replace: true });
+            }
         });
     });
 })();
