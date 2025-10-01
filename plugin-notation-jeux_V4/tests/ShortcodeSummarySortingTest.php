@@ -70,6 +70,15 @@ if (!function_exists('get_pagenum_link')) {
     }
 }
 
+if (!function_exists('wp_dropdown_categories')) {
+    function wp_dropdown_categories($args = [])
+    {
+        unset($args);
+
+        echo '<select class="jlg-cat-filter-select"></select>';
+    }
+}
+
 class ShortcodeSummarySortingTest extends TestCase
 {
     protected function setUp(): void
@@ -191,5 +200,14 @@ class ShortcodeSummarySortingTest extends TestCase
         $this->assertSame(123, $contextTwo['cat_filter']);
         $this->assertSame('date', $contextTwo['orderby']);
         $this->assertSame('DESC', $contextTwo['order']);
+    }
+
+    public function test_initial_render_marks_active_letter_button_with_aria_pressed()
+    {
+        $context = JLG_Shortcode_Summary_Display::get_render_context([], []);
+        $html    = JLG_Frontend::get_template_html('shortcode-summary-display', $context);
+
+        $this->assertMatchesRegularExpression('/<button\\b[^>]*data-letter=""[^>]*aria-pressed="true"/s', $html);
+        $this->assertMatchesRegularExpression('/<button\\b[^>]*data-letter="A"[^>]*aria-pressed="false"/s', $html);
     }
 }

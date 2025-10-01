@@ -77,32 +77,50 @@ $letters = range( 'A', 'Z' );
         <div class="jlg-summary-filters">
             <div class="jlg-summary-letter-filter" role="group" aria-label="<?php esc_attr_e( 'Filtrer par lettre', 'notation-jlg' ); ?>">
                 <?php
-                $all_letters_classes = array();
-                if ( $current_letter_filter === '' ) {
+                $is_all_letters_active = ( $current_letter_filter === '' );
+                $all_letters_classes    = array();
+                if ( $is_all_letters_active ) {
                     $all_letters_classes[] = 'is-active';
                 }
                 ?>
-                <button type="button" class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $all_letters_classes ) ) ); ?>" data-letter="">
+                <button
+                    type="button"
+                    class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $all_letters_classes ) ) ); ?>"
+                    data-letter=""
+                    aria-pressed="<?php echo esc_attr( $is_all_letters_active ? 'true' : 'false' ); ?>"
+                >
                     <?php esc_html_e( 'Tous', 'notation-jlg' ); ?>
                 </button>
                 <?php foreach ( $letters as $letter ) : ?>
                     <?php
+                    $is_letter_active      = ( $current_letter_filter === $letter );
                     $letter_button_classes = array();
-                    if ( $current_letter_filter === $letter ) {
+                    if ( $is_letter_active ) {
                         $letter_button_classes[] = 'is-active';
                     }
                     ?>
-                    <button type="button" data-letter="<?php echo esc_attr( $letter ); ?>" class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $letter_button_classes ) ) ); ?>">
+                    <button
+                        type="button"
+                        data-letter="<?php echo esc_attr( $letter ); ?>"
+                        class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $letter_button_classes ) ) ); ?>"
+                        aria-pressed="<?php echo esc_attr( $is_letter_active ? 'true' : 'false' ); ?>"
+                    >
                         <?php echo esc_html( $letter ); ?>
                     </button>
                 <?php endforeach; ?>
                 <?php
+                $is_numeric_active      = ( $current_letter_filter === '#' );
                 $numeric_button_classes = array();
-                if ( $current_letter_filter === '#' ) {
+                if ( $is_numeric_active ) {
                     $numeric_button_classes[] = 'is-active';
                 }
                 ?>
-                <button type="button" data-letter="#" class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $numeric_button_classes ) ) ); ?>">
+                <button
+                    type="button"
+                    data-letter="#"
+                    class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $numeric_button_classes ) ) ); ?>"
+                    aria-pressed="<?php echo esc_attr( $is_numeric_active ? 'true' : 'false' ); ?>"
+                >
                     <?php esc_html_e( '0-9', 'notation-jlg' ); ?>
                 </button>
             </div>

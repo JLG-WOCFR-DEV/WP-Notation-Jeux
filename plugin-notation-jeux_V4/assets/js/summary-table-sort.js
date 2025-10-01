@@ -248,11 +248,10 @@ jQuery(document).ready(function($) {
             $letterButtons.each(function() {
                 var $button = $(this);
                 var buttonLetter = ($button.attr('data-letter') || '').toString();
-                if (buttonLetter === activeLetter) {
-                    $button.addClass('is-active');
-                } else {
-                    $button.removeClass('is-active');
-                }
+                var isActive = buttonLetter === activeLetter;
+
+                $button.toggleClass('is-active', isActive);
+                $button.attr('aria-pressed', isActive ? 'true' : 'false');
             });
         }
     }
