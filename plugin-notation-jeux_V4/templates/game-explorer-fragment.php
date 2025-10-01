@@ -30,6 +30,9 @@ if ( empty( $games ) ) {
         $title               = isset( $game['title'] ) ? $game['title'] : '';
         $score_display       = isset( $game['score_display'] ) ? $game['score_display'] : '';
         $score_color         = isset( $game['score_color'] ) ? $game['score_color'] : '';
+        $has_score           = isset( $game['has_score'] )
+            ? (bool) $game['has_score']
+            : ( isset( $game['score_value'] ) && is_numeric( $game['score_value'] ) );
         $cover_url           = isset( $game['cover_url'] ) ? $game['cover_url'] : '';
         $release_display     = isset( $game['release_display'] ) ? $game['release_display'] : '';
         $developer           = isset( $game['developer'] ) ? $game['developer'] : '';
@@ -50,7 +53,9 @@ if ( empty( $games ) ) {
                 <?php if ( $score_display !== '' ) : ?>
                     <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
                         <?php echo esc_html( $score_display ); ?>
-                        <span class="jlg-ge-card__score-outof">/10</span>
+                        <?php if ( $has_score ) : ?>
+                            <span class="jlg-ge-card__score-outof">/10</span>
+                        <?php endif; ?>
                     </span>
                 <?php endif; ?>
             </a>

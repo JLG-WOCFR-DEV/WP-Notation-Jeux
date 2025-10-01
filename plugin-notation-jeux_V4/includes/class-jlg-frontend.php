@@ -1617,6 +1617,8 @@ class JLG_Frontend {
                 'platforms_list'       => array(),
                 'availability_options' => array(),
                 'base_url'             => '',
+                'request_prefix'       => '',
+                'request_keys'         => array(),
                 'total_items'          => 0,
                 'config_payload'       => array(),
                 'message'              => '',
