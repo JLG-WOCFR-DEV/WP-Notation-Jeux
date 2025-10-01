@@ -92,7 +92,7 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
         }
 
         if ( ! isset( $col_info['sortable'] ) || ! $col_info['sortable'] ) {
-            echo '<th scope="col">' . esc_html( $col_info['label'] ) . '</th>';
+            echo '<th scope="col" aria-sort="none">' . esc_html( $col_info['label'] ) . '</th>';
             return;
         }
 
@@ -166,16 +166,32 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
             $class .= ' sorted ' . strtolower( $current_order );
         }
 
-        $column_label_text = isset( $col_info['label'] ) ? wp_strip_all_tags( $col_info['label'] ) : '';
-        $direction_text    = $new_order === 'ASC'
+        $column_label_text   = isset( $col_info['label'] ) ? wp_strip_all_tags( $col_info['label'] ) : '';
+        $next_direction_text = $new_order === 'ASC'
             ? esc_html__( 'ordre croissant', 'notation-jlg' )
             : esc_html__( 'ordre décroissant', 'notation-jlg' );
-        $action_text       = sprintf(
-            /* translators: %1$s: column label, %2$s: sorting direction. */
-            esc_html__( 'Trier par %1$s en %2$s', 'notation-jlg' ),
-            $column_label_text,
-            $direction_text
-        );
+        $current_direction_text = $is_active
+            ? ( strtolower( $current_order ) === 'asc'
+                ? esc_html__( 'ordre croissant', 'notation-jlg' )
+                : esc_html__( 'ordre décroissant', 'notation-jlg' ) )
+            : '';
+
+        if ( $is_active ) {
+            $action_text = sprintf(
+                /* translators: %1$s: column label, %2$s: current direction, %3$s: next direction. */
+                esc_html__( '%1$s, actuellement trié en %2$s. Activer pour trier en %3$s', 'notation-jlg' ),
+                $column_label_text,
+                $current_direction_text,
+                $next_direction_text
+            );
+        } else {
+            $action_text = sprintf(
+                /* translators: %1$s: column label, %2$s: sorting direction. */
+                esc_html__( 'Trier par %1$s en %2$s', 'notation-jlg' ),
+                $column_label_text,
+                $next_direction_text
+            );
+        }
 
         echo '<th scope="col" class="' . esc_attr( $class ) . '" aria-sort="' . esc_attr( $aria_sort ) . '">';
         echo '<a href="' . esc_url( $url ) . '" aria-label="' . esc_attr( $action_text ) . '">' . esc_html( $col_info['label'] ) . $indicator . '</a>';
