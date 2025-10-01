@@ -24,25 +24,35 @@ $data_attributes  = sprintf(
     <div class="jlg-aio-header">
         <?php if ( $has_dual_tagline ) : ?>
         <div class="jlg-aio-flags">
-            <img src="<?php echo esc_url( JLG_NOTATION_PLUGIN_URL . 'assets/flags/fr.svg' ); ?>"
+            <button
+                type="button"
                 class="jlg-aio-flag active"
                 data-lang="fr"
-                alt="<?php echo esc_attr__( 'Français', 'notation-jlg' ); ?>">
-            <img src="<?php echo esc_url( JLG_NOTATION_PLUGIN_URL . 'assets/flags/gb.svg' ); ?>"
+                aria-pressed="true"
+                aria-label="<?php echo esc_attr__( 'Français', 'notation-jlg' ); ?>"
+            >
+                <img src="<?php echo esc_url( JLG_NOTATION_PLUGIN_URL . 'assets/flags/fr.svg' ); ?>" alt="">
+            </button>
+            <button
+                type="button"
                 class="jlg-aio-flag"
                 data-lang="en"
-                alt="<?php echo esc_attr__( 'English', 'notation-jlg' ); ?>">
+                aria-pressed="false"
+                aria-label="<?php echo esc_attr__( 'English', 'notation-jlg' ); ?>"
+            >
+                <img src="<?php echo esc_url( JLG_NOTATION_PLUGIN_URL . 'assets/flags/gb.svg' ); ?>" alt="">
+            </button>
         </div>
         <?php endif; ?>
 
         <?php if ( ! empty( $tagline_fr ) ) : ?>
-        <div class="jlg-aio-tagline" data-lang="fr">
+        <div class="jlg-aio-tagline" data-lang="fr" aria-hidden="false">
             <?php echo wp_kses_post( $tagline_fr ); ?>
         </div>
         <?php endif; ?>
 
         <?php if ( ! empty( $tagline_en ) ) : ?>
-        <div class="jlg-aio-tagline" data-lang="en"<?php echo $has_dual_tagline ? ' style="display:none;" hidden' : ''; ?>>
+        <div class="jlg-aio-tagline" data-lang="en"<?php echo $has_dual_tagline ? ' hidden aria-hidden="true"' : ' aria-hidden="false"'; ?>>
             <?php echo wp_kses_post( $tagline_en ); ?>
         </div>
         <?php endif; ?>
