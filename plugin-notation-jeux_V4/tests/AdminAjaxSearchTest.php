@@ -87,6 +87,7 @@ class AdminAjaxSearchTest extends TestCase
                         [
                             'name' => 'Elden Ring',
                             'released' => '2022-02-25',
+                            'background_image' => 'https://example.com/elden-ring.jpg',
                             'developers' => [
                                 ['name' => 'FromSoftware'],
                             ],
@@ -130,6 +131,8 @@ class AdminAjaxSearchTest extends TestCase
             $this->assertSame(['Bandai Namco Entertainment'], $game['publishers']);
             $this->assertSame(['PC', 'PlayStation 5'], $game['platforms']);
             $this->assertSame('', $game['pegi']);
+            $this->assertArrayHasKey('cover_image', $game);
+            $this->assertSame('https://example.com/elden-ring.jpg', $game['cover_image']);
 
             $this->assertArrayHasKey('pagination', $exception->data);
             $this->assertSame(2, $exception->data['pagination']['current_page']);
@@ -162,6 +165,7 @@ class AdminAjaxSearchTest extends TestCase
             $this->assertArrayHasKey('games', $exception->data);
             $this->assertNotEmpty($exception->data['games']);
             $this->assertSame('The "Legend" & Co. - Résultat simulé', $exception->data['games'][0]['name']);
+            $this->assertSame('', $exception->data['games'][0]['cover_image']);
         }
     }
 }

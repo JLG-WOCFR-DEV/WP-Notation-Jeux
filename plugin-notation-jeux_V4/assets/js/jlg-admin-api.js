@@ -155,7 +155,27 @@ jQuery(document).ready(function($) {
             $('#jlg_developpeur').val(gameData.developers);
             $('#jlg_editeur').val(gameData.publishers);
             $('#jlg_date_sortie').val(gameData.release_date);
-            $('#jlg_cover_image_url').val(gameData.cover_image);
+            var coverImage = '';
+            if (typeof gameData.cover_image === 'string') {
+                coverImage = gameData.cover_image.trim();
+            }
+
+            if (coverImage) {
+                var isValidCoverUrl = false;
+
+                try {
+                    var parsedCover = new URL(coverImage, window.location.origin);
+                    if (parsedCover.protocol === 'http:' || parsedCover.protocol === 'https:') {
+                        isValidCoverUrl = true;
+                    }
+                } catch (error) {
+                    isValidCoverUrl = false;
+                }
+
+                if (isValidCoverUrl) {
+                    $('#jlg_cover_image_url').val(coverImage);
+                }
+            }
             if (gameData.pegi) {
                 $('#jlg_pegi').val(gameData.pegi);
             }

@@ -224,6 +224,14 @@ class JLG_Admin_Ajax {
             $pegi = $raw_game['esrb_rating']['name'];
         }
 
+        $cover_image = '';
+
+        if ( ! empty( $raw_game['background_image'] ) && is_string( $raw_game['background_image'] ) ) {
+            $cover_image = $raw_game['background_image'];
+        } elseif ( ! empty( $raw_game['background_image_additional'] ) && is_string( $raw_game['background_image_additional'] ) ) {
+            $cover_image = $raw_game['background_image_additional'];
+        }
+
         return array(
             'name'         => $raw_game['name'] ?? '',
             'release_date' => $raw_game['released'] ?? '',
@@ -231,6 +239,7 @@ class JLG_Admin_Ajax {
             'publishers'   => $publishers,
             'platforms'    => $platforms,
             'pegi'         => $pegi,
+            'cover_image'  => $cover_image,
         );
     }
 
@@ -242,6 +251,7 @@ class JLG_Admin_Ajax {
             'publishers'   => '',
             'platforms'    => array(),
             'pegi'         => '',
+            'cover_image'  => '',
         );
 
         $game = array_merge( $defaults, $game );
@@ -280,6 +290,18 @@ class JLG_Admin_Ajax {
             $sanitized_pegi = JLG_Validator::sanitize_pegi( $game['pegi'] );
             $game['pegi']   = $sanitized_pegi !== null ? $sanitized_pegi : '';
         }
+
+        $cover_image = '';
+
+        if ( is_string( $game['cover_image'] ) ) {
+            $sanitized_cover = esc_url_raw( $game['cover_image'] );
+
+            if ( is_string( $sanitized_cover ) && $sanitized_cover !== '' && filter_var( $sanitized_cover, FILTER_VALIDATE_URL ) ) {
+                $cover_image = $sanitized_cover;
+            }
+        }
+
+        $game['cover_image'] = $cover_image;
 
         return $game;
     }

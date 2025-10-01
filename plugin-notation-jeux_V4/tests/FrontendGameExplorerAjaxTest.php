@@ -479,6 +479,49 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame('middle-right', $overrideResponse['config']['atts']['score_position'] ?? null);
     }
 
+    public function test_handle_game_explorer_sort_injects_cover_image_into_markup(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the cover test.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the cover test.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'] = [
+            101 => [
+                '_jlg_average_score'   => 8.9,
+                '_jlg_cover_image_url' => 'https://example.com/alpha-cover.jpg',
+                '_jlg_date_sortie'     => '2023-02-14',
+                '_jlg_developpeur'     => 'Studio Alpha',
+                '_jlg_editeur'         => 'Publisher A',
+                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+            ],
+            202 => [
+                '_jlg_average_score'   => 7.2,
+                '_jlg_cover_image_url' => '',
+                '_jlg_date_sortie'     => '2022-11-10',
+                '_jlg_developpeur'     => 'Studio Beta',
+                '_jlg_editeur'         => 'Publisher B',
+                '_jlg_plateformes'     => ['PC'],
+            ],
+        ];
+
+        $payload = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'cover-test',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => 'letter,category,platform,availability,search',
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'paged'          => '1',
+        ]);
+
+        $this->assertArrayHasKey('html', $payload);
+        $this->assertStringContainsString('src="https://example.com/alpha-cover.jpg"', $payload['html']);
+        $this->assertStringContainsString('Visuel indisponible', $payload['html']);
+    }
+
     private function dispatchExplorerAjax(array $post): array
     {
         $_POST = $post;
