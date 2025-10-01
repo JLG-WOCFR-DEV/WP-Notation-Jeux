@@ -66,6 +66,41 @@ jQuery(document).ready(function($) {
         });
     }
 
+    function updateRatingState(ratingBlock, ratingValue) {
+        var stars = ratingBlock.find('.jlg-user-star');
+
+        stars.each(function() {
+            var starButton = $(this);
+            var starValue = parseInt(starButton.data('value'), 10);
+            var isSelected = ratingValue && starValue <= ratingValue;
+            var isChecked = ratingValue && starValue === ratingValue;
+
+            starButton.toggleClass('selected', !!isSelected);
+            starButton.attr('aria-checked', isChecked ? 'true' : 'false');
+        });
+    }
+
+    function initializeAriaStates() {
+        $('.jlg-user-rating-block').each(function() {
+            var ratingBlock = $(this);
+            var checkedStar = ratingBlock.find('.jlg-user-star[aria-checked="true"]').last();
+
+            if (!checkedStar.length) {
+                checkedStar = ratingBlock.find('.jlg-user-star.selected').last();
+            }
+
+            var ratingValue = checkedStar.length ? parseInt(checkedStar.data('value'), 10) : null;
+            updateRatingState(ratingBlock, ratingValue);
+
+            ratingBlock.find('.jlg-user-rating-avg-value').attr({
+                'aria-live': 'polite',
+                'aria-atomic': 'true'
+            });
+        });
+    }
+
+    initializeAriaStates();
+
     // Effet de survol des étoiles
     $('.jlg-user-star').on('mouseover', function() {
         var ratingBlock = $(this).closest('.jlg-user-rating-block');
@@ -83,8 +118,7 @@ jQuery(document).ready(function($) {
         $(this).children('.jlg-user-star').removeClass('hover');
     });
 
-    // Au clic sur une étoile
-    $('.jlg-user-star').on('click', function() {
+    function submitRating() {
         var star = $(this);
         var ratingBlock = star.closest('.jlg-user-rating-block');
         var postId = star.parent().data('post-id');
@@ -116,7 +150,8 @@ jQuery(document).ready(function($) {
                     ratingBlock.addClass('has-voted');
 
                     if (typeof responseData.new_average !== 'undefined') {
-                        ratingBlock.find('.jlg-user-rating-avg-value').text(responseData.new_average);
+                        var avgValueElement = ratingBlock.find('.jlg-user-rating-avg-value');
+                        avgValueElement.text(responseData.new_average);
                     }
 
                     if (typeof responseData.new_count !== 'undefined') {
@@ -125,8 +160,8 @@ jQuery(document).ready(function($) {
 
                     ratingBlock.find('.jlg-rating-message').text(successMessage).show();
 
-                    star.siblings().removeClass('selected');
-                    star.add(star.prevAll()).addClass('selected');
+                    updateRatingState(ratingBlock, parseInt(rating, 10));
+                    ratingBlock.find('.jlg-user-star').removeClass('hover');
                 } else {
                     ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
 
@@ -134,15 +169,28 @@ jQuery(document).ready(function($) {
                         ratingBlock.addClass('has-voted');
                     } else {
                         ratingBlock.removeClass('has-voted');
-                        star.add(star.prevAll()).removeClass('selected');
+                        updateRatingState(ratingBlock, null);
                     }
+                    ratingBlock.find('.jlg-user-star').removeClass('hover');
                 }
             },
             error: function() {
                 ratingBlock.removeClass('is-loading has-voted');
                 ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
-                star.add(star.prevAll()).removeClass('selected');
+                updateRatingState(ratingBlock, null);
+                ratingBlock.find('.jlg-user-star').removeClass('hover');
             }
         });
+    }
+
+    // Au clic sur une étoile
+    $('.jlg-user-star').on('click', submitRating);
+
+    // Activation au clavier (Espace ou Entrée)
+    $('.jlg-user-star').on('keydown', function(event) {
+        if (event.key === ' ' || event.key === 'Enter' || event.key === 'Spacebar') {
+            event.preventDefault();
+            submitRating.call(this, event);
+        }
     });
 });
