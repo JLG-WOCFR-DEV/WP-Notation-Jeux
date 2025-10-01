@@ -5,6 +5,7 @@ use PHPUnit\Framework\TestCase;
 require_once __DIR__ . '/../includes/class-jlg-helpers.php';
 require_once __DIR__ . '/../includes/class-jlg-frontend.php';
 require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-all-in-one.php';
+require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-rating-block.php';
 
 if (!function_exists('esc_attr__')) {
     function esc_attr__($text, $domain = 'default') {
@@ -68,9 +69,9 @@ class ShortcodeAllInOneRenderTest extends TestCase
         ]);
 
         $this->assertNotSame('', $output);
-        $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag active"[^>]+data-lang="fr"/i', $output);
-        $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag"[^>]+data-lang="en"/i', $output);
-        $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr">/i', $output);
+        $this->assertMatchesRegularExpression('/<button[^>]+class="jlg-aio-flag active"[^>]+data-lang="fr"/i', $output);
+        $this->assertMatchesRegularExpression('/<button[^>]+class="jlg-aio-flag"[^>]+data-lang="en"/i', $output);
+        $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr"[^>]*>/', $output);
         $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="en"[^>]*>/', $output);
         $scripts = $GLOBALS['jlg_test_scripts'] ?? [];
         $this->assertArrayHasKey('jlg-all-in-one', $scripts['enqueued'] ?? [], 'Main All-in-One script should be enqueued.');
@@ -83,6 +84,31 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $this->assertNotEmpty($inline_scripts, 'Inline settings should be attached to the All-in-One script handle.');
         $this->assertStringContainsString('window.jlgAllInOneSettings', $inline_scripts[0]['code'] ?? '', 'Inline settings should initialize the global settings object.');
         $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-aio-score-gradient: [^;]+;?/i', $output);
+    }
+
+    public function test_render_adds_animation_class_when_enabled(): void
+    {
+        $post_id = 2004;
+        $this->seedPost($post_id);
+        $this->setPluginOptions([
+            'score_layout'      => 'text',
+            'visual_theme'      => 'dark',
+            'score_gradient_1'  => '#336699',
+            'score_gradient_2'  => '#9933cc',
+            'color_high'        => '#22c55e',
+            'color_low'         => '#ef4444',
+            'tagline_font_size' => 18,
+            'enable_animations' => 1,
+        ]);
+
+        $shortcode = new JLG_Shortcode_Rating_Block();
+        $output = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertNotSame('', $output);
+        $this->assertMatchesRegularExpression('/<div class="review-box-jlg jlg-animate"/i', $output);
+        $this->assertStringNotContainsString('review-box-jlggjlg-animate', $output);
     }
 
     public function test_circle_layout_renders_border_and_glow_variables(): void

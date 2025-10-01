@@ -16,12 +16,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 $options = JLG_Helpers::get_plugin_options();
 ?>
 
-<div class="review-box-jlg 
 <?php
-if ( $options['enable_animations'] ) {
-	echo 'jlg-animate';}
+$classes = array( 'review-box-jlg' );
+
+if ( ! empty( $options['enable_animations'] ) ) {
+        $classes[] = 'jlg-animate';
+}
+
+$class_attribute = implode( ' ', array_map( 'sanitize_html_class', $classes ) );
 ?>
-">
+<div class="<?php echo esc_attr( $class_attribute ); ?>">
     <div class="global-score-wrapper">
         <?php if ( $options['score_layout'] === 'circle' ) : ?>
             <div class="score-circle">
