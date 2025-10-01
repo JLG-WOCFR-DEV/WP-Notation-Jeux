@@ -59,25 +59,47 @@
             return;
         }
 
+        const activateFlag = (flag) => {
+            if (flag.classList.contains('active')) {
+                return;
+            }
+
+            const selectedLang = flag.dataset.lang;
+
+            flags.forEach((innerFlag) => {
+                const isActive = innerFlag === flag;
+                innerFlag.classList.toggle('active', isActive);
+                innerFlag.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+
+            taglines.forEach((tagline) => {
+                const matchesSelection = tagline.dataset.lang === selectedLang;
+
+                if (matchesSelection) {
+                    tagline.removeAttribute('hidden');
+                    tagline.setAttribute('aria-hidden', 'false');
+                    tagline.style.display = '';
+                } else {
+                    tagline.setAttribute('hidden', '');
+                    tagline.setAttribute('aria-hidden', 'true');
+                    tagline.style.display = 'none';
+                }
+            });
+        };
+
         flags.forEach((flag) => {
-            flag.addEventListener('click', () => {
-                const selectedLang = flag.dataset.lang;
+            flag.addEventListener('click', (event) => {
+                event.preventDefault();
+                activateFlag(flag);
+            });
 
-                flags.forEach((innerFlag) => {
-                    innerFlag.classList.toggle('active', innerFlag === flag);
-                });
+            flag.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
 
-                taglines.forEach((tagline) => {
-                    const matchesSelection = tagline.dataset.lang === selectedLang;
-
-                    tagline.style.display = matchesSelection ? 'block' : 'none';
-
-                    if (matchesSelection) {
-                        tagline.removeAttribute('hidden');
-                    } else {
-                        tagline.setAttribute('hidden', '');
-                    }
-                });
+                event.preventDefault();
+                activateFlag(flag);
             });
         });
     };

@@ -62,14 +62,27 @@
 }
 
 .jlg-aio-flag {
-    width: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
     height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
     cursor: pointer;
     opacity: 0.4;
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
     filter: grayscale(50%);
+    border-radius: 4px;
+}
+
+.jlg-aio-flag img {
+    width: 24px;
+    height: auto;
     display: block;
     min-height: 18px;
+    pointer-events: none;
 }
 
 .jlg-aio-flag.active {
@@ -81,6 +94,11 @@
 .jlg-aio-flag:hover {
     opacity: 0.8;
     filter: grayscale(0%);
+}
+
+.jlg-aio-flag:focus-visible {
+    outline: 2px solid var(--jlg-aio-tagline-color, #111827);
+    outline-offset: 2px;
 }
 
 .jlg-aio-rating {
