@@ -192,4 +192,20 @@ class ShortcodeSummarySortingTest extends TestCase
         $this->assertSame('date', $contextTwo['orderby']);
         $this->assertSame('DESC', $contextTwo['order']);
     }
+
+    public function test_render_includes_screen_reader_label_for_category_filter()
+    {
+        $atts = JLG_Shortcode_Summary_Display::get_default_atts();
+        $atts['id'] = 'summary-accessibility';
+
+        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, []);
+
+        $html = JLG_Frontend::get_template_html('shortcode-summary-display', $context);
+
+        $table_id     = $context['atts']['id'] ?? $atts['id'];
+        $expected_for = '<label for="' . esc_attr($table_id . '_cat_filter') . '" class="screen-reader-text">';
+
+        $this->assertStringContainsString($expected_for, $html);
+        $this->assertStringContainsString(esc_html__('Filtrer par catégorie', 'notation-jlg'), $html);
+    }
 }

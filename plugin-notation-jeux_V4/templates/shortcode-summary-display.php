@@ -111,17 +111,20 @@ $letters = range( 'A', 'Z' );
                 <input type="hidden" name="<?php echo esc_attr( $resolve_request_key( 'orderby' ) ); ?>" value="<?php echo esc_attr( $current_orderby ); ?>">
                 <input type="hidden" name="<?php echo esc_attr( $resolve_request_key( 'order' ) ); ?>" value="<?php echo esc_attr( $current_order ); ?>">
                 <input type="hidden" name="<?php echo esc_attr( $resolve_request_key( 'letter_filter' ) ); ?>" value="<?php echo esc_attr( $current_letter_filter ); ?>">
+                <label for="<?php echo esc_attr( $table_id . '_cat_filter' ); ?>" class="screen-reader-text">
+                    <?php esc_html_e( 'Filtrer par catégorie', 'notation-jlg' ); ?>
+                </label>
                 <?php
                 wp_dropdown_categories(
                     array(
-						'show_option_all' => __( 'Toutes les catégories', 'notation-jlg' ),
-						'orderby'         => 'name',
-						'hide_empty'      => 1,
-						'name'            => $resolve_request_key( 'cat_filter' ),
-						'id'              => $table_id . '_cat_filter',
-						'selected'        => $current_cat_filter,
-						'hierarchical'    => true,
-						'class'           => 'jlg-cat-filter-select',
+                        'show_option_all' => __( 'Toutes les catégories', 'notation-jlg' ),
+                        'orderby'         => 'name',
+                        'hide_empty'      => 1,
+                        'name'            => $resolve_request_key( 'cat_filter' ),
+                        'id'              => $table_id . '_cat_filter',
+                        'selected'        => $current_cat_filter,
+                        'hierarchical'    => true,
+                        'class'           => 'jlg-cat-filter-select',
                     )
                 );
                 ?>
