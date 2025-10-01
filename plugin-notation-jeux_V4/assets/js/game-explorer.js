@@ -8,7 +8,9 @@
     let activeRequestController = null;
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-    function debounce(fn, delay = 250) {
+    const DEFAULT_DEBOUNCE_DELAY = 250;
+
+    function debounce(fn, delay = DEFAULT_DEBOUNCE_DELAY) {
         let timeoutId;
         return function debounced(...args) {
             const context = this;
@@ -460,7 +462,7 @@
         if (refs.searchInput) {
             const scheduleSearchRefresh = debounce(() => {
                 refreshResults(container, config, refs);
-            });
+            }, DEFAULT_DEBOUNCE_DELAY);
             const handleSearchUpdate = () => {
                 const newValue = refs.searchInput.value || '';
                 if (newValue === config.state.search) {
