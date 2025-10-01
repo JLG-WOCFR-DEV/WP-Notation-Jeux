@@ -34,11 +34,13 @@ if ( $config_json === false ) {
 $has_category_filter     = ! empty( $filters_enabled['category'] ) && ! empty( $categories_list );
 $has_platform_filter     = ! empty( $filters_enabled['platform'] ) && ! empty( $platforms_list );
 $has_availability_filter = ! empty( $filters_enabled['availability'] );
-$has_filters             = $has_category_filter || $has_platform_filter || $has_availability_filter;
+$has_search_filter       = ! empty( $filters_enabled['search'] );
+$has_filters             = $has_category_filter || $has_platform_filter || $has_availability_filter || $has_search_filter;
 $letter_active           = isset( $current_filters['letter'] ) ? $current_filters['letter'] : '';
 $category_active         = isset( $current_filters['category'] ) ? $current_filters['category'] : '';
 $platform_active         = isset( $current_filters['platform'] ) ? $current_filters['platform'] : '';
 $availability_active     = isset( $current_filters['availability'] ) ? $current_filters['availability'] : '';
+$search_active           = isset( $current_filters['search'] ) ? $current_filters['search'] : '';
 ?>
 
 <div
@@ -187,6 +189,21 @@ $availability_active     = isset( $current_filters['availability'] ) ? $current_
                         </option>
                     <?php endforeach; ?>
                 </select>
+            <?php endif; ?>
+
+            <?php if ( $has_search_filter ) : ?>
+                <div class="jlg-ge-search">
+                    <label for="<?php echo esc_attr( $container_id ); ?>-search">
+                        <?php esc_html_e( 'Rechercher un jeu', 'notation-jlg' ); ?>
+                    </label>
+                    <input
+                        type="search"
+                        id="<?php echo esc_attr( $container_id ); ?>-search"
+                        data-role="search"
+                        value="<?php echo esc_attr( $search_active ); ?>"
+                        placeholder="<?php echo esc_attr__( 'Rechercher…', 'notation-jlg' ); ?>"
+                    >
+                </div>
             <?php endif; ?>
 
             <button type="button" class="jlg-ge-reset" data-role="reset">

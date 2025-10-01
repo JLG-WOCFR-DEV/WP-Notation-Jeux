@@ -44,6 +44,14 @@
 .jlg-game-info-box dd{margin:0;color:var(--jlg-secondary-text-color);}
 .jlg-game-info-box .platforms-list span{display:inline-block;background:var(--jlg-border-color);padding:3px 8px;border-radius:4px;font-size:0.9em;margin:2px;}
 
+/* Game Explorer */
+.jlg-game-explorer .jlg-ge-search{display:flex;flex-direction:column;gap:4px;flex:1 1 240px;min-width:220px;}
+.jlg-game-explorer .jlg-ge-search label{font-size:0.875rem;font-weight:500;color:var(--jlg-ge-text-muted,var(--jlg-secondary-text-color,#4b5563));}
+.jlg-game-explorer .jlg-ge-search input[type="search"]{width:100%;padding:0.45rem 0.75rem;border-radius:0.5rem;border:1px solid var(--jlg-ge-card-border,var(--jlg-border-color,#d1d5db));background-color:var(--jlg-ge-card-bg,var(--jlg-bg-color,#fff));color:var(--jlg-ge-text,var(--jlg-main-text-color,#111827));transition:box-shadow .2s ease,border-color .2s ease;}
+.jlg-game-explorer .jlg-ge-search input[type="search"]::placeholder{color:var(--jlg-ge-text-muted,var(--jlg-secondary-text-color,#6b7280));opacity:0.85;}
+.jlg-game-explorer .jlg-ge-search input[type="search"]:focus{outline:2px solid var(--jlg-ge-accent,var(--jlg-score-gradient-1,#2563eb));outline-offset:2px;box-shadow:0 0 0 2px rgba(37,99,235,0.15);}
+@media (max-width:640px){.jlg-game-explorer .jlg-ge-search{flex-basis:100%;min-width:100%;}}
+
 /* Summary Display */
 .jlg-summary-filters{margin-bottom:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column;gap:12px;}
 .jlg-summary-letter-filter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
