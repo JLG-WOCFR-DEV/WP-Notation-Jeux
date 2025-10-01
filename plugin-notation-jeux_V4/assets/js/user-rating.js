@@ -66,31 +66,63 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // Effet de survol des étoiles
-    $('.jlg-user-star').on('mouseover', function() {
-        var ratingBlock = $(this).closest('.jlg-user-rating-block');
-        if (ratingBlock.hasClass('has-voted') || ratingBlock.hasClass('is-loading')) {
+    var starSelector = '.jlg-user-star';
+    var starsContainerSelector = '.jlg-user-rating-stars';
+
+    function canInteract(ratingBlock) {
+        return !(ratingBlock.hasClass('has-voted') || ratingBlock.hasClass('is-loading'));
+    }
+
+    function highlightStars(star) {
+        var ratingBlock = star.closest('.jlg-user-rating-block');
+        if (!canInteract(ratingBlock)) {
             return;
         }
-        
-        var currentStar = $(this);
-        currentStar.add(currentStar.prevAll()).addClass('hover');
-        currentStar.nextAll().removeClass('hover');
+
+        star.add(star.prevAll()).addClass('hover');
+        star.nextAll().removeClass('hover');
+    }
+
+    function clearHighlights(container) {
+        container.children(starSelector).removeClass('hover');
+    }
+
+    // Effet de survol des étoiles
+    $(starSelector).on('mouseover', function() {
+        highlightStars($(this));
+    });
+
+    // Mise en évidence au focus pour les interactions clavier
+    $(starSelector).on('focus', function() {
+        highlightStars($(this));
+    });
+
+    // Retire les mises en évidence lorsque le focus quitte l'étoile
+    $(starSelector).on('blur', function() {
+        clearHighlights($(this).closest(starsContainerSelector));
     });
 
     // Annule l'effet de survol quand la souris quitte le bloc
-    $('.jlg-user-rating-stars').on('mouseleave', function() {
-        $(this).children('.jlg-user-star').removeClass('hover');
+    $(starsContainerSelector).on('mouseleave', function() {
+        clearHighlights($(this));
+    });
+
+    // Gestion des interactions clavier
+    $(starSelector).on('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+            event.preventDefault();
+            $(this).trigger('click');
+        }
     });
 
     // Au clic sur une étoile
-    $('.jlg-user-star').on('click', function() {
+    $(starSelector).on('click', function() {
         var star = $(this);
         var ratingBlock = star.closest('.jlg-user-rating-block');
         var postId = star.parent().data('post-id');
         var rating = star.data('value');
 
-        if (ratingBlock.hasClass('is-loading') || ratingBlock.hasClass('has-voted')) {
+        if (!canInteract(ratingBlock)) {
             return;
         }
 
@@ -125,8 +157,11 @@ jQuery(document).ready(function($) {
 
                     ratingBlock.find('.jlg-rating-message').text(successMessage).show();
 
-                    star.siblings().removeClass('selected');
+                    var allStars = ratingBlock.find(starSelector);
+                    allStars.removeClass('selected').attr('aria-checked', 'false');
                     star.add(star.prevAll()).addClass('selected');
+                    star.attr('aria-checked', 'true');
+                    clearHighlights(star.closest(starsContainerSelector));
                 } else {
                     ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
 
@@ -134,14 +169,18 @@ jQuery(document).ready(function($) {
                         ratingBlock.addClass('has-voted');
                     } else {
                         ratingBlock.removeClass('has-voted');
-                        star.add(star.prevAll()).removeClass('selected');
+                        var allStars = ratingBlock.find(starSelector);
+                        allStars.removeClass('selected').attr('aria-checked', 'false');
                     }
+                    clearHighlights(star.closest(starsContainerSelector));
                 }
             },
             error: function() {
                 ratingBlock.removeClass('is-loading has-voted');
                 ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
-                star.add(star.prevAll()).removeClass('selected');
+                var allStars = ratingBlock.find(starSelector);
+                allStars.removeClass('selected').attr('aria-checked', 'false');
+                clearHighlights(star.closest(starsContainerSelector));
             }
         });
     });

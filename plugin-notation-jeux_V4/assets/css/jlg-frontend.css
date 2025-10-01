@@ -93,9 +93,10 @@
 .jlg-user-rating-block{max-width:650px;margin:32px auto;text-align:center;color:var(--jlg-user-rating-text-color);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
 .jlg-user-rating-block.is-loading{opacity:.6;cursor:wait;pointer-events:none;}
 .jlg-user-rating-title{font-size:1.2rem;font-weight:600;color:var(--jlg-main-text-color);margin-bottom:12px;}
-.jlg-user-rating-stars{display:inline-flex;gap:5px;cursor:pointer;margin-bottom:12px;}
-.jlg-user-rating-block.has-voted .jlg-user-rating-stars{cursor:default;}
-.jlg-user-star{font-size:28px;color:#52525b;transition:color .2s,transform .2s;}
+.jlg-user-rating-stars{display:inline-flex;gap:5px;margin-bottom:12px;}
+.jlg-user-star{font-size:28px;color:#52525b;transition:color .2s,transform .2s;background:none;border:0;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
+.jlg-user-star:focus{outline:none;}
+.jlg-user-star:focus-visible{outline:2px solid var(--jlg-user-rating-star-color);outline-offset:4px;border-radius:4px;}
 .jlg-user-rating-block.has-voted .jlg-user-star:hover,
 .jlg-user-rating-block.has-voted .jlg-user-star.hover{color:#52525b;transform:none;}
 .jlg-user-star:hover,
