@@ -1018,6 +1018,7 @@ class JLG_Shortcode_Game_Explorer {
 
                 $score_data    = JLG_Helpers::get_resolved_average_score( $post_id );
                 $score_value   = isset( $score_data['value'] ) ? $score_data['value'] : null;
+                $has_score     = is_numeric( $score_value );
                 $score_display = isset( $score_data['formatted'] ) && $score_data['formatted'] !== ''
                     ? $score_data['formatted']
                     : esc_html__( 'N/A', 'notation-jlg' );
@@ -1067,6 +1068,7 @@ class JLG_Shortcode_Game_Explorer {
                     'title'              => $title,
                     'permalink'          => get_permalink( $post_id ),
                     'score_value'        => $score_value,
+                    'has_score'          => $has_score,
                     'score_display'      => $score_display,
                     'score_color'        => $score_color,
                     'cover_url'          => $cover_url,
