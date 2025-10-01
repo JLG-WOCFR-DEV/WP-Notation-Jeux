@@ -36,6 +36,53 @@
 .review-box-jlg.jlg-animate.is-in-view .score-circle,
 .review-box-jlg.jlg-animate.is-in-view .global-score-text{transform:scale(1);opacity:1;}
 
+@media (prefers-reduced-motion: reduce) {
+    /* Respect de la préférence utilisateur en supprimant les animations utilitaires */
+    .jlg-animate,
+    .jlg-animate * {
+        animation: none !important;
+    }
+
+    .review-box-jlg.jlg-animate .rating-bar,
+    .review-box-jlg.jlg-animate.is-in-view .rating-bar {
+        width: var(--rating-percent, 0%);
+        transition: none !important;
+    }
+
+    .review-box-jlg.jlg-animate .score-circle,
+    .review-box-jlg.jlg-animate .global-score-text,
+    .review-box-jlg.jlg-animate.is-in-view .score-circle,
+    .review-box-jlg.jlg-animate.is-in-view .global-score-text {
+        opacity: 1;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .jlg-summary-letter-filter button,
+    .jlg-summary-filters input[type="submit"],
+    .jlg-game-card,
+    .jlg-game-card img,
+    .jlg-user-star,
+    .jlg-lang-flag {
+        transition: none !important;
+    }
+
+    .jlg-game-card,
+    .jlg-game-card:hover,
+    .jlg-game-card:focus-visible,
+    .jlg-game-card img,
+    .jlg-game-card:hover img,
+    .jlg-game-card:focus-visible img,
+    .jlg-user-star,
+    .jlg-user-star:hover,
+    .jlg-user-star.hover,
+    .jlg-lang-flag,
+    .jlg-lang-flag:hover,
+    .jlg-lang-flag:focus-visible {
+        transform: none !important;
+    }
+}
+
 /* Game Info */
 .jlg-game-info-box{background-color:var(--jlg-bar-bg-color);border-left:4px solid var(--jlg-score-gradient-1);padding:20px;margin:32px auto;max-width:650px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;border-radius:8px;}
 .jlg-game-info-box h3{margin-top:0;color:var(--jlg-main-text-color);}

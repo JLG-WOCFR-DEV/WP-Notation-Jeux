@@ -1,4 +1,8 @@
 document.addEventListener("DOMContentLoaded", function() {
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return;
+    }
+
     const animatedElements = document.querySelectorAll('.jlg-animate');
 
     if (!animatedElements.length || !('IntersectionObserver' in window)) {
