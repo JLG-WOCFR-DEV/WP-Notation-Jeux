@@ -5,6 +5,7 @@
     const strings = l10n.strings || {};
 
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
+    const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
     function computeRequestKey(prefix, key) {
         return prefix ? key + '__' + prefix : key;
@@ -165,6 +166,46 @@
         }
     }
 
+    function setResultsBusyState(resultsNode, isBusy) {
+        if (!resultsNode) {
+            return;
+        }
+
+        if (isBusy) {
+            resultsNode.setAttribute('aria-busy', 'true');
+        } else {
+            resultsNode.removeAttribute('aria-busy');
+        }
+    }
+
+    function focusUpdatedResults(refs) {
+        if (!refs || !refs.resultsNode) {
+            return;
+        }
+
+        const { resultsNode } = refs;
+        const focusable = resultsNode.querySelector(FOCUSABLE_SELECTOR);
+        if (focusable && typeof focusable.focus === 'function') {
+            focusable.focus();
+            return;
+        }
+
+        if (!resultsNode.hasAttribute('tabindex')) {
+            resultsNode.setAttribute('tabindex', '-1');
+            const removeTabIndex = () => {
+                if (resultsNode.getAttribute('tabindex') === '-1') {
+                    resultsNode.removeAttribute('tabindex');
+                }
+                resultsNode.removeEventListener('blur', removeTabIndex);
+            };
+            resultsNode.addEventListener('blur', removeTabIndex);
+        }
+
+        if (typeof resultsNode.focus === 'function') {
+            resultsNode.focus();
+        }
+    }
+
     function bindPagination(container, config, refs) {
         if (!refs.resultsNode) {
             return;
@@ -206,6 +247,7 @@
         const loadingText = strings.loading || 'Loading…';
         if (refs.resultsNode) {
             refs.resultsNode.dataset.loadingText = loadingText;
+            setResultsBusyState(refs.resultsNode, true);
         }
 
         container.classList.add('is-loading');
@@ -249,6 +291,7 @@
                         const empty = strings.noResults || 'Aucun résultat.';
                         refs.resultsNode.innerHTML = '<p>' + empty + '</p>';
                     }
+                    setResultsBusyState(refs.resultsNode, false);
                 }
 
                 if (responseData.state) {
@@ -270,14 +313,27 @@
 
                 updateActiveFilters(container, config, refs);
                 bindPagination(container, config, refs);
+
+                const focusHandler = () => {
+                    focusUpdatedResults(refs);
+                };
+                if (typeof window.requestAnimationFrame === 'function') {
+                    window.requestAnimationFrame(focusHandler);
+                } else {
+                    setTimeout(focusHandler, 0);
+                }
             })
             .catch(() => {
                 if (refs.resultsNode) {
                     const errorMessage = strings.genericError || 'Une erreur est survenue.';
                     refs.resultsNode.innerHTML = '<p>' + errorMessage + '</p>';
+                    setResultsBusyState(refs.resultsNode, false);
                 }
             })
             .finally(() => {
+                if (refs.resultsNode) {
+                    setResultsBusyState(refs.resultsNode, false);
+                }
                 container.classList.remove('is-loading');
             });
     }
