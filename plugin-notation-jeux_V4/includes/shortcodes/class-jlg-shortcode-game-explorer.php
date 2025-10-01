@@ -765,8 +765,25 @@ class JLG_Shortcode_Game_Explorer {
         $filters_enabled = self::normalize_filters( $atts['filters'] );
         $score_position  = JLG_Helpers::normalize_game_explorer_score_position( $atts['score_position'] ?? '' );
 
-        $orderby = ( isset( $request['orderby'] ) && is_string( $request['orderby'] ) ) ? sanitize_key( $request['orderby'] ) : 'date';
-        $order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
+        $raw_orderby = isset( $request['orderby'] ) && is_string( $request['orderby'] ) ? $request['orderby'] : '';
+        $raw_order   = isset( $request['order'] ) ? (string) $request['order'] : '';
+
+        if ( strpos( $raw_orderby, '|' ) !== false ) {
+            $parts = array_map( 'trim', explode( '|', $raw_orderby ) );
+            if ( isset( $parts[0] ) && $parts[0] !== '' ) {
+                $raw_orderby = $parts[0];
+            }
+            if ( isset( $parts[1] ) && $parts[1] !== '' ) {
+                $raw_order = $parts[1];
+            }
+        }
+
+        $orderby = $raw_orderby !== '' ? sanitize_key( $raw_orderby ) : 'date';
+        if ( $orderby === '' ) {
+            $orderby = 'date';
+        }
+
+        $order = $raw_order !== '' ? strtoupper( sanitize_text_field( $raw_order ) ) : 'DESC';
         if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
             $order = 'DESC';
         }

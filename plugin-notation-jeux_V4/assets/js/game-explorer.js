@@ -155,19 +155,34 @@
 
     function updateActiveFilters(container, config, refs) {
         const state = config.state;
-        const letterButtons = container.querySelectorAll('.jlg-ge-letter-nav button[data-letter]');
+        const letterRefs = (refs && Array.isArray(refs.letterButtons)) ? refs.letterButtons : null;
+        const letterButtons = letterRefs && letterRefs.length
+            ? letterRefs
+            : container.querySelectorAll('.jlg-ge-letter-nav button[data-letter]');
         letterButtons.forEach((button) => {
-            const value = button.getAttribute('data-letter') || '';
+            const value = button.value ?? button.getAttribute('data-letter') ?? '';
             const isActive = value === state.letter || (value === '' && state.letter === '');
             button.classList.toggle('is-active', isActive);
             button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
+
+        if (refs && refs.letterInput) {
+            refs.letterInput.value = state.letter || '';
+        }
 
         if (refs.sortSelect) {
             const resolved = resolveSortValue(refs.sortSelect, state.orderby, state.order);
             if (resolved !== null) {
                 refs.sortSelect.value = resolved;
             }
+        }
+
+        if (refs && refs.orderInput) {
+            refs.orderInput.value = state.order || 'DESC';
+        }
+
+        if (refs && refs.orderbyInput) {
+            refs.orderbyInput.value = state.orderby + '|' + state.order;
         }
 
         if (refs.categorySelect) {
@@ -184,6 +199,10 @@
 
         if (refs.searchInput) {
             refs.searchInput.value = state.search || '';
+        }
+
+        if (refs && refs.pagedInput) {
+            refs.pagedInput.value = state.paged || 1;
         }
     }
 
@@ -252,6 +271,9 @@
 
                 config.state.paged = target;
                 writeConfig(container, config);
+                if (refs && refs.pagedInput) {
+                    refs.pagedInput.value = String(target);
+                }
                 updateActiveFilters(container, config, refs);
                 refreshResults(container, config, refs);
             });
@@ -382,14 +404,22 @@
         const config = parseConfig(container);
         writeConfig(container, config);
 
+        const form = container.querySelector('.jlg-ge-form');
+
         const refs = {
+            form,
             resultsNode: container.querySelector('[data-role="results"]'),
-            sortSelect: container.querySelector('[data-role="sort"]'),
-            categorySelect: container.querySelector('[data-role="category"]'),
-            platformSelect: container.querySelector('[data-role="platform"]'),
-            availabilitySelect: container.querySelector('[data-role="availability"]'),
-            searchInput: container.querySelector('[data-role="search"]'),
-            resetButton: container.querySelector('[data-role="reset"]'),
+            sortSelect: form ? form.querySelector('select[name="orderby"]') : null,
+            orderInput: form ? form.querySelector('input[name="order"]') : null,
+            orderbyInput: form ? form.querySelector('input[type="hidden"][name="orderby"]') : null,
+            categorySelect: form ? form.querySelector('select[name="category"]') : null,
+            platformSelect: form ? form.querySelector('select[name="platform"]') : null,
+            availabilitySelect: form ? form.querySelector('select[name="availability"]') : null,
+            searchInput: form ? form.querySelector('input[name="search"]') : null,
+            pagedInput: form ? form.querySelector('input[name="paged"]') : null,
+            letterInput: form ? form.querySelector('input[type="hidden"][name="letter"]') : null,
+            resetButton: form ? form.querySelector('button[type="reset"], input[type="reset"]') : null,
+            letterButtons: form ? Array.from(form.querySelectorAll('button[name="letter"]')) : [],
         };
 
         if (refs.resultsNode && strings.loading) {
@@ -411,6 +441,15 @@
                     config.state.order = parts[1].toUpperCase();
                 }
                 config.state.paged = 1;
+                if (refs.orderInput) {
+                    refs.orderInput.value = config.state.order;
+                }
+                if (refs.orderbyInput) {
+                    refs.orderbyInput.value = `${config.state.orderby}|${config.state.order}`;
+                }
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
                 writeConfig(container, config);
                 updateActiveFilters(container, config, refs);
                 refreshResults(container, config, refs);
@@ -421,16 +460,21 @@
             }
         }
 
-        const letterButtons = container.querySelectorAll('.jlg-ge-letter-nav button[data-letter]');
-        letterButtons.forEach((button) => {
+        refs.letterButtons.forEach((button) => {
             button.addEventListener('click', (event) => {
                 event.preventDefault();
                 if (button.disabled) {
                     return;
                 }
-                const value = button.getAttribute('data-letter') || '';
+                const value = button.value || button.getAttribute('data-letter') || '';
                 config.state.letter = value;
                 config.state.paged = 1;
+                if (refs.letterInput) {
+                    refs.letterInput.value = value;
+                }
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
                 writeConfig(container, config);
                 updateActiveFilters(container, config, refs);
                 refreshResults(container, config, refs);
@@ -441,6 +485,9 @@
             refs.categorySelect.addEventListener('change', () => {
                 config.state.category = refs.categorySelect.value || '';
                 config.state.paged = 1;
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
                 writeConfig(container, config);
                 refreshResults(container, config, refs);
             });
@@ -450,6 +497,9 @@
             refs.platformSelect.addEventListener('change', () => {
                 config.state.platform = refs.platformSelect.value || '';
                 config.state.paged = 1;
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
                 writeConfig(container, config);
                 refreshResults(container, config, refs);
             });
@@ -459,6 +509,9 @@
             refs.availabilitySelect.addEventListener('change', () => {
                 config.state.availability = refs.availabilitySelect.value || '';
                 config.state.paged = 1;
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
                 writeConfig(container, config);
                 refreshResults(container, config, refs);
             });
@@ -476,6 +529,9 @@
 
                 config.state.search = newValue;
                 config.state.paged = 1;
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
                 writeConfig(container, config);
                 scheduleSearchRefresh();
             };
@@ -484,13 +540,76 @@
             refs.searchInput.addEventListener('change', handleSearchUpdate);
         }
 
-        if (refs.resetButton) {
-            refs.resetButton.addEventListener('click', () => {
-                config.state = Object.assign({}, defaultState);
+        if (refs.form) {
+            refs.form.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                const submitter = event.submitter || null;
+                if (submitter && submitter.name === 'letter') {
+                    const submitValue = submitter.value || '';
+                    config.state.letter = submitValue;
+                    if (refs.letterInput) {
+                        refs.letterInput.value = submitValue;
+                    }
+                } else if (refs.letterInput) {
+                    config.state.letter = refs.letterInput.value || '';
+                }
+
+                if (refs.sortSelect) {
+                    const value = refs.sortSelect.value || '';
+                    const parts = value.split('|');
+                    if (parts.length === 2) {
+                        config.state.orderby = parts[0];
+                        config.state.order = parts[1].toUpperCase();
+                    }
+                }
+
+                if (refs.orderInput) {
+                    const orderValue = (refs.orderInput.value || '').toUpperCase();
+                    if (orderValue === 'ASC' || orderValue === 'DESC') {
+                        config.state.order = orderValue;
+                    }
+                }
+
+                if (refs.categorySelect) {
+                    config.state.category = refs.categorySelect.value || '';
+                }
+
+                if (refs.platformSelect) {
+                    config.state.platform = refs.platformSelect.value || '';
+                }
+
+                if (refs.availabilitySelect) {
+                    config.state.availability = refs.availabilitySelect.value || '';
+                }
+
+                if (refs.searchInput) {
+                    config.state.search = refs.searchInput.value || '';
+                }
+
+                if (refs.pagedInput) {
+                    const pagedValue = parseInt(refs.pagedInput.value || '1', 10);
+                    config.state.paged = Number.isInteger(pagedValue) && pagedValue > 0 ? pagedValue : 1;
+                }
+
                 config.state.paged = 1;
+                if (refs.pagedInput) {
+                    refs.pagedInput.value = '1';
+                }
+
                 writeConfig(container, config);
                 updateActiveFilters(container, config, refs);
                 refreshResults(container, config, refs);
+            });
+
+            refs.form.addEventListener('reset', () => {
+                setTimeout(() => {
+                    config.state = Object.assign({}, defaultState);
+                    config.state.paged = 1;
+                    writeConfig(container, config);
+                    updateActiveFilters(container, config, refs);
+                    refreshResults(container, config, refs);
+                }, 0);
             });
         }
 

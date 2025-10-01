@@ -3,6 +3,45 @@
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-game-explorer.php';
+require_once __DIR__ . '/../includes/class-jlg-frontend.php';
+
+if (!function_exists('wp_json_encode')) {
+    function wp_json_encode($data, $options = 0, $depth = 512) {
+        return json_encode($data, $options, $depth);
+    }
+}
+
+if (!function_exists('_n')) {
+    function _n($single, $plural, $number, $domain = null)
+    {
+        return (int) $number === 1 ? $single : $plural;
+    }
+}
+
+if (!function_exists('selected')) {
+    function selected($selected, $current = true, $echo = true)
+    {
+        $result = ((string) $selected === (string) $current) ? "selected=\"selected\"" : '';
+        if ($echo) {
+            echo $result;
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('disabled')) {
+    function disabled($disabled, $current = true, $echo = true)
+    {
+        $is_disabled = (bool) $disabled === (bool) $current;
+        $result = $is_disabled ? "disabled=\"disabled\"" : '';
+        if ($echo) {
+            echo $result;
+        }
+
+        return $result;
+    }
+}
 
 if (!class_exists('WP_Query')) {
     class WP_Query
@@ -242,6 +281,109 @@ class FrontendGameExplorerAjaxTest extends TestCase
     {
         $this->resetEnvironment();
         parent::tearDown();
+    }
+
+    public function test_shortcode_renders_form_controls_with_expected_names(): void
+    {
+        $output = JLG_Frontend::get_template_html('shortcode-game-explorer', [
+            'atts' => [
+                'id' => 'explorer-form-names',
+                'posts_per_page' => 6,
+                'columns' => 3,
+            ],
+            'filters_enabled' => [
+                'letter' => true,
+                'category' => true,
+                'platform' => true,
+                'availability' => true,
+                'search' => true,
+            ],
+            'current_filters' => [
+                'letter' => 'A',
+                'category' => '11',
+                'platform' => 'pc',
+                'availability' => 'available',
+                'search' => 'Metroid',
+            ],
+            'letters' => [
+                [
+                    'value' => 'A',
+                    'label' => 'A',
+                    'enabled' => true,
+                ],
+            ],
+            'sort_options' => [
+                [
+                    'value' => 'date|DESC',
+                    'orderby' => 'date',
+                    'order' => 'DESC',
+                    'label' => 'Plus récents',
+                ],
+                [
+                    'value' => 'date|ASC',
+                    'orderby' => 'date',
+                    'order' => 'ASC',
+                    'label' => 'Plus anciens',
+                ],
+            ],
+            'categories_list' => [
+                [
+                    'value' => '11',
+                    'label' => 'RPG',
+                ],
+            ],
+            'platforms_list' => [
+                [
+                    'value' => 'pc',
+                    'label' => 'PC',
+                ],
+            ],
+            'availability_options' => [
+                'available' => 'Disponible',
+                'upcoming' => 'À venir',
+            ],
+            'config_payload' => [
+                'atts' => [
+                    'id' => 'explorer-form-names',
+                    'posts_per_page' => 6,
+                    'columns' => 3,
+                    'score_position' => 'bottom-right',
+                    'filters' => 'letter,category,platform,availability,search',
+                    'categorie' => '',
+                    'plateforme' => '',
+                    'lettre' => '',
+                ],
+                'state' => [
+                    'orderby' => 'date',
+                    'order' => 'DESC',
+                    'letter' => 'A',
+                    'category' => '11',
+                    'platform' => 'pc',
+                    'availability' => 'available',
+                    'search' => 'Metroid',
+                    'paged' => 1,
+                    'total_items' => 0,
+                ],
+            ],
+            'games' => [],
+            'pagination' => [
+                'current' => 1,
+                'total' => 0,
+            ],
+            'total_items' => 0,
+        ]);
+
+        $this->assertStringContainsString('<form method="get"', $output, 'The explorer should wrap controls in a GET form.');
+        $this->assertStringContainsString('<noscript>', $output, 'The explorer should expose a noscript message.');
+        $this->assertMatchesRegularExpression('/<input[^>]+type="hidden"[^>]+name="letter"[^>]+value="A"/u', $output, 'The form should preserve the active letter in a hidden field.');
+        $this->assertMatchesRegularExpression('/<button[^>]+type="submit"[^>]+name="letter"[^>]+value="A"/u', $output, 'Letter buttons should submit with a letter name.');
+        $this->assertMatchesRegularExpression('/<select[^>]+name="orderby"/u', $output, 'The sort dropdown should expose the orderby name.');
+        $this->assertMatchesRegularExpression('/<input(?=[^>]+name="order")(?=[^>]+type="hidden")[^>]*>/u', $output, 'The form should keep the order value in a hidden input.');
+        $this->assertMatchesRegularExpression('/<select[^>]+name="category"/u', $output, 'The category filter should use the category name.');
+        $this->assertMatchesRegularExpression('/<select[^>]+name="platform"/u', $output, 'The platform filter should use the platform name.');
+        $this->assertMatchesRegularExpression('/<select[^>]+name="availability"/u', $output, 'The availability filter should use the availability name.');
+        $this->assertMatchesRegularExpression('/<input[^>]+type="search"[^>]+name="search"/u', $output, 'The search input should expose the search name.');
+        $this->assertMatchesRegularExpression('/<input[^>]+type="hidden"[^>]+name="paged"/u', $output, 'The form should track pagination with a hidden field.');
     }
 
     public function test_handle_game_explorer_sort_sanitizes_request_and_returns_counts(): void
