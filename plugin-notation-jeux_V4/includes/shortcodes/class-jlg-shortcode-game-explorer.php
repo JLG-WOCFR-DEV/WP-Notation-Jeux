@@ -739,6 +739,24 @@ class JLG_Shortcode_Game_Explorer {
         return $matched_ids;
     }
 
+    /**
+     * Prépare le contexte de rendu pour le shortcode « explorateur de jeux ».
+     *
+     * Les paramètres suivants peuvent être fournis via la requête (GET/POST) :
+     * - orderby : critère de tri (date, score, title).
+     * - order : sens de tri (ASC ou DESC).
+     * - letter : lettre utilisée pour filtrer les résultats.
+     * - category : identifiant ou slug de catégorie.
+     * - platform : slug de plateforme.
+     * - availability : statut de disponibilité.
+     * - search : texte libre à rechercher.
+     * - paged : numéro de page (>= 1).
+     *
+     * @param array<string, mixed> $atts    Attributs du shortcode.
+     * @param array<string, mixed> $request Paramètres de requête à prendre en compte.
+     *
+     * @return array<string, mixed>
+     */
     public static function get_render_context( $atts, $request = array() ) {
         $defaults = self::get_default_atts();
         $atts     = shortcode_atts( $defaults, $atts, 'jlg_game_explorer' );

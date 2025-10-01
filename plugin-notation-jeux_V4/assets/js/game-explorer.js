@@ -5,6 +5,7 @@
     const strings = l10n.strings || {};
 
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
+    const explorerInstances = [];
     let activeRequestController = null;
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -58,6 +59,212 @@
         return config.request.keys[key] || key;
     }
 
+    function cloneState(state) {
+        if (!state || typeof state !== 'object') {
+            return {};
+        }
+
+        return { ...state };
+    }
+
+    function areStatesEqual(stateA, stateB) {
+        if (stateA === stateB) {
+            return true;
+        }
+
+        if (!stateA || !stateB) {
+            return false;
+        }
+
+        return REQUEST_KEYS.every((key) => {
+            if (key === 'paged') {
+                const aValue = parseInt(stateA[key], 10) || 0;
+                const bValue = parseInt(stateB[key], 10) || 0;
+                return aValue === bValue;
+            }
+
+            const aRaw = stateA[key];
+            const bRaw = stateB[key];
+
+            if (aRaw === null || typeof aRaw === 'undefined') {
+                return bRaw === null || typeof bRaw === 'undefined' || bRaw === '';
+            }
+
+            if (bRaw === null || typeof bRaw === 'undefined') {
+                return aRaw === '';
+            }
+
+            return String(aRaw) === String(bRaw);
+        });
+    }
+
+    function applyStateToUrl(config, url, state) {
+        if (!state) {
+            return;
+        }
+
+        REQUEST_KEYS.forEach((key) => {
+            url.searchParams.delete(key);
+            const namespacedKey = getRequestKey(config, key);
+            if (namespacedKey && namespacedKey !== key) {
+                url.searchParams.delete(namespacedKey);
+            }
+        });
+
+        REQUEST_KEYS.forEach((key) => {
+            if (!(key in state)) {
+                return;
+            }
+
+            let value = state[key];
+
+            if (key === 'paged') {
+                const parsed = parseInt(value, 10);
+                if (!parsed || parsed <= 1) {
+                    return;
+                }
+                value = parsed;
+            } else if (key === 'order' && typeof value === 'string') {
+                value = value.toUpperCase();
+            }
+
+            if (value === null || typeof value === 'undefined' || value === '') {
+                return;
+            }
+
+            url.searchParams.set(getRequestKey(config, key), value);
+        });
+    }
+
+    function buildUrlFromState(container, config, state) {
+        if (typeof window === 'undefined' || typeof window.location === 'undefined') {
+            return null;
+        }
+
+        const url = new URL(window.location.href);
+        url.hash = '';
+
+        applyStateToUrl(config, url, state || config.state);
+
+        const rawId = (config.atts && config.atts.id) || container.id || '';
+        const targetId = typeof rawId === 'string' ? rawId : String(rawId);
+        if (targetId) {
+            url.hash = targetId.startsWith('#') ? targetId : '#' + targetId;
+        }
+
+        return url.href;
+    }
+
+    function updateBrowserHistory(container, config, state, options = {}) {
+        if (!window.history) {
+            return;
+        }
+
+        const { replace = false } = options;
+        const hasPush = typeof window.history.pushState === 'function';
+        const hasReplace = typeof window.history.replaceState === 'function';
+
+        if (!hasPush && !hasReplace) {
+            return;
+        }
+
+        const href = buildUrlFromState(container, config, state);
+        if (!href) {
+            return;
+        }
+
+        const currentHref = window.location.href;
+        const historyState = { explorerId: config.atts?.id || null };
+
+        if (href === currentHref) {
+            if (replace && hasReplace) {
+                window.history.replaceState(historyState, '', href);
+            }
+            return;
+        }
+
+        if (replace && hasReplace) {
+            window.history.replaceState(historyState, '', href);
+            return;
+        }
+
+        if (hasPush) {
+            window.history.pushState(historyState, '', href);
+        } else if (hasReplace) {
+            window.history.replaceState(historyState, '', href);
+        }
+    }
+
+    function parseStateFromUrl(config, url) {
+        const baseState = cloneState(config.defaultState || {});
+
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'orderby')) {
+            baseState.orderby = config.state?.orderby || 'date';
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'order')) {
+            baseState.order = (config.state?.order || 'DESC').toString().toUpperCase();
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'letter')) {
+            baseState.letter = '';
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'category')) {
+            baseState.category = '';
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'platform')) {
+            baseState.platform = '';
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'availability')) {
+            baseState.availability = '';
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'search')) {
+            baseState.search = '';
+        }
+        if (!Object.prototype.hasOwnProperty.call(baseState, 'paged')) {
+            baseState.paged = 1;
+        }
+
+        const nextState = { ...baseState };
+
+        REQUEST_KEYS.forEach((key) => {
+            const namespaced = getRequestKey(config, key);
+            let value = null;
+
+            if (namespaced && url.searchParams.has(namespaced)) {
+                value = url.searchParams.get(namespaced);
+            } else if (!namespaced || namespaced === key) {
+                if (url.searchParams.has(key)) {
+                    value = url.searchParams.get(key);
+                }
+            }
+
+            if (value === null) {
+                return;
+            }
+
+            if (key === 'paged') {
+                const parsed = parseInt(value, 10);
+                nextState.paged = !parsed || parsed < 1 ? 1 : parsed;
+                return;
+            }
+
+            if (key === 'order') {
+                nextState.order = value.toString().toUpperCase();
+                return;
+            }
+
+            nextState[key] = value;
+        });
+
+        const currentState = config.state || {};
+        Object.keys(currentState).forEach((key) => {
+            if (!REQUEST_KEYS.includes(key) && typeof nextState[key] === 'undefined') {
+                nextState[key] = currentState[key];
+            }
+        });
+
+        return nextState;
+    }
+
     function parseConfig(container) {
         const raw = container.dataset.config || '{}';
         let parsed;
@@ -104,6 +311,8 @@
         if (Number.isInteger(totalItems)) {
             parsed.state.total_items = totalItems;
         }
+
+        parsed.defaultState = { ...parsed.state };
 
         ensureRequestConfig(container, parsed);
 
@@ -258,10 +467,15 @@
         });
     }
 
-    function refreshResults(container, config, refs) {
+    function refreshResults(container, config, refs, options = {}) {
         if (!ajaxUrl) {
             return;
         }
+
+        const settings = options || {};
+        const shouldUpdateHistory = settings.updateHistory !== false;
+        const replaceHistory = settings.replaceHistory === true;
+        const shouldFocusResults = settings.focusResults !== false;
 
         ensureRequestConfig(container, config);
 
@@ -344,13 +558,19 @@
                 updateActiveFilters(container, config, refs);
                 bindPagination(container, config, refs);
 
-                const focusHandler = () => {
-                    focusUpdatedResults(refs);
-                };
-                if (typeof window.requestAnimationFrame === 'function') {
-                    window.requestAnimationFrame(focusHandler);
-                } else {
-                    setTimeout(focusHandler, 0);
+                if (shouldUpdateHistory) {
+                    updateBrowserHistory(container, config, config.state, { replace: replaceHistory });
+                }
+
+                if (shouldFocusResults) {
+                    const focusHandler = () => {
+                        focusUpdatedResults(refs);
+                    };
+                    if (typeof window.requestAnimationFrame === 'function') {
+                        window.requestAnimationFrame(focusHandler);
+                    } else {
+                        setTimeout(focusHandler, 0);
+                    }
                 }
             })
             .catch((error) => {
@@ -400,7 +620,10 @@
             refs.resetButton.textContent = strings.reset;
         }
 
-        const defaultState = JSON.parse(JSON.stringify(config.state));
+        const defaultState = (config.defaultState && Object.keys(config.defaultState).length > 0)
+            ? { ...config.defaultState }
+            : { ...config.state };
+        config.defaultState = { ...defaultState };
 
         if (refs.sortSelect) {
             refs.sortSelect.addEventListener('change', () => {
@@ -497,7 +720,41 @@
         updateActiveFilters(container, config, refs);
         updateCount(container, config.state);
         bindPagination(container, config, refs);
+
+        explorerInstances.push({ container, config, refs });
     }
+
+    window.addEventListener('popstate', () => {
+        if (!explorerInstances.length) {
+            return;
+        }
+
+        let url;
+        try {
+            url = new URL(window.location.href);
+        } catch (error) {
+            return;
+        }
+
+        explorerInstances.forEach((instance) => {
+            const { container, config, refs } = instance;
+            if (!container || !config) {
+                return;
+            }
+
+            ensureRequestConfig(container, config);
+            const nextState = parseStateFromUrl(config, url);
+
+            if (!nextState || areStatesEqual(config.state, nextState)) {
+                return;
+            }
+
+            config.state = { ...nextState };
+            writeConfig(container, config);
+            updateActiveFilters(container, config, refs);
+            refreshResults(container, config, refs, { updateHistory: false, focusResults: false });
+        });
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         const explorers = document.querySelectorAll('.jlg-game-explorer');
