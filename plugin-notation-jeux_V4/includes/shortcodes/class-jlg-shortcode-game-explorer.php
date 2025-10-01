@@ -767,6 +767,16 @@ class JLG_Shortcode_Game_Explorer {
 
         $request = self::extract_request_params( $request, $request_keys );
 
+        if ( isset( $request['orderby'] ) && is_string( $request['orderby'] ) && strpos( $request['orderby'], '|' ) !== false ) {
+            $parts = array_map( 'trim', explode( '|', $request['orderby'] ) );
+            if ( isset( $parts[0] ) && $parts[0] !== '' ) {
+                $request['orderby'] = $parts[0];
+            }
+            if ( isset( $parts[1] ) && $parts[1] !== '' ) {
+                $request['order'] = $parts[1];
+            }
+        }
+
         $options        = JLG_Helpers::get_plugin_options();
         $posts_per_page = isset( $atts['posts_per_page'] ) ? (int) $atts['posts_per_page'] : $defaults['posts_per_page'];
         if ( $posts_per_page < 1 ) {

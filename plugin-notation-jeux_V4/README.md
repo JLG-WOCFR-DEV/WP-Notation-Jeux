@@ -58,7 +58,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 - `[jlg_points_forts_faibles]` - Points positifs et négatifs
 - `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
 - `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les en-têtes permettent désormais de trier par titre, date, note moyenne ainsi que par métadonnées développeur/éditeur via les paramètres `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
-- `[jlg_game_explorer]` - Game Explorer interactif affichant vos tests sous forme de cartes. Attributs disponibles : `posts_per_page` (nombre d'entrées par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `availability`), `categorie`, `plateforme` et `lettre` pour préfiltrer le rendu.
+- `[jlg_game_explorer]` - Game Explorer interactif affichant vos tests sous forme de cartes. Attributs disponibles : `posts_per_page` (nombre d'entrées par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `availability`), `categorie`, `plateforme` et `lettre` pour préfiltrer le rendu. La navigation (lettres, filtres, tri et pagination) fonctionne désormais également sans JavaScript via des requêtes GET accessibles.
 
 ### Utilisation dans les widgets et blocs
 
