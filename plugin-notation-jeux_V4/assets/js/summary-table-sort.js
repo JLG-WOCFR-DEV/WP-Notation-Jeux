@@ -423,6 +423,7 @@ jQuery(document).ready(function($) {
 
     $('.jlg-summary-wrapper').each(function() {
         var $wrapper = $(this);
+        var lastSubmitter = null;
 
         $wrapper.on('click', 'th.sortable a, .jlg-pagination a', function(event) {
             if (event.metaKey || event.ctrlKey || event.shiftKey || event.which === 2) {
@@ -441,10 +442,50 @@ jQuery(document).ready(function($) {
             performAjax($wrapper, nextState, parsed.url.href);
         });
 
+        $wrapper.on('click', '.jlg-summary-filters form button[type="submit"]', function() {
+            lastSubmitter = this;
+        });
+
         $wrapper.on('submit', '.jlg-summary-filters form', function(event) {
             event.preventDefault();
 
             var $form = $(this);
+            var nativeEvent = event.originalEvent || {};
+            var submitter = nativeEvent.submitter || lastSubmitter || null;
+            lastSubmitter = null;
+            var letterKey = getRequestKey($wrapper, 'letter_filter');
+            var requestedLetter = null;
+
+            if (submitter) {
+                var $submitter = $(submitter);
+                var submitterName = ($submitter.attr('name') || '').toString();
+                if (submitterName === letterKey) {
+                    requestedLetter = ($submitter.val() || '').toString();
+                }
+            }
+
+            var $letterInput = $form.find('input[name="' + letterKey + '"]');
+            if (!$letterInput.length && letterKey !== 'letter_filter') {
+                $letterInput = $form.find('input[name="letter_filter"]');
+            }
+
+            if (requestedLetter === null) {
+                if ($letterInput.length) {
+                    requestedLetter = ($letterInput.val() || '').toString();
+                } else {
+                    requestedLetter = '';
+                }
+            }
+
+            var currentState = getCurrentState($wrapper);
+            if (submitter && requestedLetter === currentState.letter_filter && requestedLetter !== '') {
+                requestedLetter = '';
+            }
+
+            if ($letterInput.length) {
+                $letterInput.val(requestedLetter);
+            }
+
             var params = {};
 
             $.each($form.serializeArray(), function(_, field) {
@@ -454,36 +495,15 @@ jQuery(document).ready(function($) {
             });
 
             params = normalizeParams($wrapper, params);
+            params.letter_filter = requestedLetter;
 
             params.paged = 1;
 
             var nextState = $.extend({}, getCurrentState($wrapper), params);
-            var url = buildUrlFromState($wrapper, nextState);
-
-            performAjax($wrapper, nextState, url);
-        });
-
-        $wrapper.on('click', '.jlg-summary-letter-filter [data-letter]', function(event) {
-            event.preventDefault();
-
-            var $button = $(this);
-            var letter = ($button.attr('data-letter') || '').toString();
-            var currentState = getCurrentState($wrapper);
-
-            if (letter === currentState.letter_filter && letter !== '') {
-                letter = '';
-            }
-
-            var nextState = $.extend({}, currentState, {
-                letter_filter: letter,
-                paged: 1,
-            });
-
             updateState($wrapper, {
-                letter_filter: letter,
+                letter_filter: requestedLetter,
                 paged: nextState.paged,
             });
-
             var url = buildUrlFromState($wrapper, nextState);
 
             performAjax($wrapper, nextState, url);

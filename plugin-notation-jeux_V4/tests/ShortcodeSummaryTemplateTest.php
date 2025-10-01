@@ -73,5 +73,17 @@ class ShortcodeSummaryTemplateTest extends TestCase
             $output,
             'The "All" button should expose aria-pressed="false" when another letter is active.'
         );
+
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*type="submit"[^>]*name="letter_filter"[^>]*value=""/i',
+            $output,
+            'The "All" button should submit the letter_filter query parameter.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*type="submit"[^>]*name="letter_filter"[^>]*value="C"/i',
+            $output,
+            'Letter buttons should include the corresponding submit name/value attributes.'
+        );
     }
 }

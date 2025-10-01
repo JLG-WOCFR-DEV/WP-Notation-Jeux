@@ -208,4 +208,25 @@ class ShortcodeSummarySortingTest extends TestCase
         $this->assertStringContainsString($expected_for, $html);
         $this->assertStringContainsString(esc_html__('Filtrer par catégorie', 'notation-jlg'), $html);
     }
+
+    public function test_letter_filter_buttons_submit_namespaced_values()
+    {
+        $atts = JLG_Shortcode_Summary_Display::get_default_atts();
+        $atts['id'] = 'summary-prefix';
+
+        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, []);
+        $html    = JLG_Frontend::get_template_html('shortcode-summary-display', $context);
+
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*type="submit"[^>]*name="letter_filter__summary-prefix"[^>]*value=""/i',
+            $html,
+            'The "All" button should submit the namespaced letter_filter parameter.'
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*type="submit"[^>]*name="letter_filter__summary-prefix"[^>]*value="#"/i',
+            $html,
+            'Numeric buttons should include the namespaced submit attributes.'
+        );
+    }
 }
