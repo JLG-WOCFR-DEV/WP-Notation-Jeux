@@ -17,6 +17,103 @@ $score_classes = array(
     'jlg-ge-card__score',
     'jlg-ge-card__score--' . sanitize_html_class( $score_position ),
 );
+$current_filters = isset( $current_filters ) && is_array( $current_filters ) ? $current_filters : array();
+$request_keys    = isset( $request_keys ) && is_array( $request_keys ) ? $request_keys : array();
+$sort_key        = isset( $sort_key ) && is_string( $sort_key ) ? $sort_key : 'date';
+$sort_order      = isset( $sort_order ) && is_string( $sort_order ) ? strtoupper( $sort_order ) : 'DESC';
+if ( ! in_array( $sort_order, array( 'ASC', 'DESC' ), true ) ) {
+    $sort_order = 'DESC';
+}
+$query_params = isset( $query_params ) && is_array( $query_params ) ? $query_params : array();
+
+$namespaced_keys = array(
+    'orderby'      => isset( $request_keys['orderby'] ) ? $request_keys['orderby'] : 'orderby',
+    'order'        => isset( $request_keys['order'] ) ? $request_keys['order'] : 'order',
+    'letter'       => isset( $request_keys['letter'] ) ? $request_keys['letter'] : 'letter',
+    'category'     => isset( $request_keys['category'] ) ? $request_keys['category'] : 'category',
+    'platform'     => isset( $request_keys['platform'] ) ? $request_keys['platform'] : 'platform',
+    'availability' => isset( $request_keys['availability'] ) ? $request_keys['availability'] : 'availability',
+    'search'       => isset( $request_keys['search'] ) ? $request_keys['search'] : 'search',
+    'paged'        => isset( $request_keys['paged'] ) ? $request_keys['paged'] : 'paged',
+);
+
+$base_query_params = array();
+foreach ( $query_params as $name => $value ) {
+    if ( ! is_string( $name ) ) {
+        continue;
+    }
+
+    $value_string = is_scalar( $value ) ? (string) $value : '';
+    if ( $value_string === '' ) {
+        continue;
+    }
+
+    $base_query_params[ $name ] = $value_string;
+}
+
+if ( empty( $base_query_params ) ) {
+    if ( $sort_key !== '' ) {
+        $base_query_params[ $namespaced_keys['orderby'] ] = $sort_key . '|' . $sort_order;
+    }
+    if ( $sort_order !== '' ) {
+        $base_query_params[ $namespaced_keys['order'] ] = $sort_order;
+    }
+
+    $filter_map = array(
+        'letter'       => isset( $current_filters['letter'] ) ? $current_filters['letter'] : '',
+        'category'     => isset( $current_filters['category'] ) ? $current_filters['category'] : '',
+        'platform'     => isset( $current_filters['platform'] ) ? $current_filters['platform'] : '',
+        'availability' => isset( $current_filters['availability'] ) ? $current_filters['availability'] : '',
+        'search'       => isset( $current_filters['search'] ) ? $current_filters['search'] : '',
+    );
+
+    foreach ( $filter_map as $key => $value ) {
+        if ( $value === '' || ! isset( $namespaced_keys[ $key ] ) ) {
+            continue;
+        }
+
+        $base_query_params[ $namespaced_keys[ $key ] ] = (string) $value;
+    }
+}
+
+if ( isset( $pagination['current'] ) && (int) $pagination['current'] > 1 ) {
+    $base_query_params[ $namespaced_keys['paged'] ] = (string) (int) $pagination['current'];
+}
+
+$prepare_hidden_params = static function( array $exclude = array(), array $overrides = array() ) use ( $base_query_params ) {
+    $params = $base_query_params;
+
+    foreach ( $exclude as $exclude_key ) {
+        unset( $params[ $exclude_key ] );
+    }
+
+    foreach ( $overrides as $key => $value ) {
+        if ( $value === null ) {
+            unset( $params[ $key ] );
+            continue;
+        }
+
+        $params[ $key ] = (string) $value;
+    }
+
+    return $params;
+};
+
+$render_hidden_inputs = static function( array $params ) {
+    foreach ( $params as $name => $value ) {
+        $value_string = (string) $value;
+
+        if ( $value_string === '' ) {
+            continue;
+        }
+
+        printf(
+            '<input type="hidden" name="%1$s" value="%2$s">',
+            esc_attr( $name ),
+            esc_attr( $value_string )
+        );
+    }
+};
 
 if ( empty( $games ) ) {
     echo wp_kses_post( $message );
@@ -107,23 +204,50 @@ if ( $total_pages > 1 ) :
     $next_page = min( $total_pages, $current_page + 1 );
     ?>
     <nav class="jlg-ge-pagination" data-role="pagination" aria-label="<?php esc_attr_e( 'Navigation des pages du Game Explorer', 'notation-jlg' ); ?>">
-        <button type="button" class="jlg-ge-page jlg-ge-page--prev" data-page="<?php echo esc_attr( $prev_page ); ?>" <?php disabled( $current_page <= 1 ); ?>>
-            <?php esc_html_e( 'Précédent', 'notation-jlg' ); ?>
-        </button>
-        <ul>
+        <form method="get" class="jlg-ge-pagination__form">
             <?php
-            for ( $page = 1; $page <= $total_pages; $page++ ) :
-                $is_active = ( $page === $current_page );
-                ?>
-                <li>
-                    <button type="button" data-page="<?php echo esc_attr( $page ); ?>" class="<?php echo esc_attr( $is_active ? 'is-active' : '' ); ?>">
-                        <?php echo esc_html( $page ); ?>
-                    </button>
-                </li>
-            <?php endfor; ?>
-        </ul>
-        <button type="button" class="jlg-ge-page jlg-ge-page--next" data-page="<?php echo esc_attr( $next_page ); ?>" <?php disabled( $current_page >= $total_pages ); ?>>
-            <?php esc_html_e( 'Suivant', 'notation-jlg' ); ?>
-        </button>
+            $pagination_hidden_inputs = $prepare_hidden_params( array( $namespaced_keys['paged'] ) );
+            $render_hidden_inputs( $pagination_hidden_inputs );
+            ?>
+            <button
+                type="submit"
+                class="jlg-ge-page jlg-ge-page--prev"
+                data-page="<?php echo esc_attr( $prev_page ); ?>"
+                name="<?php echo esc_attr( $namespaced_keys['paged'] ); ?>"
+                value="<?php echo esc_attr( $prev_page ); ?>"
+                <?php disabled( $current_page <= 1 ); ?>
+            >
+                <?php esc_html_e( 'Précédent', 'notation-jlg' ); ?>
+            </button>
+            <ul>
+                <?php
+                for ( $page = 1; $page <= $total_pages; $page++ ) :
+                    $is_active = ( $page === $current_page );
+                    ?>
+                    <li>
+                        <button
+                            type="submit"
+                            data-page="<?php echo esc_attr( $page ); ?>"
+                            class="<?php echo esc_attr( $is_active ? 'is-active' : '' ); ?>"
+                            name="<?php echo esc_attr( $namespaced_keys['paged'] ); ?>"
+                            value="<?php echo esc_attr( $page ); ?>"
+                            <?php disabled( $is_active ); ?>
+                        >
+                            <?php echo esc_html( $page ); ?>
+                        </button>
+                    </li>
+                <?php endfor; ?>
+            </ul>
+            <button
+                type="submit"
+                class="jlg-ge-page jlg-ge-page--next"
+                data-page="<?php echo esc_attr( $next_page ); ?>"
+                name="<?php echo esc_attr( $namespaced_keys['paged'] ); ?>"
+                value="<?php echo esc_attr( $next_page ); ?>"
+                <?php disabled( $current_page >= $total_pages ); ?>
+            >
+                <?php esc_html_e( 'Suivant', 'notation-jlg' ); ?>
+            </button>
+        </form>
     </nav>
 <?php endif; ?>

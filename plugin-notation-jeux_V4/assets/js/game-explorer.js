@@ -485,7 +485,10 @@
         }
 
         if (refs.resetButton) {
-            refs.resetButton.addEventListener('click', () => {
+            refs.resetButton.addEventListener('click', (event) => {
+                if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                }
                 config.state = Object.assign({}, defaultState);
                 config.state.paged = 1;
                 writeConfig(container, config);
