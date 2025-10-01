@@ -4,12 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<div class="jlg-user-rating-block 
-<?php
-if ( $has_voted ) {
-	echo esc_attr( 'has-voted' );}
-?>
-">
+<div class="jlg-user-rating-block<?php echo $has_voted ? ' has-voted' : ''; ?>">
     <div class="jlg-user-rating-title"><?php esc_html_e( 'Votre avis nous intéresse !', 'notation-jlg' ); ?></div>
     <div
         class="jlg-user-rating-stars"

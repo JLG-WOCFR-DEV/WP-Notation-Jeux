@@ -68,9 +68,9 @@ class ShortcodeAllInOneRenderTest extends TestCase
         ]);
 
         $this->assertNotSame('', $output);
-        $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag active"[^>]+data-lang="fr"/i', $output);
-        $this->assertMatchesRegularExpression('/<img[^>]+class="jlg-aio-flag"[^>]+data-lang="en"/i', $output);
-        $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr">/i', $output);
+        $this->assertMatchesRegularExpression('/<button[^>]+class="jlg-aio-flag active"[^>]+data-lang="fr"/i', $output);
+        $this->assertMatchesRegularExpression('/<button[^>]+class="jlg-aio-flag"[^>]+data-lang="en"/i', $output);
+        $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr"[^>]*>/', $output);
         $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="en"[^>]*>/', $output);
         $scripts = $GLOBALS['jlg_test_scripts'] ?? [];
         $this->assertArrayHasKey('jlg-all-in-one', $scripts['enqueued'] ?? [], 'Main All-in-One script should be enqueued.');
