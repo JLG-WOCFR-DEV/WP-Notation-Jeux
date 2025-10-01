@@ -5,6 +5,7 @@
     const strings = l10n.strings || {};
 
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
+    let activeRequestController = null;
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
     function computeRequestKey(prefix, key) {
@@ -276,13 +277,21 @@
         payload.set(getRequestKey(config, 'search'), config.state.search);
         payload.set(getRequestKey(config, 'paged'), config.state.paged);
 
+        activeRequestController?.abort();
+        activeRequestController = new AbortController();
+        const requestController = activeRequestController;
+
         fetch(ajaxUrl, {
             method: 'POST',
             credentials: 'same-origin',
             body: payload,
+            signal: requestController.signal,
         })
             .then((response) => response.json())
             .then((data) => {
+                if (requestController.signal.aborted) {
+                    return;
+                }
                 if (!data || !data.success || !data.data) {
                     throw new Error('Invalid response');
                 }
@@ -327,7 +336,10 @@
                     setTimeout(focusHandler, 0);
                 }
             })
-            .catch(() => {
+            .catch((error) => {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    return;
+                }
                 if (refs.resultsNode) {
                     const errorMessage = strings.genericError || 'Une erreur est survenue.';
                     refs.resultsNode.innerHTML = '<p>' + errorMessage + '</p>';
@@ -335,6 +347,9 @@
                 }
             })
             .finally(() => {
+                if (activeRequestController === requestController) {
+                    activeRequestController = null;
+                }
                 if (refs.resultsNode) {
                     setResultsBusyState(refs.resultsNode, false);
                 }
