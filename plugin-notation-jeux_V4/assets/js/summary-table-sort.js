@@ -248,10 +248,14 @@ jQuery(document).ready(function($) {
             $letterButtons.each(function() {
                 var $button = $(this);
                 var buttonLetter = ($button.attr('data-letter') || '').toString();
-                if (buttonLetter === activeLetter) {
-                    $button.addClass('is-active');
+                var isActive = buttonLetter === activeLetter;
+
+                $button.toggleClass('is-active', isActive);
+
+                if (isActive) {
+                    $button.attr('aria-pressed', 'true');
                 } else {
-                    $button.removeClass('is-active');
+                    $button.attr('aria-pressed', 'false');
                 }
             });
         }
@@ -462,7 +466,8 @@ jQuery(document).ready(function($) {
         $wrapper.on('click', '.jlg-summary-letter-filter [data-letter]', function(event) {
             event.preventDefault();
 
-            var letter = ($(this).attr('data-letter') || '').toString();
+            var $button = $(this);
+            var letter = ($button.attr('data-letter') || '').toString();
             var currentState = getCurrentState($wrapper);
 
             if (letter === currentState.letter_filter && letter !== '') {
@@ -474,14 +479,10 @@ jQuery(document).ready(function($) {
                 paged: 1,
             });
 
-            var $form = $wrapper.find('.jlg-summary-filters form');
-            if ($form.length) {
-                $form.find('input[name="letter_filter"]').val(letter);
-                var letterInput = getRequestKey($wrapper, 'letter_filter');
-                if (letterInput !== 'letter_filter') {
-                    $form.find('input[name="' + letterInput + '"]').val(letter);
-                }
-            }
+            updateState($wrapper, {
+                letter_filter: letter,
+                paged: nextState.paged,
+            });
 
             var url = buildUrlFromState($wrapper, nextState);
 
@@ -501,6 +502,7 @@ jQuery(document).ready(function($) {
 
             performAjax($wrapper, nextState, url);
         });
+        updateState($wrapper, getCurrentState($wrapper));
     });
 
     window.addEventListener('popstate', function() {
