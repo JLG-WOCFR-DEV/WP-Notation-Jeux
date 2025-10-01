@@ -292,8 +292,9 @@
         payload.set(getRequestKey(config, 'paged'), config.state.paged);
 
         activeRequestController?.abort();
-        activeRequestController = new AbortController();
-        const requestController = activeRequestController;
+
+        const requestController = new AbortController();
+        activeRequestController = requestController;
 
         fetch(ajaxUrl, {
             method: 'POST',
@@ -351,7 +352,11 @@
                 }
             })
             .catch((error) => {
-                if (error instanceof DOMException && error.name === 'AbortError') {
+                const isAbortError = (typeof DOMException !== 'undefined'
+                    && error instanceof DOMException
+                    && error.name === 'AbortError')
+                    || (error && error.name === 'AbortError');
+                if (isAbortError) {
                     return;
                 }
                 if (refs.resultsNode) {
