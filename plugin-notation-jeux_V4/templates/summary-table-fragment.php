@@ -92,7 +92,7 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
         }
 
         if ( ! isset( $col_info['sortable'] ) || ! $col_info['sortable'] ) {
-            echo '<th>' . esc_html( $col_info['label'] ) . '</th>';
+            echo '<th scope="col">' . esc_html( $col_info['label'] ) . '</th>';
             return;
         }
 
@@ -153,7 +153,9 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
             }
         }
 
+        $aria_sort = 'none';
         if ( $is_active ) {
+            $aria_sort = strtolower( $current_order ) === 'asc' ? 'ascending' : 'descending';
             $indicator = $current_order === 'ASC'
                 ? esc_html__( ' ▲', 'notation-jlg' )
                 : esc_html__( ' ▼', 'notation-jlg' );
@@ -164,8 +166,19 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
             $class .= ' sorted ' . strtolower( $current_order );
         }
 
-        echo '<th class="' . esc_attr( $class ) . '">';
-        echo '<a href="' . esc_url( $url ) . '">' . esc_html( $col_info['label'] ) . $indicator . '</a>';
+        $column_label_text = isset( $col_info['label'] ) ? wp_strip_all_tags( $col_info['label'] ) : '';
+        $direction_text    = $new_order === 'ASC'
+            ? esc_html__( 'ordre croissant', 'notation-jlg' )
+            : esc_html__( 'ordre décroissant', 'notation-jlg' );
+        $action_text       = sprintf(
+            /* translators: %1$s: column label, %2$s: sorting direction. */
+            esc_html__( 'Trier par %1$s en %2$s', 'notation-jlg' ),
+            $column_label_text,
+            $direction_text
+        );
+
+        echo '<th scope="col" class="' . esc_attr( $class ) . '" aria-sort="' . esc_attr( $aria_sort ) . '">';
+        echo '<a href="' . esc_url( $url ) . '" aria-label="' . esc_attr( $action_text ) . '">' . esc_html( $col_info['label'] ) . $indicator . '</a>';
         echo '</th>';
     }
 }
