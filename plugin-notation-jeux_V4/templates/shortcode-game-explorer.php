@@ -195,7 +195,13 @@ $availability_active     = isset( $current_filters['availability'] ) ? $current_
         </div>
     <?php endif; ?>
 
-    <div class="jlg-ge-results" data-role="results">
+    <div
+        class="jlg-ge-results"
+        data-role="results"
+        role="status"
+        aria-live="polite"
+        aria-busy="false"
+    >
         <?php
         echo JLG_Frontend::get_template_html(
             'game-explorer-fragment',
