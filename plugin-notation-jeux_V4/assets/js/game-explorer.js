@@ -486,7 +486,7 @@
     }
 
     function refreshResults(container, config, refs, options = {}) {
-        if (!ajaxUrl) {
+        if (!ajaxUrl && !restUrl) {
             return;
         }
 
@@ -506,50 +506,139 @@
 
         container.classList.add('is-loading');
 
-        const payload = new FormData();
-        payload.set('action', 'jlg_game_explorer_sort');
-        payload.set('nonce', nonce);
-        payload.set('container_id', config.atts.id || container.id);
-        payload.set('posts_per_page', config.atts.posts_per_page);
-        payload.set('columns', config.atts.columns);
-        payload.set('filters', config.atts.filters || '');
-        payload.set('score_position', config.atts.score_position || 'bottom-right');
-        payload.set('categorie', config.atts.categorie || '');
-        payload.set('plateforme', config.atts.plateforme || '');
-        payload.set('lettre', config.atts.lettre || '');
-        payload.set(getRequestKey(config, 'orderby'), config.state.orderby);
-        payload.set(getRequestKey(config, 'order'), config.state.order);
-        payload.set(getRequestKey(config, 'letter'), config.state.letter);
-        payload.set(getRequestKey(config, 'category'), config.state.category);
-        payload.set(getRequestKey(config, 'platform'), config.state.platform);
-        payload.set(getRequestKey(config, 'availability'), config.state.availability);
-        payload.set(getRequestKey(config, 'search'), config.state.search);
-        payload.set(getRequestKey(config, 'paged'), config.state.paged);
+        const restPayload = {
+            container_id: config.atts.id || container.id,
+            posts_per_page: config.atts.posts_per_page,
+            columns: config.atts.columns,
+            filters: config.atts.filters || '',
+            score_position: config.atts.score_position || 'bottom-right',
+            categorie: config.atts.categorie || '',
+            plateforme: config.atts.plateforme || '',
+            lettre: config.atts.lettre || '',
+        };
+
+        restPayload[getRequestKey(config, 'orderby')] = config.state.orderby;
+        restPayload[getRequestKey(config, 'order')] = config.state.order;
+        restPayload[getRequestKey(config, 'letter')] = config.state.letter;
+        restPayload[getRequestKey(config, 'category')] = config.state.category;
+        restPayload[getRequestKey(config, 'platform')] = config.state.platform;
+        restPayload[getRequestKey(config, 'availability')] = config.state.availability;
+        restPayload[getRequestKey(config, 'search')] = config.state.search;
+        restPayload[getRequestKey(config, 'paged')] = config.state.paged;
 
         const previousController = activeRequestControllers.get(container);
-        if (previousController) {
+        if (previousController && typeof previousController.abort === 'function') {
             previousController.abort();
         }
 
-        const requestController = new AbortController();
+        const requestController = typeof AbortController === 'function' ? new AbortController() : { abort: function() {} };
         activeRequestControllers.set(container, requestController);
 
-        fetch(ajaxUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: payload,
-            signal: requestController.signal,
-        })
-            .then((response) => response.json())
+        const signal = requestController && requestController.signal ? requestController.signal : undefined;
+
+        let requestPromise;
+
+        if (restUrl && restNonce) {
+            if (window.wp && window.wp.apiFetch) {
+                const apiFetchArgs = {
+                    path: restPath || restUrl,
+                    method: 'POST',
+                    data: restPayload,
+                    headers: {
+                        'X-WP-Nonce': restNonce,
+                    },
+                };
+
+                if (signal) {
+                    apiFetchArgs.signal = signal;
+                }
+
+                requestPromise = window.wp.apiFetch(apiFetchArgs).then(function(data) {
+                    return { success: true, data: data };
+                }).catch(function(error) {
+                    if (error && error.name === 'AbortError') {
+                        throw error;
+                    }
+
+                    const message = (error && error.data && error.data.message)
+                        ? String(error.data.message)
+                        : strings.genericError || 'Erreur de communication.';
+
+                    return { success: false, data: { message: message } };
+                });
+            } else if (typeof window.fetch === 'function') {
+                const fetchOptions = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': restNonce,
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(restPayload),
+                };
+
+                if (signal) {
+                    fetchOptions.signal = signal;
+                }
+
+                requestPromise = window.fetch(restUrl, fetchOptions).then(function(response) {
+                    return response.json().catch(function() {
+                        return {};
+                    }).then(function(body) {
+                        if (!response.ok) {
+                            const message = body && body.message
+                                ? String(body.message)
+                                : strings.genericError || 'Erreur de communication.';
+
+                            return { success: false, data: { message: message } };
+                        }
+
+                        return { success: true, data: body };
+                    });
+                }).catch(function(error) {
+                    if (error && error.name === 'AbortError') {
+                        throw error;
+                    }
+
+                    return { success: false, data: { message: strings.genericError || 'Erreur de communication.' } };
+                });
+            }
+        }
+
+        if (!requestPromise) {
+            const legacyPayload = new FormData();
+            legacyPayload.set('action', 'jlg_game_explorer_sort');
+            legacyPayload.set('nonce', nonce);
+
+            Object.keys(restPayload).forEach(function(key) {
+                legacyPayload.set(key, restPayload[key]);
+            });
+
+            requestPromise = window.fetch(ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: legacyPayload,
+                signal: signal,
+            }).then(function(response) {
+                return response.json();
+            });
+        }
+
+        requestPromise
             .then((data) => {
-                if (requestController.signal.aborted) {
+                if (signal && signal.aborted) {
                     return;
                 }
-                if (!data || !data.success || !data.data) {
+
+                const resolved = (data && typeof data.success !== 'undefined')
+                    ? data
+                    : { success: true, data: data };
+
+                if (!resolved || !resolved.success || !resolved.data) {
                     throw new Error('Invalid response');
                 }
 
-                const responseData = data.data;
+                const responseData = resolved.data;
                 if (refs.resultsNode) {
                     if (responseData.html) {
                         refs.resultsNode.innerHTML = responseData.html;

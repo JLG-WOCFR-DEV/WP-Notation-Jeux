@@ -784,10 +784,44 @@ if (!function_exists('add_query_arg')) {
 }
 
 if (!function_exists('remove_query_arg')) {
-    function remove_query_arg($key, $url) {
-        unset($key);
+    function remove_query_arg($keys, $url = '')
+    {
+        if ($url === '' || $url === null) {
+            $url = 'https://example.com/';
+        } else {
+            $url = (string) $url;
+        }
 
-        return (string) $url;
+        $keys = (array) $keys;
+
+        $fragment = '';
+        $hash_pos = strpos($url, '#');
+        if ($hash_pos !== false) {
+            $fragment = substr($url, $hash_pos);
+            $url = substr($url, 0, $hash_pos);
+        }
+
+        $parts = explode('?', $url, 2);
+        $base = $parts[0];
+        $query_string = $parts[1] ?? '';
+
+        parse_str($query_string, $params);
+
+        foreach ($keys as $key) {
+            $key = (string) $key;
+            if ($key === '') {
+                continue;
+            }
+
+            unset($params[$key]);
+        }
+
+        $rebuilt = $base;
+        if (!empty($params)) {
+            $rebuilt .= '?' . http_build_query($params);
+        }
+
+        return $rebuilt . $fragment;
     }
 }
 
@@ -817,9 +851,7 @@ if (!function_exists('taxonomy_exists')) {
 
 if (!function_exists('is_wp_error')) {
     function is_wp_error($thing) {
-        unset($thing);
-
-        return false;
+        return $thing instanceof WP_Error;
     }
 }
 
@@ -980,6 +1012,12 @@ if (!function_exists('wp_unslash')) {
 
 if (!function_exists('wp_verify_nonce')) {
     function wp_verify_nonce($nonce, $action = -1) {
+        if (isset($GLOBALS['jlg_test_wp_verify_nonce']) && is_callable($GLOBALS['jlg_test_wp_verify_nonce'])) {
+            return (bool) call_user_func($GLOBALS['jlg_test_wp_verify_nonce'], $nonce, $action);
+        }
+
+        unset($nonce, $action);
+
         return true;
     }
 }
@@ -1250,6 +1288,17 @@ if (!function_exists('admin_url')) {
     }
 }
 
+if (!function_exists('rest_url')) {
+    function rest_url($path = '', $scheme = 'rest') {
+        unset($scheme);
+
+        $base = 'https://example.com/wp-json/';
+        $path = ltrim((string) $path, '/');
+
+        return $base . $path;
+    }
+}
+
 if (!function_exists('wp_hash')) {
     function wp_hash($data) {
         return md5((string) $data);
@@ -1259,6 +1308,101 @@ if (!function_exists('wp_hash')) {
 if (!function_exists('wp_create_nonce')) {
     function wp_create_nonce($action = -1) {
         return 'nonce-' . (string) $action;
+    }
+}
+
+if (!class_exists('WP_Error')) {
+    class WP_Error
+    {
+        protected $errors = [];
+        protected $error_data = [];
+
+        public function __construct($code = '', $message = '', $data = null)
+        {
+            if ($code !== '') {
+                $this->add($code, $message, $data);
+            }
+        }
+
+        public function add($code, $message, $data = null)
+        {
+            $code = (string) $code;
+            if ($code === '') {
+                return;
+            }
+
+            if (!isset($this->errors[$code])) {
+                $this->errors[$code] = [];
+            }
+
+            $this->errors[$code][] = (string) $message;
+
+            if ($data !== null) {
+                $this->error_data[$code] = $data;
+            }
+        }
+
+        public function add_data($data, $code = '')
+        {
+            $code = $code !== '' ? (string) $code : $this->get_error_code();
+
+            if ($code === '') {
+                return;
+            }
+
+            $this->error_data[$code] = $data;
+        }
+
+        public function get_error_codes()
+        {
+            return array_keys($this->errors);
+        }
+
+        public function get_error_code()
+        {
+            $codes = $this->get_error_codes();
+
+            return $codes ? $codes[0] : '';
+        }
+
+        public function get_error_messages($code = '')
+        {
+            if ($code === '') {
+                $all_messages = [];
+                foreach ($this->errors as $messages) {
+                    $all_messages = array_merge($all_messages, $messages);
+                }
+
+                return $all_messages;
+            }
+
+            return $this->errors[$code] ?? [];
+        }
+
+        public function get_error_message($code = '')
+        {
+            $messages = $this->get_error_messages($code);
+
+            return $messages ? $messages[0] : '';
+        }
+
+        public function get_error_data($code = '')
+        {
+            if ($code === '') {
+                $code = $this->get_error_code();
+            }
+
+            if ($code === '') {
+                return null;
+            }
+
+            return $this->error_data[$code] ?? null;
+        }
+
+        public function has_errors()
+        {
+            return !empty($this->errors);
+        }
     }
 }
 

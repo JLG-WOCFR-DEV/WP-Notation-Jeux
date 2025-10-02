@@ -112,6 +112,7 @@ final class JLG_Plugin_De_Notation_Main {
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-widget.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-blocks.php';
+        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/rest/class-jlg-rest-controller.php';
 
         // Admin seulement si nécessaire
         if ( is_admin() ) {
@@ -144,6 +145,10 @@ final class JLG_Plugin_De_Notation_Main {
         // Assets communs
         if ( class_exists( 'JLG_Assets' ) ) {
             $this->assets = JLG_Assets::get_instance();
+        }
+
+        if ( class_exists( 'JLG_REST_Controller' ) ) {
+            JLG_REST_Controller::get_instance();
         }
 
         // Frontend

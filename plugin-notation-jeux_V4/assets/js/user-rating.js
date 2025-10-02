@@ -118,6 +118,82 @@ jQuery(document).ready(function($) {
         $(this).children('.jlg-user-star').removeClass('hover');
     });
 
+    function sendRatingRequest(payload) {
+        var restUrl = (jlg_rating_ajax && jlg_rating_ajax.restUrl) ? jlg_rating_ajax.restUrl : '';
+        var restNonce = (jlg_rating_ajax && jlg_rating_ajax.restNonce) ? jlg_rating_ajax.restNonce : '';
+        var restPath = (jlg_rating_ajax && jlg_rating_ajax.restPath) ? jlg_rating_ajax.restPath : '';
+
+        if (restUrl && restNonce) {
+            if (window.wp && window.wp.apiFetch) {
+                return window.wp.apiFetch({
+                    path: restPath || restUrl,
+                    method: 'POST',
+                    data: payload,
+                    headers: {
+                        'X-WP-Nonce': restNonce,
+                    },
+                }).then(function(data) {
+                    return { success: true, data: data };
+                }).catch(function(error) {
+                    var message = genericErrorMessage;
+
+                    if (error && error.data && error.data.message) {
+                        message = String(error.data.message);
+                    } else if (error && error.message) {
+                        message = String(error.message);
+                    }
+
+                    return { success: false, data: { message: message } };
+                });
+            }
+
+            if (typeof window.fetch === 'function') {
+                return window.fetch(restUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': restNonce,
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload),
+                }).then(function(response) {
+                    return response.json().catch(function() {
+                        return {};
+                    }).then(function(body) {
+                        if (!response.ok) {
+                            var message = body && body.message ? String(body.message) : genericErrorMessage;
+                            return { success: false, data: { message: message } };
+                        }
+
+                        return { success: true, data: body };
+                    });
+                }).catch(function() {
+                    return { success: false, data: { message: genericErrorMessage } };
+                });
+            }
+        }
+
+        return new Promise(function(resolve, reject) {
+            $.ajax({
+                url: jlg_rating_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'jlg_rate_post',
+                    post_id: payload.post_id,
+                    rating: payload.rating,
+                    nonce: jlg_rating_ajax.nonce,
+                    token: jlg_rating_ajax.token
+                },
+                success: function(response) {
+                    resolve(response);
+                },
+                error: function(_, textStatus) {
+                    reject(textStatus);
+                }
+            });
+        });
+    }
+
     function submitRating() {
         var star = $(this);
         var ratingBlock = star.closest('.jlg-user-rating-block');
@@ -129,57 +205,51 @@ jQuery(document).ready(function($) {
         }
 
         ratingBlock.addClass('is-loading');
+        var payload = {
+            post_id: postId,
+            rating: rating,
+            token: jlg_rating_ajax.token,
+            tokenNonce: jlg_rating_ajax.tokenNonce || jlg_rating_ajax.nonce
+        };
 
-        $.ajax({
-            url: jlg_rating_ajax.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'jlg_rate_post',
-                post_id: postId,
-                rating: rating,
-                nonce: jlg_rating_ajax.nonce,
-                token: jlg_rating_ajax.token
-            },
-            success: function(response) {
-                ratingBlock.removeClass('is-loading');
+        sendRatingRequest(payload).then(function(response) {
+            ratingBlock.removeClass('is-loading');
 
-                var responseData = response && response.data ? response.data : {};
-                var errorMessage = responseData.message || genericErrorMessage;
+            var responseData = response && response.data ? response.data : {};
+            var errorMessage = responseData.message || genericErrorMessage;
 
-                if (response.success) {
-                    ratingBlock.addClass('has-voted');
+            if (response && response.success) {
+                ratingBlock.addClass('has-voted');
 
-                    if (typeof responseData.new_average !== 'undefined') {
-                        var avgValueElement = ratingBlock.find('.jlg-user-rating-avg-value');
-                        avgValueElement.text(responseData.new_average);
-                    }
-
-                    if (typeof responseData.new_count !== 'undefined') {
-                        ratingBlock.find('.jlg-user-rating-count-value').text(responseData.new_count);
-                    }
-
-                    ratingBlock.find('.jlg-rating-message').text(successMessage).show();
-
-                    updateRatingState(ratingBlock, parseInt(rating, 10));
-                    ratingBlock.find('.jlg-user-star').removeClass('hover');
-                } else {
-                    ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
-
-                    if (isAlreadyVotedMessage(errorMessage)) {
-                        ratingBlock.addClass('has-voted');
-                    } else {
-                        ratingBlock.removeClass('has-voted');
-                        updateRatingState(ratingBlock, null);
-                    }
-                    ratingBlock.find('.jlg-user-star').removeClass('hover');
+                if (typeof responseData.new_average !== 'undefined') {
+                    var avgValueElement = ratingBlock.find('.jlg-user-rating-avg-value');
+                    avgValueElement.text(responseData.new_average);
                 }
-            },
-            error: function() {
-                ratingBlock.removeClass('is-loading has-voted');
-                ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
-                updateRatingState(ratingBlock, null);
+
+                if (typeof responseData.new_count !== 'undefined') {
+                    ratingBlock.find('.jlg-user-rating-count-value').text(responseData.new_count);
+                }
+
+                ratingBlock.find('.jlg-rating-message').text(successMessage).show();
+
+                updateRatingState(ratingBlock, parseInt(rating, 10));
+                ratingBlock.find('.jlg-user-star').removeClass('hover');
+            } else {
+                ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
+
+                if (isAlreadyVotedMessage(errorMessage)) {
+                    ratingBlock.addClass('has-voted');
+                } else {
+                    ratingBlock.removeClass('has-voted');
+                    updateRatingState(ratingBlock, null);
+                }
                 ratingBlock.find('.jlg-user-star').removeClass('hover');
             }
+        }).catch(function() {
+            ratingBlock.removeClass('is-loading has-voted');
+            ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
+            updateRatingState(ratingBlock, null);
+            ratingBlock.find('.jlg-user-star').removeClass('hover');
         });
     }
 

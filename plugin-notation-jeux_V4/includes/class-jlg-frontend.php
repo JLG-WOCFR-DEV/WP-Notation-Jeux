@@ -441,16 +441,21 @@ class JLG_Frontend {
                 $_COOKIE[ $cookie_name ] = $token;
             }
 
-            $nonce = wp_create_nonce( 'jlg_user_rating_nonce_' . $token );
+            $nonce      = wp_create_nonce( 'jlg_user_rating_nonce_' . $token );
+            $rest_nonce = wp_create_nonce( 'wp_rest' );
 
             wp_localize_script(
                 'jlg-user-rating',
                 'jlg_rating_ajax',
                 array(
-					'ajax_url' => admin_url( 'admin-ajax.php' ),
-					'nonce'    => $nonce,
-					'token'    => $token,
-				)
+                    'restUrl'  => esc_url_raw( rest_url( 'jlg/v1/ratings' ) ),
+                    'restPath' => 'jlg/v1/ratings',
+                    'restNonce'=> $rest_nonce,
+                    'ajax_url' => admin_url( 'admin-ajax.php' ),
+                    'nonce'    => $nonce,
+                    'tokenNonce' => $nonce,
+                    'token'    => $token,
+                )
             );
         }
 
@@ -493,10 +498,13 @@ class JLG_Frontend {
                 'jlg-summary-table-sort',
                 'jlgSummarySort',
                 array(
-					'ajax_url' => admin_url( 'admin-ajax.php' ),
-					'nonce'    => wp_create_nonce( 'jlg_summary_sort' ),
-					'strings'  => array(
-						'genericError' => esc_html__( 'Une erreur est survenue. Merci de réessayer plus tard.', 'notation-jlg' ),
+                    'restUrl' => esc_url_raw( rest_url( 'jlg/v1/summary' ) ),
+                    'restPath' => 'jlg/v1/summary',
+                    'restNonce' => wp_create_nonce( 'wp_rest' ),
+                    'ajax_url' => admin_url( 'admin-ajax.php' ),
+                    'nonce'    => wp_create_nonce( 'jlg_summary_sort' ),
+                    'strings'  => array(
+                        'genericError' => esc_html__( 'Une erreur est survenue. Merci de réessayer plus tard.', 'notation-jlg' ),
 					),
 				)
             );
@@ -578,7 +586,7 @@ class JLG_Frontend {
      *
      * @return string Adresse IP valide ou chaîne vide.
      */
-    private function get_request_ip_address() {
+    private static function get_request_ip_address() {
         $ip_address = '';
 
         if ( function_exists( 'rest_get_ip_address' ) ) {
@@ -607,65 +615,123 @@ class JLG_Frontend {
      * Gère la notation AJAX des utilisateurs
      */
     public function handle_user_rating() {
+        $params = array(
+            'token'       => isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '',
+            'token_nonce' => isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '',
+            'post_id'     => isset( $_POST['post_id'] ) ? wp_unslash( $_POST['post_id'] ) : 0,
+            'rating'      => isset( $_POST['rating'] ) ? wp_unslash( $_POST['rating'] ) : 0,
+        );
+
+        $result = self::process_user_rating_submission( $params );
+
+        if ( is_wp_error( $result ) ) {
+            $status = $result->get_error_data();
+
+            if ( is_array( $status ) && isset( $status['status'] ) ) {
+                $status = (int) $status['status'];
+            } elseif ( ! is_numeric( $status ) ) {
+                $status = 400;
+            }
+
+            wp_send_json_error(
+                array(
+                    'message' => $result->get_error_message(),
+                ),
+                (int) $status
+            );
+        }
+
+        wp_send_json_success( $result );
+    }
+
+    public static function process_user_rating_submission( array $params ) {
         $cookie_name = 'jlg_user_rating_token';
         $token       = '';
 
-        if ( isset( $_POST['token'] ) ) {
-            $token = self::normalize_user_rating_token( wp_unslash( $_POST['token'] ) );
+        if ( isset( $params['token'] ) ) {
+            $token = self::normalize_user_rating_token( $params['token'] );
         }
 
-        if ( $token === '' && isset( $_COOKIE[ $cookie_name ] ) ) {
+        if ( '' === $token && isset( $_COOKIE[ $cookie_name ] ) ) {
             $token = self::normalize_user_rating_token( wp_unslash( $_COOKIE[ $cookie_name ] ) );
         }
 
-        if ( $token === '' ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Jeton de sécurité manquant ou invalide.', 'notation-jlg' ) ), 400 );
+        if ( '' === $token ) {
+            return new WP_Error(
+                'jlg_missing_rating_token',
+                esc_html__( 'Jeton de sécurité manquant ou invalide.', 'notation-jlg' ),
+                array( 'status' => 400 )
+            );
         }
 
-        if ( ! check_ajax_referer( 'jlg_user_rating_nonce_' . $token, 'nonce', false ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
+        $token_nonce = '';
+        if ( isset( $params['token_nonce'] ) ) {
+            $token_nonce = sanitize_text_field( (string) $params['token_nonce'] );
+        }
+
+        if ( $token_nonce === '' || ! wp_verify_nonce( $token_nonce, 'jlg_user_rating_nonce_' . $token ) ) {
+            return new WP_Error(
+                'jlg_invalid_rating_nonce',
+                esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ),
+                array( 'status' => 403 )
+            );
         }
 
         $options = JLG_Helpers::get_plugin_options();
 
         if ( empty( $options['user_rating_enabled'] ) ) {
-            wp_send_json_error(
-                array(
-					'message' => esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
-                ),
-                403
+            return new WP_Error(
+                'jlg_user_rating_disabled',
+                esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
+                array( 'status' => 403 )
             );
         }
 
-        $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+        $post_id = isset( $params['post_id'] ) ? intval( $params['post_id'] ) : 0;
 
         if ( ! $post_id ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Données invalides.', 'notation-jlg' ) ), 400 );
+            return new WP_Error(
+                'jlg_invalid_rating_post',
+                esc_html__( 'Données invalides.', 'notation-jlg' ),
+                array( 'status' => 400 )
+            );
         }
 
         $post = get_post( $post_id );
 
         if ( ! ( $post instanceof WP_Post ) || 'trash' === $post->post_status || 'publish' !== $post->post_status ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Article introuvable ou non disponible pour la notation.', 'notation-jlg' ) ), 404 );
+            return new WP_Error(
+                'jlg_rating_post_unavailable',
+                esc_html__( 'Article introuvable ou non disponible pour la notation.', 'notation-jlg' ),
+                array( 'status' => 404 )
+            );
         }
 
         $allows_user_rating = apply_filters(
             'jlg_post_allows_user_rating',
-            $this->post_allows_user_rating( $post, $options ),
+            self::post_allows_user_rating( $post, $options ),
             $post
         );
 
         if ( ! $allows_user_rating ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'La notation des lecteurs est désactivée pour ce contenu.', 'notation-jlg' ) ), 403 );
+            return new WP_Error(
+                'jlg_rating_forbidden',
+                esc_html__( 'La notation des lecteurs est désactivée pour ce contenu.', 'notation-jlg' ),
+                array( 'status' => 403 )
+            );
         }
 
-        $rating = isset( $_POST['rating'] ) ? intval( $_POST['rating'] ) : 0;
+        $rating = isset( $params['rating'] ) ? intval( $params['rating'] ) : 0;
 
         if ( $rating < 1 || $rating > 5 ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Données invalides.', 'notation-jlg' ) ), 422 );
+            return new WP_Error(
+                'jlg_invalid_rating',
+                esc_html__( 'Données invalides.', 'notation-jlg' ),
+                array( 'status' => 422 )
+            );
         }
 
-        $user_ip      = $this->get_request_ip_address();
+        $user_ip      = self::get_request_ip_address();
         $user_ip_hash = $user_ip ? self::hash_user_ip( $user_ip ) : '';
         $ip_log       = array();
 
@@ -677,11 +743,10 @@ class JLG_Frontend {
             }
 
             if ( isset( $ip_log[ $user_ip_hash ] ) && ( ! is_array( $ip_log[ $user_ip_hash ] ) || empty( $ip_log[ $user_ip_hash ]['legacy'] ) ) ) {
-                wp_send_json_error(
-                    array(
-						'message' => esc_html__( 'Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg' ),
-                    ),
-                    409
+                return new WP_Error(
+                    'jlg_user_rating_ip_duplicate',
+                    esc_html__( 'Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg' ),
+                    array( 'status' => 409 )
                 );
             }
         }
@@ -692,7 +757,11 @@ class JLG_Frontend {
         $ratings      = self::get_post_user_rating_tokens( $post_id, $ratings_meta );
 
         if ( isset( $ratings[ $token_hash ] ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Vous avez déjà voté !', 'notation-jlg' ) ), 409 );
+            return new WP_Error(
+                'jlg_user_rating_duplicate',
+                esc_html__( 'Vous avez déjà voté !', 'notation-jlg' ),
+                array( 'status' => 409 )
+            );
         }
 
         $ratings[ $token_hash ]                    = $rating;
@@ -710,11 +779,9 @@ class JLG_Frontend {
         update_post_meta( $post_id, '_jlg_user_rating_avg', $new_average );
         update_post_meta( $post_id, '_jlg_user_rating_count', $ratings_count );
 
-        wp_send_json_success(
-            array(
-				'new_average' => number_format_i18n( $new_average, 2 ),
-				'new_count'   => $ratings_count,
-            )
+        return array(
+            'new_average' => number_format_i18n( $new_average, 2 ),
+            'new_count'   => $ratings_count,
         );
     }
 
@@ -1085,7 +1152,7 @@ class JLG_Frontend {
     /**
      * Détermine si un article est éligible aux votes des lecteurs.
      */
-    private function post_allows_user_rating( $post, $options = null ) {
+    private static function post_allows_user_rating( $post, $options = null ) {
         if ( ! ( $post instanceof WP_Post ) ) {
             return false;
         }
@@ -1120,8 +1187,40 @@ class JLG_Frontend {
             wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
         }
 
+        $payload = isset( $_POST ) ? wp_unslash( $_POST ) : array();
+        if ( ! is_array( $payload ) ) {
+            $payload = array();
+        }
+
+        $result = self::process_summary_request( $payload );
+
+        if ( is_wp_error( $result ) ) {
+            $status = $result->get_error_data();
+
+            if ( is_array( $status ) && isset( $status['status'] ) ) {
+                $status = (int) $status['status'];
+            } elseif ( ! is_numeric( $status ) ) {
+                $status = 400;
+            }
+
+            wp_send_json_error(
+                array(
+                    'message' => $result->get_error_message(),
+                ),
+                (int) $status
+            );
+        }
+
+        wp_send_json_success( $result );
+    }
+
+    public static function process_summary_request( array $params ) {
         if ( ! class_exists( 'JLG_Shortcode_Summary_Display' ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ) ), 500 );
+            return new WP_Error(
+                'jlg_summary_shortcode_unavailable',
+                esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ),
+                array( 'status' => 500 )
+            );
         }
 
         $default_atts           = JLG_Shortcode_Summary_Display::get_default_atts();
@@ -1130,33 +1229,41 @@ class JLG_Frontend {
             $default_posts_per_page = 1;
         }
 
-        $posts_per_page_input = isset( $_POST['posts_per_page'] ) ? wp_unslash( $_POST['posts_per_page'] ) : null;
-        $posts_per_page       = null;
-
-        if ( $posts_per_page_input !== null && ! is_array( $posts_per_page_input ) ) {
-            $posts_per_page = intval( $posts_per_page_input );
+        $posts_per_page = $default_posts_per_page;
+        if ( isset( $params['posts_per_page'] ) ) {
+            $raw_posts_per_page = $params['posts_per_page'];
+            if ( is_array( $raw_posts_per_page ) ) {
+                $raw_posts_per_page = reset( $raw_posts_per_page );
+            }
+            if ( $raw_posts_per_page !== null && $raw_posts_per_page !== '' ) {
+                $posts_per_page = intval( $raw_posts_per_page );
+            }
         }
 
-        if ( $posts_per_page === null || $posts_per_page < 1 ) {
+        if ( $posts_per_page < 1 ) {
             $posts_per_page = $default_posts_per_page;
         }
 
         $posts_per_page = max( 1, min( $posts_per_page, 50 ) );
 
+        $table_id_raw = isset( $params['table_id'] ) ? $params['table_id'] : '';
+        if ( is_array( $table_id_raw ) ) {
+            $table_id_raw = reset( $table_id_raw );
+        }
+
+        $table_id = $table_id_raw !== '' ? sanitize_html_class( $table_id_raw ) : 'jlg-table-' . uniqid();
+
         $atts = array(
             'posts_per_page' => $posts_per_page,
-            'layout'         => isset( $_POST['layout'] ) ? sanitize_text_field( wp_unslash( $_POST['layout'] ) ) : 'table',
-            'categorie'      => isset( $_POST['categorie'] ) ? sanitize_text_field( wp_unslash( $_POST['categorie'] ) ) : '',
-            'colonnes'       => isset( $_POST['colonnes'] ) ? sanitize_text_field( wp_unslash( $_POST['colonnes'] ) ) : 'titre,date,note',
-            'id'             => isset( $_POST['table_id'] ) ? sanitize_html_class( wp_unslash( $_POST['table_id'] ) ) : 'jlg-table-' . uniqid(),
+            'layout'         => isset( $params['layout'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['layout'] ) ) : 'table',
+            'categorie'      => isset( $params['categorie'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['categorie'] ) ) : '',
+            'colonnes'       => isset( $params['colonnes'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['colonnes'] ) ) : 'titre,date,note',
+            'id'             => $table_id,
             'letter_filter'  => '',
             'genre_filter'   => '',
         );
 
-        $raw_request = isset( $_POST ) ? wp_unslash( $_POST ) : array();
-        if ( ! is_array( $raw_request ) ) {
-            $raw_request = array();
-        }
+        $raw_request = self::flatten_request_payload( $params );
 
         $request_prefix = sanitize_title( $atts['id'] );
         $letter_keys    = array();
@@ -1179,16 +1286,16 @@ class JLG_Frontend {
 
         foreach ( $genre_keys as $key ) {
             if ( isset( $raw_request[ $key ] ) && ! is_array( $raw_request[ $key ] ) ) {
-                $atts['genre_filter'] = sanitize_text_field( $raw_request[ $key ] );
+                $atts['genre_filter'] = sanitize_text_field( (string) $raw_request[ $key ] );
                 break;
             }
         }
 
-        $current_url = isset( $_POST['current_url'] ) ? wp_unslash( $_POST['current_url'] ) : '';
-        $base_url    = $this->sanitize_internal_url( $current_url );
+        $current_url = isset( $raw_request['current_url'] ) && ! is_array( $raw_request['current_url'] ) ? $raw_request['current_url'] : '';
+        $base_url    = self::sanitize_internal_url( $current_url );
 
         if ( $base_url === '' ) {
-            $base_url = $this->sanitize_internal_url( wp_get_referer() );
+            $base_url = self::sanitize_internal_url( wp_get_referer() );
         }
 
         $context             = JLG_Shortcode_Summary_Display::get_render_context( $atts, $raw_request, false );
@@ -1205,11 +1312,9 @@ class JLG_Frontend {
         );
 
         if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
-            wp_send_json_success(
-                array(
-					'html'  => $context['message'],
-					'state' => $state,
-                )
+            return array(
+                'html'  => $context['message'],
+                'state' => $state,
             );
         }
 
@@ -1219,36 +1324,39 @@ class JLG_Frontend {
             $state['total_pages'] = intval( $context['query']->max_num_pages );
         }
 
-        wp_send_json_success(
-            array(
-				'html'  => $html,
-				'state' => $state,
-            )
+        return array(
+            'html'  => $html,
+            'state' => $state,
         );
     }
 
-    public function handle_game_explorer_sort() {
-        if ( ! check_ajax_referer( 'jlg_game_explorer', 'nonce', false ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
-        }
-
+    public static function process_game_explorer_request( array $params ) {
         if ( ! class_exists( 'JLG_Shortcode_Game_Explorer' ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ) ), 500 );
+            return new WP_Error(
+                'jlg_game_explorer_shortcode_unavailable',
+                esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ),
+                array( 'status' => 500 )
+            );
         }
 
         $default_atts = JLG_Shortcode_Game_Explorer::get_default_atts();
 
+        $container_id_raw = isset( $params['container_id'] ) ? $params['container_id'] : ( $params['id'] ?? '' );
+        if ( is_array( $container_id_raw ) ) {
+            $container_id_raw = reset( $container_id_raw );
+        }
+
         $atts = array(
-            'id'             => isset( $_POST['container_id'] ) ? sanitize_html_class( wp_unslash( $_POST['container_id'] ) ) : ( $default_atts['id'] ?? 'jlg-game-explorer-' . uniqid() ),
-            'posts_per_page' => isset( $_POST['posts_per_page'] ) ? intval( wp_unslash( $_POST['posts_per_page'] ) ) : ( $default_atts['posts_per_page'] ?? 12 ),
-            'columns'        => isset( $_POST['columns'] ) ? intval( wp_unslash( $_POST['columns'] ) ) : ( $default_atts['columns'] ?? 3 ),
-            'filters'        => isset( $_POST['filters'] ) ? sanitize_text_field( wp_unslash( $_POST['filters'] ) ) : ( $default_atts['filters'] ?? '' ),
-            'score_position' => isset( $_POST['score_position'] )
-                ? JLG_Helpers::normalize_game_explorer_score_position( wp_unslash( $_POST['score_position'] ) )
+            'id'             => $container_id_raw !== '' ? sanitize_html_class( $container_id_raw ) : ( $default_atts['id'] ?? 'jlg-game-explorer-' . uniqid() ),
+            'posts_per_page' => isset( $params['posts_per_page'] ) ? intval( self::maybe_scalar( $params['posts_per_page'] ) ) : ( $default_atts['posts_per_page'] ?? 12 ),
+            'columns'        => isset( $params['columns'] ) ? intval( self::maybe_scalar( $params['columns'] ) ) : ( $default_atts['columns'] ?? 3 ),
+            'filters'        => isset( $params['filters'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['filters'] ) ) : ( $default_atts['filters'] ?? '' ),
+            'score_position' => isset( $params['score_position'] )
+                ? JLG_Helpers::normalize_game_explorer_score_position( self::maybe_scalar( $params['score_position'] ) )
                 : ( $default_atts['score_position'] ?? '' ),
-            'categorie'      => isset( $_POST['categorie'] ) ? sanitize_text_field( wp_unslash( $_POST['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
-            'plateforme'     => isset( $_POST['plateforme'] ) ? sanitize_text_field( wp_unslash( $_POST['plateforme'] ) ) : ( $default_atts['plateforme'] ?? '' ),
-            'lettre'         => isset( $_POST['lettre'] ) ? sanitize_text_field( wp_unslash( $_POST['lettre'] ) ) : ( $default_atts['lettre'] ?? '' ),
+            'categorie'      => isset( $params['categorie'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
+            'plateforme'     => isset( $params['plateforme'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['plateforme'] ) ) : ( $default_atts['plateforme'] ?? '' ),
+            'lettre'         => isset( $params['lettre'] ) ? sanitize_text_field( (string) self::maybe_scalar( $params['lettre'] ) ) : ( $default_atts['lettre'] ?? '' ),
         );
 
         if ( $atts['posts_per_page'] < 1 ) {
@@ -1259,10 +1367,7 @@ class JLG_Frontend {
             $atts['columns'] = $default_atts['columns'] ?? 3;
         }
 
-        $raw_request = isset( $_POST ) ? wp_unslash( $_POST ) : array();
-        if ( ! is_array( $raw_request ) ) {
-            $raw_request = array();
-        }
+        $raw_request = self::flatten_request_payload( $params );
 
         $context = JLG_Shortcode_Game_Explorer::get_render_context( $atts, $raw_request );
 
@@ -1280,27 +1385,88 @@ class JLG_Frontend {
         );
 
         if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
-            wp_send_json_success(
-                array(
-                    'html'  => $context['message'],
-                    'state' => $state,
-                    'config' => $context['config_payload'] ?? array(),
-                )
+            return array(
+                'html'   => $context['message'],
+                'state'  => $state,
+                'config' => $context['config_payload'] ?? array(),
             );
         }
 
         $html = self::get_template_html( 'game-explorer-fragment', $context );
 
-        wp_send_json_success(
-            array(
-                'html'   => $html,
-                'state'  => $state,
-                'config' => $context['config_payload'] ?? array(),
-            )
+        return array(
+            'html'   => $html,
+            'state'  => $state,
+            'config' => $context['config_payload'] ?? array(),
         );
     }
 
-    private function sanitize_internal_url( $url ) {
+    public function handle_game_explorer_sort() {
+        if ( ! check_ajax_referer( 'jlg_game_explorer', 'nonce', false ) ) {
+            wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
+        }
+
+        $payload = isset( $_POST ) ? wp_unslash( $_POST ) : array();
+        if ( ! is_array( $payload ) ) {
+            $payload = array();
+        }
+
+        $result = self::process_game_explorer_request( $payload );
+
+        if ( is_wp_error( $result ) ) {
+            $status = $result->get_error_data();
+
+            if ( is_array( $status ) && isset( $status['status'] ) ) {
+                $status = (int) $status['status'];
+            } elseif ( ! is_numeric( $status ) ) {
+                $status = 400;
+            }
+
+            wp_send_json_error(
+                array(
+                    'message' => $result->get_error_message(),
+                ),
+                (int) $status
+            );
+        }
+
+        wp_send_json_success( $result );
+    }
+
+    private static function maybe_scalar( $value ) {
+        if ( is_array( $value ) ) {
+            $value = reset( $value );
+        }
+
+        if ( is_scalar( $value ) || $value === null ) {
+            return $value;
+        }
+
+        return '';
+    }
+
+    private static function flatten_request_payload( array $payload ) {
+        $flattened = array();
+
+        foreach ( $payload as $key => $value ) {
+            if ( is_scalar( $value ) || $value === null ) {
+                $flattened[ $key ] = $value;
+                continue;
+            }
+
+            if ( is_array( $value ) ) {
+                foreach ( $value as $sub_key => $sub_value ) {
+                    if ( is_scalar( $sub_value ) || $sub_value === null ) {
+                        $flattened[ $sub_key ] = $sub_value;
+                    }
+                }
+            }
+        }
+
+        return $flattened;
+    }
+
+    private static function sanitize_internal_url( $url ) {
         $canonical_home = home_url( '/' );
 
         if ( ! is_string( $url ) ) {

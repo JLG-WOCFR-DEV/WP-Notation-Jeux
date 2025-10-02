@@ -149,12 +149,15 @@ class JLG_Assets {
             'jlg-game-explorer',
             'jlgGameExplorerL10n',
             function () {
-				return array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'jlg_game_explorer' ),
-					'strings' => array(
-						'loading'       => esc_html__( 'Chargement des jeux...', 'notation-jlg' ),
-						'noResults'     => esc_html__( 'Aucun jeu ne correspond à votre sélection.', 'notation-jlg' ),
+                return array(
+                    'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+                    'nonce'     => wp_create_nonce( 'jlg_game_explorer' ),
+                    'restUrl'   => esc_url_raw( rest_url( 'jlg/v1/game-explorer' ) ),
+                    'restPath'  => 'jlg/v1/game-explorer',
+                    'restNonce' => wp_create_nonce( 'wp_rest' ),
+                    'strings' => array(
+                        'loading'       => esc_html__( 'Chargement des jeux...', 'notation-jlg' ),
+                        'noResults'     => esc_html__( 'Aucun jeu ne correspond à votre sélection.', 'notation-jlg' ),
 						'reset'         => esc_html__( 'Réinitialiser les filtres', 'notation-jlg' ),
 						'genericError'  => esc_html__( 'Impossible de charger les jeux pour le moment.', 'notation-jlg' ),
 						'countSingular' => esc_html__( '%d jeu', 'notation-jlg' ),

@@ -20,6 +20,10 @@ jQuery(document).ready(function($) {
         return fallback;
     }
     // Recherche de jeu
+    var restUrl = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.restUrl) ? jlg_admin_ajax.restUrl : '';
+    var restPath = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.restPath) ? jlg_admin_ajax.restPath : '';
+    var restNonce = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.restNonce) ? jlg_admin_ajax.restNonce : '';
+
     $('#jlg-api-search-button').on('click', function() {
         var searchInput = $('#jlg-api-search-input');
         var resultsDiv = $('#jlg-api-search-results');
@@ -33,7 +37,7 @@ jQuery(document).ready(function($) {
             ajaxEndpoint = ajaxurl;
         }
 
-        if (!ajaxEndpoint) {
+        if (!ajaxEndpoint && !restUrl) {
             resultsDiv
                 .empty()
                 .append(
@@ -46,7 +50,7 @@ jQuery(document).ready(function($) {
 
         var nonce = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.nonce) ? jlg_admin_ajax.nonce : '';
 
-        if (!nonce) {
+        if (!nonce && !restNonce) {
             resultsDiv
                 .empty()
                 .append(
@@ -70,83 +74,46 @@ jQuery(document).ready(function($) {
 
         button.text(getString('searchingText', 'Recherche...')).prop('disabled', true);
         resultsDiv.text(getString('loadingText', 'Chargement...'));
+        var requestPromise;
 
-        $.ajax({
-            url: ajaxEndpoint,
-            type: 'POST',
-            data: {
-                action: 'jlg_search_rawg_games',
-                nonce: nonce,
-                search: searchTerm,
-            },
-            success: function(response) {
-                button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
+        if (restUrl && restNonce) {
+            var query = new URLSearchParams({ search: String(searchTerm), page: '1' });
+            var targetPath = restPath ? restPath + '?' + query.toString() : '';
+            var targetUrl = restUrl ? restUrl + (restUrl.indexOf('?') === -1 ? '?' : '&') + query.toString() : '';
 
-                if (response === '-1') {
-                    resultsDiv
-                        .empty()
-                        .append(
-                            $('<p>')
-                                .css('color', 'red')
-                                .text(getString('securityFailed', 'Vérification de sécurité échouée. Actualisez la page.'))
-                        );
-                    return;
+            if (window.wp && window.wp.apiFetch && targetPath) {
+                requestPromise = window.wp.apiFetch({
+                    path: targetPath,
+                    method: 'GET',
+                    headers: { 'X-WP-Nonce': restNonce },
+                });
+            } else if (typeof window.fetch === 'function' && targetUrl) {
+                requestPromise = window.fetch(targetUrl, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'X-WP-Nonce': restNonce },
+                }).then(function(response) {
+                    return response.json();
+                });
+            }
+        }
+
+        if (!requestPromise) {
+            requestPromise = $.ajax({
+                url: ajaxEndpoint,
+                type: 'POST',
+                data: {
+                    action: 'jlg_search_rawg_games',
+                    nonce: nonce,
+                    search: searchTerm,
                 }
+            });
+        }
 
-                if (response.success) {
-                    var games = [];
+        requestPromise.then(function(response) {
+            button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
 
-                    if (Array.isArray(response.data)) {
-                        games = response.data;
-                    } else if (response.data && Array.isArray(response.data.games)) {
-                        games = response.data.games;
-                    }
-
-                    if (!games.length && response.data && response.data.message) {
-                        resultsDiv
-                            .empty()
-                            .append(
-                                $('<p>').text(response.data.message)
-                            );
-                        resultsDiv.data('games', []);
-                        return;
-                    }
-                    var list = $('<ul>').css({
-                        'list-style': 'disc',
-                        'padding-left': '20px'
-                    });
-                    games.forEach(function(game, index) {
-                        var year = game.release_date ? new Date(game.release_date).getFullYear() : getString('notAvailableLabel', 'N/A');
-                        var listItem = $('<li>');
-                        var name = game.name ? String(game.name) : '';
-                        listItem.append($('<strong>').text(name));
-                        listItem.append(document.createTextNode(' (' + year + ') '));
-                        var buttonSelect = $('<button>')
-                            .attr('type', 'button')
-                            .addClass('button button-small jlg-select-game')
-                            .attr('data-index', index)
-                            .text(getString('selectLabel', 'Choisir'));
-                        listItem.append(buttonSelect);
-                        list.append(listItem);
-                    });
-                    resultsDiv.empty().append(list);
-                    resultsDiv.data('games', games);
-                } else {
-                    var errorMessage = '';
-                    if (response && response.data) {
-                        errorMessage = String(response.data);
-                    }
-                    resultsDiv
-                        .empty()
-                        .append(
-                            $('<p>')
-                                .css('color', 'red')
-                                .text(errorMessage)
-                        );
-                }
-            },
-            error: function() {
-                button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
+            if (!response) {
                 resultsDiv
                     .empty()
                     .append(
@@ -154,7 +121,86 @@ jQuery(document).ready(function($) {
                             .css('color', 'red')
                             .text(getString('communicationError', 'Erreur de communication.'))
                     );
+                return;
             }
+
+            var payload = response;
+            if (response && typeof response.success === 'undefined' && response.games) {
+                payload = { success: true, data: response };
+            }
+
+            if (payload === '-1') {
+                resultsDiv
+                    .empty()
+                    .append(
+                        $('<p>')
+                            .css('color', 'red')
+                            .text(getString('securityFailed', 'Vérification de sécurité échouée. Actualisez la page.'))
+                    );
+                return;
+            }
+
+            if (payload.success) {
+                var games = [];
+
+                if (Array.isArray(payload.data)) {
+                    games = payload.data;
+                } else if (payload.data && Array.isArray(payload.data.games)) {
+                    games = payload.data.games;
+                }
+
+                if (!games.length && payload.data && payload.data.message) {
+                    resultsDiv
+                        .empty()
+                        .append(
+                            $('<p>').text(payload.data.message)
+                        );
+                    resultsDiv.data('games', []);
+                    return;
+                }
+
+                var list = $('<ul>').css({
+                    'list-style': 'disc',
+                    'padding-left': '20px'
+                });
+                games.forEach(function(game, index) {
+                    var year = game.release_date ? new Date(game.release_date).getFullYear() : getString('notAvailableLabel', 'N/A');
+                    var listItem = $('<li>');
+                    var name = game.name ? String(game.name) : '';
+                    listItem.append($('<strong>').text(name));
+                    listItem.append(document.createTextNode(' (' + year + ') '));
+                    var buttonSelect = $('<button>')
+                        .attr('type', 'button')
+                        .addClass('button button-small jlg-select-game')
+                        .attr('data-index', index)
+                        .text(getString('selectLabel', 'Choisir'));
+                    listItem.append(buttonSelect);
+                    list.append(listItem);
+                });
+                resultsDiv.empty().append(list);
+                resultsDiv.data('games', games);
+            } else {
+                var errorMessage = '';
+                if (payload && payload.data) {
+                    errorMessage = String(payload.data.message || payload.data);
+                }
+                resultsDiv
+                    .empty()
+                    .append(
+                        $('<p>')
+                            .css('color', 'red')
+                            .text(errorMessage || getString('communicationError', 'Erreur de communication.'))
+                    );
+            }
+        }).catch(function() {
+            button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
+            resultsDiv
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text(getString('communicationError', 'Erreur de communication.'))
+                );
         });
     });
 

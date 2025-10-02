@@ -80,6 +80,133 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function sendSummaryRequest(restPayload, legacyPayload) {
+        var restUrl = (jlgSummarySort && jlgSummarySort.restUrl) ? jlgSummarySort.restUrl : '';
+        var restNonce = (jlgSummarySort && jlgSummarySort.restNonce) ? jlgSummarySort.restNonce : '';
+        var restPath = (jlgSummarySort && jlgSummarySort.restPath) ? jlgSummarySort.restPath : '';
+        var controller = null;
+        var promise;
+
+        if (restUrl && restNonce) {
+            var payload = $.extend(true, {}, restPayload || {});
+
+            if (typeof window.AbortController === 'function') {
+                controller = new window.AbortController();
+            }
+
+            if (window.wp && window.wp.apiFetch) {
+                var apiFetchArgs = {
+                    path: restPath || restUrl,
+                    method: 'POST',
+                    data: payload,
+                    headers: {
+                        'X-WP-Nonce': restNonce,
+                    },
+                };
+
+                if (controller) {
+                    apiFetchArgs.signal = controller.signal;
+                }
+
+                promise = window.wp.apiFetch(apiFetchArgs).then(function(data) {
+                    return { success: true, data: data };
+                }).catch(function(error) {
+                    if (error && error.name === 'AbortError') {
+                        throw error;
+                    }
+
+                    var message = (error && error.data && error.data.message)
+                        ? String(error.data.message)
+                        : jlgSummarySort.strings.genericError;
+
+                    return { success: false, data: { message: message } };
+                });
+            } else if (typeof window.fetch === 'function') {
+                var fetchOptions = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': restNonce,
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload),
+                };
+
+                if (controller) {
+                    fetchOptions.signal = controller.signal;
+                }
+
+                promise = window.fetch(restUrl, fetchOptions).then(function(response) {
+                    return response.json().catch(function() {
+                        return {};
+                    }).then(function(body) {
+                        if (!response.ok) {
+                            var message = body && body.message
+                                ? String(body.message)
+                                : jlgSummarySort.strings.genericError;
+
+                            return { success: false, data: { message: message } };
+                        }
+
+                        return { success: true, data: body };
+                    });
+                }).catch(function(error) {
+                    if (error && error.name === 'AbortError') {
+                        throw error;
+                    }
+
+                    return { success: false, data: { message: jlgSummarySort.strings.genericError } };
+                });
+            }
+        }
+
+        if (!promise) {
+            var fallbackData = $.extend(
+                {
+                    action: 'jlg_summary_sort',
+                    nonce: jlgSummarySort.nonce,
+                },
+                legacyPayload || restPayload || {}
+            );
+
+            var jqXHR = $.ajax({
+                url: jlgSummarySort.ajax_url,
+                method: 'POST',
+                data: fallbackData,
+            });
+
+            controller = {
+                abort: function() {
+                    jqXHR.abort();
+                }
+            };
+
+            promise = new Promise(function(resolve, reject) {
+                jqXHR.done(function(response) {
+                    resolve(response);
+                }).fail(function(_, textStatus) {
+                    if (textStatus === 'abort') {
+                        var abortError = new Error('AbortError');
+                        abortError.name = 'AbortError';
+                        reject(abortError);
+                        return;
+                    }
+
+                    resolve({ success: false, data: { message: jlgSummarySort.strings.genericError } });
+                });
+            });
+        }
+
+        return {
+            promise: promise,
+            abort: function() {
+                if (controller && typeof controller.abort === 'function') {
+                    controller.abort();
+                }
+            }
+        };
+    }
+
     function getCurrentState($wrapper) {
         return {
             orderby: ($wrapper.attr('data-orderby') || 'date').toString(),
@@ -357,8 +484,6 @@ jQuery(document).ready(function($) {
         }
 
         var requestData = {
-            action: 'jlg_summary_sort',
-            nonce: jlgSummarySort.nonce,
             posts_per_page: postsPerPage,
             layout: $wrapper.data('layout'),
             categorie: $wrapper.data('categorie') || '',
@@ -384,15 +509,12 @@ jQuery(document).ready(function($) {
 
         $wrapper.addClass('jlg-summary-loading');
 
-        var jqXHR = $.ajax({
-            url: ajaxUrl,
-            method: 'POST',
-            data: requestData,
-        });
+        var restPayload = $.extend({}, requestData);
+        var requestHandle = sendSummaryRequest(restPayload, requestData);
 
-        $wrapper.data('ajaxRequest', jqXHR);
+        $wrapper.data('ajaxRequest', requestHandle);
 
-        jqXHR.done(function(response) {
+        requestHandle.promise.then(function(response) {
             if (!response || !response.success || !response.data) {
                 showError($wrapper, jlgSummarySort.strings.genericError);
                 return;
@@ -410,12 +532,12 @@ jQuery(document).ready(function($) {
             if (shouldUpdateHistory && targetUrl) {
                 updateHistory(targetUrl);
             }
-        }).fail(function(_, textStatus) {
-            if (textStatus === 'abort') {
+        }).catch(function(error) {
+            if (error && error.name === 'AbortError') {
                 return;
             }
             showError($wrapper, jlgSummarySort.strings.genericError);
-        }).always(function() {
+        }).then(function() {
             $wrapper.removeClass('jlg-summary-loading');
             $wrapper.removeData('ajaxRequest');
         });
