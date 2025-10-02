@@ -274,9 +274,21 @@ class Frontend {
             '_jlg_user_rating_avg',
         );
 
-        foreach ( array_keys( Helpers::get_rating_categories() ) as $category_key ) {
-            $meta_keys[] = '_note_' . $category_key;
+        foreach ( Helpers::get_rating_category_definitions() as $definition ) {
+            if ( ! empty( $definition['meta_key'] ) ) {
+                $meta_keys[] = (string) $definition['meta_key'];
+            }
+
+            if ( ! empty( $definition['legacy_meta_keys'] ) && is_array( $definition['legacy_meta_keys'] ) ) {
+                foreach ( $definition['legacy_meta_keys'] as $legacy_meta_key ) {
+                    if ( $legacy_meta_key !== '' ) {
+                        $meta_keys[] = (string) $legacy_meta_key;
+                    }
+                }
+            }
         }
+
+        $meta_keys = array_values( array_unique( $meta_keys ) );
 
         $has_metadata = false;
 
@@ -1581,6 +1593,8 @@ class Frontend {
                 'average_score'        => null,
                 'scores'               => array(),
                 'categories'           => array(),
+                'category_scores'      => array(),
+                'category_definitions' => array(),
                 'pros_list'            => array(),
                 'cons_list'            => array(),
                 'titre'                => '',

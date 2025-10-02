@@ -61,17 +61,22 @@ class ShortcodeVisibilityTest extends TestCase
         ]);
 
         $GLOBALS['jlg_test_meta'][$post_id] = [
-            '_note_cat1' => '8',
-            '_note_cat2' => '7',
-            '_note_cat3' => '9',
-            '_note_cat4' => '6',
-            '_note_cat5' => '8',
-            '_note_cat6' => '7',
-            '_jlg_tagline_fr' => 'Un super résumé',
-            '_jlg_tagline_en' => 'A great summary',
-            '_jlg_points_forts' => "Point fort 1\nPoint fort 2",
+            '_jlg_tagline_fr'     => 'Un super résumé',
+            '_jlg_tagline_en'     => 'A great summary',
+            '_jlg_points_forts'   => "Point fort 1\nPoint fort 2",
             '_jlg_points_faibles' => "Point faible 1\nPoint faible 2",
         ];
+
+        $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();
+        $values      = ['8', '7', '9', '6', '8', '7'];
+
+        foreach ($definitions as $index => $definition) {
+            if (!isset($definition['meta_key'], $values[$index])) {
+                continue;
+            }
+
+            $GLOBALS['jlg_test_meta'][$post_id][$definition['meta_key']] = $values[$index];
+        }
     }
 
     private function deny_read_permissions(): void

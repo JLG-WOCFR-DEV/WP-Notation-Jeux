@@ -12,6 +12,7 @@ $has_tagline      = ( $atts['afficher_tagline'] === 'oui' && ( ! empty( $tagline
 $has_dual_tagline = ( ! empty( $tagline_fr ) && ! empty( $tagline_en ) );
 $show_rating      = ( $atts['afficher_notation'] === 'oui' && $average_score !== null );
 $show_points      = ( $atts['afficher_points'] === 'oui' && ( ! empty( $pros_list ) || ! empty( $cons_list ) ) );
+$category_scores  = isset( $category_scores ) && is_array( $category_scores ) ? $category_scores : array();
 $data_attributes  = sprintf(
     ' data-animations-enabled="%s" data-has-multiple-taglines="%s"',
     esc_attr( $animations_enabled ? 'true' : 'false' ),
@@ -74,11 +75,20 @@ $data_attributes  = sprintf(
         </div>
 
         <div class="jlg-aio-scores-grid">
-            <?php foreach ( $scores as $key => $score_value ) : ?>
-				<?php $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options ); ?>
+            <?php foreach ( $category_scores as $category ) : ?>
+                <?php
+                $score_value = isset( $category['score'] ) ? (float) $category['score'] : null;
+
+                if ( $score_value === null ) {
+                    continue;
+                }
+
+                $label     = isset( $category['label'] ) ? $category['label'] : '';
+                $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
+                ?>
             <div class="jlg-aio-score-item">
                 <div class="jlg-aio-score-header">
-                    <span class="jlg-aio-score-label"><?php echo esc_html( $categories[ $key ] ); ?></span>
+                    <span class="jlg-aio-score-label"><?php echo esc_html( $label ); ?></span>
                     <span class="jlg-aio-score-number"><?php echo esc_html( number_format_i18n( $score_value, 1 ) ); ?> / 10</span>
                 </div>
                 <div class="jlg-aio-score-bar-bg">

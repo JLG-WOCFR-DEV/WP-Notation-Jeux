@@ -34,13 +34,20 @@ $options = \JLG\Notation\Helpers::get_plugin_options();
     <hr>
     
     <div class="rating-breakdown">
-        <?php
-        foreach ( $scores as $key => $score_value ) :
+        <?php foreach ( $category_scores as $category ) : ?>
+            <?php
+            $score_value = isset( $category['score'] ) ? (float) $category['score'] : null;
+
+            if ( $score_value === null ) {
+                continue;
+            }
+
+            $label     = isset( $category['label'] ) ? $category['label'] : '';
             $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
-			?>
+            ?>
             <div class="rating-item">
                 <div class="rating-label">
-                    <span><?php echo esc_html( $categories[ $key ] ); ?></span>
+                    <span><?php echo esc_html( $label ); ?></span>
                     <span>
                         <?php
                         $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
@@ -54,7 +61,7 @@ $options = \JLG\Notation\Helpers::get_plugin_options();
                     </span>
                 </div>
                 <div class="rating-bar-container">
-                    <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( $score_value * 10 ); ?>%; --bar-color: <?php echo esc_attr( $bar_color ); ?>;"></div>
+                    <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( $score_value * 10 ); ?>%; --bar-color:<?php echo esc_attr( $bar_color ); ?>;"></div>
                 </div>
             </div>
         <?php endforeach; ?>

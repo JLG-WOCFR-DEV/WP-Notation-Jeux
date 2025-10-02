@@ -14,11 +14,13 @@ class Helpers {
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
+    private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
 
-    private static $option_name                   = 'notation_jlg_settings';
-    private static $category_keys                 = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
-    private static $options_cache                 = null;
-    private static $default_settings_cache        = null;
+    private static $option_name                = 'notation_jlg_settings';
+    private static $options_cache              = null;
+    private static $default_settings_cache     = null;
+    private static $category_definition_cache  = null;
+    private static $rating_meta_keys_cache     = null;
     private static $game_explorer_score_positions = array(
         'top-left',
         'top-right',
@@ -29,18 +31,29 @@ class Helpers {
     );
 
     private static function get_rating_meta_keys() {
-        static $meta_keys = null;
-
-        if ( $meta_keys === null ) {
-            $meta_keys = array_map(
-                static function ( $key ) {
-                    return '_note_' . $key;
-                },
-                self::$category_keys
-            );
+        if ( is_array( self::$rating_meta_keys_cache ) ) {
+            return self::$rating_meta_keys_cache;
         }
 
-        return $meta_keys;
+        $meta_keys = array();
+
+        foreach ( self::get_rating_category_definitions() as $definition ) {
+            if ( ! empty( $definition['meta_key'] ) ) {
+                $meta_keys[] = (string) $definition['meta_key'];
+            }
+
+            if ( ! empty( $definition['legacy_meta_keys'] ) && is_array( $definition['legacy_meta_keys'] ) ) {
+                foreach ( $definition['legacy_meta_keys'] as $legacy_meta_key ) {
+                    if ( $legacy_meta_key !== '' ) {
+                        $meta_keys[] = (string) $legacy_meta_key;
+                    }
+                }
+            }
+        }
+
+        self::$rating_meta_keys_cache = array_values( array_unique( $meta_keys ) );
+
+        return self::$rating_meta_keys_cache;
     }
 
     private static function get_theme_defaults() {
@@ -69,9 +82,9 @@ class Helpers {
     private static function get_default_platform_definitions() {
         return array(
             'pc'              => array(
-				'name'  => 'PC',
-				'order' => 1,
-			),
+                                'name'  => 'PC',
+                                'order' => 1,
+                        ),
             'playstation-5'   => array(
 				'name'  => 'PlayStation 5',
 				'order' => 2,
@@ -93,10 +106,261 @@ class Helpers {
 				'order' => 6,
 			),
             'steam-deck'      => array(
-				'name'  => 'Steam Deck',
-				'order' => 7,
-			),
+                                'name'  => 'Steam Deck',
+                                'order' => 7,
+                        ),
         );
+    }
+
+    private static function get_default_category_definitions() {
+        return array(
+            array(
+                'id'         => 'gameplay',
+                'label'      => 'Gameplay',
+                'legacy_ids' => array( 'cat1' ),
+            ),
+            array(
+                'id'         => 'graphismes',
+                'label'      => 'Graphismes',
+                'legacy_ids' => array( 'cat2' ),
+            ),
+            array(
+                'id'         => 'bande-son',
+                'label'      => 'Bande-son',
+                'legacy_ids' => array( 'cat3' ),
+            ),
+            array(
+                'id'         => 'duree-de-vie',
+                'label'      => 'Durée de vie',
+                'legacy_ids' => array( 'cat4' ),
+            ),
+            array(
+                'id'         => 'scenario',
+                'label'      => 'Scénario',
+                'legacy_ids' => array( 'cat5' ),
+            ),
+            array(
+                'id'         => 'originalite',
+                'label'      => 'Originalité',
+                'legacy_ids' => array( 'cat6' ),
+            ),
+        );
+    }
+
+    private static function prepare_category_definitions( array $categories ) {
+        $prepared  = array();
+        $used_ids  = array();
+        $fallbacks = self::LEGACY_CATEGORY_SUFFIXES;
+
+        foreach ( array_values( $categories ) as $index => $category ) {
+            $label       = '';
+            $id          = '';
+            $legacy_ids  = array();
+            $original_id = '';
+
+            if ( is_array( $category ) ) {
+                if ( isset( $category['label'] ) ) {
+                    $label = sanitize_text_field( $category['label'] );
+                }
+
+                if ( isset( $category['id'] ) ) {
+                    $id = sanitize_key( $category['id'] );
+                }
+
+                if ( isset( $category['legacy_ids'] ) && is_array( $category['legacy_ids'] ) ) {
+                    foreach ( $category['legacy_ids'] as $legacy_id ) {
+                        $sanitized_legacy = sanitize_key( $legacy_id );
+                        if ( $sanitized_legacy !== '' ) {
+                            $legacy_ids[] = $sanitized_legacy;
+                        }
+                    }
+                }
+
+                if ( isset( $category['original_id'] ) ) {
+                    $original_id = sanitize_key( $category['original_id'] );
+                }
+            } elseif ( is_string( $category ) ) {
+                $label = sanitize_text_field( $category );
+            }
+
+            if ( $label === '' ) {
+                $label = sprintf( __( 'Catégorie %d', 'notation-jlg' ), $index + 1 );
+            }
+
+            if ( $id === '' ) {
+                $id = sanitize_key( sanitize_title( $label ) );
+            }
+
+            if ( $id === '' ) {
+                $id = isset( $fallbacks[ $index ] ) ? $fallbacks[ $index ] : 'cat' . ( $index + 1 );
+            }
+
+            $base_id = $id;
+            $suffix  = 2;
+            while ( in_array( $id, $used_ids, true ) ) {
+                $id = $base_id . '-' . $suffix;
+                ++$suffix;
+            }
+
+            if ( $original_id !== '' && $original_id !== $id ) {
+                $legacy_ids[] = $original_id;
+            }
+
+            if ( empty( $legacy_ids ) && isset( $fallbacks[ $index ] ) ) {
+                $legacy_ids[] = $fallbacks[ $index ];
+            }
+
+            $legacy_ids       = array_values( array_unique( array_filter( $legacy_ids ) ) );
+            $legacy_meta_keys = array();
+
+            foreach ( $legacy_ids as $legacy_id ) {
+                $legacy_meta_keys[] = '_note_' . $legacy_id;
+            }
+
+            $prepared[] = array(
+                'id'               => $id,
+                'label'            => $label,
+                'legacy_ids'       => $legacy_ids,
+                'meta_key'         => '_note_' . $id,
+                'legacy_meta_keys' => array_values( array_unique( $legacy_meta_keys ) ),
+            );
+
+            $used_ids[] = $id;
+        }
+
+        return $prepared;
+    }
+
+    public static function get_rating_category_definitions() {
+        if ( is_array( self::$category_definition_cache ) ) {
+            return self::$category_definition_cache;
+        }
+
+        $options        = self::get_plugin_options();
+        $raw_categories = array();
+
+        if ( isset( $options['rating_categories'] ) && is_array( $options['rating_categories'] ) ) {
+            $raw_categories = $options['rating_categories'];
+        }
+
+        if ( empty( $raw_categories ) ) {
+            $raw_categories = self::get_default_category_definitions();
+        }
+
+        $prepared = self::prepare_category_definitions( $raw_categories );
+
+        if ( empty( $prepared ) ) {
+            $prepared = self::prepare_category_definitions( self::get_default_category_definitions() );
+        }
+
+        self::$category_definition_cache = $prepared;
+
+        return self::$category_definition_cache;
+    }
+
+    public static function get_rating_categories() {
+        $categories = array();
+
+        foreach ( self::get_rating_category_definitions() as $definition ) {
+            $categories[ $definition['id'] ] = $definition['label'];
+        }
+
+        return $categories;
+    }
+
+    public static function resolve_category_meta_value( $post_id, array $definition, $as_float = true ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return $as_float ? null : '';
+        }
+
+        $meta_key = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+        if ( $meta_key === '' ) {
+            return $as_float ? null : '';
+        }
+
+        $raw_value = get_post_meta( $post_id, $meta_key, true );
+        $numeric   = self::normalize_score_candidate( $raw_value );
+
+        if ( $numeric !== null ) {
+            return $as_float ? $numeric : $raw_value;
+        }
+
+        if ( isset( $definition['legacy_meta_keys'] ) && is_array( $definition['legacy_meta_keys'] ) ) {
+            foreach ( $definition['legacy_meta_keys'] as $legacy_meta_key ) {
+                $legacy_value  = get_post_meta( $post_id, $legacy_meta_key, true );
+                $legacy_number = self::normalize_score_candidate( $legacy_value );
+
+                if ( $legacy_number !== null ) {
+                    return $as_float ? $legacy_number : $legacy_value;
+                }
+            }
+        }
+
+        return $as_float ? null : '';
+    }
+
+    public static function get_post_category_scores( $post_id ) {
+        $scores = array();
+
+        foreach ( self::get_rating_category_definitions() as $definition ) {
+            $numeric = self::resolve_category_meta_value( $post_id, $definition, true );
+
+            if ( $numeric !== null ) {
+                $scores[ $definition['id'] ] = round( (float) $numeric, 1 );
+            }
+        }
+
+        return $scores;
+    }
+
+    public static function get_category_scores_for_display( $post_id ) {
+        $scores      = self::get_post_category_scores( $post_id );
+        $definitions = self::get_rating_category_definitions();
+        $display     = array();
+
+        foreach ( $definitions as $definition ) {
+            $category_id = $definition['id'];
+
+            if ( ! array_key_exists( $category_id, $scores ) ) {
+                continue;
+            }
+
+            $display[] = array(
+                'id'       => $category_id,
+                'label'    => $definition['label'],
+                'score'    => $scores[ $category_id ],
+                'meta_key' => $definition['meta_key'],
+            );
+        }
+
+        return $display;
+    }
+
+    private static function normalize_score_candidate( $value ) {
+        if ( is_array( $value ) ) {
+            return null;
+        }
+
+        if ( is_string( $value ) ) {
+            $value = trim( $value );
+        }
+
+        if ( $value === '' || $value === null ) {
+            return null;
+        }
+
+        if ( is_string( $value ) && strpos( $value, ',' ) !== false && strpos( $value, '.' ) === false ) {
+            $value = str_replace( ',', '.', $value );
+        }
+
+        if ( is_numeric( $value ) ) {
+            return (float) $value;
+        }
+
+        return null;
     }
 
     public static function get_default_settings() {
@@ -185,13 +449,8 @@ class Helpers {
             'game_explorer_filters'        => 'letter,category,platform,availability',
             'game_explorer_score_position' => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
-            // Libellés
-            'label_cat1'                   => 'Gameplay',
-            'label_cat2'                   => 'Graphismes',
-            'label_cat3'                   => 'Bande-son',
-            'label_cat4'                   => 'Durée de vie',
-            'label_cat5'                   => 'Scénario',
-            'label_cat6'                   => 'Originalité',
+            // Libellés & catégories de notation
+            'rating_categories'            => self::get_default_category_definitions(),
 
             // Options techniques et diverses
             'custom_css'                   => '',
@@ -219,6 +478,146 @@ class Helpers {
         self::$options_cache['game_explorer_score_position'] = self::normalize_game_explorer_score_position( $score_position );
 
         return self::$options_cache;
+    }
+
+    public static function migrate_legacy_rating_configuration() {
+        $options = get_option( self::$option_name );
+
+        if ( empty( $options ) || ! is_array( $options ) ) {
+            return;
+        }
+
+        $has_rating_categories = ! empty( $options['rating_categories'] ) && is_array( $options['rating_categories'] );
+
+        $legacy_labels = array();
+        foreach ( self::LEGACY_CATEGORY_SUFFIXES as $legacy_suffix ) {
+            $option_key = 'label_' . $legacy_suffix;
+            if ( isset( $options[ $option_key ] ) && $options[ $option_key ] !== '' ) {
+                $legacy_labels[ $legacy_suffix ] = (string) $options[ $option_key ];
+            }
+        }
+
+        if ( $has_rating_categories ) {
+            $options['rating_categories'] = self::prepare_category_definitions( $options['rating_categories'] );
+
+            foreach ( self::LEGACY_CATEGORY_SUFFIXES as $legacy_suffix ) {
+                unset( $options[ 'label_' . $legacy_suffix ] );
+            }
+
+            update_option( self::$option_name, $options );
+            self::flush_plugin_options_cache();
+
+            return;
+        }
+
+        if ( empty( $legacy_labels ) ) {
+            return;
+        }
+
+        $default_definitions  = self::get_default_category_definitions();
+        $category_definitions = array();
+        $used_ids             = array();
+
+        foreach ( self::LEGACY_CATEGORY_SUFFIXES as $index => $legacy_suffix ) {
+            $label_option = isset( $legacy_labels[ $legacy_suffix ] ) ? $legacy_labels[ $legacy_suffix ] : '';
+            $label        = is_string( $label_option ) ? trim( $label_option ) : '';
+
+            if ( $label === '' ) {
+                $label = $default_definitions[ $index ]['label'] ?? sprintf( __( 'Catégorie %d', 'notation-jlg' ), $index + 1 );
+            }
+
+            $id = sanitize_key( sanitize_title( $label ) );
+
+            if ( $id === '' && isset( $default_definitions[ $index ]['id'] ) ) {
+                $id = sanitize_key( $default_definitions[ $index ]['id'] );
+            }
+
+            if ( $id === '' ) {
+                $id = $legacy_suffix;
+            }
+
+            $base_id = $id;
+            $suffix  = 2;
+            while ( in_array( $id, $used_ids, true ) ) {
+                $id = $base_id . '-' . $suffix;
+                ++$suffix;
+            }
+
+            $used_ids[] = $id;
+
+            $category_definitions[] = array(
+                'id'         => $id,
+                'label'      => $label,
+                'legacy_ids' => array( $legacy_suffix ),
+            );
+        }
+
+        if ( empty( $category_definitions ) ) {
+            return;
+        }
+
+        $options['rating_categories'] = $category_definitions;
+
+        foreach ( self::LEGACY_CATEGORY_SUFFIXES as $legacy_suffix ) {
+            unset( $options[ 'label_' . $legacy_suffix ] );
+        }
+
+        update_option( self::$option_name, $options );
+        self::flush_plugin_options_cache();
+
+        global $wpdb;
+
+        if ( ! isset( $wpdb->postmeta ) ) {
+            return;
+        }
+
+        $postmeta_table = $wpdb->postmeta;
+
+        foreach ( $category_definitions as $definition ) {
+            $new_meta_key = '_note_' . $definition['id'];
+
+            foreach ( $definition['legacy_ids'] as $legacy_suffix ) {
+                $legacy_meta_key = '_note_' . $legacy_suffix;
+
+                if ( $legacy_meta_key === $new_meta_key ) {
+                    continue;
+                }
+
+                // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Table names are sourced from $wpdb.
+                $rows = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT post_id, meta_value FROM {$postmeta_table} WHERE meta_key = %s",
+                        $legacy_meta_key
+                    ),
+                    ARRAY_A
+                );
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
+
+                if ( empty( $rows ) ) {
+                    continue;
+                }
+
+                foreach ( $rows as $row ) {
+                    $post_id = isset( $row['post_id'] ) ? (int) $row['post_id'] : 0;
+
+                    if ( $post_id <= 0 ) {
+                        continue;
+                    }
+
+                    $value = isset( $row['meta_value'] ) ? $row['meta_value'] : '';
+
+                    if ( $value === '' || $value === null ) {
+                        continue;
+                    }
+
+                    $existing_value = get_post_meta( $post_id, $new_meta_key, true );
+
+                    if ( $existing_value === '' || $existing_value === null ) {
+                        update_post_meta( $post_id, $new_meta_key, $value );
+                    }
+                }
+            }
+        }
     }
 
     public static function get_game_explorer_score_positions() {
@@ -261,7 +660,9 @@ class Helpers {
     }
 
     public static function flush_plugin_options_cache() {
-        self::$options_cache = null;
+        self::$options_cache             = null;
+        self::$category_definition_cache = null;
+        self::$rating_meta_keys_cache    = null;
     }
 
     /**
@@ -331,18 +732,20 @@ class Helpers {
     }
 
     public static function get_average_score_for_post( $post_id ) {
-        $total_score = 0;
-        $count       = 0;
+        $scores = self::get_post_category_scores( $post_id );
 
-        foreach ( self::$category_keys as $key ) {
-            $score = get_post_meta( $post_id, '_note_' . $key, true );
-            if ( $score !== '' && is_numeric( $score ) ) {
-                $total_score += floatval( $score );
-                ++$count;
-            }
+        if ( empty( $scores ) ) {
+            return null;
         }
 
-        return ( $count > 0 ) ? round( $total_score / $count, 1 ) : null;
+        $total_score = array_sum( $scores );
+        $count       = count( $scores );
+
+        if ( $count === 0 ) {
+            return null;
+        }
+
+        return round( $total_score / $count, 1 );
     }
 
     /**
@@ -409,18 +812,6 @@ class Helpers {
         self::queue_average_score_rebuild( $post_id );
     }
 
-    public static function get_rating_categories() {
-        $options    = self::get_plugin_options();
-        $categories = array();
-
-        foreach ( self::$category_keys as $key ) {
-            $label_key          = 'label_' . $key;
-            $categories[ $key ] = ! empty( $options[ $label_key ] ) ? $options[ $label_key ] : 'Catégorie';
-        }
-
-        return $categories;
-    }
-
     public static function get_rated_post_ids() {
         $transient_key   = 'jlg_rated_post_ids_v1';
         $cached_post_ids = get_transient( $transient_key );
@@ -450,12 +841,20 @@ class Helpers {
 
         global $wpdb;
 
-        $meta_keys = array_map(
-            static function ( $key ) {
-				return '_note_' . $key;
-			},
-            self::$category_keys
-        );
+        $meta_keys = self::get_rating_meta_keys();
+
+        if ( empty( $meta_keys ) ) {
+            $meta_keys = array();
+            foreach ( self::get_rating_category_definitions() as $definition ) {
+                if ( ! empty( $definition['meta_key'] ) ) {
+                    $meta_keys[] = $definition['meta_key'];
+                }
+            }
+        }
+
+        if ( empty( $meta_keys ) ) {
+            return array();
+        }
 
         $post_types = self::get_allowed_post_types();
 
