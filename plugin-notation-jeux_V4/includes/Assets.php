@@ -30,21 +30,39 @@ class Assets {
     }
 
     public function enqueue_admin_assets( $hook_suffix ) {
-        if ( $hook_suffix !== 'toplevel_page_notation_jlg_settings' ) {
+        $plugin_pages = array(
+            'toplevel_page_notation_jlg_settings',
+            'notation-jlg_page_notation_jlg_settings',
+        );
+
+        if ( ! in_array( $hook_suffix, $plugin_pages, true ) ) {
             return;
         }
 
+        $version = defined( 'JLG_NOTATION_VERSION' ) ? JLG_NOTATION_VERSION : false;
+
+        wp_enqueue_style( 'wp-color-picker' );
+        wp_enqueue_script( 'wp-color-picker' );
+
+        wp_enqueue_script(
+            'jlg-admin-color-picker',
+            JLG_NOTATION_PLUGIN_URL . 'assets/js/admin-color-picker.js',
+            array( 'wp-color-picker' ),
+            $version,
+            true
+        );
+
         $active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'reglages';
+
         if ( $active_tab !== 'plateformes' ) {
             return;
         }
 
         wp_enqueue_script( 'jquery-ui-sortable' );
 
-        $handle  = 'jlg-platforms-order';
-        $src     = JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-platforms-order.js';
-        $deps    = array( 'jquery', 'jquery-ui-sortable' );
-        $version = defined( 'JLG_NOTATION_VERSION' ) ? JLG_NOTATION_VERSION : false;
+        $handle = 'jlg-platforms-order';
+        $src    = JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-platforms-order.js';
+        $deps   = array( 'jquery', 'jquery-ui-sortable' );
 
         wp_register_script( $handle, $src, $deps, $version, true );
 

@@ -352,9 +352,10 @@ class Settings {
             'notation_jlg_page',
             'jlg_layout',
             array(
-				'id'   => 'circle_border_color',
-				'type' => 'color',
-			)
+                'id'   => 'circle_border_color',
+                'type' => 'color',
+                'desc' => 'Cliquez pour ouvrir le sélecteur ou saisissez un code hexadécimal personnalisé.',
+            )
         );
 
         // Section 3: Couleurs & Thèmes
@@ -744,9 +745,11 @@ class Settings {
             'notation_jlg_page',
             'jlg_table',
             array(
-				'id'   => 'table_row_bg_color',
-				'type' => 'color',
-			)
+                'id'                => 'table_row_bg_color',
+                'type'              => 'color',
+                'allow_transparent' => true,
+                'desc'              => 'Le sélecteur accepte aussi "transparent" pour conserver la valeur par défaut.',
+            )
         );
         add_settings_field(
             'table_row_text_color',
@@ -777,9 +780,11 @@ class Settings {
             'notation_jlg_page',
             'jlg_table',
             array(
-				'id'   => 'table_zebra_bg_color',
-				'type' => 'color',
-			)
+                'id'                => 'table_zebra_bg_color',
+                'type'              => 'color',
+                'allow_transparent' => true,
+                'desc'              => 'Utilisez le sélecteur ou saisissez "transparent" pour désactiver la couleur alternée.',
+            )
         );
         add_settings_field(
             'table_border_style',
@@ -1066,12 +1071,36 @@ class Settings {
                     checked( 1, $options[ $args['id'] ] ?? 0, false )
                 );
             } elseif ( $type === 'color' ) {
+                $defaults          = Helpers::get_default_settings();
+                $field_id          = $args['id'];
+                $allow_transparent = ! empty( $args['allow_transparent'] );
+                $default_value     = $defaults[ $field_id ] ?? '#000000';
+                $current_value     = $options[ $field_id ] ?? $default_value;
+                $current_value     = is_string( $current_value ) ? $current_value : ( is_string( $default_value ) ? $default_value : '' );
+                $classes           = array( 'wp-color-picker', 'jlg-color-picker' );
+                $data_attributes   = array();
+
+                if ( $allow_transparent ) {
+                    $classes[] = 'jlg-color-picker--allow-transparent';
+                    $data_attributes['data-allow-transparent'] = 'true';
+                }
+
+                $default_attr_value                  = is_string( $default_value ) ? $default_value : '';
+                $data_attributes['data-default-color'] = $default_attr_value;
+
+                $attributes = '';
+                foreach ( $data_attributes as $attribute => $value ) {
+                    $attributes .= sprintf( ' %s="%s"', esc_attr( $attribute ), esc_attr( $value ) );
+                }
+
                 printf(
-                    '<input type="color" name="%s[%s]" id="%s" value="%s" />',
+                    '<input type="text" class="%s" name="%s[%s]" id="%s" value="%s"%s />',
+                    esc_attr( implode( ' ', $classes ) ),
                     esc_attr( $this->option_name ),
-                    esc_attr( $args['id'] ),
-                    esc_attr( $args['id'] ),
-                    esc_attr( $options[ $args['id'] ] ?? '#000000' )
+                    esc_attr( $field_id ),
+                    esc_attr( $field_id ),
+                    esc_attr( $current_value ),
+                    $attributes
                 );
             } else {
                 // Type text par défaut

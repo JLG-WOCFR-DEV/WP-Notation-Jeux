@@ -30,12 +30,37 @@ class FormRenderer {
     }
 
     public static function color_field( $args ) {
-        $options = Helpers::get_plugin_options();
+        $options           = Helpers::get_plugin_options();
+        $defaults          = Helpers::get_default_settings();
+        $field_id          = $args['id'];
+        $allow_transparent = ! empty( $args['allow_transparent'] );
+        $default_value     = $defaults[ $field_id ] ?? '#000000';
+        $current_value     = $options[ $field_id ] ?? $default_value;
+        $current_value     = is_string( $current_value ) ? $current_value : ( is_string( $default_value ) ? $default_value : '' );
+        $data_attributes   = array();
+
+        $classes = array( 'wp-color-picker', 'jlg-color-picker' );
+        if ( $allow_transparent ) {
+            $classes[] = 'jlg-color-picker--allow-transparent';
+            $data_attributes['data-allow-transparent'] = 'true';
+        }
+
+        $default_attr_value                  = is_string( $default_value ) ? $default_value : '';
+        $data_attributes['data-default-color'] = $default_attr_value;
+
+        $attributes = '';
+        foreach ( $data_attributes as $attribute => $value ) {
+            $attributes .= sprintf( ' %s="%s"', esc_attr( $attribute ), esc_attr( $value ) );
+        }
+
         printf(
-            '<input type="color" name="%s[%s]" value="%s" />',
+            '<input type="text" class="%s" name="%s[%s]" id="%s" value="%s"%s />',
+            esc_attr( implode( ' ', $classes ) ),
             esc_attr( self::$option_name ),
-            esc_attr( $args['id'] ),
-            esc_attr( $options[ $args['id'] ] ?? '#000000' )
+            esc_attr( $field_id ),
+            esc_attr( $field_id ),
+            esc_attr( $current_value ),
+            $attributes
         );
         self::render_description( $args );
     }

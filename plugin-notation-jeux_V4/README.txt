@@ -27,6 +27,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **API RAWG** : Remplissage automatique des informations de jeu
 * **SEO optimisé** : Support schema.org pour les rich snippets Google
 * **Thèmes visuels** : Mode clair et sombre avec personnalisation complète
+* **Sélecteur de couleurs enrichi** : Profitez du color picker WordPress avec saisie libre (y compris `transparent` lorsque pris en charge)
 * **Accessibilité renforcée** : Les animations respectent la préférence système "réduire les mouvements"
 * **Gestion dynamique des plateformes** : Ajoutez, triez et réinitialisez vos plateformes depuis l'onglet Plateformes
 * **Responsive** : Parfaitement adapté mobile et tablette
@@ -113,7 +114,7 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 Pour valider que des options malicieuses ne génèrent pas de CSS invalide :
 
 1. Dans l'administration WordPress, ouvrez **Notation – JLG > Réglages**.
-2. Dans la section *Tableau Récapitulatif*, saisissez `transparent` dans **Fond des lignes** et `#123456; background:red;` dans **Gradient 1**.
+2. Dans la section *Tableau Récapitulatif*, utilisez le nouveau sélecteur pour saisir `transparent` dans **Fond des lignes** (le champ accepte la saisie directe) et `#123456; background:red;` dans **Gradient 1**.
 3. Enregistrez les réglages puis affichez un article utilisant les shortcodes du plugin.
 4. Dans le code source de la page, repérez le bloc `<style id="jlg-frontend-inline-css">` :
    * Vérifiez que `--jlg-table-row-bg-color` reste à `transparent` sans aucune règle supplémentaire.
