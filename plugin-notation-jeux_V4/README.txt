@@ -28,7 +28,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **SEO optimisé** : Support schema.org pour les rich snippets Google
 * **Thèmes visuels** : Mode clair et sombre avec personnalisation complète
 * **Sélecteur de couleurs enrichi** : Profitez du color picker WordPress avec saisie libre (y compris `transparent` lorsque pris en charge)
-* **Accessibilité renforcée** : Les animations respectent la préférence système "réduire les mouvements"
+* **Accessibilité renforcée** : Les animations respectent la préférence système "réduire les mouvements" et la navigation du Game Explorer annonce désormais la page active (aria-current) tout en proposant des repères de focus visibles, y compris sur mobile
 * **Gestion dynamique des plateformes** : Ajoutez, triez et réinitialisez vos plateformes depuis l'onglet Plateformes
 * **Responsive** : Parfaitement adapté mobile et tablette
 

@@ -99,6 +99,17 @@
     cursor: not-allowed;
 }
 
+.jlg-ge-letter-nav button:focus-visible,
+.jlg-ge-pagination button:focus-visible,
+.jlg-ge-reset:focus-visible {
+    background: var(--jlg-ge-accent);
+    border-color: var(--jlg-ge-accent);
+    color: #0f172a;
+    outline: 3px solid rgba(96, 165, 250, 0.85);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.65);
+}
+
 .jlg-ge-count {
     font-size: 0.9rem;
     color: var(--jlg-ge-text-muted);
@@ -272,6 +283,13 @@
 .jlg-ge-card__title a {
     color: var(--jlg-ge-text);
     text-decoration: none;
+}
+
+.jlg-ge-card__media:focus-visible,
+.jlg-ge-card__title a:focus-visible {
+    outline: 3px solid rgba(96, 165, 250, 0.85);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.6);
 }
 
 .jlg-ge-card__title a:hover {
