@@ -28,7 +28,7 @@ if (!function_exists('wp_strtoupper')) {
     }
 }
 
-require_once dirname(__DIR__, 2) . '/includes/shortcodes/class-jlg-shortcode-game-explorer.php';
+require_once dirname(__DIR__, 2) . '/includes/Shortcodes/GameExplorer.php';
 
 class \JLG\Notation\Shortcodes\GameExplorer_Test extends \JLG\Notation\Shortcodes\GameExplorer {
     public static function normalize($value) {

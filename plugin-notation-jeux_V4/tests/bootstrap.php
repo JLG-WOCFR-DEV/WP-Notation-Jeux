@@ -1437,11 +1437,11 @@ if (!class_exists('WP_Widget')) {
     }
 }
 
-require_once __DIR__ . '/../includes/class-jlg-helpers.php';
-require_once __DIR__ . '/../includes/class-jlg-dynamic-css.php';
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-settings.php';
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-platforms.php';
-require_once __DIR__ . '/../includes/class-jlg-frontend.php';
-require_once __DIR__ . '/../includes/utils/class-jlg-validator.php';
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-ajax.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-summary-display.php';
+require_once __DIR__ . '/../includes/Helpers.php';
+require_once __DIR__ . '/../includes/DynamicCss.php';
+require_once __DIR__ . '/../includes/Admin/Settings.php';
+require_once __DIR__ . '/../includes/Admin/Platforms.php';
+require_once __DIR__ . '/../includes/Frontend.php';
+require_once __DIR__ . '/../includes/Utils/Validator.php';
+require_once __DIR__ . '/../includes/Admin/Ajax.php';
+require_once __DIR__ . '/../includes/Shortcodes/SummaryDisplay.php';

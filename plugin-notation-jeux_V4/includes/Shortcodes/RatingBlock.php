@@ -56,7 +56,14 @@ class RatingBlock {
 
         foreach ( $category_scores as $category_score ) {
             if ( isset( $category_score['id'], $category_score['score'] ) ) {
-                $score_map[ $category_score['id'] ] = (float) $category_score['score'];
+                $category_id = (string) $category_score['id'];
+
+                $score_map[ $category_id ] = array(
+                    'score'  => (float) $category_score['score'],
+                    'weight' => isset( $category_score['weight'] )
+                        ? Helpers::normalize_category_weight( $category_score['weight'], 1.0 )
+                        : 1.0,
+                );
             }
         }
 

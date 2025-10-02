@@ -2,8 +2,8 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-all-in-one.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-rating-block.php';
+require_once __DIR__ . '/../includes/Shortcodes/AllInOne.php';
+require_once __DIR__ . '/../includes/Shortcodes/RatingBlock.php';
 
 class ShortcodeVisibilityTest extends TestCase
 {

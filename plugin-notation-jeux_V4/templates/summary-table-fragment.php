@@ -375,12 +375,22 @@ else :
                                             $score_value  = null;
 
                                             if ( $category_id !== '' && isset( $category_score_map[ $category_id ] ) ) {
-                                                $score_value = (float) $category_score_map[ $category_id ];
+                                                $stored_entry = $category_score_map[ $category_id ];
+
+                                                if ( is_array( $stored_entry ) && isset( $stored_entry['score'] ) ) {
+                                                    $score_value = (float) $stored_entry['score'];
+                                                }
                                             } elseif ( $category_id !== '' ) {
                                                 $resolved = \JLG\Notation\Helpers::resolve_category_meta_value( $post_id, $definition, true );
                                                 if ( $resolved !== null ) {
-                                                    $score_value                      = (float) $resolved;
-                                                    $category_score_map[ $category_id ] = $score_value;
+                                                    $score_value = (float) $resolved;
+                                                    $category_score_map[ $category_id ] = array(
+                                                        'score'  => $score_value,
+                                                        'weight' => \JLG\Notation\Helpers::normalize_category_weight(
+                                                            $definition['weight'] ?? 1.0,
+                                                            1.0
+                                                        ),
+                                                    );
                                                 }
                                             }
 
