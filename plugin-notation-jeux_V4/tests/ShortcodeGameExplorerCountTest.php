@@ -55,7 +55,7 @@ class ShortcodeGameExplorerCountTest extends TestCase
 
     private function renderTemplateWithTotal(int $total): string
     {
-        return JLG_Frontend::get_template_html('shortcode-game-explorer', [
+        return \JLG\Notation\Frontend::get_template_html('shortcode-game-explorer', [
             'total_items' => $total,
             'atts' => [
                 'posts_per_page' => 12,

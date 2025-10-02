@@ -72,7 +72,7 @@ class ShortcodeGameExplorerScoreDisplayTest extends TestCase
             $overrides
         );
 
-        return JLG_Frontend::get_template_html('shortcode-game-explorer', [
+        return \JLG\Notation\Frontend::get_template_html('shortcode-game-explorer', [
             'atts' => [
                 'id' => 'test-explorer',
                 'posts_per_page' => 12,

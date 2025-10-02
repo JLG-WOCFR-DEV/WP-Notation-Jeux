@@ -15,7 +15,7 @@ class ShortcodeGameExplorerAvailabilityTest extends TestCase
             $timezone = wp_timezone();
             $release_iso = (new DateTimeImmutable('now', $timezone))->format('Y-m-d');
 
-            $method = new ReflectionMethod(JLG_Shortcode_Game_Explorer::class, 'determine_availability');
+            $method = new ReflectionMethod(\JLG\Notation\Shortcodes\GameExplorer::class, 'determine_availability');
             $method->setAccessible(true);
 
             $availability = $method->invoke(null, $release_iso);

@@ -1,9 +1,16 @@
 <?php
+
+namespace JLG\Notation\Shortcodes;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+use WP_Post;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Shortcode_Rating_Block {
+class RatingBlock {
 
     public function __construct() {
         add_shortcode( 'bloc_notation_jeu', array( $this, 'render' ) );
@@ -25,7 +32,7 @@ class JLG_Shortcode_Rating_Block {
         }
 
         $post          = get_post( $post_id );
-        $allowed_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_types = Helpers::get_allowed_post_types();
 
         if ( ! $post instanceof WP_Post || ! in_array( $post->post_type ?? '', $allowed_types, true ) ) {
             return '';
@@ -36,12 +43,12 @@ class JLG_Shortcode_Rating_Block {
         }
 
         // Sécurité : ne s'exécute que si des notes existent
-        $average_score = JLG_Helpers::get_average_score_for_post( $post_id );
+        $average_score = Helpers::get_average_score_for_post( $post_id );
         if ( $average_score === null ) {
             return '';
         }
 
-        $categories = JLG_Helpers::get_rating_categories();
+        $categories = Helpers::get_rating_categories();
         $scores     = array();
 
         foreach ( array_keys( $categories ) as $key ) {
@@ -51,12 +58,12 @@ class JLG_Shortcode_Rating_Block {
             }
         }
 
-        JLG_Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
+        Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
-        return JLG_Frontend::get_template_html(
+        return Frontend::get_template_html(
             'shortcode-rating-block',
             array(
-				'options'       => JLG_Helpers::get_plugin_options(),
+				'options'       => Helpers::get_plugin_options(),
 				'average_score' => $average_score,
 				'scores'        => $scores,
 				'categories'    => $categories,

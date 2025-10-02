@@ -14,7 +14,7 @@ if ( $latest_reviews->have_posts() ) {
     while ( $latest_reviews->have_posts() ) {
         $latest_reviews->the_post();
         $post_id    = get_the_ID();
-        $game_title = JLG_Helpers::get_game_title( $post_id );
+        $game_title = \JLG\Notation\Helpers::get_game_title( $post_id );
         echo '<li><a href="' . esc_url( get_permalink() ) . '">' . esc_html( $game_title ) . '</a></li>';
     }
     echo '</ul>';

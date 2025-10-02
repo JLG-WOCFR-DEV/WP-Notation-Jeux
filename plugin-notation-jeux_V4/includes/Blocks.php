@@ -1,9 +1,15 @@
 <?php
+
+namespace JLG\Notation;
+
+use JLG\Notation\Helpers;
+use JLG\Notation\Frontend;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class JLG_Blocks {
+class Blocks {
     /**
      * Handle used for the shared utilities script.
      *
@@ -178,11 +184,11 @@ class JLG_Blocks {
     }
 
     private function get_allowed_post_types_for_editor() {
-        if ( ! class_exists( 'JLG_Helpers' ) ) {
+        if ( ! class_exists( Helpers::class ) ) {
             return array();
         }
 
-        $types = JLG_Helpers::get_allowed_post_types();
+        $types = Helpers::get_allowed_post_types();
         if ( ! is_array( $types ) ) {
             $types = array();
         }
@@ -244,8 +250,8 @@ class JLG_Blocks {
             return '';
         }
 
-        if ( class_exists( 'JLG_Frontend' ) ) {
-            JLG_Frontend::mark_shortcode_rendered( $shortcode );
+        if ( class_exists( Frontend::class ) ) {
+            Frontend::mark_shortcode_rendered( $shortcode );
         }
 
         $attributes_string = '';
@@ -422,7 +428,7 @@ class JLG_Blocks {
         }
 
         if ( ! empty( $attributes['scorePosition'] ) && is_string( $attributes['scorePosition'] ) ) {
-            $atts['score_position'] = JLG_Helpers::normalize_game_explorer_score_position( $attributes['scorePosition'] );
+            $atts['score_position'] = Helpers::normalize_game_explorer_score_position( $attributes['scorePosition'] );
         }
 
         if ( ! empty( $attributes['filters'] ) && is_array( $attributes['filters'] ) ) {

@@ -6,11 +6,16 @@
  * @version 5.0
  */
 
+namespace JLG\Notation\Admin;
+
+use JLG\Notation\Helpers;
+use JLG\Notation\Utils\TemplateLoader;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Admin_Menu {
+class Menu {
     private $page_slug = 'notation_jlg_settings';
 
     public function __construct() {
@@ -43,7 +48,7 @@ class JLG_Admin_Menu {
         $tab_navigation = $this->get_tab_navigation_html( $tabs, $active_tab );
         $tab_content    = $this->get_tab_content( $active_tab );
 
-        JLG_Template_Loader::display_admin_template(
+        TemplateLoader::display_admin_template(
             'admin-page',
             array(
 				'page_title'     => __( '⭐ Notation JLG v5.0', 'notation-jlg' ),
@@ -64,7 +69,7 @@ class JLG_Admin_Menu {
     }
 
     private function get_tab_navigation_html( array $tabs, $active_tab ) {
-        return JLG_Template_Loader::get_admin_template(
+        return TemplateLoader::get_admin_template(
             'partials/tab-navigation',
             array(
 				'tabs'       => $tabs,
@@ -91,7 +96,7 @@ class JLG_Admin_Menu {
     }
 
     private function get_settings_tab_content() {
-        return JLG_Template_Loader::get_admin_template(
+        return TemplateLoader::get_admin_template(
             'tabs/settings',
             array(
 				'settings_page' => 'notation_jlg_page',
@@ -100,13 +105,13 @@ class JLG_Admin_Menu {
     }
 
     private function get_posts_list_tab_content() {
-        $rated_posts = array_values( array_unique( array_filter( array_map( 'intval', JLG_Helpers::get_rated_post_ids() ) ) ) );
+        $rated_posts = array_values( array_unique( array_filter( array_map( 'intval', Helpers::get_rated_post_ids() ) ) ) );
         $empty_state = array(
             'create_post_url' => admin_url( 'post-new.php' ),
         );
 
         if ( empty( $rated_posts ) ) {
-            return JLG_Template_Loader::get_admin_template(
+            return TemplateLoader::get_admin_template(
                 'tabs/posts-list',
                 array(
 					'has_rated_posts' => false,
@@ -121,7 +126,7 @@ class JLG_Admin_Menu {
         $order        = isset( $_GET['order'] ) && in_array( strtoupper( $_GET['order'] ), array( 'ASC', 'DESC' ), true ) ? strtoupper( $_GET['order'] ) : 'DESC';
 
         $args = array(
-            'post_type'      => JLG_Helpers::get_allowed_post_types(),
+            'post_type'      => Helpers::get_allowed_post_types(),
             'post__in'       => $rated_posts,
             'posts_per_page' => $per_page,
             'paged'          => $current_page,
@@ -140,7 +145,7 @@ class JLG_Admin_Menu {
             while ( $query->have_posts() ) {
                 $query->the_post();
                 $post_id     = get_the_ID();
-                $score_data  = JLG_Helpers::get_resolved_average_score( $post_id );
+                $score_data  = Helpers::get_resolved_average_score( $post_id );
                 $score_value = $score_data['value'];
 
                 $score_color = '#0073aa';
@@ -163,7 +168,7 @@ class JLG_Admin_Menu {
                 );
 
                 $posts[] = array(
-                    'title'         => JLG_Helpers::get_game_title( $post_id ),
+                    'title'         => Helpers::get_game_title( $post_id ),
                     'edit_link'     => get_edit_post_link( $post_id ),
                     'view_link'     => get_permalink( $post_id ),
                     'date'          => get_the_date( 'd/m/Y', $post_id ),
@@ -205,7 +210,7 @@ class JLG_Admin_Menu {
             $pagination = paginate_links( $pagination_args );
         }
 
-        return JLG_Template_Loader::get_admin_template(
+        return TemplateLoader::get_admin_template(
             'tabs/posts-list',
             array(
 				'has_rated_posts'    => true,
@@ -284,29 +289,18 @@ class JLG_Admin_Menu {
     }
 
     private function render_platforms_tab() {
-        // Utiliser l'instance singleton de la classe Platforms
-        if ( class_exists( 'JLG_Admin_Platforms' ) ) {
-            $platforms_manager = JLG_Admin_Platforms::get_instance();
-            $platforms_manager->render_platforms_page();
-        } else {
-            // Si la classe n'existe pas, essayer de la charger
-            $path = JLG_NOTATION_PLUGIN_DIR . 'includes/admin/class-jlg-admin-platforms.php';
-            if ( file_exists( $path ) ) {
-                require_once $path;
-                if ( class_exists( 'JLG_Admin_Platforms' ) ) {
-                    $platforms_manager = JLG_Admin_Platforms::get_instance();
-                    $platforms_manager->render_platforms_page();
-                } else {
-                    echo '<div class="notice notice-error"><p>' . esc_html__( 'La classe de gestion des plateformes n\'a pas pu être chargée.', 'notation-jlg' ) . '</p></div>';
-                }
-            } else {
-                echo '<div class="notice notice-error"><p>' . esc_html__( 'Fichier class-jlg-admin-platforms.php introuvable.', 'notation-jlg' ) . '</p></div>';
-            }
+        if ( ! class_exists( Platforms::class ) ) {
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'La classe de gestion des plateformes n\'a pas pu être chargée.', 'notation-jlg' ) . '</p></div>';
+
+            return;
         }
+
+        $platforms_manager = Platforms::get_instance();
+        $platforms_manager->render_platforms_page();
     }
 
     private function get_shortcodes_tab_content() {
-        return JLG_Template_Loader::get_admin_template( 'tabs/shortcodes' );
+        return TemplateLoader::get_admin_template( 'tabs/shortcodes' );
     }
 
     private function get_tutorials_tab_content() {
@@ -401,7 +395,7 @@ class JLG_Admin_Menu {
             ),
         );
 
-        return JLG_Template_Loader::get_admin_template(
+        return TemplateLoader::get_admin_template(
             'tabs/tutorials',
             array(
 				'tutorials'     => $tutorials,

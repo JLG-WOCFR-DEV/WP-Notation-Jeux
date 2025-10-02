@@ -1,9 +1,22 @@
 <?php
+
+namespace JLG\Notation;
+
+use JLG\Notation\Helpers;
+use JLG\Notation\Shortcodes\AllInOne;
+use JLG\Notation\Shortcodes\GameExplorer;
+use JLG\Notation\Shortcodes\GameInfo;
+use JLG\Notation\Shortcodes\ProsCons;
+use JLG\Notation\Shortcodes\RatingBlock;
+use JLG\Notation\Shortcodes\SummaryDisplay;
+use JLG\Notation\Shortcodes\Tagline;
+use JLG\Notation\Shortcodes\UserRating;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Frontend {
+class Frontend {
 
     private const USER_RATING_MAX_STORED_VOTES = 250;
     private const USER_RATING_RETENTION_DAYS   = 180;
@@ -84,38 +97,33 @@ class JLG_Frontend {
      */
     private function load_shortcodes() {
         $shortcodes = array(
-            'Rating_Block',
-            'Pros_Cons',
-            'Game_Info',
-            'User_Rating',
-            'Tagline',
-            'Summary_Display',
-            'All_In_One',  // NOUVEAU SHORTCODE AJOUTÉ ICI
-            'Game_Explorer',
+            RatingBlock::class,
+            ProsCons::class,
+            GameInfo::class,
+            UserRating::class,
+            Tagline::class,
+            SummaryDisplay::class,
+            AllInOne::class,
+            GameExplorer::class,
         );
 
         $errors = array();
 
-        foreach ( $shortcodes as $shortcode ) {
-            $class_name = 'JLG_Shortcode_' . $shortcode;
-            $file_path  = JLG_NOTATION_PLUGIN_DIR . 'includes/shortcodes/class-jlg-shortcode-' . strtolower( str_replace( '_', '-', $shortcode ) ) . '.php';
-
-            if ( file_exists( $file_path ) ) {
-                require_once $file_path;
-                if ( ! class_exists( $class_name ) ) {
-                    $errors[] = "Le fichier existe <code>{$file_path}</code>, mais la classe <code>{$class_name}</code> n'a pas été trouvée à l'intérieur.";
-                } else {
-                    new $class_name();
-                }
-            } else {
-                $errors[] = "Fichier de shortcode manquant : <code>{$file_path}</code>";
+        foreach ( $shortcodes as $class_name ) {
+            if ( class_exists( $class_name ) ) {
+                new $class_name();
+                continue;
             }
+
+            $errors[] = sprintf(
+                /* translators: %s: nom de classe de shortcode manquante */
+                esc_html__( 'Classe de shortcode introuvable : %s', 'notation-jlg' ),
+                esc_html( $class_name )
+            );
         }
 
-        // On vérifie les erreurs et on les affiche seulement pour les admins
         if ( ! empty( $errors ) ) {
             self::$shortcode_errors = $errors;
-            // On diffère la vérification des capacités utilisateur
             add_action( 'admin_notices', array( $this, 'display_shortcode_errors' ) );
         }
     }
@@ -266,7 +274,7 @@ class JLG_Frontend {
             '_jlg_user_rating_avg',
         );
 
-        foreach ( array_keys( JLG_Helpers::get_rating_categories() ) as $category_key ) {
+        foreach ( array_keys( Helpers::get_rating_categories() ) as $category_key ) {
             $meta_keys[] = '_note_' . $category_key;
         }
 
@@ -345,10 +353,10 @@ class JLG_Frontend {
         self::$assets_enqueued    = true;
         self::$shortcode_rendered = true;
 
-        $options       = JLG_Helpers::get_plugin_options();
-        $palette       = JLG_Helpers::get_color_palette();
+        $options       = Helpers::get_plugin_options();
+        $palette       = Helpers::get_color_palette();
         $post_id       = get_queried_object_id();
-        $average_score = JLG_Helpers::get_average_score_for_post( $post_id );
+        $average_score = Helpers::get_average_score_for_post( $post_id );
 
         // Feuille de styles principale
         wp_enqueue_style(
@@ -358,7 +366,7 @@ class JLG_Frontend {
             JLG_NOTATION_VERSION
         );
 
-        $inline_css = JLG_Dynamic_CSS::build_frontend_css( $options, $palette, $average_score );
+        $inline_css = DynamicCss::build_frontend_css( $options, $palette, $average_score );
 
         wp_add_inline_style( 'jlg-frontend', $inline_css );
 
@@ -626,7 +634,7 @@ class JLG_Frontend {
             wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
         }
 
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
 
         if ( empty( $options['user_rating_enabled'] ) ) {
             wp_send_json_error(
@@ -1090,14 +1098,14 @@ class JLG_Frontend {
             return false;
         }
 
-        $allowed_post_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_post_types = Helpers::get_allowed_post_types();
 
         if ( ! in_array( $post->post_type, $allowed_post_types, true ) ) {
             return false;
         }
 
         if ( ! is_array( $options ) ) {
-            $options = JLG_Helpers::get_plugin_options();
+            $options = Helpers::get_plugin_options();
         }
 
         if ( empty( $options['user_rating_enabled'] ) ) {
@@ -1120,11 +1128,11 @@ class JLG_Frontend {
             wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
         }
 
-        if ( ! class_exists( 'JLG_Shortcode_Summary_Display' ) ) {
+        if ( ! class_exists( SummaryDisplay::class ) ) {
             wp_send_json_error( array( 'message' => esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ) ), 500 );
         }
 
-        $default_atts           = JLG_Shortcode_Summary_Display::get_default_atts();
+        $default_atts           = SummaryDisplay::get_default_atts();
         $default_posts_per_page = isset( $default_atts['posts_per_page'] ) ? intval( $default_atts['posts_per_page'] ) : 12;
         if ( $default_posts_per_page < 1 ) {
             $default_posts_per_page = 1;
@@ -1172,7 +1180,7 @@ class JLG_Frontend {
 
         foreach ( $letter_keys as $key ) {
             if ( isset( $raw_request[ $key ] ) && ! is_array( $raw_request[ $key ] ) ) {
-                $atts['letter_filter'] = JLG_Shortcode_Summary_Display::normalize_letter_filter( $raw_request[ $key ] );
+                $atts['letter_filter'] = SummaryDisplay::normalize_letter_filter( $raw_request[ $key ] );
                 break;
             }
         }
@@ -1191,7 +1199,7 @@ class JLG_Frontend {
             $base_url = $this->sanitize_internal_url( wp_get_referer() );
         }
 
-        $context             = JLG_Shortcode_Summary_Display::get_render_context( $atts, $raw_request, false );
+        $context             = SummaryDisplay::get_render_context( $atts, $raw_request, false );
         $context['base_url'] = $base_url;
 
         $state = array(
@@ -1232,11 +1240,11 @@ class JLG_Frontend {
             wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
         }
 
-        if ( ! class_exists( 'JLG_Shortcode_Game_Explorer' ) ) {
+        if ( ! class_exists( GameExplorer::class ) ) {
             wp_send_json_error( array( 'message' => esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ) ), 500 );
         }
 
-        $default_atts = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $default_atts = GameExplorer::get_default_atts();
 
         $atts = array(
             'id'             => isset( $_POST['container_id'] ) ? sanitize_html_class( wp_unslash( $_POST['container_id'] ) ) : ( $default_atts['id'] ?? 'jlg-game-explorer-' . uniqid() ),
@@ -1244,7 +1252,7 @@ class JLG_Frontend {
             'columns'        => isset( $_POST['columns'] ) ? intval( wp_unslash( $_POST['columns'] ) ) : ( $default_atts['columns'] ?? 3 ),
             'filters'        => isset( $_POST['filters'] ) ? sanitize_text_field( wp_unslash( $_POST['filters'] ) ) : ( $default_atts['filters'] ?? '' ),
             'score_position' => isset( $_POST['score_position'] )
-                ? JLG_Helpers::normalize_game_explorer_score_position( wp_unslash( $_POST['score_position'] ) )
+                ? Helpers::normalize_game_explorer_score_position( wp_unslash( $_POST['score_position'] ) )
                 : ( $default_atts['score_position'] ?? '' ),
             'categorie'      => isset( $_POST['categorie'] ) ? sanitize_text_field( wp_unslash( $_POST['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
             'plateforme'     => isset( $_POST['plateforme'] ) ? sanitize_text_field( wp_unslash( $_POST['plateforme'] ) ) : ( $default_atts['plateforme'] ?? '' ),
@@ -1264,7 +1272,7 @@ class JLG_Frontend {
             $raw_request = array();
         }
 
-        $context = JLG_Shortcode_Game_Explorer::get_render_context( $atts, $raw_request );
+        $context = GameExplorer::get_render_context( $atts, $raw_request );
 
         $state = array(
             'orderby'      => $context['sort_key'] ?? 'date',
@@ -1406,10 +1414,10 @@ class JLG_Frontend {
      * Injecte le schema de notation pour le SEO
      */
     public function inject_review_schema() {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
 
         $allowed_post_types = array_filter(
-            JLG_Helpers::get_allowed_post_types(),
+            Helpers::get_allowed_post_types(),
             static function ( $post_type ) {
                 if ( ! is_string( $post_type ) || $post_type === '' ) {
                     return false;
@@ -1432,7 +1440,7 @@ class JLG_Frontend {
         }
 
         $post_id       = get_the_ID();
-        $score_data    = JLG_Helpers::get_resolved_average_score( $post_id );
+        $score_data    = Helpers::get_resolved_average_score( $post_id );
         $average_score = is_array( $score_data ) ? ( $score_data['value'] ?? null ) : null;
 
         if ( $average_score === null ) {
@@ -1454,7 +1462,7 @@ class JLG_Frontend {
         $schema = array(
             '@context' => 'https://schema.org',
             '@type'    => 'Game',
-            'name'     => JLG_Helpers::get_game_title( $post_id ),
+            'name'     => Helpers::get_game_title( $post_id ),
             'review'   => array(
                 '@type'         => 'Review',
                 'reviewRating'  => array(
@@ -1475,7 +1483,7 @@ class JLG_Frontend {
 
         $user_rating_enabled = isset( $options['user_rating_enabled'] )
             ? $options['user_rating_enabled']
-            : ( JLG_Helpers::get_default_settings()['user_rating_enabled'] ?? 0 );
+            : ( Helpers::get_default_settings()['user_rating_enabled'] ?? 0 );
 
         if ( ! empty( $user_rating_enabled ) && $user_rating_count > 0 ) {
             $aggregate_rating_value = (float) get_post_meta( $post_id, '_jlg_user_rating_avg', true );
@@ -1622,7 +1630,7 @@ class JLG_Frontend {
                 'total_items'          => 0,
                 'config_payload'       => array(),
                 'message'              => '',
-                'score_position'       => JLG_Helpers::normalize_game_explorer_score_position( '' ),
+                'score_position'       => Helpers::normalize_game_explorer_score_position( '' ),
             );
 
             // Fusionner les arguments fournis avec les valeurs par défaut.

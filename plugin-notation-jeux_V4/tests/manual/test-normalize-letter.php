@@ -30,7 +30,7 @@ if (!function_exists('wp_strtoupper')) {
 
 require_once dirname(__DIR__, 2) . '/includes/shortcodes/class-jlg-shortcode-game-explorer.php';
 
-class JLG_Shortcode_Game_Explorer_Test extends JLG_Shortcode_Game_Explorer {
+class \JLG\Notation\Shortcodes\GameExplorer_Test extends \JLG\Notation\Shortcodes\GameExplorer {
     public static function normalize($value) {
         return self::normalize_letter($value);
     }
@@ -45,5 +45,5 @@ $inputs = [
 ];
 
 foreach ($inputs as $input) {
-    echo json_encode(['input' => $input, 'normalized' => JLG_Shortcode_Game_Explorer_Test::normalize($input)], JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    echo json_encode(['input' => $input, 'normalized' => \JLG\Notation\Shortcodes\GameExplorer_Test::normalize($input)], JSON_UNESCAPED_UNICODE) . PHP_EOL;
 }

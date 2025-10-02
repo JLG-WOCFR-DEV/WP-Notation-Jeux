@@ -9,13 +9,13 @@ if ( ! $post_id ) {
 	return;
 }
 
-$average_score = JLG_Helpers::get_average_score_for_post( $post_id );
+$average_score = \JLG\Notation\Helpers::get_average_score_for_post( $post_id );
 if ( $average_score === null ) {
 	return;
 }
 
-$options     = JLG_Helpers::get_plugin_options();
-$score_color = JLG_Helpers::calculate_color_from_note( $average_score, $options );
+$options     = \JLG\Notation\Helpers::get_plugin_options();
+$score_color = \JLG\Notation\Helpers::calculate_color_from_note( $average_score, $options );
 ?>
 
 <div class="jlg-thumbnail-score" style="

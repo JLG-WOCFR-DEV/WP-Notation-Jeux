@@ -34,7 +34,7 @@ class ShortcodeVisibilityTest extends TestCase
         $this->registerSamplePost($post_id, 'draft');
         $this->deny_read_permissions();
 
-        $shortcode = new JLG_Shortcode_All_In_One();
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
         $output = $shortcode->render(['post_id' => $post_id]);
 
         $this->assertSame('', $output);
@@ -46,7 +46,7 @@ class ShortcodeVisibilityTest extends TestCase
         $this->registerSamplePost($post_id, 'private');
         $this->deny_read_permissions();
 
-        $shortcode = new JLG_Shortcode_Rating_Block();
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
         $output = $shortcode->render(['post_id' => $post_id]);
 
         $this->assertSame('', $output);

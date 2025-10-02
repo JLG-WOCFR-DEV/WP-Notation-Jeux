@@ -1,9 +1,16 @@
 <?php
+
+namespace JLG\Notation\Admin;
+
+use JLG\Notation\Admin\Platforms;
+use JLG\Notation\Helpers;
+use JLG\Notation\Utils\Validator;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Admin_Metaboxes {
+class Metaboxes {
     private $error_transient_key = '';
 
     public function __construct() {
@@ -13,8 +20,8 @@ class JLG_Admin_Metaboxes {
     }
 
     private function get_allowed_post_types() {
-        if ( class_exists( 'JLG_Helpers' ) && method_exists( 'JLG_Helpers', 'get_allowed_post_types' ) ) {
-            $post_types = JLG_Helpers::get_allowed_post_types();
+        if ( class_exists( Helpers::class ) && method_exists( Helpers::class, 'get_allowed_post_types' ) ) {
+            $post_types = Helpers::get_allowed_post_types();
 
             if ( is_array( $post_types ) ) {
                 $post_types = array_values(
@@ -111,9 +118,9 @@ class JLG_Admin_Metaboxes {
         );
 
         // Si la classe Helpers existe, on l'utilise
-        if ( class_exists( 'JLG_Helpers' ) ) {
-            $categories    = JLG_Helpers::get_rating_categories();
-            $average_score = JLG_Helpers::get_average_score_for_post( $post->ID );
+        if ( class_exists( Helpers::class ) ) {
+            $categories    = Helpers::get_rating_categories();
+            $average_score = Helpers::get_average_score_for_post( $post->ID );
         } else {
             $average_score = null;
         }
@@ -201,7 +208,7 @@ class JLG_Admin_Metaboxes {
         echo '<div style="margin-bottom:20px;">';
         echo '<p><strong>' . esc_html__( 'Plateformes :', 'notation-jlg' ) . '</strong></p>';
 
-        // Récupérer les plateformes depuis la classe JLG_Admin_Platforms
+        // Récupérer les plateformes depuis la classe Platforms
         $platforms_list = array(
             'PC'              => __( 'PC', 'notation-jlg' ),
             'PlayStation 5'   => __( 'PlayStation 5', 'notation-jlg' ),
@@ -211,8 +218,8 @@ class JLG_Admin_Metaboxes {
             'Xbox One'        => __( 'Xbox One', 'notation-jlg' ),
         );
 
-        if ( class_exists( 'JLG_Admin_Platforms' ) ) {
-            $platforms_manager = JLG_Admin_Platforms::get_instance();
+        if ( class_exists( Platforms::class ) ) {
+            $platforms_manager = Platforms::get_instance();
             $all_platforms     = $platforms_manager->get_platform_names();
             if ( ! empty( $all_platforms ) ) {
                 $platforms_list = array_values( $all_platforms );
@@ -305,8 +312,8 @@ class JLG_Admin_Metaboxes {
             }
 
             // Recalculer la moyenne si la classe Helpers existe
-            if ( class_exists( 'JLG_Helpers' ) ) {
-                $average = JLG_Helpers::get_average_score_for_post( $post_id );
+            if ( class_exists( Helpers::class ) ) {
+                $average = Helpers::get_average_score_for_post( $post_id );
                 if ( $average !== null ) {
                     update_post_meta( $post_id, '_jlg_average_score', $average );
                 } else {
@@ -314,7 +321,7 @@ class JLG_Admin_Metaboxes {
                 }
 
                 if ( $scores_changed ) {
-                    JLG_Helpers::clear_rated_post_ids_cache();
+                    Helpers::clear_rated_post_ids_cache();
                 }
             }
         }
@@ -350,7 +357,7 @@ class JLG_Admin_Metaboxes {
                     }
 
                     if ( $field === 'date_sortie' ) {
-                        $sanitized_date = JLG_Validator::sanitize_date( $value );
+                        $sanitized_date = Validator::sanitize_date( $value );
                         if ( $sanitized_date === null ) {
                             delete_post_meta( $post_id, '_jlg_' . $field );
                             $validation_errors[] = sprintf(
@@ -366,7 +373,7 @@ class JLG_Admin_Metaboxes {
                     }
 
                     if ( $field === 'pegi' ) {
-                        if ( ! JLG_Validator::validate_pegi( $value, false ) ) {
+                        if ( ! Validator::validate_pegi( $value, false ) ) {
                             delete_post_meta( $post_id, '_jlg_' . $field );
                             $validation_errors[] = sprintf(
                                 /* translators: %s is a list of allowed PEGI values */
@@ -377,14 +384,14 @@ class JLG_Admin_Metaboxes {
                                         function ( $rating ) {
                                             return 'PEGI ' . $rating;
                                         },
-                                        JLG_Validator::get_allowed_pegi_values()
+                                        Validator::get_allowed_pegi_values()
                                     )
                                 )
                             );
                             continue;
                         }
 
-                        $sanitized_pegi = JLG_Validator::sanitize_pegi( $value );
+                        $sanitized_pegi = Validator::sanitize_pegi( $value );
                         update_post_meta( $post_id, '_jlg_' . $field, $sanitized_pegi );
                         continue;
                     }
@@ -420,7 +427,7 @@ class JLG_Admin_Metaboxes {
             if ( isset( $_POST['jlg_plateformes'] ) && is_array( $_POST['jlg_plateformes'] ) ) {
                 $raw_platforms = wp_unslash( $_POST['jlg_plateformes'] );
                 $raw_platforms = is_array( $raw_platforms ) ? $raw_platforms : array();
-                $platforms     = JLG_Validator::sanitize_platforms( $raw_platforms );
+                $platforms     = Validator::sanitize_platforms( $raw_platforms );
                 update_post_meta( $post_id, '_jlg_plateformes', $platforms );
             } else {
                 delete_post_meta( $post_id, '_jlg_plateformes' );

@@ -4,11 +4,11 @@ use PHPUnit\Framework\TestCase;
 
 class AdminSettingsSanitizationTest extends TestCase
 {
-    private JLG_Admin_Settings $settings;
+    private \JLG\Notation\Admin\Settings $settings;
 
     protected function setUp(): void
     {
-        $this->settings = new JLG_Admin_Settings();
+        $this->settings = new \JLG\Notation\Admin\Settings();
         $this->settings->register_settings();
     }
 

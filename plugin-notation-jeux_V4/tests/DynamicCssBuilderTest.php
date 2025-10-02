@@ -9,7 +9,7 @@ class DynamicCssBuilderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
         $GLOBALS['jlg_test_options'] = [];
     }
 
@@ -18,7 +18,7 @@ class DynamicCssBuilderTest extends TestCase
      */
     public function test_build_frontend_css_generates_expected_root_variables(array $options, array $palette, ?float $average_score, array $expected): void
     {
-        $css = JLG_Dynamic_CSS::build_frontend_css($options, $palette, $average_score);
+        $css = \JLG\Notation\DynamicCss::build_frontend_css($options, $palette, $average_score);
 
         $variables = $this->extractRootVariables($css);
 
@@ -30,7 +30,7 @@ class DynamicCssBuilderTest extends TestCase
 
     public function provideFrontendCssRootScenarios(): array
     {
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
 
         return [
             'dark theme with explicit overrides' => [

@@ -21,9 +21,9 @@ class FrontendSummaryBaseUrlTest extends TestCase
 {
     public function test_root_url_without_trailing_slash_generates_front_link()
     {
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $method = $reflection->getMethod('sanitize_internal_url');
         $method->setAccessible(true);
 
@@ -58,9 +58,9 @@ class FrontendSummaryBaseUrlTest extends TestCase
 
     public function test_root_url_with_query_is_normalized_and_remains_on_public_domain()
     {
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $method = $reflection->getMethod('sanitize_internal_url');
         $method->setAccessible(true);
 
@@ -95,9 +95,9 @@ class FrontendSummaryBaseUrlTest extends TestCase
 
     public function test_www_alias_is_canonicalized_to_home_url()
     {
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $method = $reflection->getMethod('sanitize_internal_url');
         $method->setAccessible(true);
 
@@ -112,9 +112,9 @@ class FrontendSummaryBaseUrlTest extends TestCase
 
     public function test_home_url_with_custom_port_is_preserved()
     {
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $method = $reflection->getMethod('sanitize_internal_url');
         $method->setAccessible(true);
 
@@ -136,9 +136,9 @@ class FrontendSummaryBaseUrlTest extends TestCase
 
     public function test_relative_paths_are_normalized_with_leading_slash()
     {
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $method = $reflection->getMethod('sanitize_internal_url');
         $method->setAccessible(true);
 

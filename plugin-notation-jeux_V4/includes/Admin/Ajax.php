@@ -1,9 +1,15 @@
 <?php
+
+namespace JLG\Notation\Admin;
+
+use JLG\Notation\Helpers;
+use JLG\Notation\Utils\Validator;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Admin_Ajax {
+class Ajax {
 
     public function __construct() {
         add_action( 'wp_ajax_jlg_search_rawg_games', array( $this, 'handle_rawg_search' ) );
@@ -65,7 +71,7 @@ class JLG_Admin_Ajax {
 
         $page = isset( $_POST['page'] ) ? max( 1, absint( wp_unslash( $_POST['page'] ) ) ) : 1;
 
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         $api_key = isset( $options['rawg_api_key'] ) ? sanitize_text_field( (string) $options['rawg_api_key'] ) : '';
 
         if ( $api_key === '' ) {
@@ -295,12 +301,12 @@ class JLG_Admin_Ajax {
         }
 
         if ( $game['release_date'] !== '' ) {
-            $sanitized_date       = JLG_Validator::sanitize_date( $game['release_date'] );
+            $sanitized_date       = Validator::sanitize_date( $game['release_date'] );
             $game['release_date'] = $sanitized_date !== null ? $sanitized_date : '';
         }
 
         if ( $game['pegi'] !== '' ) {
-            $sanitized_pegi = JLG_Validator::sanitize_pegi( $game['pegi'] );
+            $sanitized_pegi = Validator::sanitize_pegi( $game['pegi'] );
             $game['pegi']   = $sanitized_pegi !== null ? $sanitized_pegi : '';
         }
 

@@ -1,9 +1,15 @@
 <?php
+
+namespace JLG\Notation\Shortcodes;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Shortcode_Game_Info {
+class GameInfo {
 
     public function __construct() {
         add_shortcode( 'jlg_fiche_technique', array( $this, 'render' ) );
@@ -60,9 +66,9 @@ class JLG_Shortcode_Game_Info {
             return '';
         }
 
-        JLG_Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'jlg_fiche_technique' );
+        Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'jlg_fiche_technique' );
 
-        return JLG_Frontend::get_template_html(
+        return Frontend::get_template_html(
             'shortcode-game-info',
             array(
 				'titre'             => sanitize_text_field( $atts['titre'] ),
@@ -73,7 +79,7 @@ class JLG_Shortcode_Game_Info {
 
     private function resolve_target_post_id( $post_id_attribute ) {
         $post_id       = absint( $post_id_attribute );
-        $allowed_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_types = Helpers::get_allowed_post_types();
 
         if ( $post_id && $this->is_valid_target_post( $post_id, $allowed_types ) ) {
             return $post_id;
@@ -97,7 +103,7 @@ class JLG_Shortcode_Game_Info {
 
     private function is_valid_target_post( $post_id, ?array $allowed_types = null ) {
         if ( $allowed_types === null ) {
-            $allowed_types = JLG_Helpers::get_allowed_post_types();
+            $allowed_types = Helpers::get_allowed_post_types();
         }
 
         $post = get_post( $post_id );

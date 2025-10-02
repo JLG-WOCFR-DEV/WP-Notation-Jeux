@@ -6,15 +6,19 @@
  * @version 5.0
  */
 
+namespace JLG\Notation\Utils;
+
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Form_Renderer {
+class FormRenderer {
     private static $option_name = 'notation_jlg_settings';
 
     public static function text_field( $args ) {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         printf(
             '<input type="text" class="regular-text" name="%s[%s]" value="%s" placeholder="%s" />',
             esc_attr( self::$option_name ),
@@ -26,7 +30,7 @@ class JLG_Form_Renderer {
     }
 
     public static function color_field( $args ) {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         printf(
             '<input type="color" name="%s[%s]" value="%s" />',
             esc_attr( self::$option_name ),
@@ -37,7 +41,7 @@ class JLG_Form_Renderer {
     }
 
     public static function checkbox_field( $args ) {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         printf(
             '<input type="checkbox" name="%s[%s]" value="1" %s />',
             esc_attr( self::$option_name ),
@@ -48,7 +52,7 @@ class JLG_Form_Renderer {
     }
 
     public static function select_field( $args ) {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         $value   = $options[ $args['id'] ] ?? '';
 
         printf( '<select name="%s[%s]">', esc_attr( self::$option_name ), esc_attr( $args['id'] ) );
@@ -65,7 +69,7 @@ class JLG_Form_Renderer {
     }
 
     public static function number_field( $args ) {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         $min     = $args['min'] ?? 0;
         $max     = $args['max'] ?? 100;
         $step    = $args['step'] ?? 1;
@@ -82,7 +86,7 @@ class JLG_Form_Renderer {
     }
 
     public static function textarea_field( $args ) {
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         printf(
             '<textarea name="%s[%s]" rows="10" cols="50" class="large-text code" placeholder="%s">%s</textarea>',
             esc_attr( self::$option_name ),

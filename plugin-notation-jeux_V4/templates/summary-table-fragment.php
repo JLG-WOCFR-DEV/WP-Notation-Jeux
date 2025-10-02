@@ -239,8 +239,8 @@ if ( $layout === 'grid' ) :
             while ( $query->have_posts() ) :
 				$query->the_post();
                 $post_id    = get_the_ID();
-                $game_title = JLG_Helpers::get_game_title( $post_id );
-                $score_data = JLG_Helpers::get_resolved_average_score( $post_id );
+                $game_title = \JLG\Notation\Helpers::get_game_title( $post_id );
+                $score_data = \JLG\Notation\Helpers::get_resolved_average_score( $post_id );
                 $cover_url  = get_post_meta( $post_id, '_jlg_cover_image_url', true );
                 if ( empty( $cover_url ) ) {
                     $cover_url = get_the_post_thumbnail_url( $post_id, 'medium_large' );
@@ -316,7 +316,7 @@ else :
 
                                 switch ( $col ) {
                                     case 'titre':
-                                        $game_title = JLG_Helpers::get_game_title( $post_id );
+                                        $game_title = \JLG\Notation\Helpers::get_game_title( $post_id );
                                         echo '<a href="' . esc_url( get_permalink() ) . '">' . esc_html( $game_title ) . '</a>';
                                         if ( $genre_badges_html !== '' ) {
                                             echo wp_kses_post( $genre_badges_html );
@@ -326,7 +326,7 @@ else :
                                         echo esc_html( get_the_date() );
                                         break;
                                     case 'note':
-                                        $score_data = JLG_Helpers::get_resolved_average_score( $post_id );
+                                        $score_data = \JLG\Notation\Helpers::get_resolved_average_score( $post_id );
                                         /* translators: Abbreviation meaning that the average score is not available. */
                                         $score_display = $score_data['formatted'] ?? '';
                                         if ( $score_display === '' ) {

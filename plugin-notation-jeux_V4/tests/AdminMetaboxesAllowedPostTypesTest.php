@@ -18,7 +18,7 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
         $GLOBALS['jlg_test_transients'] = [];
         $_POST = [];
 
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     protected function tearDown(): void
@@ -33,7 +33,7 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
         );
         $_POST = [];
 
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
 
         parent::tearDown();
     }
@@ -52,7 +52,7 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
             'post_type' => 'jlg_review',
         ]);
 
-        $metaboxes = new JLG_Admin_Metaboxes();
+        $metaboxes = new \JLG\Notation\Admin\Metaboxes();
         $metaboxes->register_metaboxes('jlg_review', $post);
 
         $this->assertCount(2, $GLOBALS['jlg_test_meta_boxes']);
@@ -96,7 +96,7 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
             'jlg_plateformes'    => ['PC', 'Xbox One'],
         ];
 
-        $metaboxes = new JLG_Admin_Metaboxes();
+        $metaboxes = new \JLG\Notation\Admin\Metaboxes();
         $metaboxes->save_meta_data($post_id);
 
         $saved_meta = $GLOBALS['jlg_test_meta'][$post_id];

@@ -7,13 +7,13 @@ class HelpersColorPaletteTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
         $GLOBALS['jlg_test_options'] = [];
     }
 
     public function test_uses_custom_tagline_colors_when_defined(): void
     {
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
         $options = $defaults;
         $options['visual_theme'] = 'dark';
         $options['tagline_bg_color'] = '#123456';
@@ -21,7 +21,7 @@ class HelpersColorPaletteTest extends TestCase
 
         update_option('notation_jlg_settings', $options);
 
-        $palette = JLG_Helpers::get_color_palette();
+        $palette = \JLG\Notation\Helpers::get_color_palette();
 
         $this->assertSame('#123456', $palette['tagline_bg_color']);
         $this->assertSame('#abcdef', $palette['tagline_text_color']);
@@ -29,7 +29,7 @@ class HelpersColorPaletteTest extends TestCase
 
     public function test_falls_back_to_theme_defaults_when_tagline_colors_missing(): void
     {
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
         $options = $defaults;
         $options['visual_theme'] = 'light';
         $options['tagline_bg_color'] = '';
@@ -37,7 +37,7 @@ class HelpersColorPaletteTest extends TestCase
 
         update_option('notation_jlg_settings', $options);
 
-        $palette = JLG_Helpers::get_color_palette();
+        $palette = \JLG\Notation\Helpers::get_color_palette();
 
         $this->assertSame('#f3f4f6', $palette['tagline_bg_color']);
         $this->assertSame('#4b5563', $palette['tagline_text_color']);

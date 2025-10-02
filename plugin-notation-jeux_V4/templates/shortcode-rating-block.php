@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$options = JLG_Helpers::get_plugin_options();
+$options = \JLG\Notation\Helpers::get_plugin_options();
 ?>
 
 <div class="review-box-jlg<?php echo $options['enable_animations'] ? ' jlg-animate' : ''; ?>">
@@ -36,7 +36,7 @@ $options = JLG_Helpers::get_plugin_options();
     <div class="rating-breakdown">
         <?php
         foreach ( $scores as $key => $score_value ) :
-            $bar_color = JLG_Helpers::calculate_color_from_note( $score_value, $options );
+            $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
 			?>
             <div class="rating-item">
                 <div class="rating-label">

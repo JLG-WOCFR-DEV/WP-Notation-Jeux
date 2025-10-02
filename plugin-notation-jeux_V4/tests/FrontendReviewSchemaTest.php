@@ -46,7 +46,7 @@ class FrontendReviewSchemaTest extends TestCase
 
         $GLOBALS['jlg_test_meta'][$post_id]['_jlg_average_score'] = 8.4;
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         ob_start();
         $frontend->inject_review_schema();
@@ -73,11 +73,11 @@ class FrontendReviewSchemaTest extends TestCase
 
     private function configurePluginOptions(): void
     {
-        $options = JLG_Helpers::get_default_settings();
+        $options = \JLG\Notation\Helpers::get_default_settings();
         $options['seo_schema_enabled'] = 1;
 
         update_option('notation_jlg_settings', $options);
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function registerPost(int $post_id, string $post_type, array $overrides = []): void
@@ -112,12 +112,12 @@ class FrontendReviewSchemaTest extends TestCase
         remove_all_filters('jlg_rated_post_types');
 
         $this->resetFrontendStatics();
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function resetFrontendStatics(): void
     {
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $properties = [
             'shortcode_errors'       => [],
             'instance'               => null,

@@ -1,9 +1,14 @@
 <?php
+
+namespace JLG\Notation;
+
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class JLG_Dynamic_CSS {
+class DynamicCss {
     /**
      * Build the dynamic CSS that was previously generated inline.
      *
@@ -85,7 +90,7 @@ class JLG_Dynamic_CSS {
         $table_zebra_bg_color    = $option_colors['table_zebra_bg_color'] ?? '';
         $circle_border_color     = $option_colors['circle_border_color'] ?? '';
 
-        $default_settings = JLG_Helpers::get_default_settings();
+        $default_settings = Helpers::get_default_settings();
         $default_colors   = $this->sanitize_color_options(
             array(
 				'default_score_gradient_1'           => 'score_gradient_1',
@@ -206,9 +211,9 @@ class JLG_Dynamic_CSS {
             $tagline_text_color = $secondary_text_color;
         }
 
-        $table_row_hover_color  = $this->sanitize_color_value( JLG_Helpers::adjust_hex_brightness( $bg_color_secondary, 5 ) );
-        $table_link_color       = $this->sanitize_color_value( JLG_Helpers::adjust_hex_brightness( $table_row_text_color, 20 ) );
-        $score_gradient_1_hover = $this->sanitize_color_value( JLG_Helpers::adjust_hex_brightness( $score_gradient_1, 20 ) );
+        $table_row_hover_color  = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $bg_color_secondary, 5 ) );
+        $table_link_color       = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $table_row_text_color, 20 ) );
+        $score_gradient_1_hover = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $score_gradient_1, 20 ) );
 
         $inline_css = ':root{'
             . '--jlg-bg-color:' . $bg_color . ';'
@@ -278,7 +283,7 @@ class JLG_Dynamic_CSS {
         }
 
         $zebra_hover_color = $this->sanitize_color_value(
-            JLG_Helpers::adjust_hex_brightness( $zebra_base_color, 5 )
+            Helpers::adjust_hex_brightness( $zebra_base_color, 5 )
         );
 
         if ( $zebra_hover_color === '' ) {
@@ -340,10 +345,10 @@ class JLG_Dynamic_CSS {
         }
 
         if ( ! empty( $options['circle_dynamic_bg_enabled'] ) ) {
-            $dynamic_color   = $this->sanitize_color_value( JLG_Helpers::calculate_color_from_note( $average_score, $options ) );
+            $dynamic_color   = $this->sanitize_color_value( Helpers::calculate_color_from_note( $average_score, $options ) );
             $base_for_darker = $dynamic_color ?: $score_gradient_1;
             $darker_color    = $base_for_darker !== ''
-                ? $this->sanitize_color_value( JLG_Helpers::adjust_hex_brightness( $base_for_darker, -30 ) )
+                ? $this->sanitize_color_value( Helpers::adjust_hex_brightness( $base_for_darker, -30 ) )
                 : '';
         } else {
             $dynamic_color = $score_gradient_1;
@@ -377,11 +382,11 @@ class JLG_Dynamic_CSS {
         $layout = $options['score_layout'] ?? '';
 
         if ( $layout === 'text' ) {
-            return JLG_Helpers::get_glow_css( 'text', $average_score, $options );
+            return Helpers::get_glow_css( 'text', $average_score, $options );
         }
 
         if ( $layout === 'circle' ) {
-            return JLG_Helpers::get_glow_css( 'circle', $average_score, $options );
+            return Helpers::get_glow_css( 'circle', $average_score, $options );
         }
 
         return '';

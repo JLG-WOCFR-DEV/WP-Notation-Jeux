@@ -1,9 +1,12 @@
 <?php
+
+namespace JLG\Notation\Utils;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Validator {
+class Validator {
     private static $allowed_pegi_values = array( '3', '7', '12', '16', '18' );
 
     public static function is_valid_score( $score, $allow_empty = true ) {
@@ -86,8 +89,8 @@ class JLG_Validator {
 
         $allowed_platforms = array();
 
-        if ( class_exists( 'JLG_Admin_Platforms' ) ) {
-            $platform_manager = JLG_Admin_Platforms::get_instance();
+        if ( class_exists( \JLG\Notation\Admin\Platforms::class ) ) {
+            $platform_manager = \JLG\Notation\Admin\Platforms::get_instance();
             if ( $platform_manager && method_exists( $platform_manager, 'get_platform_names' ) ) {
                 $platform_names = $platform_manager->get_platform_names();
                 if ( is_array( $platform_names ) ) {
@@ -96,20 +99,20 @@ class JLG_Validator {
             }
         }
 
-        if ( empty( $allowed_platforms ) && class_exists( 'JLG_Helpers' ) && method_exists( 'JLG_Helpers', 'get_registered_platform_labels' ) ) {
-            $default_definitions = JLG_Helpers::get_registered_platform_labels();
+        if ( empty( $allowed_platforms ) && class_exists( \JLG\Notation\Helpers::class ) && method_exists( \JLG\Notation\Helpers::class, 'get_registered_platform_labels' ) ) {
+            $default_definitions = \JLG\Notation\Helpers::get_registered_platform_labels();
 
             $allowed_platforms = $extract_labels( $default_definitions );
         }
 
-        if ( empty( $allowed_platforms ) && class_exists( 'JLG_Helpers' ) && method_exists( 'JLG_Helpers', 'get_default_platform_definitions' ) ) {
+        if ( empty( $allowed_platforms ) && class_exists( \JLG\Notation\Helpers::class ) && method_exists( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' ) ) {
             $default_definitions = array();
 
-            if ( is_callable( array( 'JLG_Helpers', 'get_default_platform_definitions' ) ) ) {
-                $default_definitions = JLG_Helpers::get_default_platform_definitions();
+            if ( is_callable( array( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' ) ) ) {
+                $default_definitions = \JLG\Notation\Helpers::get_default_platform_definitions();
             } else {
                 try {
-                    $reflection = new ReflectionMethod( 'JLG_Helpers', 'get_default_platform_definitions' );
+                    $reflection = new ReflectionMethod( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' );
 
                     if ( ! $reflection->isPublic() ) {
                         $reflection->setAccessible( true );

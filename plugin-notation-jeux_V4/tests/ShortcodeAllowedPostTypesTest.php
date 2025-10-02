@@ -21,7 +21,7 @@ class ShortcodeAllowedPostTypesTest extends TestCase
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $GLOBALS['jlg_test_filters'] = [];
 
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     protected function tearDown(): void
@@ -58,15 +58,15 @@ class ShortcodeAllowedPostTypesTest extends TestCase
             '_jlg_tagline_en' => 'Custom tagline EN',
         ];
 
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = array_merge($defaults, [
             'tagline_enabled' => 1,
         ]);
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
 
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
-        $shortcode = new JLG_Shortcode_Tagline();
+        $shortcode = new \JLG\Notation\Shortcodes\Tagline();
         $output = $shortcode->render();
 
         $this->assertNotSame('', $output);
@@ -88,7 +88,7 @@ class ShortcodeAllowedPostTypesTest extends TestCase
             '_note_cat1' => 8.0,
         ];
 
-        $shortcode = new JLG_Shortcode_Rating_Block();
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
         $output = $shortcode->render([
             'post_id' => (string) $post_id,
         ]);
@@ -119,7 +119,7 @@ class ShortcodeAllowedPostTypesTest extends TestCase
 
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
-        $shortcode = new JLG_Shortcode_Game_Info();
+        $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
 
         try {
             $output = $shortcode->render();
@@ -148,7 +148,7 @@ class ShortcodeAllowedPostTypesTest extends TestCase
 
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
-        $shortcode = new JLG_Shortcode_Game_Info();
+        $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
         $output = $shortcode->render();
 
         $this->assertSame('', $output);
@@ -177,7 +177,7 @@ class ShortcodeAllowedPostTypesTest extends TestCase
 
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
-        $shortcode = new JLG_Shortcode_User_Rating();
+        $shortcode = new \JLG\Notation\Shortcodes\UserRating();
 
         try {
             $output = $shortcode->render();

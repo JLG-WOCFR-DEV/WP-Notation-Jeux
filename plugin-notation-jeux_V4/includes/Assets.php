@@ -1,9 +1,12 @@
 <?php
+
+namespace JLG\Notation;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Assets {
+class Assets {
     private static $instance = null;
     private $localizations   = array();
     private $text_domain     = 'notation-jlg';

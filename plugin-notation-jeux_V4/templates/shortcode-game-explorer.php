@@ -364,7 +364,7 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ) );
         aria-busy="false"
     >
         <?php
-        echo JLG_Frontend::get_template_html(
+        echo \JLG\Notation\Frontend::get_template_html(
             'game-explorer-fragment',
             array(
                                 'games'           => $games,

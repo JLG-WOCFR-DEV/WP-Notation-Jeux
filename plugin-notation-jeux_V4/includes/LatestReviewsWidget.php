@@ -1,9 +1,17 @@
 <?php
+
+namespace JLG\Notation;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+use WP_Query;
+use WP_Widget;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Latest_Reviews_Widget extends WP_Widget {
+class LatestReviewsWidget extends WP_Widget {
 
     public function __construct() {
         parent::__construct(
@@ -17,7 +25,7 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
         $title  = apply_filters( 'widget_title', $instance['title'] ?? __( 'Derniers Tests', 'notation-jlg' ) );
         $number = ( ! empty( $instance['number'] ) ) ? absint( $instance['number'] ) : 5;
 
-        $rated_post_ids = JLG_Helpers::get_rated_post_ids();
+        $rated_post_ids = Helpers::get_rated_post_ids();
 
         if ( empty( $rated_post_ids ) ) {
             echo $args['before_widget'];
@@ -30,7 +38,7 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
         }
 
         $query_args = array(
-            'post_type'           => JLG_Helpers::get_allowed_post_types(),
+            'post_type'           => Helpers::get_allowed_post_types(),
             'posts_per_page'      => $number,
             'post__in'            => $rated_post_ids,
             'orderby'             => 'date',
@@ -41,7 +49,7 @@ class JLG_Latest_Reviews_Widget extends WP_Widget {
         $latest_reviews = new WP_Query( $query_args );
 
         // Utilisation d'un fichier template pour l'affichage
-        echo JLG_Frontend::get_template_html(
+        echo Frontend::get_template_html(
             'widget-latest-reviews',
             array(
 				'widget_args'    => $args,

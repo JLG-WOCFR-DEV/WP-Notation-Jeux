@@ -16,7 +16,7 @@ class HelpersGameTitleTest extends TestCase
         $post_id = 42;
         $GLOBALS['jlg_test_meta'][$post_id]['_jlg_game_title'] = '  Custom Game Title  ';
 
-        $this->assertSame('Custom Game Title', JLG_Helpers::get_game_title($post_id));
+        $this->assertSame('Custom Game Title', \JLG\Notation\Helpers::get_game_title($post_id));
     }
 
     public function test_falls_back_to_wordpress_title_when_meta_missing(): void
@@ -27,6 +27,6 @@ class HelpersGameTitleTest extends TestCase
             'post_title' => 'Original WP Title',
         ];
 
-        $this->assertSame('Original WP Title', JLG_Helpers::get_game_title($post_id));
+        $this->assertSame('Original WP Title', \JLG\Notation\Helpers::get_game_title($post_id));
     }
 }

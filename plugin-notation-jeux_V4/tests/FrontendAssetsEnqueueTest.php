@@ -22,7 +22,7 @@ class FrontendAssetsEnqueueTest extends TestCase
         $post_id = 101;
         $this->registerPost($post_id, '[jlg_tableau_recap]');
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
         $frontend->enqueue_jlg_scripts();
 
         $styles = $GLOBALS['jlg_test_styles']['enqueued'] ?? [];
@@ -39,7 +39,7 @@ class FrontendAssetsEnqueueTest extends TestCase
         $post_id = 202;
         $this->registerPost($post_id, '[jlg_game_explorer]');
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
         $frontend->enqueue_jlg_scripts();
 
         $styles = $GLOBALS['jlg_test_styles']['enqueued'] ?? [];
@@ -70,7 +70,7 @@ class FrontendAssetsEnqueueTest extends TestCase
             'enable_animations'   => 0,
         ];
 
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function resetEnvironment(): void
@@ -94,12 +94,12 @@ class FrontendAssetsEnqueueTest extends TestCase
         $_REQUEST = [];
 
         $this->resetFrontendStatics();
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function resetFrontendStatics(): void
     {
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $properties = [
             'shortcode_errors'     => [],
             'instance'             => null,

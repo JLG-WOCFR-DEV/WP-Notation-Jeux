@@ -12,6 +12,17 @@
     "require": {
         "php": ">=7.4"
     },
+    "autoload": {
+        "psr-4": {
+            "JLG\\Notation\\": "includes/",
+            "JLG\\Notation\\Admin\\": "includes/Admin/",
+            "JLG\\Notation\\Utils\\": "includes/Utils/",
+            "JLG\\Notation\\Shortcodes\\": "includes/Shortcodes/"
+        },
+        "files": [
+            "functions.php"
+        ]
+    },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
         "wp-coding-standards/wpcs": "^3.2",
