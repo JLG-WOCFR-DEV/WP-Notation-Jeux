@@ -102,6 +102,17 @@ class Settings {
             }
         }
 
+        $old_score_max = isset( $current_options['score_max'] )
+            ? Helpers::get_score_max( array( 'score_max' => $current_options['score_max'] ) )
+            : Helpers::get_default_settings()['score_max'];
+        $new_score_max = isset( $sanitized['score_max'] )
+            ? Helpers::get_score_max( array( 'score_max' => $sanitized['score_max'] ) )
+            : Helpers::get_default_settings()['score_max'];
+
+        if ( $old_score_max !== $new_score_max ) {
+            Helpers::schedule_score_scale_migration( $old_score_max, $new_score_max );
+        }
+
         Helpers::flush_plugin_options_cache();
 
         return $sanitized;
@@ -307,6 +318,24 @@ class Settings {
 
         // Section 2: Présentation de la Note Globale
         add_settings_section( 'jlg_layout', '2. 🎨 Présentation de la Note Globale', null, 'notation_jlg_page' );
+        $score_max_field_args = array(
+            'id'    => 'score_max',
+            'type'  => 'number',
+            'min'   => 5,
+            'max'   => 100,
+            'step'  => 1,
+            'desc'  => __( 'Définissez la note maximale utilisée pour vos tests (par exemple 10, 20 ou 100).', 'notation-jlg' ),
+        );
+        add_settings_field(
+            'score_max',
+            __( 'Barème maximum', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_layout',
+            $score_max_field_args
+        );
+        $this->store_field_constraints( $score_max_field_args );
+
         add_settings_field(
             'score_layout',
             'Style d\'affichage',
@@ -444,7 +473,7 @@ class Settings {
             'score_gradient_2' => 'Dégradé Note 2',
             'color_low'        => 'Notes Faibles (0-3)',
             'color_mid'        => 'Notes Moyennes (4-7)',
-            'color_high'       => 'Notes Élevées (8-10)',
+            'color_high'       => 'Notes Élevées (haut du barème)',
         );
         foreach ( $semantic_colors as $id => $label ) {
             add_settings_field(

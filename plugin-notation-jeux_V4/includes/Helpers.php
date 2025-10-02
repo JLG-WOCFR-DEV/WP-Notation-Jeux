@@ -12,6 +12,10 @@ exit;
 
 class Helpers {
 
+    public const SCORE_SCALE_MIGRATION_OPTION = 'jlg_score_scale_migration';
+    public const SCORE_SCALE_QUEUE_OPTION     = 'jlg_score_scale_queue';
+    public const SCORE_SCALE_EVENT_HOOK       = 'jlg_process_score_scale_migration';
+
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
     private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
@@ -417,6 +421,7 @@ class Helpers {
             // Options générales
             'visual_theme'                 => 'dark',
             'score_layout'                 => 'text',
+            'score_max'                    => 10,
             'enable_animations'            => 1,
             'tagline_font_size'            => 16,
 
@@ -518,7 +523,136 @@ class Helpers {
 
         self::$options_cache['game_explorer_score_position'] = self::normalize_game_explorer_score_position( $score_position );
 
+        $score_max = isset( self::$options_cache['score_max'] ) ? self::$options_cache['score_max'] : null;
+        self::$options_cache['score_max'] = self::normalize_score_max( $score_max, self::$default_settings_cache['score_max'] ?? 10 );
+
         return self::$options_cache;
+    }
+
+    public static function schedule_score_scale_migration( $old_max, $new_max ) {
+        $old_max = self::normalize_score_max( $old_max, $old_max );
+        $new_max = self::normalize_score_max( $new_max, $new_max );
+
+        if ( $old_max <= 0 || $new_max <= 0 || abs( $old_max - $new_max ) < 0.0001 ) {
+            return;
+        }
+
+        $post_ids = self::get_rated_post_ids();
+
+        $migration_payload = array(
+            'old_max' => $old_max,
+            'new_max' => $new_max,
+            'ratio'   => $new_max / $old_max,
+        );
+
+        update_option( self::SCORE_SCALE_MIGRATION_OPTION, $migration_payload, false );
+        update_option( self::SCORE_SCALE_QUEUE_OPTION, $post_ids, false );
+
+        self::clear_rated_post_ids_cache();
+
+        if ( ! function_exists( 'wp_schedule_single_event' ) ) {
+            return;
+        }
+
+        $hook = self::SCORE_SCALE_EVENT_HOOK;
+
+        if ( function_exists( 'wp_next_scheduled' ) && wp_next_scheduled( $hook ) ) {
+            return;
+        }
+
+        wp_schedule_single_event( time() + 1, $hook );
+    }
+
+    public static function rescale_post_scores_for_scale_change( $post_id, $old_max, $new_max ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $old_max = self::normalize_score_max( $old_max, $old_max );
+        $new_max = self::normalize_score_max( $new_max, $new_max );
+
+        if ( $old_max <= 0 || $new_max <= 0 || abs( $old_max - $new_max ) < 0.0001 ) {
+            return;
+        }
+
+        $ratio          = $new_max / $old_max;
+        $definitions    = self::get_rating_category_definitions();
+        $updated_scores = false;
+
+        foreach ( $definitions as $definition ) {
+            $meta_key = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+            if ( $meta_key === '' ) {
+                continue;
+            }
+
+            $raw_value = get_post_meta( $post_id, $meta_key, true );
+
+            if ( $raw_value === '' || $raw_value === null ) {
+                continue;
+            }
+
+            $numeric_value = self::normalize_score_candidate( $raw_value );
+
+            if ( $numeric_value === null ) {
+                continue;
+            }
+
+            $scaled = round( max( 0, min( $new_max, $numeric_value * $ratio ) ), 1 );
+
+            if ( abs( $scaled - (float) $numeric_value ) < 0.05 ) {
+                continue;
+            }
+
+            update_post_meta( $post_id, $meta_key, $scaled );
+            $updated_scores = true;
+        }
+
+        if ( $updated_scores ) {
+            return;
+        }
+
+        $stored_average = get_post_meta( $post_id, '_jlg_average_score', true );
+
+        if ( $stored_average === '' || $stored_average === null || ! is_numeric( $stored_average ) ) {
+            return;
+        }
+
+        $average = (float) $stored_average;
+        $scaled  = round( max( 0, min( $new_max, $average * $ratio ) ), 1 );
+
+        if ( abs( $scaled - $average ) < 0.05 ) {
+            return;
+        }
+
+        update_post_meta( $post_id, '_jlg_average_score', $scaled );
+    }
+
+    public static function get_score_max( $options = null ) {
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        $raw_value = is_array( $options ) ? ( $options['score_max'] ?? null ) : null;
+
+        return self::normalize_score_max( $raw_value, self::get_default_settings()['score_max'] ?? 10 );
+    }
+
+    private static function normalize_score_max( $value, $fallback = 10 ) {
+        $min = 5;
+        $max = 100;
+
+        if ( ! is_numeric( $value ) ) {
+            $normalized = is_numeric( $fallback ) ? (float) $fallback : 10.0;
+        } else {
+            $normalized = (float) $value;
+        }
+
+        $normalized = max( $min, min( $max, $normalized ) );
+
+        return (int) round( $normalized );
     }
 
     public static function migrate_legacy_rating_configuration() {
@@ -895,6 +1029,9 @@ class Helpers {
             }
         }
 
+        $meta_keys[] = '_jlg_average_score';
+        $meta_keys   = array_values( array_unique( array_filter( $meta_keys ) ) );
+
         if ( empty( $meta_keys ) ) {
             return array();
         }
@@ -985,6 +1122,12 @@ class Helpers {
             if ( $value !== '' && $value !== null && $value !== false ) {
                 return true;
             }
+        }
+
+        $average = get_post_meta( $post_id, '_jlg_average_score', true );
+
+        if ( $average !== '' && $average !== null && $average !== false ) {
+            return true;
         }
 
         return false;
@@ -1093,7 +1236,10 @@ class Helpers {
         }
 
         // S'assurer que la note est un nombre
-        $note = floatval( $note );
+        $note      = floatval( $note );
+        $score_max = max( 1, self::get_score_max( $options ) );
+
+        $note = max( 0, min( $score_max, $note ) );
 
         // Récupérer les couleurs définies dans les options
         $color_low  = $options['color_low'] ?? '#ef4444';
@@ -1116,19 +1262,21 @@ class Helpers {
 			$parsed_high = array( 34, 197, 94 );
         }
 
+        $midpoint = $score_max / 2;
+
         // Calculer l'interpolation selon la note
-        if ( $note <= 5 ) {
-            // Entre 0 et 5 : interpolation entre low et mid
-            $ratio = $note / 5.0;
-            $r     = round( $parsed_low[0] + ( $parsed_mid[0] - $parsed_low[0] ) * $ratio );
-            $g     = round( $parsed_low[1] + ( $parsed_mid[1] - $parsed_low[1] ) * $ratio );
-            $b     = round( $parsed_low[2] + ( $parsed_mid[2] - $parsed_low[2] ) * $ratio );
+        if ( $note <= $midpoint ) {
+            $divider = $midpoint > 0 ? $midpoint : 1;
+            $ratio   = $note / $divider;
+            $r       = round( $parsed_low[0] + ( $parsed_mid[0] - $parsed_low[0] ) * $ratio );
+            $g       = round( $parsed_low[1] + ( $parsed_mid[1] - $parsed_low[1] ) * $ratio );
+            $b       = round( $parsed_low[2] + ( $parsed_mid[2] - $parsed_low[2] ) * $ratio );
         } else {
-            // Entre 5 et 10 : interpolation entre mid et high
-            $ratio = ( $note - 5.0 ) / 5.0;
-            $r     = round( $parsed_mid[0] + ( $parsed_high[0] - $parsed_mid[0] ) * $ratio );
-            $g     = round( $parsed_mid[1] + ( $parsed_high[1] - $parsed_mid[1] ) * $ratio );
-            $b     = round( $parsed_mid[2] + ( $parsed_high[2] - $parsed_mid[2] ) * $ratio );
+            $divider = $midpoint > 0 ? $midpoint : 1;
+            $ratio   = ( $note - $midpoint ) / $divider;
+            $r       = round( $parsed_mid[0] + ( $parsed_high[0] - $parsed_mid[0] ) * $ratio );
+            $g       = round( $parsed_mid[1] + ( $parsed_high[1] - $parsed_mid[1] ) * $ratio );
+            $b       = round( $parsed_mid[2] + ( $parsed_high[2] - $parsed_mid[2] ) * $ratio );
         }
 
         // S'assurer que les valeurs sont dans les limites

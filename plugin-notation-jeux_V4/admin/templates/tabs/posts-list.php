@@ -1,6 +1,9 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
+$score_max       = \JLG\Notation\Helpers::get_score_max();
+$score_max_label = number_format_i18n($score_max);
+
 $has_rated_posts = $variables['has_rated_posts'] ?? false;
 $empty_state = isset($variables['empty_state']) && is_array($variables['empty_state']) ? $variables['empty_state'] : [];
 $stats = isset($variables['stats']) && is_array($variables['stats']) ? $variables['stats'] : [];
@@ -56,7 +59,7 @@ $column_count = count($columns) + 2;
                     <tr>
                         <td><strong><a href="<?php echo esc_url($post['edit_link'] ?? '#'); ?>"><?php echo esc_html($post['title'] ?? ''); ?></a></strong></td>
                         <td><?php echo esc_html($post['date'] ?? ''); ?></td>
-                        <td><strong style="color:<?php echo esc_attr($post['score_color'] ?? '#0073aa'); ?>;"><?php echo esc_html($post['score_display'] ?? ''); ?></strong>/10</td>
+                        <td><strong style="color:<?php echo esc_attr($post['score_color'] ?? '#0073aa'); ?>;"><?php echo esc_html($post['score_display'] ?? ''); ?></strong><?php printf( esc_html__( '/%s', 'notation-jlg' ), esc_html( $score_max_label ) ); ?></td>
                         <td><?php echo !empty($categories) ? esc_html(implode(', ', $categories)) : '-'; ?></td>
                         <td>
                             <a href="<?php echo esc_url($post['view_link'] ?? '#'); ?>" target="_blank" rel="noopener noreferrer">👁 Voir</a>

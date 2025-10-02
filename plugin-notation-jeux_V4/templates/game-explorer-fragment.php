@@ -13,6 +13,8 @@ $total_items = isset( $total_items ) ? (int) $total_items : 0;
 $score_position = isset( $score_position )
     ? \JLG\Notation\Helpers::normalize_game_explorer_score_position( $score_position )
     : \JLG\Notation\Helpers::normalize_game_explorer_score_position( '' );
+$score_max_value  = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
+$score_max_label  = number_format_i18n( $score_max_value );
 $score_classes = array(
     'jlg-ge-card__score',
     'jlg-ge-card__score--' . sanitize_html_class( $score_position ),
@@ -151,7 +153,15 @@ if ( empty( $games ) ) {
                     <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
                         <?php echo esc_html( $score_display ); ?>
                         <?php if ( $has_score ) : ?>
-                            <span class="jlg-ge-card__score-outof">/10</span>
+                            <span class="jlg-ge-card__score-outof">
+                                <?php
+                                printf(
+                                    /* translators: %s: Maximum possible rating value. */
+                                    esc_html__( '/%s', 'notation-jlg' ),
+                                    esc_html( $score_max_label )
+                                );
+                                ?>
+                            </span>
                         <?php endif; ?>
                     </span>
                 <?php endif; ?>

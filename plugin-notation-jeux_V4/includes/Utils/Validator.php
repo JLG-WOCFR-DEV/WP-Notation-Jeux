@@ -21,7 +21,9 @@ class Validator {
         }
 
         $numeric_score = floatval( $score );
-        return $numeric_score >= 0 && $numeric_score <= 10;
+        $score_max     = Helpers::get_score_max();
+
+        return $numeric_score >= 0 && $numeric_score <= $score_max;
     }
 
     public static function sanitize_score( $score ) {
@@ -33,7 +35,10 @@ class Validator {
             return '';
         }
 
-        return round( floatval( $score ), 1 );
+        $score_max = Helpers::get_score_max();
+        $value     = max( 0, min( $score_max, floatval( $score ) ) );
+
+        return round( $value, 1 );
     }
 
     public static function validate_notation_data( $post_data ) {

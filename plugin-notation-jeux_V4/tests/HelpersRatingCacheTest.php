@@ -79,6 +79,25 @@ class HelpersRatingCacheTest extends TestCase
 
         $this->assertFalse(get_transient('jlg_rated_post_ids_v1'));
     }
+
+    public function test_status_transition_with_average_only_clears_rated_cache(): void
+    {
+        $post_id = 654;
+
+        $post = new WP_Post([
+            'ID' => $post_id,
+            'post_type' => 'post',
+        ]);
+
+        $GLOBALS['jlg_test_posts'][$post_id] = $post;
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_average_score'] = '8.4';
+
+        set_transient('jlg_rated_post_ids_v1', [10, 20]);
+
+        \JLG\Notation\Helpers::maybe_clear_rated_post_ids_cache_for_status_change('draft', 'publish', $post);
+
+        $this->assertFalse(get_transient('jlg_rated_post_ids_v1'));
+    }
     private function get_primary_rating_meta_key(): string
     {
         $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();
