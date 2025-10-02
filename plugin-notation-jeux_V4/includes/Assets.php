@@ -30,7 +30,23 @@ class Assets {
     }
 
     public function enqueue_admin_assets( $hook_suffix ) {
-        if ( $hook_suffix !== 'toplevel_page_notation_jlg_settings' ) {
+        $plugin_page_prefix = 'notation-jlg_page_';
+        $plugin_page_hooks  = array( 'toplevel_page_notation_jlg_settings' );
+
+        $is_plugin_page = in_array( $hook_suffix, $plugin_page_hooks, true ) || strpos( $hook_suffix, $plugin_page_prefix ) === 0;
+
+        if ( $is_plugin_page ) {
+            wp_enqueue_style( 'wp-color-picker' );
+            wp_enqueue_script( 'wp-color-picker' );
+
+            $color_picker_handle = 'jlg-admin-color-picker';
+            $color_picker_src    = JLG_NOTATION_PLUGIN_URL . 'assets/js/admin-color-picker.js';
+            $version             = defined( 'JLG_NOTATION_VERSION' ) ? JLG_NOTATION_VERSION : false;
+
+            wp_enqueue_script( $color_picker_handle, $color_picker_src, array( 'jquery', 'wp-color-picker' ), $version, true );
+        }
+
+        if ( ! $is_plugin_page ) {
             return;
         }
 
@@ -52,26 +68,26 @@ class Assets {
             $handle,
             'jlgPlatformsOrder',
             array(
-				'listSelector'     => '#platforms-list',
-				'positionSelector' => '.jlg-platform-position',
-				'handleSelector'   => '.jlg-sort-handle',
-				'rowSelector'      => 'tr[data-key]',
-				'inputSelector'    => 'input[name="platform_order[]"]',
-				'placeholderClass' => 'jlg-sortable-placeholder',
-			)
+                                'listSelector'     => '#platforms-list',
+                                'positionSelector' => '.jlg-platform-position',
+                                'handleSelector'   => '.jlg-sort-handle',
+                                'rowSelector'      => 'tr[data-key]',
+                                'inputSelector'    => 'input[name="platform_order[]"]',
+                                'placeholderClass' => 'jlg-sortable-placeholder',
+                        )
         );
 
         wp_localize_script(
             $handle,
             'jlgPlatformsOrderL10n',
             array(
-				'confirmReset'  => esc_html__( 'Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?', 'notation-jlg' ),
-				'confirmDelete' => esc_html__( 'Êtes-vous sûr de vouloir supprimer la plateforme "%s" ?', 'notation-jlg' ),
-				'nonce'         => wp_create_nonce( 'jlg_platform_action' ),
-				'nonceField'    => 'jlg_platform_nonce',
-				'actionField'   => 'jlg_platform_action',
-				'deleteAction'  => 'delete',
-			)
+                                'confirmReset'  => esc_html__( 'Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?', 'notation-jlg' ),
+                                'confirmDelete' => esc_html__( 'Êtes-vous sûr de vouloir supprimer la plateforme "%s" ?', 'notation-jlg' ),
+                                'nonce'         => wp_create_nonce( 'jlg_platform_action' ),
+                                'nonceField'    => 'jlg_platform_nonce',
+                                'actionField'   => 'jlg_platform_action',
+                                'deleteAction'  => 'delete',
+                        )
         );
 
         wp_enqueue_script( $handle );

@@ -117,7 +117,7 @@ programmatiques pour les intégrations avancées.
 Pour vérifier que les options ne peuvent pas injecter de CSS invalide :
 
 1. Dans l'administration WordPress, rendez-vous dans **Notation – JLG > Réglages**.
-2. Dans la section *Tableau Récapitulatif*, saisissez `transparent` pour **Fond des lignes** et `#123456; background:red;` pour **Gradient 1**.
+2. Dans la section *Tableau Récapitulatif*, utilisez le nouveau sélecteur de couleur : saisissez ou collez `transparent` pour **Fond des lignes** et `#123456; background:red;` pour **Gradient 1** (dans le champ texte du picker).
 3. Enregistrez les réglages puis affichez un article utilisant les shortcodes du plugin.
 4. Inspectez le bloc `<style id="jlg-frontend-inline-css">` dans l'entête de la page :
    - La variable `--jlg-table-row-bg-color` doit conserver la valeur sûre `transparent` sans ajouter d'autre règle.

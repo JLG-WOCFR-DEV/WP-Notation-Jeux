@@ -113,7 +113,7 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 Pour valider que des options malicieuses ne génèrent pas de CSS invalide :
 
 1. Dans l'administration WordPress, ouvrez **Notation – JLG > Réglages**.
-2. Dans la section *Tableau Récapitulatif*, saisissez `transparent` dans **Fond des lignes** et `#123456; background:red;` dans **Gradient 1**.
+2. Dans la section *Tableau Récapitulatif*, utilisez le nouveau sélecteur de couleur : saisissez ou collez `transparent` dans **Fond des lignes** et `#123456; background:red;` dans **Gradient 1** (dans le champ texte du picker).
 3. Enregistrez les réglages puis affichez un article utilisant les shortcodes du plugin.
 4. Dans le code source de la page, repérez le bloc `<style id="jlg-frontend-inline-css">` :
    * Vérifiez que `--jlg-table-row-bg-color` reste à `transparent` sans aucune règle supplémentaire.

@@ -358,7 +358,7 @@ class Settings {
         );
 
         // Section 3: Couleurs & Thèmes
-        add_settings_section( 'jlg_colors', '3. 🌈 Couleurs & Thèmes', null, 'notation_jlg_page' );
+        add_settings_section( 'jlg_colors', '3. 🌈 Couleurs & Thèmes', array( $this, 'render_colors_section_intro' ), 'notation_jlg_page' );
         add_settings_field(
             'visual_theme',
             'Thème Visuel Principal',
@@ -744,9 +744,11 @@ class Settings {
             'notation_jlg_page',
             'jlg_table',
             array(
-				'id'   => 'table_row_bg_color',
-				'type' => 'color',
-			)
+                                'id'                => 'table_row_bg_color',
+                                'type'              => 'color',
+                                'allow_transparent' => true,
+                                'desc'              => __( 'Utilisez le sélecteur ou saisissez un code hexadécimal. Tapez "transparent" pour conserver la transparence.', 'notation-jlg' ),
+                        )
         );
         add_settings_field(
             'table_row_text_color',
@@ -777,9 +779,11 @@ class Settings {
             'notation_jlg_page',
             'jlg_table',
             array(
-				'id'   => 'table_zebra_bg_color',
-				'type' => 'color',
-			)
+                                'id'                => 'table_zebra_bg_color',
+                                'type'              => 'color',
+                                'allow_transparent' => true,
+                                'desc'              => __( 'Le bouton "Effacer" définit la valeur sur transparent lorsque c\'est permis.', 'notation-jlg' ),
+                        )
         );
         add_settings_field(
             'table_border_style',
@@ -1007,6 +1011,10 @@ class Settings {
                 'options' => $score_position_options,
             )
         );
+    }
+
+    public function render_colors_section_intro() {
+        echo '<p class="description">' . esc_html__( 'Les champs de couleur utilisent désormais le sélecteur WordPress : choisissez une teinte, collez un code hexadécimal ou tapez "transparent" lorsqu\'il est autorisé.', 'notation-jlg' ) . '</p>';
     }
 
     public function render_field( $args ) {
