@@ -118,31 +118,37 @@ class Helpers {
                 'id'         => 'gameplay',
                 'label'      => 'Gameplay',
                 'legacy_ids' => array( 'cat1' ),
+                'position'   => 1,
             ),
             array(
                 'id'         => 'graphismes',
                 'label'      => 'Graphismes',
                 'legacy_ids' => array( 'cat2' ),
+                'position'   => 2,
             ),
             array(
                 'id'         => 'bande-son',
                 'label'      => 'Bande-son',
                 'legacy_ids' => array( 'cat3' ),
+                'position'   => 3,
             ),
             array(
                 'id'         => 'duree-de-vie',
                 'label'      => 'Durée de vie',
                 'legacy_ids' => array( 'cat4' ),
+                'position'   => 4,
             ),
             array(
                 'id'         => 'scenario',
                 'label'      => 'Scénario',
                 'legacy_ids' => array( 'cat5' ),
+                'position'   => 5,
             ),
             array(
                 'id'         => 'originalite',
                 'label'      => 'Originalité',
                 'legacy_ids' => array( 'cat6' ),
+                'position'   => 6,
             ),
         );
     }
@@ -157,6 +163,7 @@ class Helpers {
             $id          = '';
             $legacy_ids  = array();
             $original_id = '';
+            $position    = $index + 1;
 
             if ( is_array( $category ) ) {
                 if ( isset( $category['label'] ) ) {
@@ -178,6 +185,13 @@ class Helpers {
 
                 if ( isset( $category['original_id'] ) ) {
                     $original_id = sanitize_key( $category['original_id'] );
+                }
+
+                if ( isset( $category['position'] ) ) {
+                    $position_candidate = is_numeric( $category['position'] ) ? (int) $category['position'] : $position;
+                    if ( $position_candidate > 0 ) {
+                        $position = $position_candidate;
+                    }
                 }
             } elseif ( is_string( $category ) ) {
                 $label = sanitize_text_field( $category );
@@ -221,12 +235,39 @@ class Helpers {
                 'id'               => $id,
                 'label'            => $label,
                 'legacy_ids'       => $legacy_ids,
+                'position'         => $position,
                 'meta_key'         => '_note_' . $id,
                 'legacy_meta_keys' => array_values( array_unique( $legacy_meta_keys ) ),
             );
 
             $used_ids[] = $id;
         }
+
+        if ( empty( $prepared ) ) {
+            return $prepared;
+        }
+
+        usort(
+            $prepared,
+            static function ( $a, $b ) {
+                $a_position = isset( $a['position'] ) ? (int) $a['position'] : 0;
+                $b_position = isset( $b['position'] ) ? (int) $b['position'] : 0;
+
+                if ( $a_position === $b_position ) {
+                    $a_label = isset( $a['label'] ) ? (string) $a['label'] : '';
+                    $b_label = isset( $b['label'] ) ? (string) $b['label'] : '';
+
+                    return strnatcasecmp( $a_label, $b_label );
+                }
+
+                return ( $a_position < $b_position ) ? -1 : 1;
+            }
+        );
+
+        foreach ( $prepared as $index => &$definition ) {
+            $definition['position'] = $index + 1;
+        }
+        unset( $definition );
 
         return $prepared;
     }
@@ -549,6 +590,7 @@ class Helpers {
                 'id'         => $id,
                 'label'      => $label,
                 'legacy_ids' => array( $legacy_suffix ),
+                'position'   => $index + 1,
             );
         }
 
@@ -556,7 +598,8 @@ class Helpers {
             return;
         }
 
-        $options['rating_categories'] = $category_definitions;
+        $options['rating_categories'] = self::prepare_category_definitions( $category_definitions );
+        $category_definitions        = $options['rating_categories'];
 
         foreach ( self::LEGACY_CATEGORY_SUFFIXES as $legacy_suffix ) {
             unset( $options[ 'label_' . $legacy_suffix ] );

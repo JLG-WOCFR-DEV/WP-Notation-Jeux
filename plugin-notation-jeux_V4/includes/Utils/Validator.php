@@ -2,6 +2,8 @@
 
 namespace JLG\Notation\Utils;
 
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
 }
@@ -38,15 +40,55 @@ class Validator {
         $sanitized_data = array();
         $errors         = array();
 
-        foreach ( array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' ) as $key ) {
-            $field_key = '_note_' . $key;
-            if ( isset( $post_data[ $field_key ] ) ) {
-                $score = $post_data[ $field_key ];
-                if ( self::is_valid_score( $score ) ) {
-                    $sanitized_data[ $field_key ] = self::sanitize_score( $score );
-                } else {
-                    $errors[ $field_key ] = 'Score invalide';
+        $meta_key_map = array();
+
+        if ( class_exists( Helpers::class ) ) {
+            foreach ( Helpers::get_rating_category_definitions() as $definition ) {
+                $primary_meta_key = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+                if ( $primary_meta_key === '' ) {
+                    continue;
                 }
+
+                $meta_key_map[ $primary_meta_key ] = $primary_meta_key;
+
+                if ( ! empty( $definition['legacy_meta_keys'] ) && is_array( $definition['legacy_meta_keys'] ) ) {
+                    foreach ( $definition['legacy_meta_keys'] as $legacy_meta_key ) {
+                        $legacy_meta_key = (string) $legacy_meta_key;
+
+                        if ( $legacy_meta_key === '' ) {
+                            continue;
+                        }
+
+                        $meta_key_map[ $legacy_meta_key ] = $primary_meta_key;
+                    }
+                }
+            }
+        }
+
+        if ( empty( $meta_key_map ) ) {
+            foreach ( array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' ) as $legacy_suffix ) {
+                $meta_key_map[ '_note_' . $legacy_suffix ] = '_note_' . $legacy_suffix;
+            }
+        }
+
+        foreach ( $meta_key_map as $input_key => $normalized_key ) {
+            if ( ! isset( $post_data[ $input_key ] ) ) {
+                continue;
+            }
+
+            $score = $post_data[ $input_key ];
+
+            if ( self::is_valid_score( $score ) ) {
+                $sanitized_score = self::sanitize_score( $score );
+
+                if ( $sanitized_score === null ) {
+                    continue;
+                }
+
+                $sanitized_data[ $normalized_key ] = $sanitized_score;
+            } else {
+                $errors[ $input_key ] = 'Score invalide';
             }
         }
 

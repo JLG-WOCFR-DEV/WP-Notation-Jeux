@@ -342,7 +342,7 @@ class SummaryDisplay {
     }
 
     protected static function get_available_columns() {
-        return array(
+        $columns = array(
             'titre'       => array(
                 'label'    => __( 'Titre du jeu', 'notation-jlg' ),
                 'sortable' => true,
@@ -393,6 +393,36 @@ class SummaryDisplay {
                 ),
             ),
         );
+
+        foreach ( Helpers::get_rating_category_definitions() as $definition ) {
+            $category_id = isset( $definition['id'] ) ? sanitize_key( $definition['id'] ) : '';
+            $label       = isset( $definition['label'] ) ? (string) $definition['label'] : '';
+            $meta_key    = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+            if ( $category_id === '' || $meta_key === '' ) {
+                continue;
+            }
+
+            $column_key   = 'note_' . $category_id;
+            $sorting_key  = sanitize_key( $column_key );
+            $column_label = $label !== '' ? $label : ucfirst( str_replace( '-', ' ', $category_id ) );
+
+            $columns[ $column_key ] = array(
+                'label'      => $column_label,
+                'sortable'   => true,
+                'sort'       => array(
+                    'key'      => $sorting_key,
+                    'orderby'  => 'meta_value_num',
+                    'meta_key' => $meta_key,
+                    'type'     => 'NUMERIC',
+                    'aliases'  => array( $column_key, $category_id, $sorting_key ),
+                ),
+                'type'       => 'rating_category',
+                'definition' => $definition,
+            );
+        }
+
+        return $columns;
     }
 
     protected static function get_sorting_options() {

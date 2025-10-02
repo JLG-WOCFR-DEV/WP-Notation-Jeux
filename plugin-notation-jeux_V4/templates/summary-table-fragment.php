@@ -26,6 +26,20 @@ $default_empty_message = '<p>' . esc_html__( 'Aucun article trouvé pour cette s
 $empty_message         = ! empty( $error_message ) ? $error_message : $default_empty_message;
 $columns_count         = count( $columns );
 
+$category_column_map = array();
+
+foreach ( $columns as $col_key ) {
+    if ( isset( $available_columns[ $col_key ]['type'] ) && $available_columns[ $col_key ]['type'] === 'rating_category' ) {
+        $definition = isset( $available_columns[ $col_key ]['definition'] ) ? $available_columns[ $col_key ]['definition'] : array();
+
+        if ( is_array( $definition ) ) {
+            $category_column_map[ $col_key ] = $definition;
+        }
+    }
+}
+
+$has_category_columns = ! empty( $category_column_map );
+
 $active_filter_labels = array();
 
 if ( $current_cat_filter > 0 ) {
@@ -308,6 +322,11 @@ else :
                         ?>
                         <tr>
                             <?php
+                            $category_score_map = array();
+                            if ( $has_category_columns ) {
+                                $category_score_map = \JLG\Notation\Helpers::get_post_category_scores( $post_id );
+                            }
+
                             foreach ( $columns as $col ) {
                                 if ( ! isset( $available_columns[ $col ] ) ) {
                                     continue;
@@ -346,6 +365,41 @@ else :
                                     case 'editeur':
                                         $publisher = get_post_meta( $post_id, '_jlg_editeur', true ) ?: __( '-', 'notation-jlg' );
                                         echo esc_html( $publisher );
+                                        break;
+                                    default:
+                                        if ( isset( $category_column_map[ $col ] ) ) {
+                                            $definition   = $category_column_map[ $col ];
+                                            $category_id  = isset( $definition['id'] ) ? $definition['id'] : '';
+                                            $score_value  = null;
+
+                                            if ( $category_id !== '' && isset( $category_score_map[ $category_id ] ) ) {
+                                                $score_value = (float) $category_score_map[ $category_id ];
+                                            } elseif ( $category_id !== '' ) {
+                                                $resolved = \JLG\Notation\Helpers::resolve_category_meta_value( $post_id, $definition, true );
+                                                if ( $resolved !== null ) {
+                                                    $score_value                      = (float) $resolved;
+                                                    $category_score_map[ $category_id ] = $score_value;
+                                                }
+                                            }
+
+                                            if ( $score_value === null ) {
+                                                echo esc_html__( 'N/A', 'notation-jlg' );
+                                            } else {
+                                                $formatted_score = esc_html( number_format_i18n( $score_value, 1 ) );
+                                                $max_score       = esc_html( '10' );
+
+                                                printf(
+                                                    /* translators: %1$s: category score value. %2$s: maximum rating value. */
+                                                    esc_html__( '%1$s / %2$s', 'notation-jlg' ),
+                                                    $formatted_score,
+                                                    $max_score
+                                                );
+                                            }
+
+                                            break;
+                                        }
+
+                                        echo '&mdash;';
                                         break;
                                 }
                                 echo '</td>';
