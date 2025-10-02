@@ -12,7 +12,7 @@ $error_message = '';
 $base_url = '';
 
 ob_start();
-require_once __DIR__ . '/../templates/summary-table-fragment.php';
+require_once dirname(__DIR__, 2) . '/templates/summary-table-fragment.php';
 ob_end_clean();
 
 use PHPUnit\Framework\TestCase;

@@ -46,7 +46,7 @@ class UninstallCleanupTest extends TestCase
             define('WP_UNINSTALL_PLUGIN', true);
         }
 
-        require dirname(__DIR__) . '/uninstall.php';
+        require dirname(__DIR__, 2) . '/uninstall.php';
 
         $this->assertContains('_jlg_game_title', $wpdb_stub->deleted_meta_keys);
     }

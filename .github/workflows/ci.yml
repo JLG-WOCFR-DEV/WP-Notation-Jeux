@@ -7,6 +7,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout repository
@@ -17,6 +30,9 @@ jobs:
         with:
           php-version: '8.1'
           coverage: none
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y subversion default-mysql-client
 
       - name: Get Composer cache directory
         id: composer-cache
@@ -37,6 +53,15 @@ jobs:
       - name: Run tests
         working-directory: plugin-notation-jeux_V4
         run: composer test
+
+      - name: Run integration tests
+        working-directory: plugin-notation-jeux_V4
+        env:
+          WP_TESTS_DB_NAME: wordpress_test
+          WP_TESTS_DB_USER: root
+          WP_TESTS_DB_PASSWORD: root
+          WP_TESTS_DB_HOST: 127.0.0.1
+        run: composer test:integration
 
       - name: Run coding standards checks
         working-directory: plugin-notation-jeux_V4

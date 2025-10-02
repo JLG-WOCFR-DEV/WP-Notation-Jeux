@@ -9,7 +9,7 @@ class MigrationScheduleTest extends TestCase
         parent::setUpBeforeClass();
 
         // Ensure the plugin file is loaded for class availability.
-        @require_once __DIR__ . '/../plugin-notation-jeux.php';
+        @require_once dirname(__DIR__, 2) . '/plugin-notation-jeux.php';
     }
 
     protected function setUp(): void

@@ -13,7 +13,7 @@ if (!defined('JLG_NOTATION_PLUGIN_URL')) {
 }
 
 if (!defined('JLG_NOTATION_PLUGIN_DIR')) {
-    define('JLG_NOTATION_PLUGIN_DIR', dirname(__DIR__) . '/');
+    define('JLG_NOTATION_PLUGIN_DIR', dirname(__DIR__, 2) . '/');
 }
 
 if (!defined('MINUTE_IN_SECONDS')) {
@@ -784,10 +784,52 @@ if (!function_exists('add_query_arg')) {
 }
 
 if (!function_exists('remove_query_arg')) {
-    function remove_query_arg($key, $url) {
-        unset($key);
+    function remove_query_arg($key, $url = '') {
+        $keys = (array) $key;
 
-        return (string) $url;
+        if ($url === '') {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host   = $_SERVER['HTTP_HOST'] ?? 'example.com';
+            $path   = $_SERVER['REQUEST_URI'] ?? '';
+            $url    = $scheme . '://' . $host . $path;
+        }
+
+        $fragments = parse_url((string) $url);
+        $query     = [];
+
+        if (isset($fragments['query'])) {
+            parse_str($fragments['query'], $query);
+        }
+
+        foreach ($keys as $single_key) {
+            unset($query[$single_key]);
+        }
+
+        $query_string = http_build_query($query);
+
+        $rebuilt = '';
+
+        if (!empty($fragments['scheme'])) {
+            $rebuilt .= $fragments['scheme'] . '://';
+        }
+
+        if (!empty($fragments['host'])) {
+            $rebuilt .= $fragments['host'];
+        }
+
+        if (!empty($fragments['path'])) {
+            $rebuilt .= $fragments['path'];
+        }
+
+        if ($query_string !== '') {
+            $rebuilt .= '?' . $query_string;
+        }
+
+        if (!empty($fragments['fragment'])) {
+            $rebuilt .= '#' . $fragments['fragment'];
+        }
+
+        return $rebuilt;
     }
 }
 
@@ -1437,11 +1479,11 @@ if (!class_exists('WP_Widget')) {
     }
 }
 
-require_once __DIR__ . '/../includes/class-jlg-helpers.php';
-require_once __DIR__ . '/../includes/class-jlg-dynamic-css.php';
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-settings.php';
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-platforms.php';
-require_once __DIR__ . '/../includes/class-jlg-frontend.php';
-require_once __DIR__ . '/../includes/utils/class-jlg-validator.php';
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-ajax.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-summary-display.php';
+require_once dirname(__DIR__, 2) . '/includes/class-jlg-helpers.php';
+require_once dirname(__DIR__, 2) . '/includes/class-jlg-dynamic-css.php';
+require_once dirname(__DIR__, 2) . '/includes/admin/class-jlg-admin-settings.php';
+require_once dirname(__DIR__, 2) . '/includes/admin/class-jlg-admin-platforms.php';
+require_once dirname(__DIR__, 2) . '/includes/class-jlg-frontend.php';
+require_once dirname(__DIR__, 2) . '/includes/utils/class-jlg-validator.php';
+require_once dirname(__DIR__, 2) . '/includes/admin/class-jlg-admin-ajax.php';
+require_once dirname(__DIR__, 2) . '/includes/shortcodes/class-jlg-shortcode-summary-display.php';

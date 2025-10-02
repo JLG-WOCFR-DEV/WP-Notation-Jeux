@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/admin/class-jlg-admin-metaboxes.php';
+require_once dirname(__DIR__, 2) . '/includes/admin/class-jlg-admin-metaboxes.php';
 
 class AdminMetaboxesAllowedPostTypesTest extends TestCase
 {

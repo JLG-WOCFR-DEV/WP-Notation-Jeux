@@ -112,6 +112,7 @@ final class JLG_Plugin_De_Notation_Main {
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-widget.php';
         require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-blocks.php';
+        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-rest.php';
 
         // Admin seulement si nécessaire
         if ( is_admin() ) {
@@ -165,6 +166,10 @@ final class JLG_Plugin_De_Notation_Main {
         // Blocks
         if ( class_exists( 'JLG_Blocks' ) ) {
             $this->blocks = new JLG_Blocks();
+        }
+
+        if ( class_exists( 'JLG_REST' ) ) {
+            new JLG_REST();
         }
 
         // Admin

@@ -2,8 +2,8 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/class-jlg-helpers.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-game-explorer.php';
+require_once dirname(__DIR__, 2) . '/includes/class-jlg-helpers.php';
+require_once dirname(__DIR__, 2) . '/includes/shortcodes/class-jlg-shortcode-game-explorer.php';
 
 final class GameExplorerSnapshotInvalidationTest extends TestCase
 {

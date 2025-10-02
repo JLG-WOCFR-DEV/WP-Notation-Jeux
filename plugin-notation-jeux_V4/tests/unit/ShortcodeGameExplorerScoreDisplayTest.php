@@ -8,7 +8,7 @@ if (!function_exists('wp_json_encode')) {
     }
 }
 
-require_once __DIR__ . '/../includes/class-jlg-frontend.php';
+require_once dirname(__DIR__, 2) . '/includes/class-jlg-frontend.php';
 
 class ShortcodeGameExplorerScoreDisplayTest extends TestCase
 {

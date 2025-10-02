@@ -56,7 +56,7 @@ class ShortcodeSummaryTemplateTest extends TestCase
 
         try {
             ob_start();
-            require dirname(__DIR__) . '/templates/shortcode-summary-display.php';
+            require dirname(__DIR__, 2) . '/templates/shortcode-summary-display.php';
             $output = ob_get_clean();
         } finally {
             remove_filter('jlg_frontend_template_path', $templateFilter, 10);

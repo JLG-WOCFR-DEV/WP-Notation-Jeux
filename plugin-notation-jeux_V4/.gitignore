@@ -33,3 +33,7 @@ vendor/
 
 # Configuration locale
 config.local.php
+
+# Environnement de tests WordPress
+tests/integration/wordpress/
+tests/integration/wordpress-tests-lib/
