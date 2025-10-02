@@ -92,16 +92,25 @@ class ShortcodeSummarySortingTest extends TestCase
 
         $GLOBALS['jlg_test_meta'] = [
             101 => [
-                '_note_cat1' => 8,
                 '_jlg_developpeur' => 'Studio A',
-                '_jlg_editeur' => 'Publisher A',
+                '_jlg_editeur'     => 'Publisher A',
             ],
             202 => [
-                '_note_cat1' => 6,
                 '_jlg_developpeur' => 'Studio B',
-                '_jlg_editeur' => 'Publisher B',
+                '_jlg_editeur'     => 'Publisher B',
             ],
         ];
+
+        $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();
+
+        if (!empty($definitions)) {
+            $first_meta_key = $definitions[0]['meta_key'] ?? null;
+
+            if ($first_meta_key) {
+                $GLOBALS['jlg_test_meta'][101][$first_meta_key] = 8;
+                $GLOBALS['jlg_test_meta'][202][$first_meta_key] = 6;
+            }
+        }
     }
 
     protected function tearDown(): void

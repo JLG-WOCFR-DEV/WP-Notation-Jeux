@@ -146,14 +146,18 @@ class MigrationScheduleTest extends TestCase
             'complete' => true,
         ]);
 
+        $definitions     = \JLG\Notation\Helpers::get_rating_category_definitions();
+        $first_meta_key  = $definitions[0]['meta_key'] ?? '_note_gameplay';
+        $second_meta_key = $definitions[1]['meta_key'] ?? '_note_graphismes';
+
         $GLOBALS['jlg_test_meta'] = [
             111 => [
-                '_note_cat1' => 8,
-                '_note_cat2' => 6,
+                $first_meta_key  => 8,
+                $second_meta_key => 6,
             ],
             222 => [
-                '_note_cat1' => 9,
-                '_note_cat2' => 7,
+                $first_meta_key  => 9,
+                $second_meta_key => 7,
             ],
         ];
 

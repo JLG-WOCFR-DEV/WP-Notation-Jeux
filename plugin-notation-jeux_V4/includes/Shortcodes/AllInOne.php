@@ -145,10 +145,10 @@ class AllInOne {
         }
 
         // Récupération des options et configuration
-        $options    = Helpers::get_plugin_options();
-        $palette    = Helpers::get_color_palette();
-        $categories = Helpers::get_rating_categories();
-        $defaults   = Helpers::get_default_settings();
+        $options               = Helpers::get_plugin_options();
+        $palette               = Helpers::get_color_palette();
+        $category_definitions  = Helpers::get_rating_category_definitions();
+        $defaults              = Helpers::get_default_settings();
 
         // Couleur d'accent (utilise la couleur définie ou celle des options)
         $accent_color = $atts['couleur_accent'] ?: ( $options['score_gradient_1'] ?? '' );
@@ -178,12 +178,14 @@ class AllInOne {
         }
 
         // Récupérer les scores détaillés
-        $scores = array();
+        $category_scores = array();
+        $scores          = array();
         if ( $average_score !== null ) {
-            foreach ( array_keys( $categories ) as $key ) {
-                $score_value = get_post_meta( $post_id, '_note_' . $key, true );
-                if ( $score_value !== '' && is_numeric( $score_value ) ) {
-                    $scores[ $key ] = floatval( $score_value );
+            $category_scores = Helpers::get_category_scores_for_display( $post_id );
+
+            foreach ( $category_scores as $category_score ) {
+                if ( isset( $category_score['id'], $category_score['score'] ) ) {
+                    $scores[ $category_score['id'] ] = (float) $category_score['score'];
                 }
             }
         }
@@ -344,14 +346,15 @@ class AllInOne {
         return Frontend::get_template_html(
             'shortcode-all-in-one',
             array(
-				'options'            => $options,
-				'average_score'      => $average_score,
-				'scores'             => $scores,
-				'categories'         => $categories,
-				'pros_list'          => $pros_list,
-				'cons_list'          => $cons_list,
-				'tagline_fr'         => $tagline_fr,
-				'tagline_en'         => $tagline_en,
+                                'options'            => $options,
+                                'average_score'      => $average_score,
+                                'scores'             => $scores,
+                                'category_scores'    => $category_scores,
+                                'category_definitions' => $category_definitions,
+                                'pros_list'          => $pros_list,
+                                'cons_list'          => $cons_list,
+                                'tagline_fr'         => $tagline_fr,
+                                'tagline_en'         => $tagline_en,
 				'atts'               => $atts,
 				'block_classes'      => $block_classes,
 				'css_variables'      => $css_variables_string,

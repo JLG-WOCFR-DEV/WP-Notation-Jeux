@@ -61,10 +61,27 @@ class Settings {
             $sanitized[ $field ] = $defaults[ $field ] ?? '';
         }
 
+        $current_options    = Helpers::get_plugin_options();
+        $raw_categories     = isset( $input['rating_categories'] ) && is_array( $input['rating_categories'] )
+            ? $input['rating_categories']
+            : array();
+        $current_categories = isset( $current_options['rating_categories'] ) && is_array( $current_options['rating_categories'] )
+            ? $current_options['rating_categories']
+            : array();
+        $default_categories = isset( $defaults['rating_categories'] ) && is_array( $defaults['rating_categories'] )
+            ? $defaults['rating_categories']
+            : array();
+
+        $sanitized['rating_categories'] = $this->sanitize_rating_categories( $raw_categories, $default_categories, $current_categories );
+
         // Traiter les autres champs
         foreach ( $defaults as $key => $default_value ) {
             // Skip les champs déjà traités
             if ( array_key_exists( $key, $select_fields ) ) {
+                continue;
+            }
+
+            if ( $key === 'rating_categories' ) {
                 continue;
             }
 
@@ -275,20 +292,18 @@ class Settings {
     private function register_all_sections() {
         // Section 1: Libellés
         add_settings_section( 'jlg_labels', '1. 📝 Libellés des Catégories', null, 'notation_jlg_page' );
-        for ( $i = 1; $i <= 6; $i++ ) {
-            add_settings_field(
-                'label_cat' . $i,
-                'Catégorie ' . $i,
-                array( $this, 'render_field' ),
-                'notation_jlg_page',
-                'jlg_labels',
-                array(
-					'id'          => 'label_cat' . $i,
-					'type'        => 'text',
-					'placeholder' => $this->get_default_label( $i ),
-				)
-            );
-        }
+        add_settings_field(
+            'rating_categories',
+            __( 'Catégories de notation', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_labels',
+            array(
+                'id'   => 'rating_categories',
+                'type' => 'rating_categories',
+                'desc' => __( 'Ajoutez, réorganisez ou renommez les catégories utilisées pour vos notes détaillées.', 'notation-jlg' ),
+            )
+        );
 
         // Section 2: Présentation de la Note Globale
         add_settings_section( 'jlg_layout', '2. 🎨 Présentation de la Note Globale', null, 'notation_jlg_page' );
@@ -1014,6 +1029,86 @@ class Settings {
         );
     }
 
+    private function sanitize_rating_categories( array $categories, array $defaults, array $current_categories ) {
+        $sanitized = array();
+        $used_ids  = array();
+
+        foreach ( array_values( $categories ) as $index => $category ) {
+            if ( ! is_array( $category ) ) {
+                continue;
+            }
+
+            $label       = isset( $category['label'] ) ? sanitize_text_field( $category['label'] ) : '';
+            $id          = isset( $category['id'] ) ? sanitize_key( $category['id'] ) : '';
+            $original_id = isset( $category['original_id'] ) ? sanitize_key( $category['original_id'] ) : '';
+            $legacy_ids  = array();
+
+            if ( isset( $category['legacy_ids'] ) && is_array( $category['legacy_ids'] ) ) {
+                foreach ( $category['legacy_ids'] as $legacy_id ) {
+                    $sanitized_legacy = sanitize_key( $legacy_id );
+                    if ( $sanitized_legacy !== '' ) {
+                        $legacy_ids[] = $sanitized_legacy;
+                    }
+                }
+            }
+
+            if ( $label === '' ) {
+                $label = sprintf( __( 'Catégorie %d', 'notation-jlg' ), $index + 1 );
+            }
+
+            if ( $id === '' ) {
+                $id = sanitize_key( sanitize_title( $label ) );
+            }
+
+            if ( $id === '' && isset( $defaults[ $index ]['id'] ) ) {
+                $id = sanitize_key( $defaults[ $index ]['id'] );
+            }
+
+            if ( $id === '' ) {
+                $id = 'cat' . ( $index + 1 );
+            }
+
+            $base_id = $id;
+            $suffix  = 2;
+            while ( in_array( $id, $used_ids, true ) ) {
+                $id = $base_id . '-' . $suffix;
+                ++$suffix;
+            }
+
+            $used_ids[] = $id;
+
+            if ( $original_id !== '' && $original_id !== $id ) {
+                $legacy_ids[] = $original_id;
+            }
+
+            if ( empty( $legacy_ids ) && isset( $defaults[ $index ]['legacy_ids'] ) && is_array( $defaults[ $index ]['legacy_ids'] ) ) {
+                foreach ( $defaults[ $index ]['legacy_ids'] as $legacy_default ) {
+                    $legacy_ids[] = sanitize_key( $legacy_default );
+                }
+            }
+
+            if ( isset( $current_categories[ $index ]['legacy_ids'] ) && is_array( $current_categories[ $index ]['legacy_ids'] ) ) {
+                foreach ( $current_categories[ $index ]['legacy_ids'] as $legacy_current ) {
+                    $legacy_ids[] = sanitize_key( $legacy_current );
+                }
+            }
+
+            $legacy_ids = array_values( array_unique( array_filter( $legacy_ids ) ) );
+
+            $sanitized[] = array(
+                'id'         => $id,
+                'label'      => $label,
+                'legacy_ids' => $legacy_ids,
+            );
+        }
+
+        if ( empty( $sanitized ) ) {
+            return $defaults;
+        }
+
+        return $sanitized;
+    }
+
     public function render_field( $args ) {
         $type   = $args['type'] ?? 'text';
         $method = $type . '_field';
@@ -1023,6 +1118,12 @@ class Settings {
         } else {
             // Fallback pour les autres types
             $options = Helpers::get_plugin_options();
+
+            if ( $type === 'rating_categories' ) {
+                $this->render_rating_categories_field( $args, $options );
+
+                return;
+            }
 
             if ( $type === 'textarea' ) {
                 printf(
@@ -1120,6 +1221,116 @@ class Settings {
         }
     }
 
+    private function render_rating_categories_field( $args, $options ) {
+        unset( $options );
+
+        $field_id    = $args['id'] ?? 'rating_categories';
+        $option_name = $this->option_name;
+        $definitions = Helpers::get_rating_category_definitions();
+        $wrapper_id  = $field_id . '_manager';
+        $next_index  = count( $definitions );
+
+        static $styles_printed = false;
+
+        if ( ! $styles_printed ) {
+            echo '<style>';
+            echo '.jlg-rating-categories__list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}';
+            echo '.jlg-rating-category{border:1px solid #dcdcde;background:#fff;padding:12px;border-radius:4px;}';
+            echo '.jlg-rating-category__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}';
+            echo '.jlg-rating-category__actions{display:flex;align-items:flex-end;justify-content:flex-end;}';
+            echo '.jlg-rating-category__remove{color:#a00;}';
+            echo '@media (max-width:782px){.jlg-rating-category__grid{grid-template-columns:1fr;}}';
+            echo '</style>';
+            $styles_printed = true;
+        }
+
+        echo '<div id="' . esc_attr( $wrapper_id ) . '" class="jlg-rating-categories" data-next-index="' . esc_attr( $next_index ) . '">';
+        echo '<div class="jlg-rating-categories__list">';
+
+        foreach ( $definitions as $index => $definition ) {
+            $label       = isset( $definition['label'] ) ? $definition['label'] : '';
+            $id          = isset( $definition['id'] ) ? $definition['id'] : '';
+            $legacy_ids  = isset( $definition['legacy_ids'] ) && is_array( $definition['legacy_ids'] ) ? $definition['legacy_ids'] : array();
+            $label_field = sprintf( '%s[%s][%d][label]', $option_name, $field_id, $index );
+            $id_field    = sprintf( '%s[%s][%d][id]', $option_name, $field_id, $index );
+
+            echo '<div class="jlg-rating-category" data-index="' . esc_attr( $index ) . '">';
+            echo '<div class="jlg-rating-category__grid">';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_id . '_label_' . $index ) . '"><strong>' . esc_html__( 'Libellé', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_label_' . $index ) . '" name="' . esc_attr( $label_field ) . '" value="' . esc_attr( $label ) . '" />';
+            echo '</div>';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_id . '_id_' . $index ) . '"><strong>' . esc_html__( 'Identifiant', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_id_' . $index ) . '" name="' . esc_attr( $id_field ) . '" value="' . esc_attr( $id ) . '" />';
+            echo '<p class="description">' . esc_html__( 'Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement.', 'notation-jlg' ) . '</p>';
+            echo '</div>';
+            echo '<div class="jlg-rating-category__actions">';
+            echo '<button type="button" class="button button-link-delete jlg-rating-category__remove">' . esc_html__( 'Supprimer', 'notation-jlg' ) . '</button>';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<input type="hidden" name="' . esc_attr( sprintf( '%s[%s][%d][original_id]', $option_name, $field_id, $index ) ) . '" value="' . esc_attr( $id ) . '" />';
+
+            if ( ! empty( $legacy_ids ) ) {
+                foreach ( $legacy_ids as $legacy_id ) {
+                    echo '<input type="hidden" name="' . esc_attr( sprintf( '%s[%s][%d][legacy_ids][]', $option_name, $field_id, $index ) ) . '" value="' . esc_attr( $legacy_id ) . '" />';
+                }
+            }
+
+            echo '</div>';
+        }
+
+        echo '</div>';
+        echo '<button type="button" class="button jlg-rating-categories__add">' . esc_html__( 'Ajouter une catégorie', 'notation-jlg' ) . '</button>';
+
+        if ( isset( $args['desc'] ) ) {
+            printf( '<p class="description">%s</p>', wp_kses_post( $args['desc'] ) );
+        }
+
+        echo '</div>';
+
+        $template_label = esc_attr__( 'Libellé', 'notation-jlg' );
+        $template_id    = esc_attr__( 'Identifiant', 'notation-jlg' );
+        $template_remove = esc_attr__( 'Supprimer', 'notation-jlg' );
+        $template_desc   = esc_html__( 'Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement.', 'notation-jlg' );
+
+        echo '<template id="' . esc_attr( $wrapper_id ) . '_template">';
+        echo '<div class="jlg-rating-category" data-index="__INDEX__">';
+        echo '<div class="jlg-rating-category__grid">';
+        echo '<div>';
+        echo '<label for="' . esc_attr( $field_id . '_label___INDEX__' ) . '"><strong>' . esc_html( $template_label ) . '</strong></label>';
+        echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_label___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][label]', $option_name, $field_id ) ) . '" value="" />';
+        echo '</div>';
+        echo '<div>';
+        echo '<label for="' . esc_attr( $field_id . '_id___INDEX__' ) . '"><strong>' . esc_html( $template_id ) . '</strong></label>';
+        echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_id___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][id]', $option_name, $field_id ) ) . '" value="" />';
+        echo '<p class="description">' . esc_html( $template_desc ) . '</p>';
+        echo '</div>';
+        echo '<div class="jlg-rating-category__actions">';
+        echo '<button type="button" class="button button-link-delete jlg-rating-category__remove">' . esc_html( $template_remove ) . '</button>';
+        echo '</div>';
+        echo '</div>';
+        echo '<input type="hidden" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][original_id]', $option_name, $field_id ) ) . '" value="" />';
+        echo '</div>';
+        echo '</template>';
+
+        echo '<script>';
+        echo '(function(){';
+        echo 'const container=document.getElementById(' . wp_json_encode( $wrapper_id ) . ');';
+        echo 'if(!container){return;}';
+        echo 'const list=container.querySelector(".jlg-rating-categories__list");';
+        echo 'const template=document.getElementById(' . wp_json_encode( $wrapper_id . '_template' ) . ');';
+        echo 'const addButton=container.querySelector(".jlg-rating-categories__add");';
+        echo 'let nextIndex=parseInt(container.getAttribute("data-next-index"),10);';
+        echo 'if(!Number.isFinite(nextIndex)){nextIndex=list?list.children.length:0;}';
+        echo 'function bindRow(row){if(!row){return;}const remove=row.querySelector(".jlg-rating-category__remove");if(remove){remove.addEventListener("click",function(event){event.preventDefault();row.remove();});}}';
+        echo 'if(list){Array.prototype.forEach.call(list.children,bindRow);}';
+        echo 'if(addButton&&template&&list){addButton.addEventListener("click",function(event){event.preventDefault();const fragment=template.content.cloneNode(true);const row=fragment.querySelector(".jlg-rating-category");const index=nextIndex++;if(!row){return;}row.setAttribute("data-index",String(index));fragment.querySelectorAll("[name]").forEach(function(element){element.name=element.name.replace(/__INDEX__/g,index);});fragment.querySelectorAll("[id]").forEach(function(element){element.id=element.id.replace(/__INDEX__/g,index);});fragment.querySelectorAll("label[for]").forEach(function(label){label.htmlFor=label.htmlFor.replace(/__INDEX__/g,index);});list.appendChild(fragment);bindRow(list.lastElementChild);container.setAttribute("data-next-index",String(nextIndex));});}';
+        echo '})();';
+        echo '</script>';
+    }
+
     public function render_debug_info() {
         $options = get_option( $this->option_name );
         if ( ! empty( $options['debug_mode_enabled'] ) ) {
@@ -1142,8 +1353,4 @@ class Settings {
         }
     }
 
-    private function get_default_label( $index ) {
-        $defaults = array( 'Gameplay', 'Graphismes', 'Bande-son', 'Durée de vie', 'Scénario', 'Originalité' );
-        return $defaults[ $index - 1 ] ?? 'Catégorie ' . $index;
-    }
 }

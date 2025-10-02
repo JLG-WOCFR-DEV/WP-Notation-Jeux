@@ -84,8 +84,11 @@ class ShortcodeAllowedPostTypesTest extends TestCase
             'post_status' => 'publish',
         ]);
 
+        $definitions      = \JLG\Notation\Helpers::get_rating_category_definitions();
+        $primary_meta_key = $definitions[0]['meta_key'] ?? '_note_gameplay';
+
         $GLOBALS['jlg_test_meta'][$post_id] = [
-            '_note_cat1' => 8.0,
+            $primary_meta_key => 8.0,
         ];
 
         $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();

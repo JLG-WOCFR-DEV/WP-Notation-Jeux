@@ -77,6 +77,9 @@ final class JLG_Plugin_De_Notation_Main {
 
     private function __construct() {
         $this->load_dependencies();
+        if ( class_exists( \JLG\Notation\Helpers::class ) ) {
+            \JLG\Notation\Helpers::migrate_legacy_rating_configuration();
+        }
         $this->init_components();
         add_action( 'jlg_process_v5_migration', array( $this, 'process_migration_batch' ) );
         add_action( 'jlg_queue_average_rebuild', array( $this, 'queue_additional_posts_for_migration' ) );
@@ -147,6 +150,10 @@ final class JLG_Plugin_De_Notation_Main {
     public function on_activation() {
         // Migration automatique depuis v4
         $current_version = get_option( 'jlg_notation_version', '4.0' );
+
+        if ( class_exists( \JLG\Notation\Helpers::class ) ) {
+            \JLG\Notation\Helpers::migrate_legacy_rating_configuration();
+        }
 
         if ( version_compare( $current_version, '5.0', '<' ) ) {
             $this->queue_migration_from_v4();

@@ -107,32 +107,26 @@ class Metaboxes {
 
         wp_nonce_field( 'jlg_save_notes_data', 'jlg_notation_nonce' );
 
-        // Récupérer les catégories de notation
-        $categories = array(
-            'cat1' => __( 'Gameplay', 'notation-jlg' ),
-            'cat2' => __( 'Graphismes', 'notation-jlg' ),
-            'cat3' => __( 'Bande-son', 'notation-jlg' ),
-            'cat4' => __( 'Durée de vie', 'notation-jlg' ),
-            'cat5' => __( 'Scénario', 'notation-jlg' ),
-            'cat6' => __( 'Originalité', 'notation-jlg' ),
-        );
-
-        // Si la classe Helpers existe, on l'utilise
-        if ( class_exists( Helpers::class ) ) {
-            $categories    = Helpers::get_rating_categories();
-            $average_score = Helpers::get_average_score_for_post( $post->ID );
-        } else {
-            $average_score = null;
-        }
+        $definitions   = Helpers::get_rating_category_definitions();
+        $average_score = Helpers::get_average_score_for_post( $post->ID );
 
         echo '<div class="jlg-metabox-notation">';
         echo '<p>' . esc_html__( 'Entrez les notes sur 10. Laissez vide si non pertinent.', 'notation-jlg' ) . '</p>';
 
-        foreach ( $categories as $key => $label ) {
-            $value = get_post_meta( $post->ID, '_note_' . $key, true );
+        foreach ( $definitions as $definition ) {
+            $label    = isset( $definition['label'] ) ? $definition['label'] : '';
+            $meta_key = isset( $definition['meta_key'] ) ? $definition['meta_key'] : '';
+
+            if ( $meta_key === '' ) {
+                continue;
+            }
+
+            $value = Helpers::resolve_category_meta_value( $post->ID, $definition, true );
+            $value = $value !== null ? number_format( (float) $value, 1, '.', '' ) : '';
+
             echo '<div style="margin-bottom:10px;">';
             echo '<label><strong>' . esc_html( $label ) . ' :</strong></label><br>';
-            echo '<input type="number" step="0.1" min="0" max="10" name="_note_' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '" style="width:80px;" /> ' . esc_html_x( '/ 10', 'score input suffix', 'notation-jlg' );
+            echo '<input type="number" step="0.1" min="0" max="10" name="' . esc_attr( $meta_key ) . '" value="' . esc_attr( $value ) . '" style="width:80px;" /> ' . esc_html_x( '/ 10', 'score input suffix', 'notation-jlg' );
             echo '</div>';
         }
 
@@ -292,20 +286,34 @@ class Metaboxes {
 
         // Sauvegarder les notes
         if ( isset( $_POST['jlg_notation_nonce'] ) && wp_verify_nonce( $_POST['jlg_notation_nonce'], 'jlg_save_notes_data' ) ) {
-            $categories     = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
+            $definitions    = Helpers::get_rating_category_definitions();
             $scores_changed = false;
 
-            foreach ( $categories as $key ) {
-                $field_name = '_note_' . $key;
-                if ( isset( $_POST[ $field_name ] ) ) {
-                    $raw_value = wp_unslash( $_POST[ $field_name ] );
-                    $value     = sanitize_text_field( $raw_value );
+            foreach ( $definitions as $definition ) {
+                $meta_key = isset( $definition['meta_key'] ) ? $definition['meta_key'] : '';
 
-                    if ( $value === '' ) {
-                        $deleted        = delete_post_meta( $post_id, $field_name );
-                        $scores_changed = $scores_changed || (bool) $deleted;
-                    } elseif ( is_numeric( $value ) && $value >= 0 && $value <= 10 ) {
-                        $updated        = update_post_meta( $post_id, $field_name, round( floatval( $value ), 1 ) );
+                if ( $meta_key === '' || ! isset( $_POST[ $meta_key ] ) ) {
+                    continue;
+                }
+
+                $raw_value = wp_unslash( $_POST[ $meta_key ] );
+                if ( is_string( $raw_value ) ) {
+                    $raw_value = str_replace( ',', '.', $raw_value );
+                }
+
+                $value = sanitize_text_field( (string) $raw_value );
+
+                if ( $value === '' ) {
+                    $deleted        = delete_post_meta( $post_id, $meta_key );
+                    $scores_changed = $scores_changed || (bool) $deleted;
+                    continue;
+                }
+
+                if ( is_numeric( $value ) ) {
+                    $numeric_value = round( floatval( $value ), 1 );
+
+                    if ( $numeric_value >= 0 && $numeric_value <= 10 ) {
+                        $updated        = update_post_meta( $post_id, $meta_key, $numeric_value );
                         $scores_changed = $scores_changed || (bool) $updated;
                     }
                 }

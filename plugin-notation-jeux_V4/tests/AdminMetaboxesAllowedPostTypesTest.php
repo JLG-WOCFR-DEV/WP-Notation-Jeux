@@ -76,10 +76,14 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
         ]);
         $GLOBALS['jlg_test_meta'][$post_id] = [];
 
+        $definitions     = \JLG\Notation\Helpers::get_rating_category_definitions();
+        $first_meta_key  = $definitions[0]['meta_key'] ?? '_note_gameplay';
+        $second_meta_key = $definitions[1]['meta_key'] ?? '_note_graphismes';
+
         $_POST = [
             'jlg_notation_nonce' => 'nonce',
-            '_note_cat1'         => '9.5',
-            '_note_cat2'         => '8.0',
+            $first_meta_key      => '9.5',
+            $second_meta_key     => '8.0',
             'jlg_details_nonce'  => 'nonce',
             'jlg_game_title'     => 'Custom Review Game',
             'jlg_developpeur'    => 'Studio Test',
@@ -101,8 +105,8 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
 
         $saved_meta = $GLOBALS['jlg_test_meta'][$post_id];
 
-        $this->assertSame(9.5, $saved_meta['_note_cat1']);
-        $this->assertSame(8.0, $saved_meta['_note_cat2']);
+        $this->assertSame(9.5, $saved_meta[$first_meta_key]);
+        $this->assertSame(8.0, $saved_meta[$second_meta_key]);
         $this->assertSame('Custom Review Game', $saved_meta['_jlg_game_title']);
         $this->assertSame('Studio Test', $saved_meta['_jlg_developpeur']);
         $this->assertSame('Publisher Test', $saved_meta['_jlg_editeur']);

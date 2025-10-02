@@ -48,13 +48,12 @@ class RatingBlock {
             return '';
         }
 
-        $categories = Helpers::get_rating_categories();
-        $scores     = array();
+        $category_scores = Helpers::get_category_scores_for_display( $post_id );
+        $score_map       = array();
 
-        foreach ( array_keys( $categories ) as $key ) {
-            $score_value = get_post_meta( $post_id, '_note_' . $key, true );
-            if ( $score_value !== '' && is_numeric( $score_value ) ) {
-                $scores[ $key ] = floatval( $score_value );
+        foreach ( $category_scores as $category_score ) {
+            if ( isset( $category_score['id'], $category_score['score'] ) ) {
+                $score_map[ $category_score['id'] ] = (float) $category_score['score'];
             }
         }
 
@@ -63,11 +62,12 @@ class RatingBlock {
         return Frontend::get_template_html(
             'shortcode-rating-block',
             array(
-				'options'       => Helpers::get_plugin_options(),
-				'average_score' => $average_score,
-				'scores'        => $scores,
-				'categories'    => $categories,
-			)
+                                'options'       => Helpers::get_plugin_options(),
+                                'average_score' => $average_score,
+                                'scores'        => $score_map,
+                                'category_scores' => $category_scores,
+                                'category_definitions' => Helpers::get_rating_category_definitions(),
+                        )
         );
     }
 }

@@ -194,30 +194,28 @@ class ShortcodeAllInOneRenderTest extends TestCase
         ]);
 
         $GLOBALS['jlg_test_meta'][$post_id] = [
-            '_jlg_tagline_fr'      => 'Meilleur jeu de l\'année',
-            '_jlg_tagline_en'      => 'Game of the year contender',
-            '_jlg_points_forts'    => "Univers immersif\nCombats dynamiques",
-            '_jlg_points_faibles'  => "Quêtes répétitives\nQuelques bugs",
-            '_note_cat1'           => 8.5,
-            '_note_cat2'           => 7.0,
-            '_note_cat3'           => 9.0,
-            '_note_cat4'           => 8.0,
+            '_jlg_tagline_fr'     => 'Meilleur jeu de l\'année',
+            '_jlg_tagline_en'     => 'Game of the year contender',
+            '_jlg_points_forts'   => "Univers immersif\nCombats dynamiques",
+            '_jlg_points_faibles' => "Quêtes répétitives\nQuelques bugs",
         ];
+
+        $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();
+        $values      = [8.5, 7.0, 9.0, 8.0, 7.5, 6.5];
+
+        foreach ($definitions as $index => $definition) {
+            if (!isset($definition['meta_key'], $values[$index])) {
+                continue;
+            }
+
+            $GLOBALS['jlg_test_meta'][$post_id][$definition['meta_key']] = $values[$index];
+        }
     }
 
     private function setPluginOptions(array $overrides): void
     {
         $defaults = \JLG\Notation\Helpers::get_default_settings();
-        $base = array_merge($defaults, [
-            'label_cat1' => 'Gameplay',
-            'label_cat2' => 'Graphismes',
-            'label_cat3' => 'Bande-son',
-            'label_cat4' => 'Durée de vie',
-            'label_cat5' => 'Scénario',
-            'label_cat6' => 'Originalité',
-        ]);
-
-        $options = array_merge($base, $overrides);
+        $options  = array_merge($defaults, $overrides);
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $options;
         \JLG\Notation\Helpers::flush_plugin_options_cache();
