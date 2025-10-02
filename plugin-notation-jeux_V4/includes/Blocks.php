@@ -92,6 +92,7 @@ class Blocks {
 
         add_action( 'init', array( $this, 'register_block_editor_assets' ) );
         add_action( 'init', array( $this, 'register_blocks' ) );
+        add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
     }
 
     public function register_block_editor_assets() {
@@ -180,6 +181,70 @@ class Blocks {
             }
 
             register_block_type_from_metadata( $metadata_path, $args );
+        }
+    }
+
+    public function enqueue_block_editor_assets() {
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return;
+        }
+
+        $current_screen = get_current_screen();
+        if ( ! $current_screen || $current_screen->id !== 'post' ) {
+            return;
+        }
+
+        $frontend_handle = 'jlg-frontend';
+        if ( ! wp_style_is( $frontend_handle, 'registered' ) ) {
+            wp_register_style(
+                $frontend_handle,
+                trailingslashit( JLG_NOTATION_PLUGIN_URL ) . 'assets/css/jlg-frontend.css',
+                array(),
+                JLG_NOTATION_VERSION
+            );
+        }
+
+        if ( ! wp_style_is( $frontend_handle, 'enqueued' ) ) {
+            wp_enqueue_style( $frontend_handle );
+        }
+
+        if ( wp_style_is( $frontend_handle, 'enqueued' ) ) {
+            $options = Helpers::get_plugin_options();
+            $palette = Helpers::get_color_palette();
+
+            $post_id = 0;
+            if ( isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $post_id = absint( $_GET['post'] );
+            }
+
+            if ( $post_id <= 0 ) {
+                $post_id = get_the_ID();
+            }
+
+            $average_score = null;
+            if ( $post_id > 0 ) {
+                $average_score = Helpers::get_average_score_for_post( $post_id );
+            }
+
+            $inline_css = DynamicCss::build_frontend_css( $options, $palette, $average_score );
+
+            if ( $inline_css !== '' ) {
+                wp_add_inline_style( $frontend_handle, $inline_css );
+            }
+        }
+
+        $game_explorer_handle = 'jlg-game-explorer';
+        if ( ! wp_style_is( $game_explorer_handle, 'registered' ) ) {
+            wp_register_style(
+                $game_explorer_handle,
+                trailingslashit( JLG_NOTATION_PLUGIN_URL ) . 'assets/css/game-explorer.css',
+                array( $frontend_handle ),
+                JLG_NOTATION_VERSION
+            );
+        }
+
+        if ( wp_style_is( $game_explorer_handle, 'registered' ) && ! wp_style_is( $game_explorer_handle, 'enqueued' ) ) {
+            wp_enqueue_style( $game_explorer_handle );
         }
     }
 
