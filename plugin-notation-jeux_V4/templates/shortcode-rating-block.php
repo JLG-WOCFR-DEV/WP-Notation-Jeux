@@ -13,7 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$options = \JLG\Notation\Helpers::get_plugin_options();
+$options          = \JLG\Notation\Helpers::get_plugin_options();
+$score_max        = \JLG\Notation\Helpers::get_score_max( $options );
+$score_max_label  = number_format_i18n( $score_max );
 ?>
 
 <div class="review-box-jlg<?php echo $options['enable_animations'] ? ' jlg-animate' : ''; ?>">
@@ -55,13 +57,18 @@ $options = \JLG\Notation\Helpers::get_plugin_options();
                             /* translators: 1: Rating value for a specific category. 2: Maximum possible rating. */
                             esc_html__( '%1$s / %2$s', 'notation-jlg' ),
                             $formatted_score_value,
-                            10
+                            esc_html( $score_max_label )
                         );
                         ?>
                     </span>
                 </div>
                 <div class="rating-bar-container">
-                    <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( $score_value * 10 ); ?>%; --bar-color:<?php echo esc_attr( $bar_color ); ?>;"></div>
+                    <?php
+                    $percentage = $score_max > 0
+                        ? max( 0, min( 100, ( $score_value / $score_max ) * 100 ) )
+                        : 0;
+                    ?>
+                    <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( round( $percentage, 2 ) ); ?>%; --bar-color:<?php echo esc_attr( $bar_color ); ?>;"></div>
                 </div>
             </div>
         <?php endforeach; ?>

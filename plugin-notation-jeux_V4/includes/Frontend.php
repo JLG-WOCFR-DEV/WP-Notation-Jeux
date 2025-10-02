@@ -1459,16 +1459,17 @@ class Frontend {
             return;
         }
 
+        $score_max            = Helpers::get_score_max();
         $review_rating_bounds = apply_filters(
             'jlg_review_rating_bounds',
             array(
                 'min' => 0,
-                'max' => 10,
+                'max' => $score_max,
             ),
             $post_id
         );
 
-        $review_best_rating  = isset( $review_rating_bounds['max'] ) ? floatval( $review_rating_bounds['max'] ) : 10;
+        $review_best_rating  = isset( $review_rating_bounds['max'] ) ? floatval( $review_rating_bounds['max'] ) : $score_max;
         $review_worst_rating = isset( $review_rating_bounds['min'] ) ? floatval( $review_rating_bounds['min'] ) : 0;
 
         $schema = array(
@@ -1610,6 +1611,7 @@ class Frontend {
                 'paged'                => 1,
                 'orderby'              => '',
                 'order'                => '',
+                'score_max'            => Helpers::get_score_max(),
                 'colonnes'             => array(),
                 'colonnes_disponibles' => array(),
                 'error_message'        => '',

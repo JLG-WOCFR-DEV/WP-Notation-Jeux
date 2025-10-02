@@ -3,6 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+$score_max       = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
+$score_max_label = number_format_i18n( $score_max );
 $style_attribute = '';
 if ( ! empty( $css_variables ) ) {
     $style_attribute = ' style="' . esc_attr( $css_variables ) . '"';
@@ -89,11 +91,26 @@ $data_attributes  = sprintf(
             <div class="jlg-aio-score-item">
                 <div class="jlg-aio-score-header">
                     <span class="jlg-aio-score-label"><?php echo esc_html( $label ); ?></span>
-                    <span class="jlg-aio-score-number"><?php echo esc_html( number_format_i18n( $score_value, 1 ) ); ?> / 10</span>
+                    <span class="jlg-aio-score-number">
+                        <?php echo esc_html( number_format_i18n( $score_value, 1 ) ); ?>
+                        <?php
+                        printf(
+                            /* translators: %s: Maximum possible rating value. */
+                            esc_html_x( '/ %s', 'score input suffix', 'notation-jlg' ),
+                            esc_html( $score_max_label )
+                        );
+                        ?>
+                    </span>
                 </div>
                 <div class="jlg-aio-score-bar-bg">
+                    <?php
+                    $percentage = $score_max > 0
+                        ? max( 0, min( 100, ( $score_value / $score_max ) * 100 ) )
+                        : 0;
+                    $percentage_attr = esc_attr( round( $percentage, 2 ) );
+                    ?>
                     <div class="jlg-aio-score-bar"
-                        style="--bar-color: <?php echo esc_attr( $bar_color ); ?>; --bar-width: <?php echo esc_attr( $score_value * 10 ); ?>%; width: <?php echo esc_attr( $score_value * 10 ); ?>%;"></div>
+                        style="--bar-color: <?php echo esc_attr( $bar_color ); ?>; --bar-width: <?php echo $percentage_attr; ?>%; width: <?php echo $percentage_attr; ?>%;"></div>
                 </div>
             </div>
             <?php endforeach; ?>

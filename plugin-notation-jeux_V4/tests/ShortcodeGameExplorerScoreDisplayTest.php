@@ -29,7 +29,7 @@ class ShortcodeGameExplorerScoreDisplayTest extends TestCase
         $this->assertStringNotContainsString(
             'jlg-ge-card__score-outof',
             $output,
-            'The "/10" suffix should not be displayed when no numeric score is available.'
+            'The score suffix should not be displayed when no numeric score is available.'
         );
     }
 
@@ -41,10 +41,13 @@ class ShortcodeGameExplorerScoreDisplayTest extends TestCase
             'has_score' => true,
         ]);
 
-        $this->assertStringContainsString(
-            '<span class="jlg-ge-card__score-outof">/10</span>',
+        $score_max_label = number_format_i18n( \JLG\Notation\Helpers::get_score_max() );
+        $pattern         = '/<span class="jlg-ge-card__score-outof">\s*\/' . preg_quote( $score_max_label, '/' ) . '<\/span>/';
+
+        $this->assertMatchesRegularExpression(
+            $pattern,
             $output,
-            'The "/10" suffix should be rendered when a numeric score is available.'
+            'The score suffix should be rendered when a numeric score is available.'
         );
     }
 

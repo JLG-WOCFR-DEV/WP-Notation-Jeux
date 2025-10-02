@@ -355,12 +355,13 @@ class AllInOne {
                                 'cons_list'          => $cons_list,
                                 'tagline_fr'         => $tagline_fr,
                                 'tagline_en'         => $tagline_en,
-				'atts'               => $atts,
-				'block_classes'      => $block_classes,
-				'css_variables'      => $css_variables_string,
-				'score_layout'       => $score_layout,
-				'animations_enabled' => ! empty( $options['enable_animations'] ),
-			)
+                                'atts'               => $atts,
+                                'block_classes'      => $block_classes,
+                                'css_variables'      => $css_variables_string,
+                                'score_layout'       => $score_layout,
+                                'animations_enabled' => ! empty( $options['enable_animations'] ),
+                                'score_max'          => Helpers::get_score_max( $options ),
+                        )
         );
     }
 

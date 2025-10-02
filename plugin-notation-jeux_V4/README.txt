@@ -18,7 +18,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 = Fonctionnalités principales =
 
-* **Système de notation flexible** : 6 catégories personnalisables notées sur 10
+* **Système de notation flexible** : 6 catégories personnalisables avec un barème ajustable (par défaut sur 10)
 * **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
 * **Notation utilisateurs** : Permettez à vos lecteurs de voter
 * **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage

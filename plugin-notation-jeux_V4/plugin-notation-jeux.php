@@ -67,6 +67,7 @@ final class JLG_Plugin_De_Notation_Main {
     private $blocks                         = null;
     private const MIGRATION_BATCH_SIZE      = 50;
     private const MIGRATION_SCAN_BATCH_SIZE = 200;
+    private const SCORE_SCALE_MIGRATION_BATCH_SIZE = 40;
 
     public static function get_instance() {
         if ( self::$instance === null ) {
@@ -83,6 +84,7 @@ final class JLG_Plugin_De_Notation_Main {
         $this->init_components();
         add_action( 'jlg_process_v5_migration', array( $this, 'process_migration_batch' ) );
         add_action( 'jlg_queue_average_rebuild', array( $this, 'queue_additional_posts_for_migration' ) );
+        add_action( \JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK, array( $this, 'process_score_scale_migration_batch' ) );
         add_action( 'init', array( $this, 'ensure_migration_schedule' ) );
         register_activation_hook( __FILE__, array( $this, 'on_activation' ) );
         register_deactivation_hook( __FILE__, array( $this, 'on_deactivation' ) );
@@ -171,11 +173,14 @@ final class JLG_Plugin_De_Notation_Main {
     public function on_deactivation() {
         if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
             wp_clear_scheduled_hook( 'jlg_process_v5_migration' );
+            wp_clear_scheduled_hook( \JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK );
         }
 
         delete_option( 'jlg_migration_v5_queue' );
         delete_option( 'jlg_migration_v5_scan_state' );
         delete_option( 'jlg_migration_v5_completed' );
+        delete_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION );
+        delete_option( \JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION );
     }
 
     private function queue_migration_from_v4() {
@@ -370,6 +375,60 @@ final class JLG_Plugin_De_Notation_Main {
         update_option( 'jlg_migration_v5_completed', current_time( 'mysql' ), false );
     }
 
+    public function process_score_scale_migration_batch() {
+        $migration = get_option( \JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION, array() );
+
+        if ( ! is_array( $migration ) || empty( $migration['old_max'] ) || empty( $migration['new_max'] ) ) {
+            delete_option( \JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION );
+            delete_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION );
+            return;
+        }
+
+        $queue = get_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION, array() );
+
+        if ( ! is_array( $queue ) ) {
+            $queue = array();
+        }
+
+        $queue = array_values(
+            array_filter(
+                array_map( 'intval', $queue ),
+                static function ( $post_id ) {
+                    return $post_id > 0;
+                }
+            )
+        );
+
+        if ( empty( $queue ) ) {
+            delete_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION );
+            delete_option( \JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION );
+            return;
+        }
+
+        $batch = array_splice( $queue, 0, self::SCORE_SCALE_MIGRATION_BATCH_SIZE );
+
+        foreach ( $batch as $post_id ) {
+            \JLG\Notation\Helpers::rescale_post_scores_for_scale_change(
+                $post_id,
+                $migration['old_max'],
+                $migration['new_max']
+            );
+        }
+
+        update_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION, $queue, false );
+
+        if ( empty( $queue ) ) {
+            delete_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION );
+            delete_option( \JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION );
+            \JLG\Notation\Helpers::clear_rated_post_ids_cache();
+            return;
+        }
+
+        if ( function_exists( 'wp_schedule_single_event' ) ) {
+            wp_schedule_single_event( time() + 1, \JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK );
+        }
+    }
+
     public function queue_additional_posts_for_migration( $post_ids ) {
         if ( ! is_array( $post_ids ) ) {
             $post_ids = array( $post_ids );
@@ -413,7 +472,14 @@ function jlg_get_post_rating( $post_id = null ) {
 function jlg_display_post_rating( $post_id = null ) {
     $score = jlg_get_post_rating( $post_id );
     if ( $score !== null ) {
-        echo '<span class="jlg-post-rating">' . esc_html( number_format_i18n( $score, 1 ) ) . '/10</span>';
+        $score_max_label = number_format_i18n( \JLG\Notation\Helpers::get_score_max() );
+        echo '<span class="jlg-post-rating">' . esc_html( number_format_i18n( $score, 1 ) ) . ' ';
+        printf(
+            /* translators: %s: Maximum possible rating value. */
+            esc_html__( '/%s', 'notation-jlg' ),
+            esc_html( $score_max_label )
+        );
+        echo '</span>';
     }
 }
 

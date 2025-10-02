@@ -7,6 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+$score_max         = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
+$score_max_label   = number_format_i18n( $score_max );
 $columns           = is_array( $colonnes ) ? $colonnes : array();
 $available_columns = is_array( $colonnes_disponibles ) ? $colonnes_disponibles : array();
 $table_id          = ! empty( $table_id ) ? sanitize_html_class( $table_id ) : '';
@@ -336,7 +338,7 @@ else :
                                         printf(
                                             /* translators: %s: Maximum possible rating value. */
                                             esc_html__( '/ %s', 'notation-jlg' ),
-                                            10
+                                            esc_html( $score_max_label )
                                         );
                                         break;
                                     case 'developpeur':

@@ -107,11 +107,19 @@ class Metaboxes {
 
         wp_nonce_field( 'jlg_save_notes_data', 'jlg_notation_nonce' );
 
-        $definitions   = Helpers::get_rating_category_definitions();
-        $average_score = Helpers::get_average_score_for_post( $post->ID );
+        $definitions     = Helpers::get_rating_category_definitions();
+        $average_score   = Helpers::get_average_score_for_post( $post->ID );
+        $score_max       = Helpers::get_score_max();
+        $score_max_label = number_format_i18n( $score_max );
 
         echo '<div class="jlg-metabox-notation">';
-        echo '<p>' . esc_html__( 'Entrez les notes sur 10. Laissez vide si non pertinent.', 'notation-jlg' ) . '</p>';
+        printf(
+            '<p>%s</p>',
+            sprintf(
+                esc_html__( 'Entrez les notes sur %s. Laissez vide si non pertinent.', 'notation-jlg' ),
+                esc_html( $score_max_label )
+            )
+        );
 
         foreach ( $definitions as $definition ) {
             $label    = isset( $definition['label'] ) ? $definition['label'] : '';
@@ -126,16 +134,25 @@ class Metaboxes {
 
             echo '<div style="margin-bottom:10px;">';
             echo '<label><strong>' . esc_html( $label ) . ' :</strong></label><br>';
-            echo '<input type="number" step="0.1" min="0" max="10" name="' . esc_attr( $meta_key ) . '" value="' . esc_attr( $value ) . '" style="width:80px;" /> ' . esc_html_x( '/ 10', 'score input suffix', 'notation-jlg' );
+            echo '<input type="number" step="0.1" min="0" max="' . esc_attr( $score_max ) . '" name="' . esc_attr( $meta_key ) . '" value="' . esc_attr( $value ) . '" style="width:80px;" /> ';
+            printf(
+                '%s',
+                sprintf(
+                    /* translators: %s: Maximum possible rating value. */
+                    esc_html_x( '/ %s', 'score input suffix', 'notation-jlg' ),
+                    esc_html( $score_max_label )
+                )
+            );
             echo '</div>';
         }
 
         if ( $average_score !== null ) {
             echo '<div style="background:#f0f6fc; padding:10px; margin-top:15px; border-radius:4px;">';
             $average_display = sprintf(
-                /* translators: %s: average score value. */
-                __( '%s / 10', 'notation-jlg' ),
-                number_format_i18n( $average_score, 1 )
+                /* translators: 1: Average score value. 2: Maximum possible rating value. */
+                __( '%1$s / %2$s', 'notation-jlg' ),
+                number_format_i18n( $average_score, 1 ),
+                $score_max_label
             );
             echo '<strong>' . esc_html__( 'Note moyenne :', 'notation-jlg' ) . '</strong> <span style="color:#0073aa; font-size:16px;">' . esc_html( $average_display ) . '</span>';
             echo '</div>';
@@ -287,6 +304,7 @@ class Metaboxes {
         // Sauvegarder les notes
         if ( isset( $_POST['jlg_notation_nonce'] ) && wp_verify_nonce( $_POST['jlg_notation_nonce'], 'jlg_save_notes_data' ) ) {
             $definitions    = Helpers::get_rating_category_definitions();
+            $score_max      = Helpers::get_score_max();
             $scores_changed = false;
 
             foreach ( $definitions as $definition ) {
@@ -312,7 +330,7 @@ class Metaboxes {
                 if ( is_numeric( $value ) ) {
                     $numeric_value = round( floatval( $value ), 1 );
 
-                    if ( $numeric_value >= 0 && $numeric_value <= 10 ) {
+                    if ( $numeric_value >= 0 && $numeric_value <= $score_max ) {
                         $updated        = update_post_meta( $post_id, $meta_key, $numeric_value );
                         $scores_changed = $scores_changed || (bool) $updated;
                     }

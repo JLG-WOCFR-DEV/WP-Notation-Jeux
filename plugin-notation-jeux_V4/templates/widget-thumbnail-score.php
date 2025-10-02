@@ -14,8 +14,10 @@ if ( $average_score === null ) {
 	return;
 }
 
-$options     = \JLG\Notation\Helpers::get_plugin_options();
-$score_color = \JLG\Notation\Helpers::calculate_color_from_note( $average_score, $options );
+$options         = \JLG\Notation\Helpers::get_plugin_options();
+$score_color     = \JLG\Notation\Helpers::calculate_color_from_note( $average_score, $options );
+$score_max       = \JLG\Notation\Helpers::get_score_max( $options );
+$score_max_label = number_format_i18n( $score_max );
 ?>
 
 <div class="jlg-thumbnail-score" style="
@@ -39,7 +41,7 @@ $score_color = \JLG\Notation\Helpers::calculate_color_from_note( $average_score,
         printf(
             /* translators: %s: Maximum rating value displayed with the thumbnail score. */
             esc_html__( '/%s', 'notation-jlg' ),
-            10
+            esc_html( $score_max_label )
         );
         ?>
     </span>
