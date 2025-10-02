@@ -79,6 +79,14 @@ if (!function_exists('wp_set_script_translations')) {
     }
 }
 
+if (!function_exists('do_shortcode')) {
+    function do_shortcode($shortcode) {
+        $GLOBALS['jlg_test_last_shortcode'] = $shortcode;
+
+        return '[rendered]' . $shortcode;
+    }
+}
+
 class BlocksRegistrationTest extends TestCase
 {
     protected function setUp(): void
@@ -146,5 +154,24 @@ class BlocksRegistrationTest extends TestCase
             $this->assertArrayHasKey('render_callback', $found_registration['args']);
             $this->assertSame([$blocks, $config['callback']], $found_registration['args']['render_callback']);
         }
+    }
+
+    public function test_render_rating_block_supports_attribute_overrides(): void
+    {
+        $blocks = new \JLG\Notation\Blocks();
+
+        $GLOBALS['jlg_test_last_shortcode'] = null;
+
+        $result = $blocks->render_rating_block([
+            'postId'        => 42,
+            'scoreLayout'   => 'circle',
+            'showAnimations' => false,
+            'accentColor'   => '#ABCDEF',
+        ]);
+
+        $expected_shortcode = '[bloc_notation_jeu post_id="42" score_layout="circle" animations="non" accent_color="#abcdef"]';
+
+        $this->assertSame($expected_shortcode, $GLOBALS['jlg_test_last_shortcode']);
+        $this->assertSame('[rendered]' . $expected_shortcode, $result);
     }
 }

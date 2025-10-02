@@ -13,14 +13,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$options          = \JLG\Notation\Helpers::get_plugin_options();
-$score_max        = \JLG\Notation\Helpers::get_score_max( $options );
-$score_max_label  = number_format_i18n( $score_max );
+$options = isset( $options ) && is_array( $options )
+    ? $options
+    : \JLG\Notation\Helpers::get_plugin_options();
+
+$score_max       = \JLG\Notation\Helpers::get_score_max( $options );
+$score_max_label = number_format_i18n( $score_max );
+$score_layout    = isset( $options['score_layout'] ) && $options['score_layout'] === 'circle' ? 'circle' : 'text';
+$animations_on   = ! empty( $options['enable_animations'] );
+
+$style_variables = array(
+    '--jlg-score-gradient-1' => isset( $options['score_gradient_1'] ) ? $options['score_gradient_1'] : '',
+    '--jlg-score-gradient-2' => isset( $options['score_gradient_2'] ) ? $options['score_gradient_2'] : '',
+    '--jlg-color-high'       => isset( $options['color_high'] ) ? $options['color_high'] : '',
+    '--jlg-color-mid'        => isset( $options['color_mid'] ) ? $options['color_mid'] : '',
+    '--jlg-color-low'        => isset( $options['color_low'] ) ? $options['color_low'] : '',
+);
+
+$style_rules = array();
+foreach ( $style_variables as $var => $value ) {
+    if ( is_string( $value ) && $value !== '' ) {
+        $style_rules[] = $var . ':' . $value;
+    }
+}
+
+$style_attribute = ! empty( $style_rules ) ? ' style="' . esc_attr( implode( ';', $style_rules ) ) . '"' : '';
 ?>
 
-<div class="review-box-jlg<?php echo $options['enable_animations'] ? ' jlg-animate' : ''; ?>">
+<div class="review-box-jlg<?php echo $animations_on ? ' jlg-animate' : ''; ?>"<?php echo $style_attribute; ?>>
     <div class="global-score-wrapper">
-        <?php if ( $options['score_layout'] === 'circle' ) : ?>
+        <?php if ( $score_layout === 'circle' ) : ?>
             <div class="score-circle">
                 <div class="score-value"><?php echo esc_html( number_format_i18n( $average_score, 1 ) ); ?></div>
                 <div class="score-label"><?php esc_html_e( 'Note Globale', 'notation-jlg' ); ?></div>

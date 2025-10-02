@@ -350,6 +350,24 @@ class Blocks {
             $atts['post_id'] = $post_id;
         }
 
+        if ( ! empty( $attributes['scoreLayout'] ) && is_string( $attributes['scoreLayout'] ) ) {
+            $layout = sanitize_key( $attributes['scoreLayout'] );
+            if ( in_array( $layout, array( 'text', 'circle' ), true ) ) {
+                $atts['score_layout'] = $layout;
+            }
+        }
+
+        if ( isset( $attributes['showAnimations'] ) ) {
+            $atts['animations'] = (bool) $attributes['showAnimations'];
+        }
+
+        if ( ! empty( $attributes['accentColor'] ) && is_string( $attributes['accentColor'] ) ) {
+            $color = sanitize_hex_color( $attributes['accentColor'] );
+            if ( ! empty( $color ) ) {
+                $atts['accent_color'] = $color;
+            }
+        }
+
         return $this->render_shortcode( 'bloc_notation_jeu', $atts );
     }
 

@@ -19,7 +19,10 @@ class RatingBlock {
     public function render( $atts, $content = '', $shortcode_tag = '' ) {
         $atts = shortcode_atts(
             array(
-				'post_id' => get_the_ID(),
+                'post_id'      => get_the_ID(),
+                'score_layout' => '',
+                'animations'   => '',
+                'accent_color' => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -57,17 +60,72 @@ class RatingBlock {
             }
         }
 
+        $options  = Helpers::get_plugin_options();
+        $defaults = Helpers::get_default_settings();
+
+        $score_layout = is_string( $atts['score_layout'] ) ? sanitize_key( $atts['score_layout'] ) : '';
+        if ( in_array( $score_layout, array( 'text', 'circle' ), true ) ) {
+            $options['score_layout'] = $score_layout;
+        } elseif ( ! isset( $options['score_layout'] ) ) {
+            $options['score_layout'] = $defaults['score_layout'] ?? 'text';
+        }
+
+        $animations_override = $this->normalize_bool_attribute( $atts['animations'] );
+        if ( $animations_override !== null ) {
+            $options['enable_animations'] = $animations_override ? 1 : 0;
+        } elseif ( ! isset( $options['enable_animations'] ) ) {
+            $options['enable_animations'] = ! empty( $defaults['enable_animations'] );
+        }
+
+        $accent_color = '';
+        if ( is_string( $atts['accent_color'] ) && $atts['accent_color'] !== '' ) {
+            $accent_color = sanitize_hex_color( $atts['accent_color'] );
+        }
+
+        if ( ! empty( $accent_color ) ) {
+            $options['score_gradient_1'] = $accent_color;
+            $options['score_gradient_2'] = Helpers::adjust_hex_brightness( $accent_color, 20 );
+            $options['color_high']       = $accent_color;
+            $options['color_mid']        = Helpers::adjust_hex_brightness( $accent_color, -10 );
+            $options['color_low']        = Helpers::adjust_hex_brightness( $accent_color, -25 );
+            $options['accent_color']     = $accent_color;
+        }
+
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
         return Frontend::get_template_html(
             'shortcode-rating-block',
             array(
-                                'options'       => Helpers::get_plugin_options(),
-                                'average_score' => $average_score,
-                                'scores'        => $score_map,
-                                'category_scores' => $category_scores,
-                                'category_definitions' => Helpers::get_rating_category_definitions(),
-                        )
+                'options'              => $options,
+                'average_score'        => $average_score,
+                'scores'               => $score_map,
+                'category_scores'      => $category_scores,
+                'category_definitions' => Helpers::get_rating_category_definitions(),
+            )
         );
+    }
+
+    private function normalize_bool_attribute( $value ) {
+        if ( is_bool( $value ) ) {
+            return $value;
+        }
+
+        if ( is_numeric( $value ) ) {
+            return intval( $value ) === 1;
+        }
+
+        if ( is_string( $value ) ) {
+            $normalized = strtolower( trim( $value ) );
+
+            if ( in_array( $normalized, array( '1', 'true', 'on', 'yes', 'oui' ), true ) ) {
+                return true;
+            }
+
+            if ( in_array( $normalized, array( '0', 'false', 'off', 'no', 'non' ), true ) ) {
+                return false;
+            }
+        }
+
+        return null;
     }
 }
