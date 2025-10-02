@@ -99,6 +99,26 @@ if ( $columns_count === 0 ) {
     $columns_count = 1;
 }
 
+if ( ! function_exists( 'jlg_get_summary_column_label' ) ) {
+    function jlg_get_summary_column_label( $col_info ) {
+        $label = isset( $col_info['label'] ) ? (string) $col_info['label'] : '';
+
+        if ( isset( $col_info['type'] ) && $col_info['type'] === 'rating_category' ) {
+            $weight = isset( $col_info['weight'] ) ? $col_info['weight'] : 1.0;
+            $weight = \JLG\Notation\Helpers::normalize_category_weight( $weight, 1.0 );
+
+            if ( abs( $weight - 1.0 ) > 0.001 ) {
+                $label .= ' ' . sprintf(
+                    _x( '×%s', 'category weight multiplier', 'notation-jlg' ),
+                    number_format_i18n( $weight, 1 )
+                );
+            }
+        }
+
+        return $label;
+    }
+}
+
 if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
     function jlg_print_sortable_header( $col, $col_info, $current_orderby, $current_order, $table_id, $extra_params = array() ) {
         $base_url = '';
@@ -107,8 +127,10 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
             unset( $extra_params['base_url'] );
         }
 
+        $display_label = jlg_get_summary_column_label( $col_info );
+
         if ( ! isset( $col_info['sortable'] ) || ! $col_info['sortable'] ) {
-            echo '<th scope="col" aria-sort="none">' . esc_html( $col_info['label'] ) . '</th>';
+            echo '<th scope="col" aria-sort="none">' . esc_html( $display_label ) . '</th>';
             return;
         }
 
@@ -182,7 +204,7 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
             $class .= ' sorted ' . strtolower( $current_order );
         }
 
-        $column_label_text   = isset( $col_info['label'] ) ? wp_strip_all_tags( $col_info['label'] ) : '';
+        $column_label_text   = wp_strip_all_tags( $display_label );
         $next_direction_text = $new_order === 'ASC'
             ? esc_html__( 'ordre croissant', 'notation-jlg' )
             : esc_html__( 'ordre décroissant', 'notation-jlg' );
@@ -210,7 +232,7 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
         }
 
         echo '<th scope="col" class="' . esc_attr( $class ) . '" aria-sort="' . esc_attr( $aria_sort ) . '">';
-        echo '<a href="' . esc_url( $url ) . '" aria-label="' . esc_attr( $action_text ) . '">' . esc_html( $col_info['label'] ) . $indicator . '</a>';
+        echo '<a href="' . esc_url( $url ) . '" aria-label="' . esc_attr( $action_text ) . '">' . esc_html( $display_label ) . $indicator . '</a>';
         echo '</th>';
     }
 }
@@ -333,7 +355,9 @@ else :
                                 if ( ! isset( $available_columns[ $col ] ) ) {
                                     continue;
                                 }
-                                echo '<td data-label="' . esc_attr( $available_columns[ $col ]['label'] ) . '">';
+                                $column_info        = $available_columns[ $col ];
+                                $column_label_attr  = jlg_get_summary_column_label( $column_info );
+                                echo '<td data-label="' . esc_attr( $column_label_attr ) . '">';
 
                                 switch ( $col ) {
                                     case 'titre':
