@@ -10,6 +10,12 @@
     max-width: 650px;
     box-shadow: 0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);
 }
+.wp-block-notation-jlg-rating-block.alignwide .review-box-jlg,
+.wp-block-notation-jlg-rating-block.alignfull .review-box-jlg {
+    max-width: none;
+    width: 100%;
+    margin: 32px 0;
+}
 .review-box-jlg hr { border:0; height:1px; background-color: var(--jlg-border-color); margin:24px 0; }
 .review-box-jlg .global-score-wrapper { text-align:center; margin-bottom:24px; }
 .review-box-jlg .score-value {

@@ -8,6 +8,12 @@
     max-width: 750px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, .1), 0 10px 10px -5px rgba(0, 0, 0, .04);
 }
+.wp-block-notation-jlg-all-in-one.alignwide .jlg-all-in-one-block,
+.wp-block-notation-jlg-all-in-one.alignfull .jlg-all-in-one-block {
+    max-width: none;
+    width: 100%;
+    margin: 40px 0;
+}
 
 .jlg-all-in-one-block.style-moderne {
     background: linear-gradient(
