@@ -407,6 +407,11 @@ class SummaryDisplay {
             $sorting_key  = sanitize_key( $column_key );
             $column_label = $label !== '' ? $label : ucfirst( str_replace( '-', ' ', $category_id ) );
 
+            $weight = Helpers::normalize_category_weight(
+                $definition['weight'] ?? 1.0,
+                1.0
+            );
+
             $columns[ $column_key ] = array(
                 'label'      => $column_label,
                 'sortable'   => true,
@@ -419,6 +424,7 @@ class SummaryDisplay {
                 ),
                 'type'       => 'rating_category',
                 'definition' => $definition,
+                'weight'     => $weight,
             );
         }
 
