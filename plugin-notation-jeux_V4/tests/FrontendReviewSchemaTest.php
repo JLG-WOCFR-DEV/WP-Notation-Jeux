@@ -71,10 +71,70 @@ class FrontendReviewSchemaTest extends TestCase
         $this->assertSame('2024-01-15T08:00:00+00:00', $data['review']['datePublished'] ?? null, 'Schema should include the publication date.');
     }
 
-    private function configurePluginOptions(): void
+    public function test_schema_falls_back_to_weighted_average_when_cache_missing(): void
+    {
+        $options            = \JLG\Notation\Helpers::get_default_settings();
+        $custom_categories  = $options['rating_categories'];
+        $custom_categories[0]['weight'] = 2.5;
+        $custom_categories[1]['weight'] = 0.5;
+
+        $this->configurePluginOptions(
+            array(
+                'rating_categories' => $custom_categories,
+            )
+        );
+
+        $post_type = 'jlg_review';
+        register_post_type($post_type);
+
+        add_filter('jlg_rated_post_types', static function ($post_types) use ($post_type) {
+            if (!is_array($post_types)) {
+                $post_types = [];
+            }
+
+            $post_types[] = $post_type;
+
+            return array_values(array_unique($post_types));
+        });
+
+        $post_id = 654;
+        $this->registerPost($post_id, $post_type, [
+            'post_author' => 13,
+            'post_title'  => 'Weighted Review Schema',
+        ]);
+
+        $GLOBALS['jlg_test_users'][13] = [
+            'display_name' => 'Weighted Tester',
+        ];
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_note_gameplay']   = 9;
+        $GLOBALS['jlg_test_meta'][$post_id]['_note_graphismes'] = 5;
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        ob_start();
+        $frontend->inject_review_schema();
+        $output = ob_get_clean();
+
+        $this->assertNotSame('', $output, 'Schema output should not be empty when weighted averages exist.');
+        preg_match('/<script type="application\/ld\+json">(.+)<\/script>/', $output, $matches);
+        $json = $matches[1] ?? '';
+        $data = json_decode($json, true);
+
+        $this->assertIsArray($data, 'JSON-LD payload should decode to an array.');
+        $this->assertSame(8.3, $data['review']['reviewRating']['ratingValue'] ?? null, 'Schema should expose the weighted average when cache is missing.');
+    }
+
+    private function configurePluginOptions(array $overrides = []): void
     {
         $options = \JLG\Notation\Helpers::get_default_settings();
         $options['seo_schema_enabled'] = 1;
+
+        if (!empty($overrides)) {
+            foreach ($overrides as $key => $value) {
+                $options[$key] = $value;
+            }
+        }
 
         update_option('notation_jlg_settings', $options);
         \JLG\Notation\Helpers::flush_plugin_options_cache();

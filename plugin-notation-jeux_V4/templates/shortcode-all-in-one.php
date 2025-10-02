@@ -86,11 +86,28 @@ $data_attributes  = sprintf(
                 }
 
                 $label     = isset( $category['label'] ) ? $category['label'] : '';
+                $weight    = isset( $category['weight'] )
+                    ? \JLG\Notation\Helpers::normalize_category_weight( $category['weight'], 1.0 )
+                    : 1.0;
+                $show_weight = abs( $weight - 1.0 ) > 0.001;
                 $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
                 ?>
             <div class="jlg-aio-score-item">
                 <div class="jlg-aio-score-header">
-                    <span class="jlg-aio-score-label"><?php echo esc_html( $label ); ?></span>
+                    <span class="jlg-aio-score-label">
+                        <?php echo esc_html( $label ); ?>
+                        <?php if ( $show_weight ) : ?>
+                            <span class="jlg-aio-score-weight">
+                                <?php
+                                printf(
+                                    /* translators: %s: weight multiplier for a rating category. */
+                                    esc_html_x( '×%s', 'category weight multiplier', 'notation-jlg' ),
+                                    esc_html( number_format_i18n( $weight, 1 ) )
+                                );
+                                ?>
+                            </span>
+                        <?php endif; ?>
+                    </span>
                     <span class="jlg-aio-score-number">
                         <?php echo esc_html( number_format_i18n( $score_value, 1 ) ); ?>
                         <?php

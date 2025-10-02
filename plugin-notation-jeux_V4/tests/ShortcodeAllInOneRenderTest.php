@@ -2,10 +2,10 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/class-jlg-helpers.php';
-require_once __DIR__ . '/../includes/class-jlg-frontend.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-all-in-one.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-rating-block.php';
+require_once __DIR__ . '/../includes/Helpers.php';
+require_once __DIR__ . '/../includes/Frontend.php';
+require_once __DIR__ . '/../includes/Shortcodes/AllInOne.php';
+require_once __DIR__ . '/../includes/Shortcodes/RatingBlock.php';
 
 if (!function_exists('esc_attr__')) {
     function esc_attr__($text, $domain = 'default') {

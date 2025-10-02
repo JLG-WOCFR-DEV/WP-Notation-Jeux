@@ -123,38 +123,71 @@ class Helpers {
                 'label'      => 'Gameplay',
                 'legacy_ids' => array( 'cat1' ),
                 'position'   => 1,
+                'weight'     => 1.0,
             ),
             array(
                 'id'         => 'graphismes',
                 'label'      => 'Graphismes',
                 'legacy_ids' => array( 'cat2' ),
                 'position'   => 2,
+                'weight'     => 1.0,
             ),
             array(
                 'id'         => 'bande-son',
                 'label'      => 'Bande-son',
                 'legacy_ids' => array( 'cat3' ),
                 'position'   => 3,
+                'weight'     => 1.0,
             ),
             array(
                 'id'         => 'duree-de-vie',
                 'label'      => 'Durée de vie',
                 'legacy_ids' => array( 'cat4' ),
                 'position'   => 4,
+                'weight'     => 1.0,
             ),
             array(
                 'id'         => 'scenario',
                 'label'      => 'Scénario',
                 'legacy_ids' => array( 'cat5' ),
                 'position'   => 5,
+                'weight'     => 1.0,
             ),
             array(
                 'id'         => 'originalite',
                 'label'      => 'Originalité',
                 'legacy_ids' => array( 'cat6' ),
                 'position'   => 6,
+                'weight'     => 1.0,
             ),
         );
+    }
+
+    public static function normalize_category_weight( $weight, $default = 1.0 ) {
+        if ( is_array( $weight ) ) {
+            return (float) $default;
+        }
+
+        if ( is_string( $weight ) ) {
+            $weight = str_replace( ',', '.', $weight );
+            $weight = trim( $weight );
+        }
+
+        if ( $weight === '' || $weight === null ) {
+            $weight = $default;
+        }
+
+        if ( ! is_numeric( $weight ) ) {
+            return (float) $default;
+        }
+
+        $normalized = (float) $weight;
+
+        if ( $normalized < 0 ) {
+            $normalized = 0.0;
+        }
+
+        return round( $normalized, 3 );
     }
 
     private static function prepare_category_definitions( array $categories ) {
@@ -168,6 +201,7 @@ class Helpers {
             $legacy_ids  = array();
             $original_id = '';
             $position    = $index + 1;
+            $weight      = 1.0;
 
             if ( is_array( $category ) ) {
                 if ( isset( $category['label'] ) ) {
@@ -196,6 +230,10 @@ class Helpers {
                     if ( $position_candidate > 0 ) {
                         $position = $position_candidate;
                     }
+                }
+
+                if ( isset( $category['weight'] ) ) {
+                    $weight = self::normalize_category_weight( $category['weight'], 1.0 );
                 }
             } elseif ( is_string( $category ) ) {
                 $label = sanitize_text_field( $category );
@@ -242,6 +280,7 @@ class Helpers {
                 'position'         => $position,
                 'meta_key'         => '_note_' . $id,
                 'legacy_meta_keys' => array_values( array_unique( $legacy_meta_keys ) ),
+                'weight'           => $weight,
             );
 
             $used_ids[] = $id;
@@ -354,7 +393,19 @@ class Helpers {
             $numeric = self::resolve_category_meta_value( $post_id, $definition, true );
 
             if ( $numeric !== null ) {
-                $scores[ $definition['id'] ] = round( (float) $numeric, 1 );
+                $category_id = isset( $definition['id'] ) ? (string) $definition['id'] : '';
+                $weight      = isset( $definition['weight'] )
+                    ? self::normalize_category_weight( $definition['weight'], 1.0 )
+                    : 1.0;
+
+                if ( $category_id === '' ) {
+                    continue;
+                }
+
+                $scores[ $category_id ] = array(
+                    'score'  => round( (float) $numeric, 1 ),
+                    'weight' => $weight,
+                );
             }
         }
 
@@ -373,10 +424,21 @@ class Helpers {
                 continue;
             }
 
+            $score_entry = $scores[ $category_id ];
+
+            if ( ! is_array( $score_entry ) || ! isset( $score_entry['score'] ) ) {
+                continue;
+            }
+
+            $weight = isset( $score_entry['weight'] )
+                ? self::normalize_category_weight( $score_entry['weight'], 1.0 )
+                : 1.0;
+
             $display[] = array(
                 'id'       => $category_id,
                 'label'    => $definition['label'],
-                'score'    => $scores[ $category_id ],
+                'score'    => $score_entry['score'],
+                'weight'   => $weight,
                 'meta_key' => $definition['meta_key'],
             );
         }
@@ -915,14 +977,31 @@ class Helpers {
             return null;
         }
 
-        $total_score = array_sum( $scores );
-        $count       = count( $scores );
+        $weighted_sum = 0.0;
+        $weight_total = 0.0;
 
-        if ( $count === 0 ) {
+        foreach ( $scores as $score_entry ) {
+            if ( ! is_array( $score_entry ) || ! isset( $score_entry['score'] ) ) {
+                continue;
+            }
+
+            $weight = isset( $score_entry['weight'] )
+                ? self::normalize_category_weight( $score_entry['weight'], 1.0 )
+                : 1.0;
+
+            if ( $weight <= 0 ) {
+                continue;
+            }
+
+            $weighted_sum += (float) $score_entry['score'] * $weight;
+            $weight_total += $weight;
+        }
+
+        if ( $weight_total <= 0 ) {
             return null;
         }
 
-        return round( $total_score / $count, 1 );
+        return round( $weighted_sum / $weight_total, 1 );
     }
 
     /**

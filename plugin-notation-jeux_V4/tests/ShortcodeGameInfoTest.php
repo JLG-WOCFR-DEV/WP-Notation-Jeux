@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-game-info.php';
+require_once __DIR__ . '/../includes/Shortcodes/GameInfo.php';
 
 class ShortcodeGameInfoTest extends TestCase
 {

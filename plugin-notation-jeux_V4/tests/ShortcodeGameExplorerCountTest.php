@@ -16,7 +16,7 @@ if (!function_exists('_n')) {
     }
 }
 
-require_once __DIR__ . '/../includes/class-jlg-frontend.php';
+require_once __DIR__ . '/../includes/Frontend.php';
 
 class ShortcodeGameExplorerCountTest extends TestCase
 {

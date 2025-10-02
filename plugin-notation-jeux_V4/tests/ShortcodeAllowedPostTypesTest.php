@@ -2,12 +2,12 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/class-jlg-helpers.php';
-require_once __DIR__ . '/../includes/class-jlg-frontend.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-tagline.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-rating-block.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-game-info.php';
-require_once __DIR__ . '/../includes/shortcodes/class-jlg-shortcode-user-rating.php';
+require_once __DIR__ . '/../includes/Helpers.php';
+require_once __DIR__ . '/../includes/Frontend.php';
+require_once __DIR__ . '/../includes/Shortcodes/Tagline.php';
+require_once __DIR__ . '/../includes/Shortcodes/RatingBlock.php';
+require_once __DIR__ . '/../includes/Shortcodes/GameInfo.php';
+require_once __DIR__ . '/../includes/Shortcodes/UserRating.php';
 
 class ShortcodeAllowedPostTypesTest extends TestCase
 {

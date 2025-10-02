@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../includes/class-jlg-blocks.php';
+require_once __DIR__ . '/../includes/Blocks.php';
 
 if (!function_exists('trailingslashit')) {
     function trailingslashit($value) {

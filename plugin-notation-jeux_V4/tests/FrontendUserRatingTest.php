@@ -243,6 +243,27 @@ class FrontendUserRatingTest extends TestCase
         }
     }
 
+    public function test_weighted_average_is_calculated_from_category_scores(): void
+    {
+        $options = \JLG\Notation\Helpers::get_default_settings();
+        $categories = $options['rating_categories'];
+        $categories[0]['weight'] = 2.5;
+        $categories[1]['weight'] = 0.5;
+
+        $options['rating_categories'] = $categories;
+
+        update_option('notation_jlg_settings', $options);
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $post_id = 9876;
+        $GLOBALS['jlg_test_meta'][$post_id]['_note_' . $categories[0]['id']] = 9;
+        $GLOBALS['jlg_test_meta'][$post_id]['_note_' . $categories[1]['id']] = 5;
+
+        $average = \JLG\Notation\Helpers::get_average_score_for_post($post_id);
+
+        $this->assertSame(8.3, $average, 'Weighted averages should use the configured category weights.');
+    }
+
     private function resetShortcodeTracking(): void
     {
         $reflection = new \ReflectionClass(\JLG\Notation\Frontend::class);

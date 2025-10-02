@@ -1072,6 +1072,9 @@ class Settings {
             $original_id = isset( $category['original_id'] ) ? sanitize_key( $category['original_id'] ) : '';
             $legacy_ids  = array();
             $position    = isset( $category['position'] ) ? intval( $category['position'] ) : ( $index + 1 );
+            $weight      = isset( $category['weight'] )
+                ? Helpers::normalize_category_weight( $category['weight'], 1.0 )
+                : 1.0;
 
             if ( $position < 1 ) {
                 $position = $index + 1;
@@ -1134,6 +1137,7 @@ class Settings {
                 'label'      => $label,
                 'legacy_ids' => $legacy_ids,
                 'position'   => $position,
+                'weight'     => $weight,
             );
         }
 
@@ -1311,9 +1315,14 @@ class Settings {
             $id          = isset( $definition['id'] ) ? $definition['id'] : '';
             $position    = isset( $definition['position'] ) ? (int) $definition['position'] : ( $index + 1 );
             $legacy_ids  = isset( $definition['legacy_ids'] ) && is_array( $definition['legacy_ids'] ) ? $definition['legacy_ids'] : array();
+            $weight      = isset( $definition['weight'] )
+                ? Helpers::normalize_category_weight( $definition['weight'], 1.0 )
+                : 1.0;
             $label_field = sprintf( '%s[%s][%d][label]', $option_name, $field_id, $index );
             $id_field    = sprintf( '%s[%s][%d][id]', $option_name, $field_id, $index );
             $position_field = sprintf( '%s[%s][%d][position]', $option_name, $field_id, $index );
+            $weight_field   = sprintf( '%s[%s][%d][weight]', $option_name, $field_id, $index );
+            $weight_value   = number_format( $weight, 1, '.', '' );
 
             echo '<div class="jlg-rating-category" data-index="' . esc_attr( $index ) . '">';
             echo '<div class="jlg-rating-category__grid">';
@@ -1325,6 +1334,11 @@ class Settings {
             echo '<label for="' . esc_attr( $field_id . '_id_' . $index ) . '"><strong>' . esc_html__( 'Identifiant', 'notation-jlg' ) . '</strong></label>';
             echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_id_' . $index ) . '" name="' . esc_attr( $id_field ) . '" value="' . esc_attr( $id ) . '" />';
             echo '<p class="description">' . esc_html__( 'Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement.', 'notation-jlg' ) . '</p>';
+            echo '</div>';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_id . '_weight_' . $index ) . '"><strong>' . esc_html__( 'Pondération', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="number" class="small-text jlg-rating-category__weight" id="' . esc_attr( $field_id . '_weight_' . $index ) . '" name="' . esc_attr( $weight_field ) . '" value="' . esc_attr( $weight_value ) . '" min="0" step="0.1" />';
+            echo '<p class="description">' . esc_html__( 'Coefficient utilisé pour la moyenne pondérée.', 'notation-jlg' ) . '</p>';
             echo '</div>';
             echo '<div class="jlg-rating-category__actions">';
             echo '<button type="button" class="button button-secondary jlg-rating-category__move-up" aria-label="' . esc_attr( $move_up_aria ) . '">' . esc_html( $move_up_text ) . '</button>';
@@ -1371,6 +1385,11 @@ class Settings {
         echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_id___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][id]', $option_name, $field_id ) ) . '" value="" />';
         echo '<p class="description">' . esc_html( $template_desc ) . '</p>';
         echo '</div>';
+        echo '<div>';
+        echo '<label for="' . esc_attr( $field_id . '_weight___INDEX__' ) . '"><strong>' . esc_html__( 'Pondération', 'notation-jlg' ) . '</strong></label>';
+        echo '<input type="number" class="small-text jlg-rating-category__weight" id="' . esc_attr( $field_id . '_weight___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][weight]', $option_name, $field_id ) ) . '" value="1" min="0" step="0.1" />';
+        echo '<p class="description">' . esc_html__( 'Coefficient utilisé pour la moyenne pondérée.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
         echo '<div class="jlg-rating-category__actions">';
         echo '<button type="button" class="button button-secondary jlg-rating-category__move-up" aria-label="' . esc_attr( $move_up_aria ) . '">' . esc_html( $move_up_text ) . '</button>';
         echo '<button type="button" class="button button-secondary jlg-rating-category__move-down" aria-label="' . esc_attr( $move_down_aria ) . '">' . esc_html( $move_down_text ) . '</button>';
@@ -1391,10 +1410,10 @@ class Settings {
         echo 'const addButton=container.querySelector(".jlg-rating-categories__add");';
         echo 'let nextIndex=parseInt(container.getAttribute("data-next-index"),10);';
         echo 'if(!Number.isFinite(nextIndex)){nextIndex=list?list.children.length:0;}';
-        echo 'function renumberRows(){if(!list){return;}Array.prototype.forEach.call(list.children,function(row,index){row.setAttribute("data-index",String(index));row.querySelectorAll("[name]").forEach(function(element){if(typeof element.name!=="string"){return;}element.name=element.name.replace(/\[\d+\]/,"["+index+"]");});row.querySelectorAll("[id]").forEach(function(element){if(typeof element.id!=="string"||!/_\d+$/.test(element.id)){return;}element.id=element.id.replace(/_\d+$/,"_"+index);} );row.querySelectorAll("label[for]").forEach(function(label){if(typeof label.htmlFor!=="string"||!/_\d+$/.test(label.htmlFor)){return;}label.htmlFor=label.htmlFor.replace(/_\d+$/,"_"+index);} );const position=row.querySelector(".jlg-rating-category__position");if(position){position.value=String(index+1);}});nextIndex=list.children.length;container.setAttribute("data-next-index",String(nextIndex));}';
+        echo 'function renumberRows(){if(!list){return;}Array.prototype.forEach.call(list.children,function(row,index){row.setAttribute("data-index",String(index));row.querySelectorAll("[name]").forEach(function(element){if(typeof element.name!=="string"){return;}element.name=element.name.replace(/\[\d+\]/g,"["+index+"]");});row.querySelectorAll("[id]").forEach(function(element){if(typeof element.id!=="string"||!/_\d+$/.test(element.id)){return;}element.id=element.id.replace(/_\d+$/,"_"+index);} );row.querySelectorAll("label[for]").forEach(function(label){if(typeof label.htmlFor!=="string"||!/_\d+$/.test(label.htmlFor)){return;}label.htmlFor=label.htmlFor.replace(/_\d+$/,"_"+index);} );const position=row.querySelector(".jlg-rating-category__position");if(position){position.value=String(index+1);}});nextIndex=list.children.length;container.setAttribute("data-next-index",String(nextIndex));}';
         echo 'function bindRow(row){if(!row){return;}const remove=row.querySelector(".jlg-rating-category__remove");if(remove){remove.addEventListener("click",function(event){event.preventDefault();row.remove();renumberRows();});}const moveUp=row.querySelector(".jlg-rating-category__move-up");if(moveUp&&list){moveUp.addEventListener("click",function(event){event.preventDefault();const previous=row.previousElementSibling;if(previous){list.insertBefore(row,previous);}renumberRows();});}const moveDown=row.querySelector(".jlg-rating-category__move-down");if(moveDown&&list){moveDown.addEventListener("click",function(event){event.preventDefault();const next=row.nextElementSibling;if(next){list.insertBefore(next,row);}renumberRows();});}}';
         echo 'if(list){Array.prototype.forEach.call(list.children,bindRow);renumberRows();}';
-        echo 'if(addButton&&template&&list){addButton.addEventListener("click",function(event){event.preventDefault();const fragment=template.content.cloneNode(true);const row=fragment.querySelector(".jlg-rating-category");const index=nextIndex++;if(!row){return;}row.setAttribute("data-index",String(index));fragment.querySelectorAll("[name]").forEach(function(element){element.name=element.name.replace(/__INDEX__/g,index);});fragment.querySelectorAll("[id]").forEach(function(element){element.id=element.id.replace(/__INDEX__/g,index);});fragment.querySelectorAll("label[for]").forEach(function(label){label.htmlFor=label.htmlFor.replace(/__INDEX__/g,index);});list.appendChild(fragment);bindRow(list.lastElementChild);renumberRows();});}';
+        echo 'if(addButton&&template&&list){addButton.addEventListener("click",function(event){event.preventDefault();const fragment=template.content.cloneNode(true);const row=fragment.querySelector(".jlg-rating-category");const index=nextIndex++;if(!row){return;}row.setAttribute("data-index",String(index));fragment.querySelectorAll("[name]").forEach(function(element){element.name=element.name.replace(/__INDEX__/g,index);});fragment.querySelectorAll("[id]").forEach(function(element){element.id=element.id.replace(/__INDEX__/g,index);});fragment.querySelectorAll("label[for]").forEach(function(label){label.htmlFor=label.htmlFor.replace(/__INDEX__/g,index);});list.appendChild(fragment);const appendedRow=list.lastElementChild;if(!appendedRow){return;}bindRow(appendedRow);const weightInput=appendedRow.querySelector(".jlg-rating-category__weight");if(weightInput&&weightInput.value===""){weightInput.value="1";}renumberRows();});}';
         echo '})();';
         echo '</script>';
     }

@@ -45,11 +45,28 @@ $score_max_label  = number_format_i18n( $score_max );
             }
 
             $label     = isset( $category['label'] ) ? $category['label'] : '';
+            $weight    = isset( $category['weight'] )
+                ? \JLG\Notation\Helpers::normalize_category_weight( $category['weight'], 1.0 )
+                : 1.0;
+            $show_weight = abs( $weight - 1.0 ) > 0.001;
             $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
             ?>
             <div class="rating-item">
                 <div class="rating-label">
-                    <span><?php echo esc_html( $label ); ?></span>
+                    <span>
+                        <?php echo esc_html( $label ); ?>
+                        <?php if ( $show_weight ) : ?>
+                            <span class="rating-weight">
+                                <?php
+                                printf(
+                                    /* translators: %s: weight multiplier for a rating category. */
+                                    esc_html_x( '×%s', 'category weight multiplier', 'notation-jlg' ),
+                                    esc_html( number_format_i18n( $weight, 1 ) )
+                                );
+                                ?>
+                            </span>
+                        <?php endif; ?>
+                    </span>
                     <span>
                         <?php
                         $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
