@@ -41,6 +41,14 @@ class Assets {
 
         $version = defined( 'JLG_NOTATION_VERSION' ) ? JLG_NOTATION_VERSION : false;
 
+        wp_enqueue_style( 'wp-components' );
+        wp_enqueue_style(
+            'jlg-admin-styles',
+            JLG_NOTATION_PLUGIN_URL . 'assets/css/jlg-admin.css',
+            array( 'wp-components' ),
+            $version
+        );
+
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
 
