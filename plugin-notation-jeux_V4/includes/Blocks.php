@@ -476,6 +476,31 @@ class Blocks {
             $atts['titre_points_faibles'] = sanitize_text_field( $attributes['consTitle'] );
         }
 
+        if ( ! empty( $attributes['ctaLabel'] ) && is_string( $attributes['ctaLabel'] ) ) {
+            $atts['cta_label'] = sanitize_text_field( $attributes['ctaLabel'] );
+        }
+
+        if ( ! empty( $attributes['ctaUrl'] ) && is_string( $attributes['ctaUrl'] ) ) {
+            $url = esc_url_raw( $attributes['ctaUrl'] );
+            if ( $url !== '' && wp_http_validate_url( $url ) ) {
+                $atts['cta_url'] = $url;
+            }
+        }
+
+        if ( ! empty( $attributes['ctaRole'] ) && is_string( $attributes['ctaRole'] ) ) {
+            $role = sanitize_key( $attributes['ctaRole'] );
+            if ( $role !== '' ) {
+                $atts['cta_role'] = $role;
+            }
+        }
+
+        if ( isset( $attributes['ctaRel'] ) && is_string( $attributes['ctaRel'] ) ) {
+            $rel = sanitize_text_field( $attributes['ctaRel'] );
+            if ( $rel !== '' ) {
+                $atts['cta_rel'] = $rel;
+            }
+        }
+
         return $this->render_shortcode( 'jlg_bloc_complet', $atts );
     }
 

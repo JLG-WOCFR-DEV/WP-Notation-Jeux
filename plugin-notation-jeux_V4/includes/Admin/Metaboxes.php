@@ -177,7 +177,7 @@ class Metaboxes {
 
         // Récupérer les métadonnées
         $meta = array();
-        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url' );
+        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url', 'cta_label', 'cta_url' );
         foreach ( $keys as $key ) {
             $meta[ $key ] = get_post_meta( $post->ID, '_jlg_' . $key, true );
         }
@@ -188,6 +188,19 @@ class Metaboxes {
         echo '<label for="jlg_game_title"><strong>' . esc_html__( 'Nom du jeu', 'notation-jlg' ) . ' :</strong></label><br>';
         echo '<input type="text" id="jlg_game_title" name="jlg_game_title" value="' . esc_attr( $meta['game_title'] ?? '' ) . '" style="width:100%;">';
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+
+        echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
+        echo '<div>';
+        echo '<label for="jlg_cta_label"><strong>' . esc_html__( 'Texte du bouton CTA', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="text" id="jlg_cta_label" name="jlg_cta_label" value="' . esc_attr( $meta['cta_label'] ?? '' ) . '" style="width:100%;" placeholder="' . esc_attr__( 'Découvrir le jeu', 'notation-jlg' ) . '">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Laisser vide pour ne pas afficher de bouton.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+        echo '<div>';
+        echo '<label for="jlg_cta_url"><strong>' . esc_html__( 'URL du bouton CTA', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="url" id="jlg_cta_url" name="jlg_cta_url" value="' . esc_attr( $meta['cta_url'] ?? '' ) . '" style="width:100%;" placeholder="https://">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Utilisez une URL absolue commençant par https://', 'notation-jlg' ) . '</p>';
+        echo '</div>';
         echo '</div>';
 
         // Fiche technique
@@ -446,6 +459,33 @@ class Metaboxes {
                     } else {
                         delete_post_meta( $post_id, '_jlg_' . $field );
                     }
+                }
+            }
+
+            $cta_label = isset( $_POST['jlg_cta_label'] ) ? sanitize_text_field( wp_unslash( $_POST['jlg_cta_label'] ) ) : '';
+            $cta_label = is_string( $cta_label ) ? trim( $cta_label ) : '';
+            $cta_url   = isset( $_POST['jlg_cta_url'] ) ? esc_url_raw( wp_unslash( $_POST['jlg_cta_url'] ) ) : '';
+            $cta_url   = is_string( $cta_url ) ? trim( $cta_url ) : '';
+
+            if ( $cta_label === '' && $cta_url === '' ) {
+                delete_post_meta( $post_id, '_jlg_cta_label' );
+                delete_post_meta( $post_id, '_jlg_cta_url' );
+            } elseif ( $cta_label === '' || $cta_url === '' ) {
+                delete_post_meta( $post_id, '_jlg_cta_label' );
+                delete_post_meta( $post_id, '_jlg_cta_url' );
+
+                $validation_errors[] = __( 'Bouton CTA : le texte et l\'URL doivent être renseignés ensemble.', 'notation-jlg' );
+            } else {
+                $validated_url = wp_http_validate_url( $cta_url );
+
+                if ( ! $validated_url ) {
+                    delete_post_meta( $post_id, '_jlg_cta_label' );
+                    delete_post_meta( $post_id, '_jlg_cta_url' );
+
+                    $validation_errors[] = __( 'Bouton CTA : l\'URL doit être absolue et commencer par http ou https.', 'notation-jlg' );
+                } else {
+                    update_post_meta( $post_id, '_jlg_cta_label', $cta_label );
+                    update_post_meta( $post_id, '_jlg_cta_url', esc_url_raw( $validated_url ) );
                 }
             }
 

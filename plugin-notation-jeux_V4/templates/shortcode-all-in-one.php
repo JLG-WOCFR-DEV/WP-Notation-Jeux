@@ -15,6 +15,9 @@ $has_dual_tagline = ( ! empty( $tagline_fr ) && ! empty( $tagline_en ) );
 $show_rating      = ( $atts['afficher_notation'] === 'oui' && $average_score !== null );
 $show_points      = ( $atts['afficher_points'] === 'oui' && ( ! empty( $pros_list ) || ! empty( $cons_list ) ) );
 $category_scores  = isset( $category_scores ) && is_array( $category_scores ) ? $category_scores : array();
+$has_cta          = ( ! empty( $cta_label ) && ! empty( $cta_url ) );
+$cta_role_attr    = ! empty( $cta_role ) ? $cta_role : 'button';
+$cta_rel_attr     = isset( $cta_rel ) ? trim( (string) $cta_rel ) : '';
 $data_attributes  = sprintf(
     ' data-animations-enabled="%s" data-has-multiple-taglines="%s"',
     esc_attr( $animations_enabled ? 'true' : 'false' ),
@@ -147,6 +150,14 @@ $data_attributes  = sprintf(
             </ul>
         </div>
         <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ( $has_cta ) : ?>
+    <div class="jlg-aio-cta">
+        <a class="jlg-aio-cta-button" href="<?php echo esc_url( $cta_url ); ?>" role="<?php echo esc_attr( $cta_role_attr ); ?>"<?php echo $cta_rel_attr !== '' ? ' rel="' . esc_attr( $cta_rel_attr ) . '"' : ''; ?>>
+            <span class="jlg-aio-cta-label"><?php echo esc_html( $cta_label ); ?></span>
+        </a>
     </div>
     <?php endif; ?>
 </div>

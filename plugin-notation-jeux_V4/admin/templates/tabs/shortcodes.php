@@ -31,6 +31,10 @@ if (!defined('ABSPATH')) exit;
             <li><strong>couleur_accent</strong> : Code couleur hex (ex: "#60a5fa")</li>
             <li><strong>titre_points_forts</strong> : Titre personnalisé (défaut : "Points Forts")</li>
             <li><strong>titre_points_faibles</strong> : Titre personnalisé (défaut : "Points Faibles")</li>
+            <li><strong>cta_label</strong> : Texte du bouton d'appel à l'action (défaut : valeur de la métadonnée)</li>
+            <li><strong>cta_url</strong> : URL absolue du bouton (défaut : valeur de la métadonnée)</li>
+            <li><strong>cta_role</strong> : Attribut <code>role</code> du lien (défaut : <code>button</code>)</li>
+            <li><strong>cta_rel</strong> : Attribut <code>rel</code> (défaut : <code>nofollow sponsored</code>)</li>
         </ul>
 
         <h4>Exemples d'utilisation :</h4>
@@ -49,6 +53,9 @@ if (!defined('ABSPATH')) exit;
 
 <span style="color:#666;">// Seulement notation et points (sans tagline)</span>
 [jlg_bloc_complet afficher_tagline="non"]
+
+<span style="color:#666;">// Bouton personnalisé avec texte et URL dédiés</span>
+[jlg_bloc_complet cta_label="Acheter le jeu" cta_url="https://exemple.com/boutique" cta_rel="nofollow noopener"]
 
 <span style="color:#666;">// Configuration complète personnalisée</span>
 [jlg_bloc_complet style="moderne" couleur_accent="#8b5cf6" titre_points_forts="Les +" titre_points_faibles="Les -"]</pre>

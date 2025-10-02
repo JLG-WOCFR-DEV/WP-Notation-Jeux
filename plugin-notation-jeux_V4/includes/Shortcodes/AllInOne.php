@@ -90,14 +90,18 @@ class AllInOne {
         // Attributs du shortcode
         $atts = shortcode_atts(
             array(
-				'post_id'              => get_the_ID(),
-				'afficher_notation'    => 'oui',
-				'afficher_points'      => 'oui',
-				'afficher_tagline'     => 'oui',
-				'titre_points_forts'   => 'Points Forts',
-				'titre_points_faibles' => 'Points Faibles',
-				'style'                => 'moderne', // moderne, classique, compact
-				'couleur_accent'       => '', // Permet de surcharger la couleur d'accent
+                                'post_id'              => get_the_ID(),
+                                'afficher_notation'    => 'oui',
+                                'afficher_points'      => 'oui',
+                                'afficher_tagline'     => 'oui',
+                                'titre_points_forts'   => 'Points Forts',
+                                'titre_points_faibles' => 'Points Faibles',
+                                'style'                => 'moderne', // moderne, classique, compact
+                                'couleur_accent'       => '', // Permet de surcharger la couleur d'accent
+                                'cta_label'            => '',
+                                'cta_url'              => '',
+                                'cta_role'             => 'button',
+                                'cta_rel'              => 'nofollow sponsored',
             ),
             $atts,
             'jlg_bloc_complet'
@@ -111,6 +115,18 @@ class AllInOne {
         $atts['titre_points_faibles'] = sanitize_text_field( $atts['titre_points_faibles'] );
         $atts['style']                = sanitize_text_field( $atts['style'] );
         $atts['couleur_accent']       = sanitize_hex_color( $atts['couleur_accent'] );
+        $atts['cta_label']            = sanitize_text_field( $atts['cta_label'] );
+        $atts['cta_url']              = esc_url_raw( $atts['cta_url'] );
+        $atts['cta_role']             = sanitize_key( $atts['cta_role'] );
+        $atts['cta_rel']              = sanitize_text_field( $atts['cta_rel'] );
+
+        if ( $atts['cta_url'] !== '' && ! wp_http_validate_url( $atts['cta_url'] ) ) {
+            $atts['cta_url'] = '';
+        }
+
+        if ( $atts['cta_role'] === '' ) {
+            $atts['cta_role'] = 'button';
+        }
 
         $allowed_styles = array( 'moderne', 'classique', 'compact' );
         if ( ! in_array( $atts['style'], $allowed_styles, true ) ) {
@@ -138,9 +154,24 @@ class AllInOne {
         $tagline_en    = get_post_meta( $post_id, '_jlg_tagline_en', true );
         $pros          = get_post_meta( $post_id, '_jlg_points_forts', true );
         $cons          = get_post_meta( $post_id, '_jlg_points_faibles', true );
+        $cta_label     = get_post_meta( $post_id, '_jlg_cta_label', true );
+        $cta_url       = get_post_meta( $post_id, '_jlg_cta_url', true );
+
+        $cta_label = is_string( $cta_label ) ? trim( $cta_label ) : '';
+        $cta_url   = is_string( $cta_url ) ? trim( $cta_url ) : '';
+
+        if ( $atts['cta_label'] !== '' ) {
+            $cta_label = $atts['cta_label'];
+        }
+
+        if ( $atts['cta_url'] !== '' ) {
+            $cta_url = $atts['cta_url'];
+        }
+
+        $has_cta = ( $cta_label !== '' && $cta_url !== '' );
 
         // Si aucune donnée, ne rien afficher
-        if ( $average_score === null && empty( $tagline_fr ) && empty( $tagline_en ) && empty( $pros ) && empty( $cons ) ) {
+        if ( $average_score === null && empty( $tagline_fr ) && empty( $tagline_en ) && empty( $pros ) && empty( $cons ) && ! $has_cta ) {
             return '';
         }
 
@@ -231,6 +262,8 @@ class AllInOne {
             '--jlg-aio-cons-icon-color'       => $color_low,
             '--jlg-aio-circle-border'         => 'none',
             '--jlg-aio-circle-shadow'         => $this->build_circle_shadow( $accent_color ),
+            '--jlg-aio-cta-bg'                => $accent_color,
+            '--jlg-aio-cta-text'              => '#ffffff',
         );
 
         if ( $score_layout === 'circle' ) {
@@ -355,6 +388,10 @@ class AllInOne {
                                 'cons_list'          => $cons_list,
                                 'tagline_fr'         => $tagline_fr,
                                 'tagline_en'         => $tagline_en,
+                                'cta_label'          => $cta_label,
+                                'cta_url'            => $cta_url,
+                                'cta_role'           => $atts['cta_role'],
+                                'cta_rel'            => $atts['cta_rel'],
                                 'atts'               => $atts,
                                 'block_classes'      => $block_classes,
                                 'css_variables'      => $css_variables_string,

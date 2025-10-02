@@ -42,6 +42,22 @@
     "consTitle": {
       "type": "string",
       "default": "Points Faibles"
+    },
+    "ctaLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "ctaUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "ctaRole": {
+      "type": "string",
+      "default": "button"
+    },
+    "ctaRel": {
+      "type": "string",
+      "default": "nofollow sponsored"
     }
   },
   "editorScript": "notation-jlg-all-in-one-editor",

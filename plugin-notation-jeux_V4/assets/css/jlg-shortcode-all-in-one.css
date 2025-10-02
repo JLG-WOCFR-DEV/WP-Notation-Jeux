@@ -199,6 +199,44 @@
     color: var(--jlg-aio-text-color, #111827);
 }
 
+.jlg-aio-cta {
+    padding: 0 30px 30px;
+    text-align: center;
+    background: var(--jlg-aio-bg, #ffffff);
+}
+
+.jlg-aio-cta-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 32px;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--jlg-aio-cta-text, #ffffff);
+    background: var(--jlg-aio-cta-bg, #2563eb);
+    border-radius: 9999px;
+    text-decoration: none;
+    box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.jlg-aio-cta-button:hover,
+.jlg-aio-cta-button:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 25px -15px rgba(0, 0, 0, 0.4);
+    filter: brightness(1.05);
+}
+
+.jlg-aio-cta-button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 3px;
+}
+
+.jlg-aio-cta-label {
+    pointer-events: none;
+}
+
 .jlg-aio-score-number {
     color: var(--jlg-aio-score-number-color, #6b7280);
     font-weight: 500;

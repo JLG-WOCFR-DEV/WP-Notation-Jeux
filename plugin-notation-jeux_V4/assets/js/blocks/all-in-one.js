@@ -134,6 +134,42 @@
                                 setAttributes({ consTitle: value || '' });
                             },
                         })
+                    ),
+                    createElement(
+                        PanelBody,
+                        { title: __('Bouton d\'action', 'notation-jlg'), initialOpen: false },
+                        createElement(TextControl, {
+                            label: __('Texte du bouton', 'notation-jlg'),
+                            value: attributes.ctaLabel || '',
+                            onChange: function (value) {
+                                setAttributes({ ctaLabel: value || '' });
+                            },
+                        }),
+                        createElement(TextControl, {
+                            label: __('URL du bouton', 'notation-jlg'),
+                            type: 'url',
+                            value: attributes.ctaUrl || '',
+                            onChange: function (value) {
+                                setAttributes({ ctaUrl: value || '' });
+                            },
+                            help: __('Utilisez une URL absolue (https://...)', 'notation-jlg'),
+                        }),
+                        createElement(TextControl, {
+                            label: __('Attribut role', 'notation-jlg'),
+                            value: attributes.ctaRole || '',
+                            onChange: function (value) {
+                                setAttributes({ ctaRole: value || '' });
+                            },
+                            help: __('Par défaut : button', 'notation-jlg'),
+                        }),
+                        createElement(TextControl, {
+                            label: __('Attribut rel', 'notation-jlg'),
+                            value: attributes.ctaRel || '',
+                            onChange: function (value) {
+                                setAttributes({ ctaRel: value || '' });
+                            },
+                            help: __('Par défaut : nofollow sponsored', 'notation-jlg'),
+                        })
                     )
                 ),
                 createElement(
@@ -150,6 +186,10 @@
                             accentColor: attributes.accentColor || '',
                             prosTitle: attributes.prosTitle || '',
                             consTitle: attributes.consTitle || '',
+                            ctaLabel: attributes.ctaLabel || '',
+                            ctaUrl: attributes.ctaUrl || '',
+                            ctaRole: attributes.ctaRole || '',
+                            ctaRel: attributes.ctaRel || '',
                         },
                         label: __('Bloc tout-en-un', 'notation-jlg'),
                     })
