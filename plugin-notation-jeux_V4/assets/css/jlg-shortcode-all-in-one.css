@@ -57,7 +57,7 @@
     color: var(--jlg-aio-tagline-color, #111827);
     text-align: center;
     position: relative;
-    padding: 0 50px;
+    padding: 0 clamp(16px, 8vw, 40px);
 }
 
 .jlg-aio-flags {
@@ -107,6 +107,18 @@
 .jlg-aio-flag:focus-visible {
     outline: 2px solid var(--jlg-aio-tagline-color, #111827);
     outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .jlg-aio-tagline {
+        padding: 0 16px;
+    }
+
+    .jlg-aio-flags {
+        position: static;
+        margin: 12px auto 0;
+        justify-content: center;
+    }
 }
 
 .jlg-aio-rating {
