@@ -454,6 +454,39 @@
         }
     }
 
+    function updatePaginationAccessibility(refs) {
+        if (!refs || !refs.resultsNode) {
+            return;
+        }
+
+        const pagination = refs.resultsNode.querySelector('[data-role="pagination"]');
+        if (!pagination) {
+            return;
+        }
+
+        const buttons = pagination.querySelectorAll('button[data-page]');
+        buttons.forEach((button) => {
+            const isControlButton = button.classList.contains('jlg-ge-page--prev')
+                || button.classList.contains('jlg-ge-page--next');
+
+            if (isControlButton) {
+                if (button.disabled) {
+                    button.setAttribute('aria-disabled', 'true');
+                } else {
+                    button.removeAttribute('aria-disabled');
+                }
+                button.removeAttribute('aria-current');
+                return;
+            }
+
+            if (button.classList.contains('is-active') || button.disabled) {
+                button.setAttribute('aria-current', 'page');
+            } else {
+                button.removeAttribute('aria-current');
+            }
+        });
+    }
+
     function bindPagination(container, config, refs) {
         if (!refs.resultsNode) {
             return;
@@ -483,6 +516,8 @@
                 refreshResults(container, config, refs);
             });
         });
+
+        updatePaginationAccessibility(refs);
     }
 
     function refreshResults(container, config, refs, options = {}) {
@@ -558,6 +593,7 @@
                         refs.resultsNode.innerHTML = '<p>' + empty + '</p>';
                     }
                     setResultsBusyState(refs.resultsNode, false);
+                    updatePaginationAccessibility(refs);
                 }
 
                 if (responseData.state) {

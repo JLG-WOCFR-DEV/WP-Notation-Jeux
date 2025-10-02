@@ -215,8 +215,10 @@ $current_page = isset( $pagination['current'] ) ? (int) $pagination['current'] :
 $total_pages  = isset( $pagination['total'] ) ? (int) $pagination['total'] : 0;
 
 if ( $total_pages > 1 ) :
-    $prev_page = max( 1, $current_page - 1 );
-    $next_page = min( $total_pages, $current_page + 1 );
+    $prev_page      = max( 1, $current_page - 1 );
+    $next_page      = min( $total_pages, $current_page + 1 );
+    $prev_disabled  = ( $current_page <= 1 );
+    $next_disabled  = ( $current_page >= $total_pages );
     ?>
     <nav class="jlg-ge-pagination" data-role="pagination" aria-label="<?php esc_attr_e( 'Navigation des pages du Game Explorer', 'notation-jlg' ); ?>">
         <form method="get" class="jlg-ge-pagination__form">
@@ -230,7 +232,7 @@ if ( $total_pages > 1 ) :
                 data-page="<?php echo esc_attr( $prev_page ); ?>"
                 name="<?php echo esc_attr( $namespaced_keys['paged'] ); ?>"
                 value="<?php echo esc_attr( $prev_page ); ?>"
-                <?php disabled( $current_page <= 1 ); ?>
+                <?php disabled( $prev_disabled ); ?><?php echo $prev_disabled ? ' aria-disabled="true"' : ''; ?>
             >
                 <?php esc_html_e( 'Précédent', 'notation-jlg' ); ?>
             </button>
@@ -246,7 +248,7 @@ if ( $total_pages > 1 ) :
                             class="<?php echo esc_attr( $is_active ? 'is-active' : '' ); ?>"
                             name="<?php echo esc_attr( $namespaced_keys['paged'] ); ?>"
                             value="<?php echo esc_attr( $page ); ?>"
-                            <?php disabled( $is_active ); ?>
+                            <?php disabled( $is_active ); ?><?php echo $is_active ? ' aria-current="page"' : ''; ?>
                         >
                             <?php echo esc_html( $page ); ?>
                         </button>
@@ -259,7 +261,7 @@ if ( $total_pages > 1 ) :
                 data-page="<?php echo esc_attr( $next_page ); ?>"
                 name="<?php echo esc_attr( $namespaced_keys['paged'] ); ?>"
                 value="<?php echo esc_attr( $next_page ); ?>"
-                <?php disabled( $current_page >= $total_pages ); ?>
+                <?php disabled( $next_disabled ); ?><?php echo $next_disabled ? ' aria-disabled="true"' : ''; ?>
             >
                 <?php esc_html_e( 'Suivant', 'notation-jlg' ); ?>
             </button>
