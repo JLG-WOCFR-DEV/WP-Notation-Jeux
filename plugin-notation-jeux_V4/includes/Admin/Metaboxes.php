@@ -190,19 +190,6 @@ class Metaboxes {
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 
-        echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
-        echo '<div>';
-        echo '<label for="jlg_cta_label"><strong>' . esc_html__( 'Texte du bouton CTA', 'notation-jlg' ) . ' :</strong></label><br>';
-        echo '<input type="text" id="jlg_cta_label" name="jlg_cta_label" value="' . esc_attr( $meta['cta_label'] ?? '' ) . '" style="width:100%;" placeholder="' . esc_attr__( 'Découvrir le jeu', 'notation-jlg' ) . '">';
-        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Laisser vide pour ne pas afficher de bouton.', 'notation-jlg' ) . '</p>';
-        echo '</div>';
-        echo '<div>';
-        echo '<label for="jlg_cta_url"><strong>' . esc_html__( 'URL du bouton CTA', 'notation-jlg' ) . ' :</strong></label><br>';
-        echo '<input type="url" id="jlg_cta_url" name="jlg_cta_url" value="' . esc_attr( $meta['cta_url'] ?? '' ) . '" style="width:100%;" placeholder="https://">';
-        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Utilisez une URL absolue commençant par https://', 'notation-jlg' ) . '</p>';
-        echo '</div>';
-        echo '</div>';
-
         // Fiche technique
         echo '<h3>' . esc_html__( '📋 Fiche Technique', 'notation-jlg' ) . '</h3>';
         echo '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:20px;">';
@@ -267,7 +254,7 @@ class Metaboxes {
         echo '</div>';
 
         // Taglines
-        echo '<h3>' . esc_html__( '💬 Taglines', 'notation-jlg' ) . '</h3>';
+        echo '<h3>' . esc_html__( '💬 Taglines & CTA', 'notation-jlg' ) . '</h3>';
         echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
         echo '<div>';
         echo '<label><strong>' . esc_html__( 'Française :', 'notation-jlg' ) . '</strong></label><br>';
@@ -276,6 +263,18 @@ class Metaboxes {
         echo '<div>';
         echo '<label><strong>' . esc_html__( 'Anglaise :', 'notation-jlg' ) . '</strong></label><br>';
         echo '<textarea name="jlg_tagline_en" rows="3" style="width:100%;">' . esc_textarea( $meta['tagline_en'] ?? '' ) . '</textarea>';
+        echo '</div>';
+        echo '<div style="grid-column: 1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:15px;">';
+        echo '<div>';
+        echo '<label for="jlg_cta_label"><strong>' . esc_html__( 'Texte du bouton CTA', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="text" id="jlg_cta_label" name="jlg_cta_label" value="' . esc_attr( $meta['cta_label'] ?? '' ) . '" style="width:100%;" placeholder="' . esc_attr__( 'Découvrir le jeu', 'notation-jlg' ) . '">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Obligatoire si vous renseignez une URL.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+        echo '<div>';
+        echo '<label for="jlg_cta_url"><strong>' . esc_html__( 'URL du bouton CTA', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="url" id="jlg_cta_url" name="jlg_cta_url" value="' . esc_attr( $meta['cta_url'] ?? '' ) . '" style="width:100%;" placeholder="https://">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Renseignez une URL absolue (https://...).', 'notation-jlg' ) . '</p>';
+        echo '</div>';
         echo '</div>';
         echo '</div>';
 

@@ -11,6 +11,7 @@ namespace JLG\Notation\Shortcodes;
 
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
+use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
@@ -118,7 +119,7 @@ class AllInOne {
         $atts['cta_label']            = sanitize_text_field( $atts['cta_label'] );
         $atts['cta_url']              = esc_url_raw( $atts['cta_url'] );
         $atts['cta_role']             = sanitize_key( $atts['cta_role'] );
-        $atts['cta_rel']              = sanitize_text_field( $atts['cta_rel'] );
+        $atts['cta_rel']              = trim( sanitize_text_field( $atts['cta_rel'] ) );
 
         if ( $atts['cta_url'] !== '' && ! wp_http_validate_url( $atts['cta_url'] ) ) {
             $atts['cta_url'] = '';
@@ -157,8 +158,12 @@ class AllInOne {
         $cta_label     = get_post_meta( $post_id, '_jlg_cta_label', true );
         $cta_url       = get_post_meta( $post_id, '_jlg_cta_url', true );
 
-        $cta_label = is_string( $cta_label ) ? trim( $cta_label ) : '';
+        $cta_label = is_string( $cta_label ) ? sanitize_text_field( $cta_label ) : '';
+        $cta_label = $cta_label !== '' ? trim( $cta_label ) : '';
         $cta_url   = is_string( $cta_url ) ? trim( $cta_url ) : '';
+        if ( $cta_url !== '' && ! wp_http_validate_url( $cta_url ) ) {
+            $cta_url = '';
+        }
 
         if ( $atts['cta_label'] !== '' ) {
             $cta_label = $atts['cta_label'];

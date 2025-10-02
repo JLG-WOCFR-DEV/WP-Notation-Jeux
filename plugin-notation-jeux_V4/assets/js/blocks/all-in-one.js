@@ -144,6 +144,7 @@
                             onChange: function (value) {
                                 setAttributes({ ctaLabel: value || '' });
                             },
+                            help: __('Laissez vide pour utiliser le texte défini dans la métabox.', 'notation-jlg'),
                         }),
                         createElement(TextControl, {
                             label: __('URL du bouton', 'notation-jlg'),
@@ -152,7 +153,7 @@
                             onChange: function (value) {
                                 setAttributes({ ctaUrl: value || '' });
                             },
-                            help: __('Utilisez une URL absolue (https://...)', 'notation-jlg'),
+                            help: __('Utilisez une URL absolue (https://...) ou laissez vide pour utiliser la métabox.', 'notation-jlg'),
                         }),
                         createElement(TextControl, {
                             label: __('Attribut role', 'notation-jlg'),
