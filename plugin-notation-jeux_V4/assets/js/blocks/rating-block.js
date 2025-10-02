@@ -34,37 +34,44 @@
               return props;
           };
 
+    function createAccentColorControl(attributes, setAttributes) {
+        var colorValue = (attributes && attributes.accentColor) || '';
+
+        if (PanelColorSettings) {
+            return createElement(PanelColorSettings, {
+                title: __('Couleurs', 'notation-jlg'),
+                colorSettings: [
+                    {
+                        value: colorValue,
+                        onChange: function (value) {
+                            setAttributes({ accentColor: value || '' });
+                        },
+                        label: __('Couleur d\'accent', 'notation-jlg'),
+                    },
+                ],
+            });
+        }
+
+        return createElement(
+            PanelBody,
+            { title: __('Couleur d\'accent', 'notation-jlg'), initialOpen: false },
+            ColorPalette
+                ? createElement(ColorPalette, {
+                      value: colorValue,
+                      onChange: function (value) {
+                          setAttributes({ accentColor: value || '' });
+                      },
+                  })
+                : null
+        );
+    }
+
     registerBlockType('notation-jlg/rating-block', {
         edit: function (props) {
             var attributes = props.attributes || {};
             var setAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
             var blockProps = useBlockProps({ className: 'notation-jlg-rating-block-editor' });
-
-            var colorControl = PanelColorSettings
-                ? createElement(PanelColorSettings, {
-                      title: __('Couleurs', 'notation-jlg'),
-                      colorSettings: [
-                          {
-                              value: attributes.accentColor || '',
-                              onChange: function (value) {
-                                  setAttributes({ accentColor: value || '' });
-                              },
-                              label: __('Couleur d\'accent', 'notation-jlg'),
-                          },
-                      ],
-                  })
-                : createElement(
-                      PanelBody,
-                      { title: __('Couleur d\'accent', 'notation-jlg'), initialOpen: false },
-                      ColorPalette
-                          ? createElement(ColorPalette, {
-                                value: attributes.accentColor || '',
-                                onChange: function (value) {
-                                    setAttributes({ accentColor: value || '' });
-                                },
-                            })
-                          : null
-                  );
+            var colorControl = createAccentColorControl(attributes, setAttributes);
 
             return createElement(
                 Fragment,
