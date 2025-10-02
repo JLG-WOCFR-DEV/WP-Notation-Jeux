@@ -2,6 +2,7 @@
 
 namespace JLG\Notation;
 
+use JLG\Notation\DynamicCss;
 use JLG\Notation\Helpers;
 use JLG\Notation\Frontend;
 
@@ -92,6 +93,74 @@ class Blocks {
 
         add_action( 'init', array( $this, 'register_block_editor_assets' ) );
         add_action( 'init', array( $this, 'register_blocks' ) );
+        add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+    }
+
+    public function enqueue_block_editor_assets() {
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return;
+        }
+
+        $current_screen = get_current_screen();
+
+        if ( ! $current_screen ) {
+            return;
+        }
+
+        $screen_id = isset( $current_screen->id ) ? (string) $current_screen->id : '';
+
+        $is_block_editor = false;
+
+        if ( property_exists( $current_screen, 'is_block_editor' ) && $current_screen->is_block_editor ) {
+            $is_block_editor = true;
+        } elseif ( $screen_id !== '' && strpos( $screen_id, 'block-editor' ) !== false ) {
+            $is_block_editor = true;
+        }
+
+        if ( ! $is_block_editor ) {
+            return;
+        }
+
+        $frontend_handle = 'jlg-frontend';
+
+        if ( ! wp_style_is( $frontend_handle, 'enqueued' ) && ! wp_style_is( $frontend_handle, 'done' ) ) {
+            wp_enqueue_style(
+                $frontend_handle,
+                JLG_NOTATION_PLUGIN_URL . 'assets/css/jlg-frontend.css',
+                array(),
+                JLG_NOTATION_VERSION
+            );
+        }
+
+        static $frontend_inline_done = false;
+
+        if ( ! $frontend_inline_done && wp_style_is( $frontend_handle, 'enqueued' ) ) {
+            $options       = Helpers::get_plugin_options();
+            $palette       = Helpers::get_color_palette();
+            $inline_css    = DynamicCss::build_frontend_css( $options, $palette, null );
+            $inline_css    = is_string( $inline_css ) ? trim( $inline_css ) : '';
+
+            if ( $inline_css !== '' ) {
+                wp_add_inline_style( $frontend_handle, $inline_css );
+            }
+
+            $frontend_inline_done = true;
+        }
+
+        $game_explorer_handle = 'jlg-game-explorer';
+
+        if ( ! wp_style_is( $game_explorer_handle, 'registered' ) ) {
+            wp_register_style(
+                $game_explorer_handle,
+                JLG_NOTATION_PLUGIN_URL . 'assets/css/game-explorer.css',
+                array( $frontend_handle ),
+                JLG_NOTATION_VERSION
+            );
+        }
+
+        if ( wp_style_is( $game_explorer_handle, 'registered' ) && ! wp_style_is( $game_explorer_handle, 'enqueued' ) && ! wp_style_is( $game_explorer_handle, 'done' ) ) {
+            wp_enqueue_style( $game_explorer_handle );
+        }
     }
 
     public function register_block_editor_assets() {
