@@ -112,7 +112,7 @@ class ShortcodeSummarySortingTest extends TestCase
 
     public function test_sorting_by_developer_uses_meta_arguments()
     {
-        $context = JLG_Shortcode_Summary_Display::get_render_context([], [
+        $context = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context([], [
             'orderby' => 'meta__jlg_developpeur',
             'order'   => 'ASC',
         ]);
@@ -127,7 +127,7 @@ class ShortcodeSummarySortingTest extends TestCase
 
     public function test_sorting_alias_for_note_maps_to_average_score_meta()
     {
-        $context = JLG_Shortcode_Summary_Display::get_render_context([], [
+        $context = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context([], [
             'orderby' => 'note',
         ]);
 
@@ -151,7 +151,7 @@ class ShortcodeSummarySortingTest extends TestCase
         });
 
         try {
-            $context = JLG_Shortcode_Summary_Display::get_render_context([], []);
+            $context = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context([], []);
         } finally {
             if ($previous_filters === null) {
                 unset($GLOBALS['jlg_test_filters']);
@@ -166,10 +166,10 @@ class ShortcodeSummarySortingTest extends TestCase
 
     public function test_namespaced_request_parameters_are_scoped_to_each_table()
     {
-        $attsOne = JLG_Shortcode_Summary_Display::get_default_atts();
+        $attsOne = \JLG\Notation\Shortcodes\SummaryDisplay::get_default_atts();
         $attsOne['id'] = 'table-one';
 
-        $attsTwo = JLG_Shortcode_Summary_Display::get_default_atts();
+        $attsTwo = \JLG\Notation\Shortcodes\SummaryDisplay::get_default_atts();
         $attsTwo['id'] = 'table-two';
 
         $request = [
@@ -179,8 +179,8 @@ class ShortcodeSummarySortingTest extends TestCase
             'cat_filter__table-two'   => '123',
         ];
 
-        $contextOne = JLG_Shortcode_Summary_Display::get_render_context($attsOne, $request);
-        $contextTwo = JLG_Shortcode_Summary_Display::get_render_context($attsTwo, $request);
+        $contextOne = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context($attsOne, $request);
+        $contextTwo = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context($attsTwo, $request);
 
         $this->assertSame('average_score', $contextOne['orderby']);
         $this->assertSame('ASC', $contextOne['order']);
@@ -195,12 +195,12 @@ class ShortcodeSummarySortingTest extends TestCase
 
     public function test_render_includes_screen_reader_label_for_category_filter()
     {
-        $atts = JLG_Shortcode_Summary_Display::get_default_atts();
+        $atts = \JLG\Notation\Shortcodes\SummaryDisplay::get_default_atts();
         $atts['id'] = 'summary-accessibility';
 
-        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, []);
+        $context = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context($atts, []);
 
-        $html = JLG_Frontend::get_template_html('shortcode-summary-display', $context);
+        $html = \JLG\Notation\Frontend::get_template_html('shortcode-summary-display', $context);
 
         $table_id     = $context['atts']['id'] ?? $atts['id'];
         $expected_for = '<label for="' . esc_attr($table_id . '_cat_filter') . '" class="screen-reader-text">';
@@ -211,11 +211,11 @@ class ShortcodeSummarySortingTest extends TestCase
 
     public function test_letter_filter_buttons_submit_namespaced_values()
     {
-        $atts = JLG_Shortcode_Summary_Display::get_default_atts();
+        $atts = \JLG\Notation\Shortcodes\SummaryDisplay::get_default_atts();
         $atts['id'] = 'summary-prefix';
 
-        $context = JLG_Shortcode_Summary_Display::get_render_context($atts, []);
-        $html    = JLG_Frontend::get_template_html('shortcode-summary-display', $context);
+        $context = \JLG\Notation\Shortcodes\SummaryDisplay::get_render_context($atts, []);
+        $html    = \JLG\Notation\Frontend::get_template_html('shortcode-summary-display', $context);
 
         $this->assertMatchesRegularExpression(
             '/<button[^>]*type="submit"[^>]*name="letter_filter__summary-prefix"[^>]*value=""/i',

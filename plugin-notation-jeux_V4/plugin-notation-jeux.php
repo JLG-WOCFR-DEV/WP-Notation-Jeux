@@ -13,7 +13,12 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
+}
+
+$autoload_path = __DIR__ . '/vendor/autoload.php';
+if ( file_exists( $autoload_path ) ) {
+        require $autoload_path;
 }
 
 // Constantes
@@ -81,95 +86,61 @@ final class JLG_Plugin_De_Notation_Main {
     }
 
     private function load_dependencies() {
-        // Helpers (requis par tous)
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-helpers.php';
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-assets.php';
-        require_once JLG_NOTATION_PLUGIN_DIR . 'functions.php';
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/shortcodes/class-jlg-shortcode-game-explorer.php';
+        $helpers_class = \JLG\Notation\Helpers::class;
 
-        add_action( 'update_option_notation_jlg_settings', array( 'JLG_Helpers', 'flush_plugin_options_cache' ), 10, 0 );
-        add_action( 'add_option_notation_jlg_settings', array( 'JLG_Helpers', 'flush_plugin_options_cache' ), 10, 0 );
-        add_action( 'delete_option_notation_jlg_settings', array( 'JLG_Helpers', 'flush_plugin_options_cache' ), 10, 0 );
-        add_action( 'added_post_meta', array( 'JLG_Helpers', 'maybe_handle_rating_meta_change' ), 10, 4 );
-        add_action( 'updated_post_meta', array( 'JLG_Helpers', 'maybe_handle_rating_meta_change' ), 10, 4 );
-        add_action( 'deleted_post_meta', array( 'JLG_Helpers', 'maybe_handle_rating_meta_change' ), 10, 4 );
-        add_action( 'transition_post_status', array( 'JLG_Helpers', 'maybe_clear_rated_post_ids_cache_for_status_change' ), 20, 3 );
+        add_action( 'update_option_notation_jlg_settings', array( $helpers_class, 'flush_plugin_options_cache' ), 10, 0 );
+        add_action( 'add_option_notation_jlg_settings', array( $helpers_class, 'flush_plugin_options_cache' ), 10, 0 );
+        add_action( 'delete_option_notation_jlg_settings', array( $helpers_class, 'flush_plugin_options_cache' ), 10, 0 );
+        add_action( 'added_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
+        add_action( 'updated_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
+        add_action( 'deleted_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
+        add_action( 'transition_post_status', array( $helpers_class, 'maybe_clear_rated_post_ids_cache_for_status_change' ), 20, 3 );
 
-        if ( class_exists( 'JLG_Shortcode_Game_Explorer' ) ) {
-            add_action( 'added_post_meta', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta' ), 20, 4 );
-            add_action( 'updated_post_meta', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta' ), 20, 4 );
-            add_action( 'deleted_post_meta', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_meta' ), 20, 4 );
-            add_action( 'save_post', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_post' ), 20, 3 );
-            add_action( 'transition_post_status', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_status_change' ), 20, 3 );
-            add_action( 'set_object_terms', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_terms' ), 20, 4 );
-            add_action( 'created_term', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_term_event' ), 20, 3 );
-            add_action( 'edited_term', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_term_event' ), 20, 3 );
-            add_action( 'delete_term', array( 'JLG_Shortcode_Game_Explorer', 'maybe_clear_filters_snapshot_for_term_event' ), 20, 4 );
-        }
+        $game_explorer_class = \JLG\Notation\Shortcodes\GameExplorer::class;
 
-        // Frontend (toujours)
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-dynamic-css.php';
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-frontend.php';
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-widget.php';
-        require_once JLG_NOTATION_PLUGIN_DIR . 'includes/class-jlg-blocks.php';
-
-        // Admin seulement si nécessaire
-        if ( is_admin() ) {
-            $this->load_admin_classes();
-        }
-    }
-
-    private function load_admin_classes() {
-        // Utilitaires admin
-        $utils_files = array(
-            'includes/utils/class-jlg-form-renderer.php',
-            'includes/utils/class-jlg-template-loader.php',
-            'includes/utils/class-jlg-validator.php',
-        );
-
-        // Classes admin
-        $admin_files = array(
-            'includes/admin/class-jlg-admin-core.php',
-        );
-
-        foreach ( array_merge( $utils_files, $admin_files ) as $file ) {
-            $path = JLG_NOTATION_PLUGIN_DIR . $file;
-            if ( file_exists( $path ) ) {
-                require_once $path;
-            }
+        if ( class_exists( $game_explorer_class ) ) {
+            add_action( 'added_post_meta', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_meta' ), 20, 4 );
+            add_action( 'updated_post_meta', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_meta' ), 20, 4 );
+            add_action( 'deleted_post_meta', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_meta' ), 20, 4 );
+            add_action( 'save_post', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_post' ), 20, 3 );
+            add_action( 'transition_post_status', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_status_change' ), 20, 3 );
+            add_action( 'set_object_terms', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_terms' ), 20, 4 );
+            add_action( 'created_term', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_term_event' ), 20, 3 );
+            add_action( 'edited_term', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_term_event' ), 20, 3 );
+            add_action( 'delete_term', array( $game_explorer_class, 'maybe_clear_filters_snapshot_for_term_event' ), 20, 4 );
         }
     }
 
     private function init_components() {
         // Assets communs
-        if ( class_exists( 'JLG_Assets' ) ) {
-            $this->assets = JLG_Assets::get_instance();
+        if ( class_exists( \JLG\Notation\Assets::class ) ) {
+            $this->assets = \JLG\Notation\Assets::get_instance();
         }
 
         // Frontend
         $doing_ajax = function_exists( 'wp_doing_ajax' ) ? wp_doing_ajax() : ( defined( 'DOING_AJAX' ) && DOING_AJAX );
-        if ( ( ! is_admin() || $doing_ajax ) && class_exists( 'JLG_Frontend' ) ) {
-            $this->frontend = new JLG_Frontend();
+        if ( ( ! is_admin() || $doing_ajax ) && class_exists( \JLG\Notation\Frontend::class ) ) {
+            $this->frontend = new \JLG\Notation\Frontend();
         }
 
         // Widget
-        if ( class_exists( 'JLG_Latest_Reviews_Widget' ) ) {
+        if ( class_exists( \JLG\Notation\LatestReviewsWidget::class ) ) {
             add_action(
                 'widgets_init',
                 function () {
-					register_widget( 'JLG_Latest_Reviews_Widget' );
-				}
+                                        register_widget( \JLG\Notation\LatestReviewsWidget::class );
+                                }
             );
         }
 
         // Blocks
-        if ( class_exists( 'JLG_Blocks' ) ) {
-            $this->blocks = new JLG_Blocks();
+        if ( class_exists( \JLG\Notation\Blocks::class ) ) {
+            $this->blocks = new \JLG\Notation\Blocks();
         }
 
         // Admin
-        if ( is_admin() && class_exists( 'JLG_Admin_Core' ) ) {
-            $this->admin = JLG_Admin_Core::get_instance();
+        if ( is_admin() && class_exists( \JLG\Notation\Admin\Core::class ) ) {
+            $this->admin = \JLG\Notation\Admin\Core::get_instance();
         }
     }
 
@@ -183,7 +154,7 @@ final class JLG_Plugin_De_Notation_Main {
 
         // Options par défaut
         if ( ! get_option( 'notation_jlg_settings' ) ) {
-            add_option( 'notation_jlg_settings', JLG_Helpers::get_default_settings() );
+            add_option( 'notation_jlg_settings', \JLG\Notation\Helpers::get_default_settings() );
         }
 
         update_option( 'jlg_notation_version', JLG_NOTATION_VERSION );
@@ -252,7 +223,7 @@ final class JLG_Plugin_De_Notation_Main {
             $post_id = intval( $post_id );
 
             if ( $post_id > 0 ) {
-                JLG_Helpers::get_resolved_average_score( $post_id );
+                \JLG\Notation\Helpers::get_resolved_average_score( $post_id );
             }
         }
 
@@ -292,7 +263,7 @@ final class JLG_Plugin_De_Notation_Main {
         }
 
         $last_post_id = isset( $scan_state['last_post_id'] ) ? (int) $scan_state['last_post_id'] : 0;
-        $fetched      = JLG_Helpers::get_rated_post_ids_batch( $last_post_id, $batch_size );
+        $fetched      = \JLG\Notation\Helpers::get_rated_post_ids_batch( $last_post_id, $batch_size );
 
         if ( empty( $fetched ) ) {
             $scan_state['complete'] = true;
@@ -429,7 +400,7 @@ function jlg_get_post_rating( $post_id = null ) {
     if ( ! $post_id ) {
 		$post_id = get_the_ID();
     }
-    return JLG_Helpers::get_average_score_for_post( $post_id );
+    return \JLG\Notation\Helpers::get_average_score_for_post( $post_id );
 }
 
 function jlg_display_post_rating( $post_id = null ) {

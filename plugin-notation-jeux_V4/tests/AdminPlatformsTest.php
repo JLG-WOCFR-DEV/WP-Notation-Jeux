@@ -13,11 +13,11 @@ class AdminPlatformsTest extends TestCase
         $_POST = [];
         $_GET = [];
 
-        $instanceProperty = new ReflectionProperty(JLG_Admin_Platforms::class, 'instance');
+        $instanceProperty = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'instance');
         $instanceProperty->setAccessible(true);
         $instanceProperty->setValue(null, null);
 
-        $debugProperty = new ReflectionProperty(JLG_Admin_Platforms::class, 'debug_messages');
+        $debugProperty = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'debug_messages');
         $debugProperty->setAccessible(true);
         $debugProperty->setValue(null, []);
     }
@@ -30,16 +30,16 @@ class AdminPlatformsTest extends TestCase
         return $reflection->invokeArgs($object, $args);
     }
 
-    private function setDefaultPlatforms(JLG_Admin_Platforms $admin, array $platforms): void
+    private function setDefaultPlatforms(\JLG\Notation\Admin\Platforms $admin, array $platforms): void
     {
-        $property = new ReflectionProperty(JLG_Admin_Platforms::class, 'default_platforms');
+        $property = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'default_platforms');
         $property->setAccessible(true);
         $property->setValue($admin, $platforms);
     }
 
     public function test_add_platform_persists_custom_definition_and_order(): void
     {
-        $admin = new JLG_Admin_Platforms();
+        $admin = new \JLG\Notation\Admin\Platforms();
 
         $_POST['new_platform_name'] = 'Amiga 500';
         $_POST['new_platform_icon'] = '🕹️';
@@ -65,7 +65,7 @@ class AdminPlatformsTest extends TestCase
 
     public function test_delete_platform_removes_custom_definition_and_order(): void
     {
-        $admin = new JLG_Admin_Platforms();
+        $admin = new \JLG\Notation\Admin\Platforms();
 
         $_POST['new_platform_name'] = 'Amiga 500';
         $_POST['new_platform_icon'] = '🕹️';
@@ -85,7 +85,7 @@ class AdminPlatformsTest extends TestCase
 
     public function test_update_platform_order_saves_only_order_map(): void
     {
-        $admin = new JLG_Admin_Platforms();
+        $admin = new \JLG\Notation\Admin\Platforms();
 
         $_POST['new_platform_name'] = 'Amiga 500';
         $_POST['new_platform_icon'] = '🕹️';
@@ -122,7 +122,7 @@ class AdminPlatformsTest extends TestCase
             ],
         ]);
 
-        $admin = new JLG_Admin_Platforms();
+        $admin = new \JLG\Notation\Admin\Platforms();
 
         $this->setDefaultPlatforms($admin, [
             'pc' => ['name' => 'PC Nouveau', 'icon' => '🖥️', 'order' => 2, 'custom' => false],
@@ -141,14 +141,14 @@ class AdminPlatformsTest extends TestCase
 
     public function test_sanitize_platforms_falls_back_to_helper_defaults_when_singleton_missing(): void
     {
-        $instanceProperty = new ReflectionProperty(JLG_Admin_Platforms::class, 'instance');
+        $instanceProperty = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'instance');
         $instanceProperty->setAccessible(true);
         $originalInstance = $instanceProperty->getValue();
 
         try {
             $instanceProperty->setValue(null, false);
 
-            $sanitized = JLG_Validator::sanitize_platforms([
+            $sanitized = \JLG\Notation\Utils\Validator::sanitize_platforms([
                 'Steam Deck',
                 'Invalid Console',
             ]);
@@ -161,14 +161,14 @@ class AdminPlatformsTest extends TestCase
 
     public function test_sanitize_platforms_filters_obsolete_defaults_when_manager_unavailable(): void
     {
-        $instanceProperty = new ReflectionProperty(JLG_Admin_Platforms::class, 'instance');
+        $instanceProperty = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'instance');
         $instanceProperty->setAccessible(true);
         $originalInstance = $instanceProperty->getValue();
 
         try {
             $instanceProperty->setValue(null, false);
 
-            $sanitized = JLG_Validator::sanitize_platforms([
+            $sanitized = \JLG\Notation\Utils\Validator::sanitize_platforms([
                 'Steam Deck',
                 'Nintendo Switch 2',
                 'Invalid Console',
@@ -182,7 +182,7 @@ class AdminPlatformsTest extends TestCase
 
     public function test_sanitize_platforms_preserves_custom_platforms(): void
     {
-        $admin = JLG_Admin_Platforms::get_instance();
+        $admin = \JLG\Notation\Admin\Platforms::get_instance();
 
         $_POST['new_platform_name'] = 'Amiga 600';
         $_POST['new_platform_icon'] = '🕹️';
@@ -192,7 +192,7 @@ class AdminPlatformsTest extends TestCase
 
         $this->assertTrue($result['success']);
 
-        $sanitized = JLG_Validator::sanitize_platforms([
+        $sanitized = \JLG\Notation\Utils\Validator::sanitize_platforms([
             'Amiga 600',
             'Imaginary Console',
         ]);

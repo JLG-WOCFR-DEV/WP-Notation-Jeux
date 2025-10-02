@@ -6,11 +6,16 @@
  * @version 5.0
  */
 
+namespace JLG\Notation\Admin;
+
+use JLG\Notation\Helpers;
+use JLG\Notation\Utils\FormRenderer;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Admin_Settings {
+class Settings {
 
     private $option_name       = 'notation_jlg_settings';
     private $field_constraints = array();
@@ -26,11 +31,11 @@ class JLG_Admin_Settings {
 
     public function sanitize_options( $input ) {
         if ( ! is_array( $input ) ) {
-            return JLG_Helpers::get_default_settings();
+            return Helpers::get_default_settings();
         }
 
         $sanitized = array();
-        $defaults  = JLG_Helpers::get_default_settings();
+        $defaults  = Helpers::get_default_settings();
 
         // IMPORTANT: Traiter d'abord les champs select pour les modes de couleur
         // Ces champs doivent être traités spécialement pour conserver leur valeur
@@ -40,7 +45,7 @@ class JLG_Admin_Settings {
             'text_glow_color_mode'         => array( 'dynamic', 'custom' ),
             'circle_glow_color_mode'       => array( 'dynamic', 'custom' ),
             'table_border_style'           => array( 'none', 'horizontal', 'full' ),
-            'game_explorer_score_position' => JLG_Helpers::get_game_explorer_score_positions(),
+            'game_explorer_score_position' => Helpers::get_game_explorer_score_positions(),
         );
 
         foreach ( $select_fields as $field => $allowed_values ) {
@@ -80,7 +85,7 @@ class JLG_Admin_Settings {
             }
         }
 
-        JLG_Helpers::flush_plugin_options_cache();
+        Helpers::flush_plugin_options_cache();
 
         return $sanitized;
     }
@@ -1008,11 +1013,11 @@ class JLG_Admin_Settings {
         $type   = $args['type'] ?? 'text';
         $method = $type . '_field';
 
-        if ( method_exists( 'JLG_Form_Renderer', $method ) ) {
-            call_user_func( array( 'JLG_Form_Renderer', $method ), $args );
+        if ( method_exists( FormRenderer::class, $method ) ) {
+            call_user_func( array( FormRenderer::class, $method ), $args );
         } else {
             // Fallback pour les autres types
-            $options = JLG_Helpers::get_plugin_options();
+            $options = Helpers::get_plugin_options();
 
             if ( $type === 'textarea' ) {
                 printf(

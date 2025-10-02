@@ -1,9 +1,12 @@
 <?php
+
+namespace JLG\Notation\Utils;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Template_Loader {
+class TemplateLoader {
     private static $templates_dir  = '';
     private static $template_cache = array();
 

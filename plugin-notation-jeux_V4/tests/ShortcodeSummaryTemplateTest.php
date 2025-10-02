@@ -28,7 +28,7 @@ class ShortcodeSummaryTemplateTest extends TestCase
 {
     public function test_active_letter_button_sets_aria_pressed_attribute()
     {
-        $atts = JLG_Shortcode_Summary_Display::get_default_atts();
+        $atts = \JLG\Notation\Shortcodes\SummaryDisplay::get_default_atts();
         $atts['id'] = 'table-test';
         $atts['posts_per_page'] = 5;
         $atts['letter_filter'] = 'C';

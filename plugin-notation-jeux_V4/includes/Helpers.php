@@ -4,11 +4,13 @@
  * Contient toutes les fonctions logiques réutilisables du plugin.
  */
 
+namespace JLG\Notation;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Helpers {
+class Helpers {
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';

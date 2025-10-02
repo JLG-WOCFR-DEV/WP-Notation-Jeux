@@ -156,7 +156,7 @@ $letters = range( 'A', 'Z' );
 
     <div class="jlg-summary-content">
         <?php
-        echo JLG_Frontend::get_template_html(
+        echo \JLG\Notation\Frontend::get_template_html(
             'summary-table-fragment',
             array(
 				'query'                => $query,

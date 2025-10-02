@@ -287,7 +287,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'paged'          => '-5',
         ];
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         try {
             $frontend->handle_game_explorer_sort();
@@ -328,7 +328,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'paged'   => '0',
         ];
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         try {
             $frontend->handle_game_explorer_sort();
@@ -353,7 +353,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->configureOptions();
         $this->primeSnapshot($this->buildSnapshotWithPosts());
 
-        $atts = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $atts = \JLG\Notation\Shortcodes\GameExplorer::get_default_atts();
         $request = [
             'orderby'      => 'date',
             'order'        => 'DESC',
@@ -365,7 +365,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'paged'        => 1,
         ];
 
-        $context = JLG_Shortcode_Game_Explorer::get_render_context($atts, $request);
+        $context = \JLG\Notation\Shortcodes\GameExplorer::get_render_context($atts, $request);
 
         $this->assertSame([], $context['games'], 'No games should be returned for an unmatched letter filter.');
         $this->assertSame(0, $context['total_items'], 'Total items should be zero when no posts match.');
@@ -391,10 +391,10 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->configureOptions();
         $this->primeSnapshot($this->buildSnapshotWithPosts());
 
-        $attsOne = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $attsOne = \JLG\Notation\Shortcodes\GameExplorer::get_default_atts();
         $attsOne['id'] = 'first-explorer';
 
-        $attsTwo = JLG_Shortcode_Game_Explorer::get_default_atts();
+        $attsTwo = \JLG\Notation\Shortcodes\GameExplorer::get_default_atts();
         $attsTwo['id'] = 'second-explorer';
 
         $request = [
@@ -405,8 +405,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'category__second-explorer'=> '11',
         ];
 
-        $contextOne = JLG_Shortcode_Game_Explorer::get_render_context($attsOne, $request);
-        $contextTwo = JLG_Shortcode_Game_Explorer::get_render_context($attsTwo, $request);
+        $contextOne = \JLG\Notation\Shortcodes\GameExplorer::get_render_context($attsOne, $request);
+        $contextTwo = \JLG\Notation\Shortcodes\GameExplorer::get_render_context($attsTwo, $request);
 
         $this->assertSame('A', $contextOne['current_filters']['letter']);
         $this->assertSame('', $contextOne['current_filters']['category']);
@@ -506,7 +506,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame('bottom-right', $defaultResponse['config']['atts']['score_position'] ?? null);
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings']['game_explorer_score_position'] = 'top-left';
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
 
         $topLeftResponse = $this->dispatchExplorerAjax($basePost);
         $this->assertArrayHasKey('html', $topLeftResponse);
@@ -525,7 +525,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
     private function dispatchExplorerAjax(array $post): array
     {
         $_POST = $post;
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
         $payload = null;
 
         try {
@@ -554,11 +554,11 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->primeSnapshot($this->buildSnapshotWithPosts());
         set_transient('jlg_game_explorer_snapshot_v1', ['cached' => true]);
 
-        JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_meta(0, 777, '_jlg_developpeur', 'Studio Gamma');
+        \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_meta(0, 777, '_jlg_developpeur', 'Studio Gamma');
 
         $this->assertFalse(get_transient('jlg_game_explorer_snapshot_v1'), 'Transient cache should be cleared after meta update.');
 
-        $reflection = new ReflectionClass(JLG_Shortcode_Game_Explorer::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Shortcodes\GameExplorer::class);
         $property = $reflection->getProperty('filters_snapshot');
         $property->setAccessible(true);
 
@@ -605,7 +605,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
         set_transient('jlg_rated_post_ids_v1', [101, '202', 'not-a-number']);
 
-        $reflection = new ReflectionMethod(JLG_Shortcode_Game_Explorer::class, 'build_filters_snapshot');
+        $reflection = new ReflectionMethod(\JLG\Notation\Shortcodes\GameExplorer::class, 'build_filters_snapshot');
         $reflection->setAccessible(true);
 
         $snapshot = $reflection->invoke(null);
@@ -626,14 +626,14 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
     private function configureOptions(): void
     {
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
         $defaults['game_explorer_posts_per_page'] = 2;
         $defaults['game_explorer_filters'] = 'letter,category,platform,availability,search';
-        $defaults['game_explorer_score_position'] = JLG_Helpers::normalize_game_explorer_score_position('');
+        $defaults['game_explorer_score_position'] = \JLG\Notation\Helpers::normalize_game_explorer_score_position('');
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $defaults;
         $GLOBALS['jlg_test_options']['jlg_platforms_list'] = [];
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function registerPost(int $post_id, string $title, string $content, string $post_date): void
@@ -700,12 +700,12 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $_REQUEST = [];
         $this->resetFrontendStatics();
         $this->resetSnapshot();
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function resetFrontendStatics(): void
     {
-        $reflection = new ReflectionClass(JLG_Frontend::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
         $defaults = [
             'shortcode_errors'      => [],
             'instance'              => null,
@@ -726,7 +726,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
     private function resetSnapshot(): void
     {
-        $reflection = new ReflectionClass(JLG_Shortcode_Game_Explorer::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Shortcodes\GameExplorer::class);
         if ($reflection->hasProperty('filters_snapshot')) {
             $property = $reflection->getProperty('filters_snapshot');
             $property->setAccessible(true);
@@ -736,7 +736,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
     private function primeSnapshot(array $snapshot): void
     {
-        $reflection = new ReflectionClass(JLG_Shortcode_Game_Explorer::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Shortcodes\GameExplorer::class);
         $property = $reflection->getProperty('filters_snapshot');
         $property->setAccessible(true);
         $property->setValue(null, $snapshot);

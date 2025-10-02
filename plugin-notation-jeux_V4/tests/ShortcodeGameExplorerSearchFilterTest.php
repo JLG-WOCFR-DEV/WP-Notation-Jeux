@@ -16,7 +16,7 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
     {
         $search_value = 'Metroid';
 
-        $output = JLG_Frontend::get_template_html('shortcode-game-explorer', [
+        $output = \JLG\Notation\Frontend::get_template_html('shortcode-game-explorer', [
             'atts' => [
                 'id' => 'explorer-test',
                 'posts_per_page' => 9,

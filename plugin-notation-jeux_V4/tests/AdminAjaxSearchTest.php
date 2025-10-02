@@ -46,8 +46,8 @@ class AdminAjaxSearchTest extends TestCase
         $_POST = [];
         remove_all_filters('pre_http_request');
         $GLOBALS['jlg_test_transients'] = [];
-        update_option('notation_jlg_settings', JLG_Helpers::get_default_settings());
-        JLG_Helpers::flush_plugin_options_cache();
+        update_option('notation_jlg_settings', \JLG\Notation\Helpers::get_default_settings());
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     protected function tearDown(): void
@@ -55,7 +55,7 @@ class AdminAjaxSearchTest extends TestCase
         remove_all_filters('pre_http_request');
         $_POST = [];
         $GLOBALS['jlg_test_transients'] = [];
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
         parent::tearDown();
     }
 
@@ -65,10 +65,10 @@ class AdminAjaxSearchTest extends TestCase
         $_POST['nonce'] = 'dummy-nonce';
         $_POST['page'] = 2;
 
-        $settings = JLG_Helpers::get_default_settings();
+        $settings = \JLG\Notation\Helpers::get_default_settings();
         $settings['rawg_api_key'] = 'demo-key';
         update_option('notation_jlg_settings', $settings);
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
 
         $captured_request = null;
         add_filter(
@@ -112,7 +112,7 @@ class AdminAjaxSearchTest extends TestCase
             3
         );
 
-        $ajax = new JLG_Admin_Ajax();
+        $ajax = new \JLG\Notation\Admin\Ajax();
 
         try {
             $ajax->handle_rawg_search();
@@ -152,7 +152,7 @@ class AdminAjaxSearchTest extends TestCase
         $_POST['search'] = addslashes('The "Legend" & Co.');
         $_POST['nonce'] = 'dummy-nonce';
 
-        $ajax = new JLG_Admin_Ajax();
+        $ajax = new \JLG\Notation\Admin\Ajax();
 
         try {
             $ajax->handle_rawg_search();

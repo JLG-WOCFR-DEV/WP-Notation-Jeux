@@ -35,7 +35,7 @@ class ShortcodeGameInfoTest extends TestCase
             '_jlg_plateformes' => ['PC', 'Switch ', '<script>'],
         ];
 
-        $shortcode = new JLG_Shortcode_Game_Info();
+        $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
         $output = $shortcode->render([
             'post_id' => (string) $post_id,
             'champs'  => 'developpeur,plateformes',
@@ -56,7 +56,7 @@ class ShortcodeGameInfoTest extends TestCase
             '_jlg_developpeur' => 'Studio Y',
         ];
 
-        $shortcode = new JLG_Shortcode_Game_Info();
+        $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
         $output = $shortcode->render(['post_id' => $post_id]);
 
         $this->assertSame('', $output);
@@ -76,7 +76,7 @@ class ShortcodeGameInfoTest extends TestCase
         };
 
         try {
-            $shortcode = new JLG_Shortcode_Game_Info();
+            $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
             $output = $shortcode->render([
                 'post_id' => (string) $post_id,
                 'champs'  => 'developpeur',
@@ -99,7 +99,7 @@ class ShortcodeGameInfoTest extends TestCase
 
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
-        $shortcode = new JLG_Shortcode_Game_Info();
+        $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
         $output = $shortcode->render(['champs' => 'editeur']);
 
         $this->assertNotSame('', $output);

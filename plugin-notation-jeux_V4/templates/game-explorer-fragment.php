@@ -11,8 +11,8 @@ $pagination  = is_array( $pagination ) ? $pagination : array(
 );
 $total_items = isset( $total_items ) ? (int) $total_items : 0;
 $score_position = isset( $score_position )
-    ? JLG_Helpers::normalize_game_explorer_score_position( $score_position )
-    : JLG_Helpers::normalize_game_explorer_score_position( '' );
+    ? \JLG\Notation\Helpers::normalize_game_explorer_score_position( $score_position )
+    : \JLG\Notation\Helpers::normalize_game_explorer_score_position( '' );
 $score_classes = array(
     'jlg-ge-card__score',
     'jlg-ge-card__score--' . sanitize_html_class( $score_position ),

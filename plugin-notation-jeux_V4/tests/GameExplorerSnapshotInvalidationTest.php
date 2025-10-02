@@ -15,7 +15,7 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
     {
         parent::setUp();
 
-        $reflection = new ReflectionClass(JLG_Shortcode_Game_Explorer::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Shortcodes\GameExplorer::class);
         $this->filtersSnapshotProperty = $reflection->getProperty('filters_snapshot');
         $this->filtersSnapshotProperty->setAccessible(true);
 
@@ -26,12 +26,12 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
         $GLOBALS['jlg_test_filters'] = [];
 
         $this->filtersSnapshotProperty->setValue(null);
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     protected function tearDown(): void
     {
-        JLG_Shortcode_Game_Explorer::clear_filters_snapshot();
+        \JLG\Notation\Shortcodes\GameExplorer::clear_filters_snapshot();
         $this->filtersSnapshotProperty->setValue(null);
 
         parent::tearDown();
@@ -44,19 +44,19 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
 
         $scenarios = [
             'relevant meta update' => function () use ($post): void {
-                JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_meta(0, $post->ID, '_jlg_developpeur', 'Studio');
+                \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_meta(0, $post->ID, '_jlg_developpeur', 'Studio');
             },
             'post save' => function () use ($post): void {
-                JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_post($post->ID, $post, true);
+                \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_post($post->ID, $post, true);
             },
             'status transition' => function () use ($post): void {
-                JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_status_change('draft', 'publish', $post);
+                \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_status_change('draft', 'publish', $post);
             },
             'term assignment' => function () use ($post): void {
-                JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_terms($post->ID, [], [], 'category');
+                \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_terms($post->ID, [], [], 'category');
             },
             'term lifecycle event' => function (): void {
-                JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_term_event((object) ['taxonomy' => 'category']);
+                \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_term_event((object) ['taxonomy' => 'category']);
             },
         ];
 
@@ -76,7 +76,7 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
 
         $snapshot = $this->primeSnapshotCaches();
 
-        JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_meta(0, $post->ID, '_irrelevant_meta_key', 'Value');
+        \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_meta(0, $post->ID, '_irrelevant_meta_key', 'Value');
 
         $this->assertSnapshotIntact($snapshot, 'irrelevant meta update');
     }
@@ -88,17 +88,17 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
 
         $snapshot = $this->primeSnapshotCaches();
 
-        JLG_Shortcode_Game_Explorer::maybe_clear_filters_snapshot_for_post($post->ID, $post, false);
+        \JLG\Notation\Shortcodes\GameExplorer::maybe_clear_filters_snapshot_for_post($post->ID, $post, false);
 
         $this->assertSnapshotIntact($snapshot, 'unsupported post type save');
     }
 
     private function configurePluginOptions(): void
     {
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $defaults;
         $GLOBALS['jlg_test_options']['jlg_platforms_list'] = [];
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     private function registerPost(int $post_id, string $status, string $type): WP_Post

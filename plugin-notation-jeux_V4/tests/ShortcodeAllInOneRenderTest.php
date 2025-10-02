@@ -31,7 +31,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $GLOBALS['jlg_test_filters'] = [];
 
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     protected function tearDown(): void
@@ -63,7 +63,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
             'enable_animations' => 0,
         ]);
 
-        $shortcode = new JLG_Shortcode_All_In_One();
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
         $output = $shortcode->render([
             'post_id' => (string) $post_id,
         ]);
@@ -114,7 +114,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
             'circle_glow_speed'        => 1.5,
         ]);
 
-        $shortcode = new JLG_Shortcode_All_In_One();
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
         $output = $shortcode->render([
             'post_id' => (string) $post_id,
         ]);
@@ -146,7 +146,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
             'enable_animations' => 0,
         ]);
 
-        $shortcode = new JLG_Shortcode_All_In_One();
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
 
         try {
             $output = $shortcode->render([
@@ -176,7 +176,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
             'enable_animations' => 1,
         ]);
 
-        $shortcode = new JLG_Shortcode_Rating_Block();
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
         $output = $shortcode->render([
             'post_id' => (string) $post_id,
         ]);
@@ -207,7 +207,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
 
     private function setPluginOptions(array $overrides): void
     {
-        $defaults = JLG_Helpers::get_default_settings();
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
         $base = array_merge($defaults, [
             'label_cat1' => 'Gameplay',
             'label_cat2' => 'Graphismes',
@@ -220,6 +220,6 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $options = array_merge($base, $overrides);
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $options;
-        JLG_Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 }

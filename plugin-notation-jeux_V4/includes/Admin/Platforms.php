@@ -6,11 +6,15 @@
  * @version 5.0
  */
 
+namespace JLG\Notation\Admin;
+
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Admin_Platforms {
+class Platforms {
 
     private $option_name           = 'jlg_platforms_list';
     private $tag_map_option        = 'jlg_platform_tag_map';
@@ -75,7 +79,7 @@ class JLG_Admin_Platforms {
     public function __construct() {
         // Important: Hook sur admin_init pour traiter les actions POST
         add_action( 'admin_init', array( $this, 'handle_platform_actions' ), 5 );
-        $this->log_debug( '✅ Classe JLG_Admin_Platforms initialisée' );
+        $this->log_debug( '✅ Classe Platforms initialisée' );
     }
 
     /**
@@ -847,8 +851,8 @@ class JLG_Admin_Platforms {
                             foreach ( $platforms as $key => $platform ) :
                                 $linked_tag_terms = array();
 
-                                if ( class_exists( 'JLG_Helpers' ) ) {
-                                    $linked_tag_terms = JLG_Helpers::get_platform_tags( $key );
+                                if ( class_exists( Helpers::class ) ) {
+                                    $linked_tag_terms = Helpers::get_platform_tags( $key );
                                 } elseif ( isset( $tag_map[ $key ] ) && ! empty( $tag_map[ $key ] ) ) {
                                     $fallback_terms = get_terms(
                                         array(
@@ -1056,7 +1060,7 @@ class JLG_Admin_Platforms {
             return $this->debug_enabled;
         }
 
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         $enabled = ! empty( $options['debug_mode_enabled'] );
 
         if ( isset( $_GET['debug'] ) ) {

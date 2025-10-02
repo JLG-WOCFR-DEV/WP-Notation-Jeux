@@ -75,7 +75,7 @@ $data_attributes  = sprintf(
 
         <div class="jlg-aio-scores-grid">
             <?php foreach ( $scores as $key => $score_value ) : ?>
-				<?php $bar_color = JLG_Helpers::calculate_color_from_note( $score_value, $options ); ?>
+				<?php $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options ); ?>
             <div class="jlg-aio-score-item">
                 <div class="jlg-aio-score-header">
                     <span class="jlg-aio-score-label"><?php echo esc_html( $categories[ $key ] ); ?></span>

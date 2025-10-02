@@ -6,11 +6,16 @@
  * @version 5.0
  */
 
+namespace JLG\Notation\Shortcodes;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Shortcode_Summary_Display {
+class SummaryDisplay {
 
     private const MAX_SYNC_AVERAGE_REBUILDS = 10;
     private const REQUEST_KEYS              = array(
@@ -33,9 +38,9 @@ class JLG_Shortcode_Summary_Display {
             return $context['message'];
         }
 
-        JLG_Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'jlg_tableau_recap' );
+        Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'jlg_tableau_recap' );
 
-        return JLG_Frontend::get_template_html( 'shortcode-summary-display', $context );
+        return Frontend::get_template_html( 'shortcode-summary-display', $context );
     }
 
     public static function get_render_context( $atts, $request = array(), $use_global_paged = false ) {
@@ -105,8 +110,8 @@ class JLG_Shortcode_Summary_Display {
         $sorting = $sorting_options[ $orderby ];
         $orderby = $sorting['key'];
 
-        $rated_post_ids     = JLG_Helpers::get_rated_post_ids();
-        $allowed_post_types = JLG_Helpers::get_allowed_post_types();
+        $rated_post_ids     = Helpers::get_rated_post_ids();
+        $allowed_post_types = Helpers::get_allowed_post_types();
         $allowed_post_types = array_values(
             array_unique(
                 array_filter(
@@ -154,13 +159,13 @@ class JLG_Shortcode_Summary_Display {
                 $sync_targets = array_slice( $posts_missing_average, 0, $max_sync );
 
                 foreach ( $sync_targets as $post_id ) {
-                    JLG_Helpers::get_resolved_average_score( $post_id );
+                    Helpers::get_resolved_average_score( $post_id );
                 }
 
                 $async_targets = array_diff( $posts_missing_average, $sync_targets );
 
                 if ( ! empty( $async_targets ) ) {
-                    JLG_Helpers::queue_average_score_rebuild( $async_targets );
+                    Helpers::queue_average_score_rebuild( $async_targets );
                 }
             }
         }

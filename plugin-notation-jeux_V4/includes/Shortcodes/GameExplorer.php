@@ -1,9 +1,15 @@
 <?php
+
+namespace JLG\Notation\Shortcodes;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Shortcode_Game_Explorer {
+class GameExplorer {
 
     private const SNAPSHOT_TRANSIENT_KEY      = 'jlg_game_explorer_snapshot_v1';
     private const SNAPSHOT_RELEVANT_META_KEYS = array(
@@ -156,11 +162,11 @@ class JLG_Shortcode_Game_Explorer {
             return false;
         }
 
-        if ( ! class_exists( 'JLG_Helpers' ) ) {
+        if ( ! class_exists( Helpers::class ) ) {
             return false;
         }
 
-        $allowed_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_types = Helpers::get_allowed_post_types();
 
         return in_array( $post_type, $allowed_types, true );
     }
@@ -192,13 +198,13 @@ class JLG_Shortcode_Game_Explorer {
             return $context['message'];
         }
 
-        JLG_Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'jlg_game_explorer' );
+        Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'jlg_game_explorer' );
 
-        return JLG_Frontend::get_template_html( 'shortcode-game-explorer', $context );
+        return Frontend::get_template_html( 'shortcode-game-explorer', $context );
     }
 
     public static function get_default_atts() {
-        $options        = JLG_Helpers::get_plugin_options();
+        $options        = Helpers::get_plugin_options();
         $posts_per_page = isset( $options['game_explorer_posts_per_page'] ) ? (int) $options['game_explorer_posts_per_page'] : 12;
         if ( $posts_per_page < 1 ) {
             $posts_per_page = 12;
@@ -210,7 +216,7 @@ class JLG_Shortcode_Game_Explorer {
         }
 
         $filters = isset( $options['game_explorer_filters'] ) ? $options['game_explorer_filters'] : 'letter,category,platform,availability';
-        $score_position = JLG_Helpers::normalize_game_explorer_score_position(
+        $score_position = Helpers::normalize_game_explorer_score_position(
             $options['game_explorer_score_position'] ?? ''
         );
 
@@ -563,7 +569,7 @@ class JLG_Shortcode_Game_Explorer {
             'platforms_map'  => array(),
         );
 
-        $rated_posts = JLG_Helpers::get_rated_post_ids();
+        $rated_posts = Helpers::get_rated_post_ids();
         if ( empty( $rated_posts ) ) {
             return $snapshot;
         }
@@ -609,7 +615,7 @@ class JLG_Shortcode_Game_Explorer {
                 continue;
             }
 
-            $title = JLG_Helpers::get_game_title( $post_id );
+            $title = Helpers::get_game_title( $post_id );
             if ( $title === '' ) {
                 $title = get_the_title( $post_id );
             }
@@ -777,7 +783,7 @@ class JLG_Shortcode_Game_Explorer {
             }
         }
 
-        $options        = JLG_Helpers::get_plugin_options();
+        $options        = Helpers::get_plugin_options();
         $posts_per_page = isset( $atts['posts_per_page'] ) ? (int) $atts['posts_per_page'] : $defaults['posts_per_page'];
         if ( $posts_per_page < 1 ) {
             $posts_per_page = isset( $options['game_explorer_posts_per_page'] ) ? (int) $options['game_explorer_posts_per_page'] : 12;
@@ -791,7 +797,7 @@ class JLG_Shortcode_Game_Explorer {
         $columns = max( 1, min( $columns, 4 ) );
 
         $filters_enabled = self::normalize_filters( $atts['filters'] );
-        $score_position  = JLG_Helpers::normalize_game_explorer_score_position( $atts['score_position'] ?? '' );
+        $score_position  = Helpers::normalize_game_explorer_score_position( $atts['score_position'] ?? '' );
 
         $orderby = ( isset( $request['orderby'] ) && is_string( $request['orderby'] ) ) ? sanitize_key( $request['orderby'] ) : 'date';
         $order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
@@ -871,7 +877,7 @@ class JLG_Shortcode_Game_Explorer {
         $platforms_map  = isset( $snapshot['platforms_map'] ) && is_array( $snapshot['platforms_map'] ) ? $snapshot['platforms_map'] : array();
         $platforms_list = array();
         if ( ! empty( $platforms_map ) ) {
-            $registered_platforms = JLG_Helpers::get_registered_platform_labels();
+            $registered_platforms = Helpers::get_registered_platform_labels();
             foreach ( $registered_platforms as $slug => $label ) {
                 $normalized_slug = self::resolve_platform_slug( $label );
                 if ( $normalized_slug !== '' && isset( $platforms_map[ $normalized_slug ] ) ) {
@@ -1004,7 +1010,7 @@ class JLG_Shortcode_Game_Explorer {
             $paged = 1;
         }
 
-        $post_types    = JLG_Helpers::get_allowed_post_types();
+        $post_types    = Helpers::get_allowed_post_types();
         $post_statuses = apply_filters( 'jlg_rated_post_statuses', array( 'publish' ) );
         if ( ! is_array( $post_statuses ) || empty( $post_statuses ) ) {
             $post_statuses = array( 'publish' );
@@ -1039,19 +1045,19 @@ class JLG_Shortcode_Game_Explorer {
                 $post_id   = (int) $post->ID;
                 $post_info = isset( $snapshot['posts'][ $post_id ] ) ? $snapshot['posts'][ $post_id ] : array();
 
-                $title = JLG_Helpers::get_game_title( $post_id );
+                $title = Helpers::get_game_title( $post_id );
                 if ( $title === '' ) {
                     $title = get_the_title( $post_id );
                 }
 
-                $score_data    = JLG_Helpers::get_resolved_average_score( $post_id );
+                $score_data    = Helpers::get_resolved_average_score( $post_id );
                 $score_value   = isset( $score_data['value'] ) ? $score_data['value'] : null;
                 $has_score     = is_numeric( $score_value );
                 $score_display = isset( $score_data['formatted'] ) && $score_data['formatted'] !== ''
                     ? $score_data['formatted']
                     : esc_html__( 'N/A', 'notation-jlg' );
                 $score_color   = $score_value !== null
-                    ? JLG_Helpers::calculate_color_from_note( $score_value, $options )
+                    ? Helpers::calculate_color_from_note( $score_value, $options )
                     : ( $options['color_mid'] ?? '#f97316' );
 
                 $cover_meta = get_post_meta( $post_id, '_jlg_cover_image_url', true );

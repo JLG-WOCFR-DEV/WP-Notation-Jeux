@@ -1,32 +1,38 @@
 <?php
+
+namespace JLG\Notation\Shortcodes;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Shortcode_User_Rating {
+class UserRating {
 
     public function __construct() {
         add_shortcode( 'notation_utilisateurs_jlg', array( $this, 'render' ) );
     }
 
     public function render( $atts = array(), $content = '', $shortcode_tag = '' ) {
-        $allowed_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_types = Helpers::get_allowed_post_types();
 
         if ( ! is_singular( $allowed_types ) ) {
             return '';
         }
 
-        $options = JLG_Helpers::get_plugin_options();
+        $options = Helpers::get_plugin_options();
         if ( empty( $options['user_rating_enabled'] ) ) {
             return '';
         }
 
         $post_id                     = get_the_ID();
-        list($has_voted, $user_vote) = JLG_Frontend::get_user_vote_for_post( $post_id );
+        list($has_voted, $user_vote) = Frontend::get_user_vote_for_post( $post_id );
 
-        JLG_Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'notation_utilisateurs_jlg' );
+        Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'notation_utilisateurs_jlg' );
 
-        return JLG_Frontend::get_template_html(
+        return Frontend::get_template_html(
             'shortcode-user-rating',
             array(
 				'options'    => $options,

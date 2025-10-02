@@ -98,7 +98,7 @@ class BlocksRegistrationTest extends TestCase
 
     public function test_register_blocks_and_editor_assets(): void
     {
-        $blocks = new JLG_Blocks();
+        $blocks = new \JLG\Notation\Blocks();
 
         $blocks->register_block_editor_assets();
         $blocks->register_blocks();
@@ -119,7 +119,7 @@ class BlocksRegistrationTest extends TestCase
         $this->assertSame('notation-jlg', $shared_translations['domain']);
         $this->assertStringContainsString('/languages', $shared_translations['path']);
 
-        $reflection = new ReflectionClass(JLG_Blocks::class);
+        $reflection = new ReflectionClass(\JLG\Notation\Blocks::class);
         $blocks_property = $reflection->getProperty('blocks');
         $blocks_property->setAccessible(true);
         $registered_blocks = $blocks_property->getValue($blocks);

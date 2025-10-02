@@ -31,7 +31,7 @@ class FrontendUserRatingTest extends TestCase
         $_POST['rating']  = '5';
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         try {
             $frontend->handle_user_rating();
@@ -58,7 +58,7 @@ class FrontendUserRatingTest extends TestCase
 
         $_SERVER['REMOTE_ADDR'] = '198.51.100.42';
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         $_POST = [
             'token'   => str_repeat('a', 32),
@@ -125,7 +125,7 @@ class FrontendUserRatingTest extends TestCase
 
         $_SERVER['REMOTE_ADDR'] = '192.0.2.10';
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         $_POST = [
             'token'   => str_repeat('e', 32),
@@ -182,8 +182,8 @@ class FrontendUserRatingTest extends TestCase
 
         $_SERVER['REMOTE_ADDR'] = '203.0.113.5';
 
-        $frontend = new JLG_Frontend();
-        JLG_Frontend::mark_shortcode_rendered('notation_utilisateurs_jlg');
+        $frontend = new \JLG\Notation\Frontend();
+        \JLG\Notation\Frontend::mark_shortcode_rendered('notation_utilisateurs_jlg');
 
         $_POST = [
             'token'   => str_repeat('c', 32),
@@ -221,7 +221,7 @@ class FrontendUserRatingTest extends TestCase
 
         $_SERVER['REMOTE_ADDR'] = '198.51.100.99';
 
-        $frontend = new JLG_Frontend();
+        $frontend = new \JLG\Notation\Frontend();
 
         $_POST = [
             'token'   => str_repeat('d', 32),
@@ -245,7 +245,7 @@ class FrontendUserRatingTest extends TestCase
 
     private function resetShortcodeTracking(): void
     {
-        $reflection = new \ReflectionClass(JLG_Frontend::class);
+        $reflection = new \ReflectionClass(\JLG\Notation\Frontend::class);
 
         foreach ([
             'rendered_shortcodes' => [],

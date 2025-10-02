@@ -7,11 +7,16 @@
  * @version 5.0
  */
 
+namespace JLG\Notation\Shortcodes;
+
+use JLG\Notation\Frontend;
+use JLG\Notation\Helpers;
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
-class JLG_Shortcode_All_In_One {
+class AllInOne {
 
     /**
      * Handle used to register/enqueue the stylesheet for the shortcode.
@@ -117,7 +122,7 @@ class JLG_Shortcode_All_In_One {
         }
 
         $post          = get_post( $post_id );
-        $allowed_types = JLG_Helpers::get_allowed_post_types();
+        $allowed_types = Helpers::get_allowed_post_types();
 
         if ( ! $post instanceof WP_Post || ! in_array( $post->post_type ?? '', $allowed_types, true ) ) {
             return '';
@@ -128,7 +133,7 @@ class JLG_Shortcode_All_In_One {
         }
 
         // Vérifier qu'il y a des données à afficher
-        $average_score = JLG_Helpers::get_average_score_for_post( $post_id );
+        $average_score = Helpers::get_average_score_for_post( $post_id );
         $tagline_fr    = get_post_meta( $post_id, '_jlg_tagline_fr', true );
         $tagline_en    = get_post_meta( $post_id, '_jlg_tagline_en', true );
         $pros          = get_post_meta( $post_id, '_jlg_points_forts', true );
@@ -140,10 +145,10 @@ class JLG_Shortcode_All_In_One {
         }
 
         // Récupération des options et configuration
-        $options    = JLG_Helpers::get_plugin_options();
-        $palette    = JLG_Helpers::get_color_palette();
-        $categories = JLG_Helpers::get_rating_categories();
-        $defaults   = JLG_Helpers::get_default_settings();
+        $options    = Helpers::get_plugin_options();
+        $palette    = Helpers::get_color_palette();
+        $categories = Helpers::get_rating_categories();
+        $defaults   = Helpers::get_default_settings();
 
         // Couleur d'accent (utilise la couleur définie ou celle des options)
         $accent_color = $atts['couleur_accent'] ?: ( $options['score_gradient_1'] ?? '' );
@@ -236,7 +241,7 @@ class JLG_Shortcode_All_In_One {
             $glow_mode = isset( $options['text_glow_color_mode'] ) ? $options['text_glow_color_mode'] : 'dynamic';
 
             if ( $glow_mode === 'dynamic' && $average_score !== null ) {
-                $glow_color = JLG_Helpers::calculate_color_from_note( $average_score, $options );
+                $glow_color = Helpers::calculate_color_from_note( $average_score, $options );
             } else {
                 $glow_color = isset( $options['text_glow_custom_color'] ) ? $options['text_glow_custom_color'] : '#60a5fa';
             }
@@ -279,7 +284,7 @@ class JLG_Shortcode_All_In_One {
             $glow_mode = isset( $options['circle_glow_color_mode'] ) ? $options['circle_glow_color_mode'] : 'dynamic';
 
             if ( $glow_mode === 'dynamic' && $average_score !== null ) {
-                $glow_color = JLG_Helpers::calculate_color_from_note( $average_score, $options );
+                $glow_color = Helpers::calculate_color_from_note( $average_score, $options );
             } else {
                 $glow_color = isset( $options['circle_glow_custom_color'] ) ? $options['circle_glow_custom_color'] : '#60a5fa';
             }
@@ -334,9 +339,9 @@ class JLG_Shortcode_All_In_One {
         $css_variables_string = $this->format_css_variables( $css_variables );
 
         $tag = $shortcode_tag !== '' ? $shortcode_tag : 'jlg_bloc_complet';
-        JLG_Frontend::mark_shortcode_rendered( $tag );
+        Frontend::mark_shortcode_rendered( $tag );
 
-        return JLG_Frontend::get_template_html(
+        return Frontend::get_template_html(
             'shortcode-all-in-one',
             array(
 				'options'            => $options,
@@ -413,9 +418,9 @@ class JLG_Shortcode_All_In_One {
         }
 
         if ( ! empty( $options['circle_dynamic_bg_enabled'] ) && $average_score !== null ) {
-            $dynamic_color = JLG_Helpers::calculate_color_from_note( $average_score, $options );
+            $dynamic_color = Helpers::calculate_color_from_note( $average_score, $options );
             $dynamic_color = sanitize_hex_color( $dynamic_color );
-            $darker_color  = $dynamic_color ? JLG_Helpers::adjust_hex_brightness( $dynamic_color, -30 ) : '';
+            $darker_color  = $dynamic_color ? Helpers::adjust_hex_brightness( $dynamic_color, -30 ) : '';
             $darker_color  = sanitize_hex_color( $darker_color );
 
             if ( $dynamic_color && $darker_color ) {
@@ -475,4 +480,4 @@ class JLG_Shortcode_All_In_One {
     }
 }
 
-// L'initialisation est désormais gérée par JLG_Frontend::load_shortcodes()
+// L'initialisation est désormais gérée par Frontend::load_shortcodes()
