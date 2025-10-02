@@ -14,6 +14,18 @@
     "postId": {
       "type": "integer",
       "default": 0
+    },
+    "scoreLayout": {
+      "type": "string",
+      "default": "text"
+    },
+    "accentColor": {
+      "type": "string",
+      "default": ""
+    },
+    "showAnimations": {
+      "type": "boolean",
+      "default": true
     }
   },
   "editorScript": "notation-jlg-rating-block-editor",
