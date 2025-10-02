@@ -1042,6 +1042,11 @@ class Settings {
             $id          = isset( $category['id'] ) ? sanitize_key( $category['id'] ) : '';
             $original_id = isset( $category['original_id'] ) ? sanitize_key( $category['original_id'] ) : '';
             $legacy_ids  = array();
+            $position    = isset( $category['position'] ) ? intval( $category['position'] ) : ( $index + 1 );
+
+            if ( $position < 1 ) {
+                $position = $index + 1;
+            }
 
             if ( isset( $category['legacy_ids'] ) && is_array( $category['legacy_ids'] ) ) {
                 foreach ( $category['legacy_ids'] as $legacy_id ) {
@@ -1099,12 +1104,32 @@ class Settings {
                 'id'         => $id,
                 'label'      => $label,
                 'legacy_ids' => $legacy_ids,
+                'position'   => $position,
             );
         }
 
         if ( empty( $sanitized ) ) {
             return $defaults;
         }
+
+        usort(
+            $sanitized,
+            static function ( $a, $b ) {
+                $a_position = isset( $a['position'] ) ? (int) $a['position'] : 0;
+                $b_position = isset( $b['position'] ) ? (int) $b['position'] : 0;
+
+                if ( $a_position === $b_position ) {
+                    return 0;
+                }
+
+                return ( $a_position < $b_position ) ? -1 : 1;
+            }
+        );
+
+        foreach ( $sanitized as $index => &$category ) {
+            $category['position'] = $index + 1;
+        }
+        unset( $category );
 
         return $sanitized;
     }
@@ -1224,11 +1249,15 @@ class Settings {
     private function render_rating_categories_field( $args, $options ) {
         unset( $options );
 
-        $field_id    = $args['id'] ?? 'rating_categories';
-        $option_name = $this->option_name;
-        $definitions = Helpers::get_rating_category_definitions();
-        $wrapper_id  = $field_id . '_manager';
-        $next_index  = count( $definitions );
+        $field_id      = $args['id'] ?? 'rating_categories';
+        $option_name   = $this->option_name;
+        $definitions   = Helpers::get_rating_category_definitions();
+        $wrapper_id    = $field_id . '_manager';
+        $next_index    = count( $definitions );
+        $move_up_text  = esc_html__( 'Monter', 'notation-jlg' );
+        $move_down_text = esc_html__( 'Descendre', 'notation-jlg' );
+        $move_up_aria  = esc_attr__( 'Monter la catégorie', 'notation-jlg' );
+        $move_down_aria = esc_attr__( 'Descendre la catégorie', 'notation-jlg' );
 
         static $styles_printed = false;
 
@@ -1237,7 +1266,8 @@ class Settings {
             echo '.jlg-rating-categories__list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}';
             echo '.jlg-rating-category{border:1px solid #dcdcde;background:#fff;padding:12px;border-radius:4px;}';
             echo '.jlg-rating-category__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}';
-            echo '.jlg-rating-category__actions{display:flex;align-items:flex-end;justify-content:flex-end;}';
+            echo '.jlg-rating-category__actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;}';
+            echo '.jlg-rating-category__actions .button{margin:0;}';
             echo '.jlg-rating-category__remove{color:#a00;}';
             echo '@media (max-width:782px){.jlg-rating-category__grid{grid-template-columns:1fr;}}';
             echo '</style>';
@@ -1250,9 +1280,11 @@ class Settings {
         foreach ( $definitions as $index => $definition ) {
             $label       = isset( $definition['label'] ) ? $definition['label'] : '';
             $id          = isset( $definition['id'] ) ? $definition['id'] : '';
+            $position    = isset( $definition['position'] ) ? (int) $definition['position'] : ( $index + 1 );
             $legacy_ids  = isset( $definition['legacy_ids'] ) && is_array( $definition['legacy_ids'] ) ? $definition['legacy_ids'] : array();
             $label_field = sprintf( '%s[%s][%d][label]', $option_name, $field_id, $index );
             $id_field    = sprintf( '%s[%s][%d][id]', $option_name, $field_id, $index );
+            $position_field = sprintf( '%s[%s][%d][position]', $option_name, $field_id, $index );
 
             echo '<div class="jlg-rating-category" data-index="' . esc_attr( $index ) . '">';
             echo '<div class="jlg-rating-category__grid">';
@@ -1266,11 +1298,14 @@ class Settings {
             echo '<p class="description">' . esc_html__( 'Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement.', 'notation-jlg' ) . '</p>';
             echo '</div>';
             echo '<div class="jlg-rating-category__actions">';
+            echo '<button type="button" class="button button-secondary jlg-rating-category__move-up" aria-label="' . esc_attr( $move_up_aria ) . '">' . esc_html( $move_up_text ) . '</button>';
+            echo '<button type="button" class="button button-secondary jlg-rating-category__move-down" aria-label="' . esc_attr( $move_down_aria ) . '">' . esc_html( $move_down_text ) . '</button>';
             echo '<button type="button" class="button button-link-delete jlg-rating-category__remove">' . esc_html__( 'Supprimer', 'notation-jlg' ) . '</button>';
             echo '</div>';
             echo '</div>';
 
             echo '<input type="hidden" name="' . esc_attr( sprintf( '%s[%s][%d][original_id]', $option_name, $field_id, $index ) ) . '" value="' . esc_attr( $id ) . '" />';
+            echo '<input type="hidden" class="jlg-rating-category__position" name="' . esc_attr( $position_field ) . '" value="' . esc_attr( $position ) . '" />';
 
             if ( ! empty( $legacy_ids ) ) {
                 foreach ( $legacy_ids as $legacy_id ) {
@@ -1308,10 +1343,13 @@ class Settings {
         echo '<p class="description">' . esc_html( $template_desc ) . '</p>';
         echo '</div>';
         echo '<div class="jlg-rating-category__actions">';
+        echo '<button type="button" class="button button-secondary jlg-rating-category__move-up" aria-label="' . esc_attr( $move_up_aria ) . '">' . esc_html( $move_up_text ) . '</button>';
+        echo '<button type="button" class="button button-secondary jlg-rating-category__move-down" aria-label="' . esc_attr( $move_down_aria ) . '">' . esc_html( $move_down_text ) . '</button>';
         echo '<button type="button" class="button button-link-delete jlg-rating-category__remove">' . esc_html( $template_remove ) . '</button>';
         echo '</div>';
         echo '</div>';
         echo '<input type="hidden" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][original_id]', $option_name, $field_id ) ) . '" value="" />';
+        echo '<input type="hidden" class="jlg-rating-category__position" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][position]', $option_name, $field_id ) ) . '" value="" />';
         echo '</div>';
         echo '</template>';
 
@@ -1324,9 +1362,10 @@ class Settings {
         echo 'const addButton=container.querySelector(".jlg-rating-categories__add");';
         echo 'let nextIndex=parseInt(container.getAttribute("data-next-index"),10);';
         echo 'if(!Number.isFinite(nextIndex)){nextIndex=list?list.children.length:0;}';
-        echo 'function bindRow(row){if(!row){return;}const remove=row.querySelector(".jlg-rating-category__remove");if(remove){remove.addEventListener("click",function(event){event.preventDefault();row.remove();});}}';
-        echo 'if(list){Array.prototype.forEach.call(list.children,bindRow);}';
-        echo 'if(addButton&&template&&list){addButton.addEventListener("click",function(event){event.preventDefault();const fragment=template.content.cloneNode(true);const row=fragment.querySelector(".jlg-rating-category");const index=nextIndex++;if(!row){return;}row.setAttribute("data-index",String(index));fragment.querySelectorAll("[name]").forEach(function(element){element.name=element.name.replace(/__INDEX__/g,index);});fragment.querySelectorAll("[id]").forEach(function(element){element.id=element.id.replace(/__INDEX__/g,index);});fragment.querySelectorAll("label[for]").forEach(function(label){label.htmlFor=label.htmlFor.replace(/__INDEX__/g,index);});list.appendChild(fragment);bindRow(list.lastElementChild);container.setAttribute("data-next-index",String(nextIndex));});}';
+        echo 'function renumberRows(){if(!list){return;}Array.prototype.forEach.call(list.children,function(row,index){row.setAttribute("data-index",String(index));row.querySelectorAll("[name]").forEach(function(element){if(typeof element.name!=="string"){return;}element.name=element.name.replace(/\[\d+\]/,"["+index+"]");});row.querySelectorAll("[id]").forEach(function(element){if(typeof element.id!=="string"||!/_\d+$/.test(element.id)){return;}element.id=element.id.replace(/_\d+$/,"_"+index);} );row.querySelectorAll("label[for]").forEach(function(label){if(typeof label.htmlFor!=="string"||!/_\d+$/.test(label.htmlFor)){return;}label.htmlFor=label.htmlFor.replace(/_\d+$/,"_"+index);} );const position=row.querySelector(".jlg-rating-category__position");if(position){position.value=String(index+1);}});nextIndex=list.children.length;container.setAttribute("data-next-index",String(nextIndex));}';
+        echo 'function bindRow(row){if(!row){return;}const remove=row.querySelector(".jlg-rating-category__remove");if(remove){remove.addEventListener("click",function(event){event.preventDefault();row.remove();renumberRows();});}const moveUp=row.querySelector(".jlg-rating-category__move-up");if(moveUp&&list){moveUp.addEventListener("click",function(event){event.preventDefault();const previous=row.previousElementSibling;if(previous){list.insertBefore(row,previous);}renumberRows();});}const moveDown=row.querySelector(".jlg-rating-category__move-down");if(moveDown&&list){moveDown.addEventListener("click",function(event){event.preventDefault();const next=row.nextElementSibling;if(next){list.insertBefore(next,row);}renumberRows();});}}';
+        echo 'if(list){Array.prototype.forEach.call(list.children,bindRow);renumberRows();}';
+        echo 'if(addButton&&template&&list){addButton.addEventListener("click",function(event){event.preventDefault();const fragment=template.content.cloneNode(true);const row=fragment.querySelector(".jlg-rating-category");const index=nextIndex++;if(!row){return;}row.setAttribute("data-index",String(index));fragment.querySelectorAll("[name]").forEach(function(element){element.name=element.name.replace(/__INDEX__/g,index);});fragment.querySelectorAll("[id]").forEach(function(element){element.id=element.id.replace(/__INDEX__/g,index);});fragment.querySelectorAll("label[for]").forEach(function(label){label.htmlFor=label.htmlFor.replace(/__INDEX__/g,index);});list.appendChild(fragment);bindRow(list.lastElementChild);renumberRows();});}';
         echo '})();';
         echo '</script>';
     }
