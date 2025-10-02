@@ -18,6 +18,9 @@ exit;
 
 class Frontend {
 
+    public const FRONTEND_STYLE_HANDLE      = 'jlg-frontend';
+    public const GAME_EXPLORER_STYLE_HANDLE = 'jlg-game-explorer';
+
     private const USER_RATING_MAX_STORED_VOTES = 250;
     private const USER_RATING_RETENTION_DAYS   = 180;
 
@@ -174,7 +177,7 @@ class Frontend {
         if ( ! self::$assets_enqueued && did_action( 'wp_enqueue_scripts' ) && self::$instance instanceof self ) {
             self::$instance->enqueue_jlg_scripts( true );
 
-            if ( did_action( 'wp_print_styles' ) && ! wp_style_is( 'jlg-frontend', 'done' ) ) {
+            if ( did_action( 'wp_print_styles' ) && ! wp_style_is( self::FRONTEND_STYLE_HANDLE, 'done' ) ) {
                 if ( ! self::$deferred_styles_hooked ) {
                     self::$deferred_styles_hooked = true;
                     add_action( 'wp_footer', array( self::$instance, 'print_deferred_styles' ) );
@@ -201,11 +204,11 @@ class Frontend {
      * Imprime la feuille de style frontend si elle n'a pas déjà été imprimée.
      */
     public function print_deferred_styles() {
-        if ( ! wp_style_is( 'jlg-frontend', 'done' ) ) {
-            wp_print_styles( 'jlg-frontend' );
+        if ( ! wp_style_is( self::FRONTEND_STYLE_HANDLE, 'done' ) ) {
+            wp_print_styles( self::FRONTEND_STYLE_HANDLE );
         }
 
-        if ( wp_style_is( 'jlg-frontend', 'done' ) ) {
+        if ( wp_style_is( self::FRONTEND_STYLE_HANDLE, 'done' ) ) {
             remove_action( 'wp_footer', array( self::$instance, 'print_deferred_styles' ) );
             self::$deferred_styles_hooked = false;
         }
@@ -372,7 +375,7 @@ class Frontend {
 
         // Feuille de styles principale
         wp_enqueue_style(
-            'jlg-frontend',
+            self::FRONTEND_STYLE_HANDLE,
             JLG_NOTATION_PLUGIN_URL . 'assets/css/jlg-frontend.css',
             array(),
             JLG_NOTATION_VERSION
@@ -380,13 +383,13 @@ class Frontend {
 
         $inline_css = DynamicCss::build_frontend_css( $options, $palette, $average_score );
 
-        wp_add_inline_style( 'jlg-frontend', $inline_css );
+        wp_add_inline_style( self::FRONTEND_STYLE_HANDLE, $inline_css );
 
-        if ( ! wp_style_is( 'jlg-game-explorer', 'registered' ) ) {
+        if ( ! wp_style_is( self::GAME_EXPLORER_STYLE_HANDLE, 'registered' ) ) {
             wp_register_style(
-                'jlg-game-explorer',
+                self::GAME_EXPLORER_STYLE_HANDLE,
                 JLG_NOTATION_PLUGIN_URL . 'assets/css/game-explorer.css',
-                array( 'jlg-frontend' ),
+                array( self::FRONTEND_STYLE_HANDLE ),
                 JLG_NOTATION_VERSION
             );
         }
@@ -413,13 +416,13 @@ class Frontend {
         $should_enqueue_game_explorer_assets = $should_enqueue_game_explorer_script || $game_explorer_ajax;
 
         if ( $should_enqueue_game_explorer_assets ) {
-            wp_enqueue_style( 'jlg-game-explorer' );
+            wp_enqueue_style( self::GAME_EXPLORER_STYLE_HANDLE );
 
-            if ( wp_style_is( 'jlg-game-explorer', 'enqueued' ) ) {
+            if ( wp_style_is( self::GAME_EXPLORER_STYLE_HANDLE, 'enqueued' ) ) {
                 $game_explorer_css = $this->build_game_explorer_css( $options, $palette );
 
                 if ( ! empty( $game_explorer_css ) ) {
-                    wp_add_inline_style( 'jlg-game-explorer', $game_explorer_css );
+                    wp_add_inline_style( self::GAME_EXPLORER_STYLE_HANDLE, $game_explorer_css );
                 }
             }
         }
