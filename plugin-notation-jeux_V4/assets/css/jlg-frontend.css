@@ -99,6 +99,13 @@
 .jlg-game-info-box dd{margin:0;color:var(--jlg-secondary-text-color);}
 .jlg-game-info-box .platforms-list span{display:inline-block;background:var(--jlg-border-color);padding:3px 8px;border-radius:4px;font-size:0.9em;margin:2px;}
 
+@media (max-width:600px){
+    .jlg-game-info-box dl{grid-template-columns:1fr;gap:12px;}
+    .jlg-game-info-box dt{font-weight:700;margin-top:16px;}
+    .jlg-game-info-box dt:first-of-type{margin-top:0;}
+    .jlg-game-info-box dd{margin:0;font-weight:400;}
+}
+
 /* Game Explorer */
 .jlg-game-explorer .jlg-ge-search{display:flex;flex-direction:column;gap:4px;flex:1 1 240px;min-width:220px;}
 .jlg-game-explorer .jlg-ge-search label{font-size:0.875rem;font-weight:500;color:var(--jlg-ge-text-muted,var(--jlg-secondary-text-color,#4b5563));}
