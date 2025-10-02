@@ -33,6 +33,7 @@ class Assets {
         $plugin_pages = array(
             'toplevel_page_notation_jlg_settings',
             'notation-jlg_page_notation_jlg_settings',
+            'notation_jlg_page_notation_jlg_settings',
         );
 
         if ( ! in_array( $hook_suffix, $plugin_pages, true ) ) {

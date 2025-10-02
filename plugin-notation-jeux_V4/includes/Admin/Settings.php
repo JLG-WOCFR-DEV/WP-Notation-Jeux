@@ -763,7 +763,7 @@ class Settings {
                 'id'                => 'table_row_bg_color',
                 'type'              => 'color',
                 'allow_transparent' => true,
-                'desc'              => 'Le sélecteur accepte aussi "transparent" pour conserver la valeur par défaut.',
+                'desc'              => 'Le sélecteur WordPress accepte le clic ou la saisie libre. Tapez "transparent" pour conserver la valeur par défaut.',
             )
         );
         add_settings_field(
@@ -798,7 +798,7 @@ class Settings {
                 'id'                => 'table_zebra_bg_color',
                 'type'              => 'color',
                 'allow_transparent' => true,
-                'desc'              => 'Utilisez le sélecteur ou saisissez "transparent" pour désactiver la couleur alternée.',
+                'desc'              => 'Utilisez le sélecteur WordPress ou saisissez "transparent" pour désactiver la couleur alternée.',
             )
         );
         add_settings_field(

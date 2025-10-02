@@ -36,4 +36,34 @@ class AdminSettingsSanitizationTest extends TestCase
         $this->assertSame(50, $sanitized['circle_glow_intensity']);
         $this->assertSame(15, $sanitized['text_glow_intensity']);
     }
+
+    public function test_color_fields_accept_custom_hex_and_transparent(): void
+    {
+        $input = [
+            'table_header_bg_color' => '#ABCDEF',
+            'table_row_bg_color'    => 'Transparent',
+            'table_zebra_bg_color'  => '#123456',
+            'thumb_text_color'      => '#zzzzzz',
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame('#abcdef', $sanitized['table_header_bg_color']);
+        $this->assertSame('transparent', $sanitized['table_row_bg_color']);
+        $this->assertSame('#123456', $sanitized['table_zebra_bg_color']);
+        $this->assertSame('#ffffff', $sanitized['thumb_text_color']);
+    }
+
+    public function test_transparent_is_preserved_for_zebra_background(): void
+    {
+        $input = [
+            'table_row_bg_color'   => 'transparent',
+            'table_zebra_bg_color' => 'transparent',
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame('transparent', $sanitized['table_row_bg_color']);
+        $this->assertSame('transparent', $sanitized['table_zebra_bg_color']);
+    }
 }

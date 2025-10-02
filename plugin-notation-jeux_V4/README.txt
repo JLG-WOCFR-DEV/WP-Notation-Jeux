@@ -121,6 +121,12 @@ Pour valider que des options malicieuses ne génèrent pas de CSS invalide :
    * Vérifiez que `--jlg-score-gradient-1` ne contient pas de fragment `background:red;` et qu'elle revient à la couleur par défaut du plugin (la portion malveillante est supprimée).
 5. Restaurez ensuite des couleurs hexadécimales valides pour confirmer que l'affichage retrouve ses couleurs.
 
+== Vérification du sélecteur de couleurs WordPress ==
+
+1. Depuis **Notation – JLG > Réglages**, ouvrez un champ couleur (par exemple *Fond des lignes*) et sélectionnez une nouvelle teinte avec le color picker WordPress, puis sauvegardez. La valeur hex personnalisée doit être conservée après rechargement.
+2. Pour un champ autorisant la transparence, saisissez `transparent` directement dans le champ texte, enregistrez puis confirmez que l'interface conserve bien la valeur `transparent`.
+3. Utilisez enfin le bouton de réinitialisation du color picker pour revenir à la couleur par défaut et vérifiez que la valeur d'origine est restaurée.
+
 == Frequently Asked Questions ==
 
 = Comment personnaliser les catégories de notation ? =
