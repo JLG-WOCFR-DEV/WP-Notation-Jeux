@@ -357,8 +357,9 @@ class Blocks {
             }
         }
 
-        if ( isset( $attributes['showAnimations'] ) ) {
-            $atts['animations'] = (bool) $attributes['showAnimations'];
+        if ( array_key_exists( 'showAnimations', $attributes ) ) {
+            $is_enabled          = (bool) $attributes['showAnimations'];
+            $atts['animations'] = $is_enabled ? 'oui' : 'non';
         }
 
         if ( ! empty( $attributes['accentColor'] ) && is_string( $attributes['accentColor'] ) ) {

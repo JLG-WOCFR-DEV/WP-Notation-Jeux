@@ -17,7 +17,8 @@
     },
     "scoreLayout": {
       "type": "string",
-      "default": "text"
+      "default": "text",
+      "enum": ["text", "circle"]
     },
     "accentColor": {
       "type": "string",

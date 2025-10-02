@@ -98,6 +98,14 @@ class RatingBlock {
             $options['accent_color']     = $accent_color;
         }
 
+        $resolved_score_layout = in_array( $options['score_layout'] ?? '', array( 'text', 'circle' ), true )
+            ? $options['score_layout']
+            : 'text';
+
+        $animations_enabled = ! empty( $options['enable_animations'] );
+        $css_variables       = $this->build_css_variables( $options );
+        $score_max           = Helpers::get_score_max( $options );
+
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
         return Frontend::get_template_html(
@@ -108,8 +116,32 @@ class RatingBlock {
                 'scores'               => $score_map,
                 'category_scores'      => $category_scores,
                 'category_definitions' => Helpers::get_rating_category_definitions(),
+                'score_layout'         => $resolved_score_layout,
+                'animations_enabled'   => $animations_enabled,
+                'css_variables'        => $css_variables,
+                'score_max'            => $score_max,
             )
         );
+    }
+
+    private function build_css_variables( array $options ) {
+        $variables = array(
+            '--jlg-score-gradient-1' => isset( $options['score_gradient_1'] ) ? (string) $options['score_gradient_1'] : '',
+            '--jlg-score-gradient-2' => isset( $options['score_gradient_2'] ) ? (string) $options['score_gradient_2'] : '',
+            '--jlg-color-high'       => isset( $options['color_high'] ) ? (string) $options['color_high'] : '',
+            '--jlg-color-mid'        => isset( $options['color_mid'] ) ? (string) $options['color_mid'] : '',
+            '--jlg-color-low'        => isset( $options['color_low'] ) ? (string) $options['color_low'] : '',
+        );
+
+        $rules = array();
+
+        foreach ( $variables as $name => $value ) {
+            if ( is_string( $value ) && $value !== '' ) {
+                $rules[] = $name . ':' . $value;
+            }
+        }
+
+        return implode( ';', $rules );
     }
 
     private function normalize_bool_attribute( $value ) {

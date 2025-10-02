@@ -17,32 +17,45 @@ $options = isset( $options ) && is_array( $options )
     ? $options
     : \JLG\Notation\Helpers::get_plugin_options();
 
-$score_max       = \JLG\Notation\Helpers::get_score_max( $options );
-$score_max_label = number_format_i18n( $score_max );
-$score_layout    = isset( $options['score_layout'] ) && $options['score_layout'] === 'circle' ? 'circle' : 'text';
-$animations_on   = ! empty( $options['enable_animations'] );
+$resolved_score_layout = in_array( (string) $score_layout, array( 'text', 'circle' ), true )
+    ? $score_layout
+    : ( isset( $options['score_layout'] ) && $options['score_layout'] === 'circle' ? 'circle' : 'text' );
 
-$style_variables = array(
-    '--jlg-score-gradient-1' => isset( $options['score_gradient_1'] ) ? $options['score_gradient_1'] : '',
-    '--jlg-score-gradient-2' => isset( $options['score_gradient_2'] ) ? $options['score_gradient_2'] : '',
-    '--jlg-color-high'       => isset( $options['color_high'] ) ? $options['color_high'] : '',
-    '--jlg-color-mid'        => isset( $options['color_mid'] ) ? $options['color_mid'] : '',
-    '--jlg-color-low'        => isset( $options['color_low'] ) ? $options['color_low'] : '',
-);
+$animations_on = (bool) $animations_enabled;
 
-$style_rules = array();
-foreach ( $style_variables as $var => $value ) {
-    if ( is_string( $value ) && $value !== '' ) {
-        $style_rules[] = $var . ':' . $value;
+$resolved_score_max = is_numeric( $score_max )
+    ? (float) $score_max
+    : \JLG\Notation\Helpers::get_score_max( $options );
+
+$score_max_label = number_format_i18n( $resolved_score_max );
+
+$css_variables_string = is_string( $css_variables ) ? $css_variables : '';
+
+if ( $css_variables_string === '' ) {
+    $style_variables = array(
+        '--jlg-score-gradient-1' => isset( $options['score_gradient_1'] ) ? $options['score_gradient_1'] : '',
+        '--jlg-score-gradient-2' => isset( $options['score_gradient_2'] ) ? $options['score_gradient_2'] : '',
+        '--jlg-color-high'       => isset( $options['color_high'] ) ? $options['color_high'] : '',
+        '--jlg-color-mid'        => isset( $options['color_mid'] ) ? $options['color_mid'] : '',
+        '--jlg-color-low'        => isset( $options['color_low'] ) ? $options['color_low'] : '',
+    );
+
+    $style_rules = array();
+    foreach ( $style_variables as $var => $value ) {
+        if ( is_string( $value ) && $value !== '' ) {
+            $style_rules[] = $var . ':' . $value;
+        }
     }
+
+    $css_variables_string = ! empty( $style_rules ) ? implode( ';', $style_rules ) : '';
 }
 
-$style_attribute = ! empty( $style_rules ) ? ' style="' . esc_attr( implode( ';', $style_rules ) ) . '"' : '';
+$style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
 ?>
 
 <div class="review-box-jlg<?php echo $animations_on ? ' jlg-animate' : ''; ?>"<?php echo $style_attribute; ?>>
     <div class="global-score-wrapper">
-        <?php if ( $score_layout === 'circle' ) : ?>
+        <?php if ( $resolved_score_layout === 'circle' ) : ?>
             <div class="score-circle">
                 <div class="score-value"><?php echo esc_html( number_format_i18n( $average_score, 1 ) ); ?></div>
                 <div class="score-label"><?php esc_html_e( 'Note Globale', 'notation-jlg' ); ?></div>
@@ -103,8 +116,8 @@ $style_attribute = ! empty( $style_rules ) ? ' style="' . esc_attr( implode( ';'
                 </div>
                 <div class="rating-bar-container">
                     <?php
-                    $percentage = $score_max > 0
-                        ? max( 0, min( 100, ( $score_value / $score_max ) * 100 ) )
+                    $percentage = $resolved_score_max > 0
+                        ? max( 0, min( 100, ( $score_value / $resolved_score_max ) * 100 ) )
                         : 0;
                     ?>
                     <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( round( $percentage, 2 ) ); ?>%; --bar-color:<?php echo esc_attr( $bar_color ); ?>;"></div>
