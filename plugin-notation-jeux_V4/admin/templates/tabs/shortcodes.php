@@ -37,6 +37,8 @@ if (!defined('ABSPATH')) exit;
             <li><strong>cta_rel</strong> : Attribut <code>rel</code> (défaut : <code>nofollow sponsored</code>)</li>
         </ul>
 
+        <p style="margin-top:10px;">Les options <code>cta_label</code> et <code>cta_url</code> remplacent celles saisies dans la section <em>Taglines &amp; CTA</em> de la métabox.</p>
+
         <h4>Exemples d'utilisation :</h4>
         <pre style="background:#fff; padding:10px; border:1px solid #ddd; border-radius:3px;">
 <span style="color:#666;">// Bloc complet avec tous les éléments (recommandé)</span>
