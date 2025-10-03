@@ -89,6 +89,18 @@
     .jlg-lang-flag:focus-visible {
         transform: none !important;
     }
+
+    .jlg-summary-wrapper.jlg-summary-loading .jlg-summary-content {
+        filter: none;
+    }
+
+    .jlg-summary-wrapper.jlg-summary-loading .jlg-summary-content::after {
+        transition: none !important;
+    }
+
+    .jlg-summary-wrapper .jlg-summary-loading-indicator::before {
+        animation: none;
+    }
 }
 
 /* Game Info */
@@ -131,6 +143,13 @@
 .jlg-game-card .jlg-genre-badges{position:absolute;left:15px;right:15px;bottom:15px;z-index:2;gap:6px;pointer-events:none;}
 .jlg-game-card .jlg-genre-badge{background-color:rgba(0,0,0,.65);color:#fff;}
 .jlg-game-card-title{position:absolute;bottom:0;left:0;right:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,0) 100%);padding:30px 15px 60px;}
+.jlg-summary-wrapper .jlg-summary-content{position:relative;}
+.jlg-summary-wrapper.jlg-summary-loading .jlg-summary-content{filter:blur(.5px);}
+.jlg-summary-wrapper.jlg-summary-loading .jlg-summary-content::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.4),rgba(0,0,0,.65));pointer-events:auto;z-index:12;transition:opacity .2s ease;}
+.jlg-summary-wrapper.jlg-summary-loading .jlg-summary-content>*{pointer-events:none;}
+.jlg-summary-wrapper .jlg-summary-loading-indicator{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:15;pointer-events:none;}
+.jlg-summary-wrapper .jlg-summary-loading-indicator::before{content:"";width:2.75rem;height:2.75rem;border-radius:50%;border:3px solid var(--jlg-border-color);border-top-color:var(--jlg-score-gradient-1);animation:jlg-summary-spinner .9s linear infinite;box-shadow:0 0 8px rgba(0,0,0,.08);background:transparent;}
+@keyframes jlg-summary-spinner{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 .jlg-summary-wrapper .jlg-summary-letter-filter button:focus{outline:2px solid var(--jlg-score-gradient-1);outline-offset:2px;}
 .jlg-summary-wrapper .jlg-summary-letter-filter button.is-active:focus{outline:2px solid rgba(255,255,255,.9);}
 .jlg-summary-filters-form input[type="submit"]{margin-left:auto;}
