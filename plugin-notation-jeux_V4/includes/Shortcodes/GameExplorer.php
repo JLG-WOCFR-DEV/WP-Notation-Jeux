@@ -215,7 +215,16 @@ class GameExplorer {
             $columns = 3;
         }
 
-        $filters = isset( $options['game_explorer_filters'] ) ? $options['game_explorer_filters'] : 'letter,category,platform,availability';
+        $filters_option = isset( $options['game_explorer_filters'] )
+            ? $options['game_explorer_filters']
+            : Helpers::get_default_game_explorer_filters();
+
+        $filters_list = Helpers::normalize_game_explorer_filters(
+            $filters_option,
+            Helpers::get_default_game_explorer_filters()
+        );
+
+        $filters = implode( ',', $filters_list );
         $score_position = Helpers::normalize_game_explorer_score_position(
             $options['game_explorer_score_position'] ?? ''
         );
@@ -287,20 +296,14 @@ class GameExplorer {
     }
 
     protected static function normalize_filters( $filters_string ) {
-        $allowed    = array( 'letter', 'category', 'platform', 'availability', 'search' );
+        $allowed        = Helpers::get_game_explorer_allowed_filters();
+        $default_filters = Helpers::get_default_game_explorer_filters();
+        $list            = Helpers::normalize_game_explorer_filters( $filters_string, $default_filters );
+
         $normalized = array();
 
-        if ( is_string( $filters_string ) ) {
-            $parts = array_filter( array_map( 'trim', explode( ',', strtolower( $filters_string ) ) ) );
-            foreach ( $parts as $part ) {
-                if ( in_array( $part, $allowed, true ) ) {
-                    $normalized[ $part ] = true;
-                }
-            }
-        }
-
-        if ( empty( $normalized ) ) {
-            $normalized = array_fill_keys( array( 'letter', 'category', 'platform', 'availability' ), true );
+        foreach ( $allowed as $filter_key ) {
+            $normalized[ $filter_key ] = in_array( $filter_key, $list, true );
         }
 
         return $normalized;

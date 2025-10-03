@@ -628,7 +628,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
     {
         $defaults = \JLG\Notation\Helpers::get_default_settings();
         $defaults['game_explorer_posts_per_page'] = 2;
-        $defaults['game_explorer_filters'] = 'letter,category,platform,availability,search';
+        $defaults['game_explorer_filters'] = \JLG\Notation\Helpers::get_default_game_explorer_filters();
         $defaults['game_explorer_score_position'] = \JLG\Notation\Helpers::normalize_game_explorer_score_position('');
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $defaults;
