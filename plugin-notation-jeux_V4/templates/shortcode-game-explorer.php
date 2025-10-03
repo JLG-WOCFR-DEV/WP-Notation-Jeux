@@ -247,13 +247,18 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ) );
 
     <?php if ( $has_filters ) : ?>
         <?php $filters_panel_id = $container_id . '-filters'; ?>
-        <div class="jlg-ge-filters-wrapper" data-role="filters-wrapper">
+        <div
+            class="jlg-ge-filters-wrapper"
+            data-role="filters-wrapper"
+            data-expanded="true"
+        >
             <button
                 type="button"
                 class="jlg-ge-filters-toggle"
                 data-role="filters-toggle"
                 aria-expanded="true"
                 aria-controls="<?php echo esc_attr( $filters_panel_id ); ?>"
+                data-expanded="true"
             >
                 <span class="jlg-ge-filters-toggle__label"><?php esc_html_e( 'Filtres', 'notation-jlg' ); ?></span>
             </button>
@@ -263,6 +268,7 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ) );
                 id="<?php echo esc_attr( $filters_panel_id ); ?>"
                 data-role="filters-panel"
                 aria-hidden="false"
+                data-expanded="true"
             >
                 <div class="jlg-ge-filters" data-role="filters">
                     <form method="get" class="jlg-ge-filters__form" data-role="filters-form">

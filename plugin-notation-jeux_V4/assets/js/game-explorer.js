@@ -506,18 +506,25 @@
         const wrapper = refs.filtersWrapper;
         const backdrop = refs.filtersBackdrop;
 
-        toggle.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+        const expandedValue = nextExpanded ? 'true' : 'false';
+
+        toggle.setAttribute('aria-expanded', expandedValue);
+        toggle.dataset.expanded = expandedValue;
+
         panel.setAttribute('aria-hidden', nextExpanded ? 'false' : 'true');
+        panel.dataset.expanded = expandedValue;
         panel.classList.toggle('is-collapsed', !nextExpanded);
 
         if (wrapper) {
             wrapper.classList.toggle('is-expanded', nextExpanded);
+            wrapper.dataset.expanded = expandedValue;
         }
 
         if (backdrop) {
             const showBackdrop = nextExpanded && !!state.isMobile;
             backdrop.classList.toggle('is-active', showBackdrop);
             backdrop.setAttribute('aria-hidden', showBackdrop ? 'false' : 'true');
+            backdrop.dataset.active = showBackdrop ? 'true' : 'false';
         }
 
         if (nextExpanded) {
@@ -572,7 +579,18 @@
 
         toggle.setAttribute('aria-controls', panelId);
         toggle.setAttribute('aria-expanded', 'true');
+        toggle.dataset.expanded = 'true';
+
         panel.setAttribute('aria-hidden', 'false');
+        panel.dataset.expanded = 'true';
+
+        if (refs.filtersWrapper) {
+            refs.filtersWrapper.dataset.expanded = 'true';
+        }
+
+        if (refs.filtersBackdrop) {
+            refs.filtersBackdrop.dataset.active = 'false';
+        }
 
         const applyMobileState = (isMobile) => {
             state.isMobile = !!isMobile;
