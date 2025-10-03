@@ -12,3 +12,23 @@
 .notation-jlg-block-preview .components-placeholder {
     width: 100%;
 }
+
+.editor-styles-wrapper .review-box-jlg.jlg-animate .rating-bar {
+    width: var(--rating-percent, 0%);
+}
+
+.editor-styles-wrapper .review-box-jlg.jlg-animate .score-circle,
+.editor-styles-wrapper .review-box-jlg.jlg-animate .global-score-text {
+    opacity: 1;
+    transform: none;
+}
+
+.editor-styles-wrapper .jlg-all-in-one-block.animate-in .jlg-aio-score-bar {
+    width: var(--bar-width) !important;
+}
+
+.editor-styles-wrapper .jlg-all-in-one-block.animate-in .jlg-aio-score-value,
+.editor-styles-wrapper .jlg-all-in-one-block.animate-in .jlg-aio-score-item {
+    opacity: 1;
+    transform: none;
+}
