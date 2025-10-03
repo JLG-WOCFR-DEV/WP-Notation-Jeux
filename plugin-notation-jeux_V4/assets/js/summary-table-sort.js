@@ -80,6 +80,25 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function toggleLoadingIndicator($wrapper, isLoading) {
+        var $content = $wrapper.find('.jlg-summary-content');
+
+        if (!$content.length) {
+            return;
+        }
+
+        if (isLoading) {
+            if (!$content.children('.jlg-summary-loading-indicator').length) {
+                $('<div>', {
+                    'class': 'jlg-summary-loading-indicator',
+                    'aria-hidden': 'true',
+                }).appendTo($content);
+            }
+        } else {
+            $content.children('.jlg-summary-loading-indicator').remove();
+        }
+    }
+
     function getCurrentState($wrapper) {
         return {
             orderby: ($wrapper.attr('data-orderby') || 'date').toString(),
@@ -383,6 +402,7 @@ jQuery(document).ready(function($) {
         requestData[getRequestKey($wrapper, 'genre_filter')] = genreFilter;
 
         $wrapper.addClass('jlg-summary-loading');
+        toggleLoadingIndicator($wrapper, true);
 
         var jqXHR = $.ajax({
             url: ajaxUrl,
@@ -417,6 +437,7 @@ jQuery(document).ready(function($) {
             showError($wrapper, jlgSummarySort.strings.genericError);
         }).always(function() {
             $wrapper.removeClass('jlg-summary-loading');
+            toggleLoadingIndicator($wrapper, false);
             $wrapper.removeData('ajaxRequest');
         });
     }
