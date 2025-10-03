@@ -52,8 +52,8 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 
 ### Shortcodes disponibles
 
-- `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`. Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
-- `[bloc_notation_jeu]` - Bloc de notation principal
+- `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`, `display_mode` (`absolute` ou `percent`). Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
+- `[bloc_notation_jeu]` - Bloc de notation principal. Attributs : `post_id` (ID du test), `score_layout` (`text` ou `circle`), `animations` (`oui`/`non`), `accent_color` et `display_mode` (`absolute` ou `percent`) pour choisir entre une note affichée en valeur absolue ou en pourcentage.
 - `[jlg_fiche_technique]` - Fiche technique du jeu. Attributs : `post_id` (optionnel, ID d'un test publié à afficher, utilise l'article courant sinon), `champs` (liste de champs séparés par des virgules) et `titre`.
 - `[tagline_notation_jlg]` - Phrase d'accroche bilingue
 - `[jlg_points_forts_faibles]` - Points positifs et négatifs
@@ -76,7 +76,8 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 Le plugin propose désormais une collection complète de blocs dynamiques pour l'éditeur moderne :
 
 - **Bloc de notation** (`notation-jlg/rating-block`) : sélectionnez un test publié ou laissez vide pour utiliser l'article
-  courant.
+  courant, choisissez la disposition (`texte` ou `cercle`), activez ou non les animations et décidez du format du score
+  (valeur absolue ou pourcentage).
 - **Points forts / faibles** (`notation-jlg/pros-cons`) et **Tagline bilingue** (`notation-jlg/tagline`) : affichent
   automatiquement les métadonnées du test.
 - **Fiche technique** (`notation-jlg/game-info`) : choisissez les champs à afficher, personnalisez le titre et ciblez un
@@ -84,8 +85,8 @@ Le plugin propose désormais une collection complète de blocs dynamiques pour l
 - **Notation utilisateurs** (`notation-jlg/user-rating`) : insère le module de vote interactif.
 - **Tableau récapitulatif** (`notation-jlg/summary-display`) : contrôlez le nombre d'éléments, la disposition (table ou
   grille), les colonnes et les filtres par défaut.
-- **Bloc tout-en-un** (`notation-jlg/all-in-one`) : activez ou non chaque sous-section, choisissez le style et la couleur
-  d'accent pour un rendu cohérent.
+- **Bloc tout-en-un** (`notation-jlg/all-in-one`) : activez ou non chaque sous-section, choisissez le style, la couleur
+  d'accent et le format du score (valeur absolue ou pourcentage) pour un rendu cohérent.
 - **Game Explorer** (`notation-jlg/game-explorer`) : définissez le tri initial, les filtres disponibles et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
 

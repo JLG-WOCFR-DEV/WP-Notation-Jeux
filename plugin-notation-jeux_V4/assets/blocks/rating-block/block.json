@@ -24,6 +24,11 @@
       "type": "string",
       "default": ""
     },
+    "scoreDisplay": {
+      "type": "string",
+      "default": "absolute",
+      "enum": ["absolute", "percent"]
+    },
     "showAnimations": {
       "type": "boolean",
       "default": true

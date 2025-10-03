@@ -99,6 +99,17 @@
                                 setAttributes({ scoreLayout: value || 'text' });
                             },
                         }),
+                        createElement(SelectControl, {
+                            label: __('Affichage du score', 'notation-jlg'),
+                            value: attributes.scoreDisplay || 'absolute',
+                            options: [
+                                { value: 'absolute', label: __('Valeur absolue', 'notation-jlg') },
+                                { value: 'percent', label: __('Pourcentage', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ scoreDisplay: value || 'absolute' });
+                            },
+                        }),
                         createElement(ToggleControl, {
                             label: __('Afficher les animations', 'notation-jlg'),
                             checked: typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
@@ -117,6 +128,7 @@
                         attributes: {
                             postId: attributes.postId || 0,
                             scoreLayout: attributes.scoreLayout || 'text',
+                            scoreDisplay: attributes.scoreDisplay || 'absolute',
                             showAnimations: typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
                             accentColor: attributes.accentColor || '',
                         },

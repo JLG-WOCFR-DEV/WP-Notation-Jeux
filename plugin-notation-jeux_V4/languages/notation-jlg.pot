@@ -810,3 +810,62 @@ msgstr ""
 #, php-format
 msgid "/%s"
 msgstr ""
+
+#: assets/js/blocks/all-in-one.js:98
+#: assets/js/blocks/rating-block.js:103
+msgid "Affichage du score"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:101
+#: assets/js/blocks/rating-block.js:107
+msgid "Valeur absolue"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:102
+#: assets/js/blocks/rating-block.js:108
+msgid "Pourcentage"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:36
+#: templates/shortcode-rating-block.php:63
+msgctxt "global percentage score"
+msgid "%s %%"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:41
+#: templates/shortcode-rating-block.php:68
+msgid "Note globale : %1$s %%, soit %2$s sur %3$s"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:47
+#: templates/shortcode-rating-block.php:74
+msgid "Équivalent à %1$s sur %2$s"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:57
+#: templates/shortcode-rating-block.php:89
+msgid "Note globale : %1$s sur %2$s"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:63
+#: templates/shortcode-all-in-one.php:147
+#: templates/shortcode-rating-block.php:95
+#: templates/shortcode-rating-block.php:152
+msgid "Correspond à %s %%"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:133
+#: templates/shortcode-rating-block.php:137
+msgctxt "category percentage score"
+msgid "%s %%"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:138
+#: templates/shortcode-rating-block.php:142
+msgid "%1$s : %2$s %%, soit %3$s sur %4$s"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:147
+#: templates/shortcode-rating-block.php:152
+msgid "%1$s : %2$s sur %3$s"
+msgstr ""

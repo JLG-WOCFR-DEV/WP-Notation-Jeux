@@ -31,6 +31,11 @@
       "type": "string",
       "default": "moderne"
     },
+    "scoreDisplay": {
+      "type": "string",
+      "default": "absolute",
+      "enum": ["absolute", "percent"]
+    },
     "accentColor": {
       "type": "string",
       "default": ""

@@ -23,6 +23,7 @@ class RatingBlock {
                 'score_layout' => '',
                 'animations'   => '',
                 'accent_color' => '',
+                'display_mode' => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -120,6 +121,28 @@ class RatingBlock {
         $css_variables       = $this->build_css_variables( $options );
         $score_max           = Helpers::get_score_max( $options );
 
+        $display_mode = is_string( $atts['display_mode'] ) ? sanitize_key( $atts['display_mode'] ) : '';
+        if ( ! in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
+            $display_mode = 'absolute';
+        }
+
+        $average_percentage = null;
+        if ( $score_max > 0 ) {
+            $average_percentage = max( 0, min( 100, ( $average_score / $score_max ) * 100 ) );
+        }
+
+        $category_percentages = array();
+        if ( $score_max > 0 ) {
+            foreach ( $category_scores as $category_score ) {
+                if ( isset( $category_score['id'], $category_score['score'] ) ) {
+                    $category_percentages[ (string) $category_score['id'] ] = max(
+                        0,
+                        min( 100, ( (float) $category_score['score'] / $score_max ) * 100 )
+                    );
+                }
+            }
+        }
+
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
         return Frontend::get_template_html(
@@ -127,10 +150,13 @@ class RatingBlock {
             array(
                 'options'              => $options,
                 'average_score'        => $average_score,
+                'average_score_percentage' => $average_percentage,
                 'scores'               => $score_map,
                 'category_scores'      => $category_scores,
+                'category_percentages' => $category_percentages,
                 'category_definitions' => Helpers::get_rating_category_definitions(),
                 'score_layout'         => $resolved_score_layout,
+                'display_mode'         => $display_mode,
                 'animations_enabled'   => $animations_enabled,
                 'css_variables'        => $css_variables,
                 'score_max'            => $score_max,

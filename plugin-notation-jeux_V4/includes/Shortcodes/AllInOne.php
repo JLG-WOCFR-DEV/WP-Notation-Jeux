@@ -103,6 +103,7 @@ class AllInOne {
                                 'cta_url'              => '',
                                 'cta_role'             => 'button',
                                 'cta_rel'              => 'nofollow sponsored',
+                                'display_mode'         => '',
             ),
             $atts,
             'jlg_bloc_complet'
@@ -120,6 +121,12 @@ class AllInOne {
         $atts['cta_url']              = esc_url_raw( $atts['cta_url'] );
         $atts['cta_role']             = sanitize_key( $atts['cta_role'] );
         $atts['cta_rel']              = trim( sanitize_text_field( $atts['cta_rel'] ) );
+
+        $display_mode = is_string( $atts['display_mode'] ) ? sanitize_key( $atts['display_mode'] ) : '';
+        if ( ! in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
+            $display_mode = 'absolute';
+        }
+        $atts['display_mode'] = $display_mode;
 
         if ( $atts['cta_url'] !== '' && ! wp_http_validate_url( $atts['cta_url'] ) ) {
             $atts['cta_url'] = '';
@@ -384,6 +391,25 @@ class AllInOne {
 
         $css_variables_string = $this->format_css_variables( $css_variables );
 
+        $score_max_value = Helpers::get_score_max( $options );
+
+        $average_percentage = null;
+        if ( $score_max_value > 0 && $average_score !== null ) {
+            $average_percentage = max( 0, min( 100, ( $average_score / $score_max_value ) * 100 ) );
+        }
+
+        $category_percentages = array();
+        if ( $score_max_value > 0 ) {
+            foreach ( $category_scores as $category_score ) {
+                if ( isset( $category_score['id'], $category_score['score'] ) ) {
+                    $category_percentages[ (string) $category_score['id'] ] = max(
+                        0,
+                        min( 100, ( (float) $category_score['score'] / $score_max_value ) * 100 )
+                    );
+                }
+            }
+        }
+
         $tag = $shortcode_tag !== '' ? $shortcode_tag : 'jlg_bloc_complet';
         Frontend::mark_shortcode_rendered( $tag );
 
@@ -392,8 +418,10 @@ class AllInOne {
             array(
                                 'options'            => $options,
                                 'average_score'      => $average_score,
+                                'average_score_percentage' => $average_percentage,
                                 'scores'             => $scores,
                                 'category_scores'    => $category_scores,
+                                'category_percentages' => $category_percentages,
                                 'category_definitions' => $category_definitions,
                                 'pros_list'          => $pros_list,
                                 'cons_list'          => $cons_list,
@@ -408,7 +436,8 @@ class AllInOne {
                                 'css_variables'      => $css_variables_string,
                                 'score_layout'       => $score_layout,
                                 'animations_enabled' => ! empty( $options['enable_animations'] ),
-                                'score_max'          => Helpers::get_score_max( $options ),
+                                'score_max'          => $score_max_value,
+                                'display_mode'       => $display_mode,
                         )
         );
     }
