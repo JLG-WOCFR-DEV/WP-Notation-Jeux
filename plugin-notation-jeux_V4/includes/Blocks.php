@@ -369,6 +369,10 @@ class Blocks {
             }
         }
 
+        if ( class_exists( Frontend::class ) ) {
+            Frontend::mark_shortcode_rendered( 'bloc_notation_jeu' );
+        }
+
         return $this->render_shortcode( 'bloc_notation_jeu', $atts );
     }
 

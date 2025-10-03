@@ -48,6 +48,20 @@ class RatingBlock {
         // Sécurité : ne s'exécute que si des notes existent
         $average_score = Helpers::get_average_score_for_post( $post_id );
         if ( $average_score === null ) {
+            if ( $this->is_editor_preview_context() ) {
+                $shortcode_handle = $shortcode_tag ?: 'bloc_notation_jeu';
+
+                Frontend::mark_shortcode_rendered( $shortcode_handle );
+
+                return Frontend::get_template_html(
+                    'shortcode-rating-block-empty',
+                    array(
+                        'post'    => $post,
+                        'post_id' => $post_id,
+                    )
+                );
+            }
+
             return '';
         }
 
@@ -166,5 +180,25 @@ class RatingBlock {
         }
 
         return null;
+    }
+
+    private function is_editor_preview_context() {
+        if ( ! function_exists( 'is_admin' ) || ! is_admin() ) {
+            return false;
+        }
+
+        $doing_ajax = function_exists( 'wp_doing_ajax' )
+            ? wp_doing_ajax()
+            : ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+
+        if ( $doing_ajax ) {
+            return true;
+        }
+
+        if ( function_exists( 'doing_filter' ) && doing_filter( 'rest_request_after_callbacks' ) ) {
+            return true;
+        }
+
+        return false;
     }
 }
