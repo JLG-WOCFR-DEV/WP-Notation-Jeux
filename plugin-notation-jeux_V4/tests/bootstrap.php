@@ -112,6 +112,21 @@ if (!function_exists('is_admin')) {
     }
 }
 
+if (!function_exists('doing_filter')) {
+    /**
+     * Minimal doing_filter stub so tests can emulate REST rendering context.
+     */
+    function doing_filter($hook = null) {
+        if (!is_string($hook) || $hook === '') {
+            return false;
+        }
+
+        $flags = $GLOBALS['jlg_test_doing_filters'] ?? [];
+
+        return !empty($flags[$hook]);
+    }
+}
+
 if (!function_exists('wp_next_scheduled')) {
     /**
      * Expose scheduled events for assertions via $GLOBALS['jlg_test_scheduled_events'].

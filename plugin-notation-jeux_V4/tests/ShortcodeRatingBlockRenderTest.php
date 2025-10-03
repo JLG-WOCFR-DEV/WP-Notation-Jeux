@@ -28,7 +28,10 @@ class ShortcodeRatingBlockRenderTest extends TestCase
             $GLOBALS['jlg_test_posts'],
             $GLOBALS['jlg_test_meta'],
             $GLOBALS['jlg_test_options'],
-            $GLOBALS['jlg_test_current_post_id']
+            $GLOBALS['jlg_test_current_post_id'],
+            $GLOBALS['jlg_test_is_admin'],
+            $GLOBALS['jlg_test_doing_ajax'],
+            $GLOBALS['jlg_test_doing_filters']
         );
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
@@ -89,6 +92,26 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertStringContainsString('jlg-animate', $output, 'Animations should follow plugin settings.');
         $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-score-gradient-1:#123123/i', $output, 'Default accent colors should surface in CSS variables.');
         $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-color-low:#345678/i', $output);
+    }
+
+    public function test_render_outputs_placeholder_in_editor_when_scores_missing(): void
+    {
+        $post_id = 1203;
+        $this->seedPost($post_id);
+
+        $GLOBALS['jlg_test_is_admin'] = true;
+        $GLOBALS['jlg_test_doing_filters'] = [
+            'rest_request_after_callbacks' => true,
+        ];
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertNotSame('', $output, 'Editor preview should render placeholder markup.');
+        $this->assertStringContainsString('jlg-rating-block-empty', $output, 'Placeholder class should be present.');
+        $this->assertStringContainsString('Notation JLG', $output, 'Metabox reference should guide editors.');
     }
 
     private function seedPost(int $post_id): void
