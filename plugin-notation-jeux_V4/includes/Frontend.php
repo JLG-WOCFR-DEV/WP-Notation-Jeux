@@ -2,6 +2,9 @@
 
 namespace JLG\Notation;
 
+use Exception;
+use WP_Post;
+use WP_Query;
 use JLG\Notation\Helpers;
 use JLG\Notation\Shortcodes\AllInOne;
 use JLG\Notation\Shortcodes\GameExplorer;
