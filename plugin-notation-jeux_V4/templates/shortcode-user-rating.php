@@ -4,10 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<div class="jlg-user-rating-block 
+<?php
+$is_interaction_disabled = $has_voted;
+?>
+<div class="jlg-user-rating-block
 <?php
 if ( $has_voted ) {
-	echo esc_attr( 'has-voted' );}
+        echo esc_attr( 'has-voted' );}
 ?>
 ">
     <div class="jlg-user-rating-title"><?php esc_html_e( 'Votre avis nous intéresse !', 'notation-jlg' ); ?></div>
@@ -16,6 +19,7 @@ if ( $has_voted ) {
         data-post-id="<?php echo esc_attr( $post_id ); ?>"
         role="radiogroup"
         aria-label="<?php echo esc_attr__( 'Choisissez une note', 'notation-jlg' ); ?>"
+        <?php echo $is_interaction_disabled ? 'aria-disabled="true"' : ''; ?>
     >
         <?php for ( $i = 1; $i <= 5; $i++ ) :
             $is_selected      = $has_voted && $i <= $user_vote;
@@ -27,6 +31,7 @@ if ( $has_voted ) {
                 data-value="<?php echo esc_attr( $i ); ?>"
                 role="radio"
                 aria-checked="<?php echo $is_checked_radio ? 'true' : 'false'; ?>"
+                <?php echo $is_interaction_disabled ? 'aria-disabled="true" disabled="disabled"' : ''; ?>
                 aria-label="<?php
                     /* translators: 1: Selected rating value. 2: Maximum possible rating. */
                     echo esc_attr( sprintf( __( 'Attribuer %1$s sur %2$s', 'notation-jlg' ), number_format_i18n( $i ), number_format_i18n( 5 ) ) );
