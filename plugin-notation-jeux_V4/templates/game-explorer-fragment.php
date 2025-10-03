@@ -137,6 +137,9 @@ if ( empty( $games ) ) {
         $developer           = isset( $game['developer'] ) ? $game['developer'] : '';
         $publisher           = isset( $game['publisher'] ) ? $game['publisher'] : '';
         $platforms           = isset( $game['platforms'] ) && is_array( $game['platforms'] ) ? $game['platforms'] : array();
+        $platform_count      = count( $platforms );
+        $display_platforms   = array_slice( $platforms, 0, 4 );
+        $extra_platforms     = max( 0, $platform_count - count( $display_platforms ) );
         $genre               = isset( $game['genre'] ) ? $game['genre'] : '';
         $availability_label  = isset( $game['availability_label'] ) ? $game['availability_label'] : '';
         $availability_status = isset( $game['availability'] ) ? $game['availability'] : '';
@@ -194,9 +197,22 @@ if ( empty( $games ) ) {
                     <?php endif; ?>
                 </dl>
                 <div class="jlg-ge-card__badges">
-                    <?php foreach ( array_slice( $platforms, 0, 4 ) as $platform_label ) : ?>
+                    <?php foreach ( $display_platforms as $platform_label ) : ?>
                         <span class="jlg-ge-badge jlg-ge-badge--platform"><?php echo esc_html( $platform_label ); ?></span>
                     <?php endforeach; ?>
+                    <?php if ( $extra_platforms > 0 ) : ?>
+                        <?php
+                        $more_badge_label = sprintf( __( '+%d', 'notation-jlg' ), $extra_platforms );
+                        $more_badge_aria  = sprintf(
+                            /* translators: %d: number of additional platforms. */
+                            _n( '+%d plateforme', '+%d plateformes', $extra_platforms, 'notation-jlg' ),
+                            $extra_platforms
+                        );
+                        ?>
+                        <span class="jlg-ge-badge jlg-ge-badge--platform jlg-ge-badge--more" aria-label="<?php echo esc_attr( $more_badge_aria ); ?>">
+                            <?php echo esc_html( $more_badge_label ); ?>
+                        </span>
+                    <?php endif; ?>
                     <?php if ( $genre !== '' ) : ?>
                         <span class="jlg-ge-badge jlg-ge-badge--genre"><?php echo esc_html( $genre ); ?></span>
                     <?php endif; ?>

@@ -495,6 +495,13 @@
     border-color: rgba(148, 163, 184, 0.2);
 }
 
+.jlg-ge-badge--more {
+    background: rgba(15, 23, 42, 0.12);
+    border-color: rgba(15, 23, 42, 0.28);
+    color: var(--jlg-ge-text);
+    font-weight: 600;
+}
+
 .jlg-ge-badge--genre {
     background: rgba(96, 165, 250, 0.15);
     border-color: rgba(96, 165, 250, 0.25);
