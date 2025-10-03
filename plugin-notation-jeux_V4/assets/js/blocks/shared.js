@@ -6,6 +6,7 @@
     var createElement = wp.element.createElement;
     var Fragment = wp.element.Fragment;
     var useState = wp.element.useState;
+    var useEffect = wp.element.useEffect;
     var useMemo = wp.element.useMemo;
     var useSelect = wp.data.useSelect;
     var __ = wp.i18n.__;
@@ -43,6 +44,60 @@
         var _useState2 = useState('');
         var search = _useState2[0];
         var setSearch = _useState2[1];
+
+        useEffect(
+            function () {
+                if (!value) {
+                    setSearch('');
+                    return;
+                }
+
+                setSearch(String(value));
+            },
+            [value]
+        );
+
+        var currentSelection = useSelect(
+            function (select) {
+                if (!value) {
+                    return { record: null, type: null };
+                }
+
+                var core = select('core');
+                if (!core || !core.getEntityRecord) {
+                    return { record: null, type: null };
+                }
+
+                var selectedType = null;
+                var selectedRecord = null;
+
+                allowedTypes.some(function (type) {
+                    var record = core.getEntityRecord('postType', type.slug, value);
+                    if (record) {
+                        selectedType = type.slug;
+                        selectedRecord = record;
+                        return true;
+                    }
+                    return false;
+                });
+
+                return { record: selectedRecord, type: selectedType };
+            },
+            [value, allowedTypes]
+        );
+
+        useEffect(
+            function () {
+                if (!value) {
+                    return;
+                }
+
+                if (currentSelection.type && currentSelection.type !== postType) {
+                    setPostType(currentSelection.type);
+                }
+            },
+            [value, currentSelection.type, postType]
+        );
 
         var queryArgs = useMemo(function () {
             return {
@@ -98,10 +153,48 @@
             [records]
         );
 
+        var resolvedOptions = useMemo(
+            function () {
+                if (!value) {
+                    return options;
+                }
+
+                var stringValue = String(value);
+                var hasSelected = options.some(function (option) {
+                    return option.value === stringValue;
+                });
+
+                if (hasSelected) {
+                    return options;
+                }
+
+                var selectedRecord = currentSelection.record;
+                if (!selectedRecord) {
+                    return options;
+                }
+
+                var labelText = selectedRecord && selectedRecord.title && selectedRecord.title.rendered ? selectedRecord.title.rendered : '';
+                if (!labelText && selectedRecord && selectedRecord.slug) {
+                    labelText = selectedRecord.slug;
+                }
+                if (!labelText && selectedRecord && selectedRecord.id) {
+                    labelText = '#' + selectedRecord.id;
+                }
+
+                return options.concat([
+                    {
+                        value: stringValue,
+                        label: decodeEntities(labelText),
+                    },
+                ]);
+            },
+            [options, value, currentSelection.record]
+        );
+
         var helpText = '';
         if (isResolving) {
             helpText = __('Chargement…', 'notation-jlg');
-        } else if (!options.length) {
+        } else if (!resolvedOptions.length) {
             helpText = __('Aucun élément trouvé.', 'notation-jlg');
         }
 
@@ -128,7 +221,7 @@
                 createElement(ComboboxControl, {
                     label: label,
                     value: value ? String(value) : '',
-                    options: options,
+                    options: resolvedOptions,
                     onFilterValueChange: function (nextSearch) {
                         setSearch(nextSearch || '');
                     },
