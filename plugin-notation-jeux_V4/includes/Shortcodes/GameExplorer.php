@@ -4,7 +4,6 @@ namespace JLG\Notation\Shortcodes;
 
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
-use WP_Query;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
@@ -1041,7 +1040,7 @@ class GameExplorer {
             $query_args['orderby'] = 'title';
         }
 
-        $query = new WP_Query( $query_args );
+        $query = new \WP_Query( $query_args );
 
         $games = array();
         if ( $query->have_posts() ) {
