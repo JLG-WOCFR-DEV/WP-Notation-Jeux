@@ -94,6 +94,22 @@ class Settings {
             $available_public_post_types
         );
 
+        $default_filters = isset( $defaults['game_explorer_filters'] ) && is_array( $defaults['game_explorer_filters'] )
+            ? $defaults['game_explorer_filters']
+            : Helpers::get_default_game_explorer_filters();
+
+        $current_filters = isset( $current_options['game_explorer_filters'] )
+            ? $current_options['game_explorer_filters']
+            : $default_filters;
+
+        $raw_filters = $input['game_explorer_filters'] ?? null;
+
+        $sanitized['game_explorer_filters'] = $this->sanitize_game_explorer_filters(
+            $raw_filters,
+            $default_filters,
+            $current_filters
+        );
+
         // Traiter les autres champs
         foreach ( $defaults as $key => $default_value ) {
             // Skip les champs déjà traités
@@ -106,6 +122,10 @@ class Settings {
             }
 
             if ( $key === 'allowed_post_types' ) {
+                continue;
+            }
+
+            if ( $key === 'game_explorer_filters' ) {
                 continue;
             }
 
@@ -140,6 +160,22 @@ class Settings {
         Helpers::flush_plugin_options_cache();
 
         return $sanitized;
+    }
+
+    private function sanitize_game_explorer_filters( $raw_filters, array $default_filters, $current_filters ) {
+        $fallback = ! empty( $default_filters ) ? $default_filters : Helpers::get_default_game_explorer_filters();
+
+        if ( $raw_filters === null ) {
+            $raw_filters = $current_filters;
+        }
+
+        $normalized = Helpers::normalize_game_explorer_filters( $raw_filters, $fallback );
+
+        if ( empty( $normalized ) ) {
+            return Helpers::get_default_game_explorer_filters();
+        }
+
+        return $normalized;
     }
 
     private function sanitize_option_value( $key, $value, $default_value = '' ) {
@@ -1121,10 +1157,16 @@ class Settings {
             'notation_jlg_page',
             'jlg_game_explorer',
             array(
-                'id'          => 'game_explorer_filters',
-                'type'        => 'text',
-                'placeholder' => 'letter,category,platform,availability',
-                'desc'        => __( 'Liste séparée par des virgules. Options disponibles : letter, category, platform, availability.', 'notation-jlg' ),
+                'id'      => 'game_explorer_filters',
+                'type'    => 'checkbox_group',
+                'options' => array(
+                    'letter'       => __( 'Lettre', 'notation-jlg' ),
+                    'category'     => __( 'Catégorie', 'notation-jlg' ),
+                    'platform'     => __( 'Plateforme', 'notation-jlg' ),
+                    'availability' => __( 'Disponibilité', 'notation-jlg' ),
+                    'search'       => __( 'Recherche', 'notation-jlg' ),
+                ),
+                'desc'    => __( 'Sélectionnez les filtres à afficher dans l’explorateur de jeux.', 'notation-jlg' ),
             )
         );
 
@@ -1322,6 +1364,8 @@ class Settings {
                     esc_attr( $args['id'] ),
                     checked( 1, $options[ $args['id'] ] ?? 0, false )
                 );
+            } elseif ( $type === 'checkbox_group' ) {
+                FormRenderer::checkbox_group_field( $args );
             } elseif ( $type === 'color' ) {
                 $defaults          = Helpers::get_default_settings();
                 $field_id          = $args['id'];

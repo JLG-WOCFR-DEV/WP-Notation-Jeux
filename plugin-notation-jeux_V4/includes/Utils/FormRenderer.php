@@ -76,6 +76,58 @@ class FormRenderer {
         self::render_description( $args );
     }
 
+    public static function checkbox_group_field( $args ) {
+        $options  = Helpers::get_plugin_options();
+        $defaults = Helpers::get_default_settings();
+        $field_id = $args['id'];
+
+        $choices = isset( $args['options'] ) && is_array( $args['options'] )
+            ? $args['options']
+            : array();
+
+        $selected = $options[ $field_id ] ?? ( $defaults[ $field_id ] ?? array() );
+
+        if ( $field_id === 'game_explorer_filters' ) {
+            $selected = Helpers::normalize_game_explorer_filters(
+                $selected,
+                Helpers::get_default_game_explorer_filters()
+            );
+        } else {
+            if ( is_string( $selected ) ) {
+                $selected = array( $selected );
+            }
+
+            if ( ! is_array( $selected ) ) {
+                $selected = array();
+            }
+
+            $selected = array_values( array_unique( array_filter( array_map( 'sanitize_key', $selected ) ) ) );
+        }
+
+        if ( empty( $choices ) ) {
+            return;
+        }
+
+        echo '<div class="jlg-checkbox-group">';
+
+        foreach ( $choices as $choice_key => $choice_label ) {
+            $choice_id = sprintf( '%s_%s', $field_id, $choice_key );
+            printf(
+                '<label for="%1$s" class="jlg-checkbox-group__item"><input type="checkbox" name="%2$s[%3$s][]" id="%1$s" value="%4$s" %5$s /> %6$s</label>',
+                esc_attr( $choice_id ),
+                esc_attr( self::$option_name ),
+                esc_attr( $field_id ),
+                esc_attr( $choice_key ),
+                checked( in_array( $choice_key, $selected, true ), true, false ),
+                esc_html( $choice_label )
+            );
+        }
+
+        echo '</div>';
+
+        self::render_description( $args );
+    }
+
     public static function select_field( $args ) {
         $options = Helpers::get_plugin_options();
         $value   = $options[ $args['id'] ] ?? '';

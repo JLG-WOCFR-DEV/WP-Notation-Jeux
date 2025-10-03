@@ -17,6 +17,8 @@ class Helpers {
     public const SCORE_SCALE_EVENT_HOOK       = 'jlg_process_score_scale_migration';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
+    private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'availability', 'search' );
+    private const GAME_EXPLORER_DEFAULT_FILTERS        = array( 'letter', 'category', 'platform', 'availability', 'search' );
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
     private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
 
@@ -555,7 +557,7 @@ class Helpers {
             // Options Game Explorer
             'game_explorer_columns'        => 3,
             'game_explorer_posts_per_page' => 12,
-            'game_explorer_filters'        => 'letter,category,platform,availability',
+            'game_explorer_filters'        => self::GAME_EXPLORER_DEFAULT_FILTERS,
             'game_explorer_score_position' => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés & catégories de notation
@@ -579,6 +581,15 @@ class Helpers {
         $defaults            = self::get_default_settings();
         $saved_options       = get_option( self::$option_name, $defaults );
         self::$options_cache = wp_parse_args( $saved_options, $defaults );
+
+        $filters = isset( self::$options_cache['game_explorer_filters'] )
+            ? self::$options_cache['game_explorer_filters']
+            : self::get_default_game_explorer_filters();
+
+        self::$options_cache['game_explorer_filters'] = self::normalize_game_explorer_filters(
+            $filters,
+            self::get_default_game_explorer_filters()
+        );
 
         $score_position = isset( self::$options_cache['game_explorer_score_position'] )
             ? self::$options_cache['game_explorer_score_position']
@@ -876,6 +887,46 @@ class Helpers {
         }
 
         return self::GAME_EXPLORER_DEFAULT_SCORE_POSITION;
+    }
+
+    public static function get_game_explorer_allowed_filters() {
+        return self::GAME_EXPLORER_ALLOWED_FILTERS;
+    }
+
+    public static function get_default_game_explorer_filters() {
+        return self::GAME_EXPLORER_DEFAULT_FILTERS;
+    }
+
+    public static function normalize_game_explorer_filters( $filters, array $fallback = array() ) {
+        $allowed = self::get_game_explorer_allowed_filters();
+
+        if ( empty( $fallback ) ) {
+            $fallback = self::get_default_game_explorer_filters();
+        }
+
+        if ( is_string( $filters ) ) {
+            $filters = explode( ',', $filters );
+        }
+
+        if ( ! is_array( $filters ) ) {
+            $filters = array();
+        }
+
+        $filters = array_map( 'sanitize_key', array_filter( array_map( 'trim', $filters ) ) );
+
+        $normalized = array();
+
+        foreach ( $allowed as $filter_key ) {
+            if ( in_array( $filter_key, $filters, true ) ) {
+                $normalized[] = $filter_key;
+            }
+        }
+
+        if ( empty( $normalized ) ) {
+            return array_values( array_intersect( $allowed, $fallback ) );
+        }
+
+        return $normalized;
     }
 
     /**
