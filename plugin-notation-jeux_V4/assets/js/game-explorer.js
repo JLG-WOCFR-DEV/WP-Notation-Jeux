@@ -7,6 +7,8 @@
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
     const activeRequestControllers = new WeakMap();
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const MOBILE_BREAKPOINT = 768;
+    const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
     const DEFAULT_DEBOUNCE_DELAY = 250;
 
@@ -237,6 +239,36 @@
         }
     }
 
+    function focusFirstElement(root) {
+        if (!root) {
+            return false;
+        }
+
+        const focusable = root.querySelector(FOCUSABLE_SELECTOR);
+        if (focusable && typeof focusable.focus === 'function') {
+            focusable.focus();
+            return true;
+        }
+
+        if (typeof root.focus === 'function') {
+            if (!root.hasAttribute('tabindex')) {
+                root.setAttribute('tabindex', '-1');
+                const handleBlur = () => {
+                    if (root.getAttribute('tabindex') === '-1') {
+                        root.removeAttribute('tabindex');
+                    }
+                    root.removeEventListener('blur', handleBlur);
+                };
+                root.addEventListener('blur', handleBlur);
+            }
+
+            root.focus();
+            return true;
+        }
+
+        return false;
+    }
+
     function debounce(fn, delay = DEFAULT_DEBOUNCE_DELAY) {
         let timeoutId;
         return function debounced(...args) {
@@ -452,6 +484,156 @@
         if (typeof resultsNode.focus === 'function') {
             resultsNode.focus();
         }
+    }
+
+    function setFiltersPanelExpanded(container, refs, expanded, options = {}) {
+        if (!refs || !refs.filtersPanel || !refs.filtersToggle) {
+            return;
+        }
+
+        const state = refs.state || (refs.state = {});
+        const force = options.force === true;
+        const nextExpanded = !!expanded;
+
+        if (!force && state.filtersExpanded === nextExpanded) {
+            return;
+        }
+
+        state.filtersExpanded = nextExpanded;
+
+        const panel = refs.filtersPanel;
+        const toggle = refs.filtersToggle;
+        const wrapper = refs.filtersWrapper;
+        const backdrop = refs.filtersBackdrop;
+
+        toggle.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+        panel.setAttribute('aria-hidden', nextExpanded ? 'false' : 'true');
+        panel.classList.toggle('is-collapsed', !nextExpanded);
+
+        if (wrapper) {
+            wrapper.classList.toggle('is-expanded', nextExpanded);
+        }
+
+        if (backdrop) {
+            const showBackdrop = nextExpanded && !!state.isMobile;
+            backdrop.classList.toggle('is-active', showBackdrop);
+            backdrop.setAttribute('aria-hidden', showBackdrop ? 'false' : 'true');
+        }
+
+        if (nextExpanded) {
+            if (state.isMobile && options.autoFocus !== false) {
+                focusFirstElement(panel);
+            }
+            return;
+        }
+
+        if (options.skipFocus === true) {
+            return;
+        }
+
+        if (options.focusTarget === 'results') {
+            return;
+        }
+
+        if (typeof toggle.focus === 'function') {
+            toggle.focus();
+        }
+    }
+
+    function collapseFiltersForMobile(container, refs, options = {}) {
+        if (!refs || !refs.state || !refs.state.isMobile) {
+            return;
+        }
+
+        if (!refs.state.filtersExpanded) {
+            return;
+        }
+
+        setFiltersPanelExpanded(container, refs, false, Object.assign({ skipFocus: true }, options));
+    }
+
+    function setupFiltersPanel(container, refs) {
+        if (!refs) {
+            return;
+        }
+
+        const panel = refs.filtersPanel;
+        const toggle = refs.filtersToggle;
+        if (!panel || !toggle) {
+            return;
+        }
+
+        const state = refs.state || (refs.state = {});
+        let panelId = panel.id;
+        if (typeof panelId !== 'string' || panelId === '') {
+            panelId = (container.id || 'jlg-game-explorer') + '-filters';
+            panel.id = panelId;
+        }
+
+        toggle.setAttribute('aria-controls', panelId);
+        toggle.setAttribute('aria-expanded', 'true');
+        panel.setAttribute('aria-hidden', 'false');
+
+        const applyMobileState = (isMobile) => {
+            state.isMobile = !!isMobile;
+
+            if (refs.filtersWrapper) {
+                refs.filtersWrapper.classList.toggle('is-mobile', state.isMobile);
+            }
+
+            if (refs.filtersBackdrop) {
+                refs.filtersBackdrop.classList.toggle('is-mobile', state.isMobile);
+            }
+
+            if (state.isMobile) {
+                setFiltersPanelExpanded(container, refs, false, { force: true, skipFocus: true });
+            } else {
+                setFiltersPanelExpanded(container, refs, true, { force: true, skipFocus: true });
+            }
+        };
+
+        let mediaQuery;
+        if (typeof window.matchMedia === 'function') {
+            mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+        }
+
+        if (mediaQuery) {
+            applyMobileState(mediaQuery.matches);
+            const handleChange = (event) => {
+                applyMobileState(event.matches);
+            };
+
+            if (typeof mediaQuery.addEventListener === 'function') {
+                mediaQuery.addEventListener('change', handleChange);
+            } else if (typeof mediaQuery.addListener === 'function') {
+                mediaQuery.addListener(handleChange);
+            }
+
+            state.mobileMediaQuery = mediaQuery;
+        } else {
+            applyMobileState(window.innerWidth < MOBILE_BREAKPOINT);
+        }
+
+        toggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            const next = !state.filtersExpanded;
+            setFiltersPanelExpanded(container, refs, next);
+        });
+
+        if (refs.filtersBackdrop) {
+            refs.filtersBackdrop.addEventListener('click', () => {
+                if (!state.isMobile) {
+                    return;
+                }
+                setFiltersPanelExpanded(container, refs, false);
+            });
+        }
+
+        panel.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && state.isMobile && state.filtersExpanded) {
+                setFiltersPanelExpanded(container, refs, false);
+            }
+        });
     }
 
     function updatePaginationAccessibility(refs) {
@@ -678,9 +860,21 @@
             availabilitySelect: container.querySelector('[data-role="availability"]'),
             searchInput: container.querySelector('[data-role="search"]'),
             resetButton: container.querySelector('[data-role="reset"]'),
+            filtersWrapper: container.querySelector('[data-role="filters-wrapper"]'),
+            filtersPanel: container.querySelector('[data-role="filters-panel"]'),
+            filtersToggle: container.querySelector('[data-role="filters-toggle"]'),
+            filtersBackdrop: container.querySelector('[data-role="filters-backdrop"]'),
+            filtersForm: container.querySelector('[data-role="filters-form"]'),
+        };
+
+        refs.state = {
+            filtersExpanded: true,
+            isMobile: false,
         };
 
         container.__jlgGameExplorer = { config, refs };
+
+        setupFiltersPanel(container, refs);
 
         if (refs.resultsNode && strings.loading) {
             refs.resultsNode.dataset.loadingText = strings.loading;
@@ -730,6 +924,7 @@
                 config.state.category = refs.categorySelect.value || '';
                 config.state.paged = 1;
                 writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
                 refreshResults(container, config, refs);
             });
         }
@@ -739,6 +934,7 @@
                 config.state.platform = refs.platformSelect.value || '';
                 config.state.paged = 1;
                 writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
                 refreshResults(container, config, refs);
             });
         }
@@ -748,6 +944,7 @@
                 config.state.availability = refs.availabilitySelect.value || '';
                 config.state.paged = 1;
                 writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
                 refreshResults(container, config, refs);
             });
         }
@@ -781,6 +978,36 @@
                 config.state.paged = 1;
                 writeConfig(container, config);
                 updateActiveFilters(container, config, refs);
+                collapseFiltersForMobile(container, refs);
+                refreshResults(container, config, refs);
+            });
+        }
+
+        if (refs.filtersForm) {
+            refs.filtersForm.addEventListener('submit', (event) => {
+                if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                }
+
+                if (refs.categorySelect) {
+                    config.state.category = refs.categorySelect.value || '';
+                }
+
+                if (refs.platformSelect) {
+                    config.state.platform = refs.platformSelect.value || '';
+                }
+
+                if (refs.availabilitySelect) {
+                    config.state.availability = refs.availabilitySelect.value || '';
+                }
+
+                if (refs.searchInput) {
+                    config.state.search = refs.searchInput.value || '';
+                }
+
+                config.state.paged = 1;
+                writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
                 refreshResults(container, config, refs);
             });
         }
