@@ -246,113 +246,133 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ) );
     </div>
 
     <?php if ( $has_filters ) : ?>
-        <div class="jlg-ge-filters" data-role="filters">
-            <form method="get" class="jlg-ge-filters__form">
-                <?php
-                $filters_hidden_inputs = $prepare_hidden_params(
-                    array(
-                        $namespaced_keys['category'],
-                        $namespaced_keys['platform'],
-                        $namespaced_keys['availability'],
-                        $namespaced_keys['search'],
-                        $namespaced_keys['paged'],
-                    )
-                );
-                $render_hidden_inputs( $filters_hidden_inputs );
-                ?>
-                <?php if ( $has_category_filter ) : ?>
-                    <label for="<?php echo esc_attr( $container_id ); ?>-category" class="screen-reader-text">
-                        <?php esc_html_e( 'Filtrer par catégorie', 'notation-jlg' ); ?>
-                    </label>
-                    <select
-                        id="<?php echo esc_attr( $container_id ); ?>-category"
-                        name="<?php echo esc_attr( $namespaced_keys['category'] ); ?>"
-                        data-role="category"
-                    >
-                        <option value="">
-                            <?php esc_html_e( 'Toutes les catégories', 'notation-jlg' ); ?>
-                        </option>
+        <?php $filters_panel_id = $container_id . '-filters'; ?>
+        <div class="jlg-ge-filters-wrapper" data-role="filters-wrapper">
+            <button
+                type="button"
+                class="jlg-ge-filters-toggle"
+                data-role="filters-toggle"
+                aria-expanded="true"
+                aria-controls="<?php echo esc_attr( $filters_panel_id ); ?>"
+            >
+                <span class="jlg-ge-filters-toggle__label"><?php esc_html_e( 'Filtres', 'notation-jlg' ); ?></span>
+            </button>
+            <div class="jlg-ge-filters-backdrop" data-role="filters-backdrop" aria-hidden="true"></div>
+            <div
+                class="jlg-ge-filters-panel"
+                id="<?php echo esc_attr( $filters_panel_id ); ?>"
+                data-role="filters-panel"
+                aria-hidden="false"
+            >
+                <div class="jlg-ge-filters" data-role="filters">
+                    <form method="get" class="jlg-ge-filters__form" data-role="filters-form">
                         <?php
-                        foreach ( $categories_list as $category ) :
-                            $value = isset( $category['value'] ) ? (string) $category['value'] : '';
-                            $label = isset( $category['label'] ) ? $category['label'] : $value;
-                            ?>
-                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $category_active, $value ); ?>>
-                                <?php echo esc_html( $label ); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                <?php endif; ?>
+                        $filters_hidden_inputs = $prepare_hidden_params(
+                            array(
+                                $namespaced_keys['category'],
+                                $namespaced_keys['platform'],
+                                $namespaced_keys['availability'],
+                                $namespaced_keys['search'],
+                                $namespaced_keys['paged'],
+                            )
+                        );
+                        $render_hidden_inputs( $filters_hidden_inputs );
+                        ?>
+                        <?php if ( $has_category_filter ) : ?>
+                            <label for="<?php echo esc_attr( $container_id ); ?>-category" class="screen-reader-text">
+                                <?php esc_html_e( 'Filtrer par catégorie', 'notation-jlg' ); ?>
+                            </label>
+                            <select
+                                id="<?php echo esc_attr( $container_id ); ?>-category"
+                                name="<?php echo esc_attr( $namespaced_keys['category'] ); ?>"
+                                data-role="category"
+                            >
+                                <option value="">
+                                    <?php esc_html_e( 'Toutes les catégories', 'notation-jlg' ); ?>
+                                </option>
+                                <?php
+                                foreach ( $categories_list as $category ) :
+                                    $value = isset( $category['value'] ) ? (string) $category['value'] : '';
+                                    $label = isset( $category['label'] ) ? $category['label'] : $value;
+                                    ?>
+                                    <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $category_active, $value ); ?>>
+                                        <?php echo esc_html( $label ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
 
-                <?php if ( $has_platform_filter ) : ?>
-                    <label for="<?php echo esc_attr( $container_id ); ?>-platform" class="screen-reader-text">
-                        <?php esc_html_e( 'Filtrer par plateforme', 'notation-jlg' ); ?>
-                    </label>
-                    <select
-                        id="<?php echo esc_attr( $container_id ); ?>-platform"
-                        name="<?php echo esc_attr( $namespaced_keys['platform'] ); ?>"
-                        data-role="platform"
-                    >
-                        <option value="">
-                            <?php esc_html_e( 'Toutes les plateformes', 'notation-jlg' ); ?>
-                        </option>
-                        <?php
-                        foreach ( $platforms_list as $platform ) :
-                            $value = isset( $platform['value'] ) ? (string) $platform['value'] : '';
-                            $label = isset( $platform['label'] ) ? $platform['label'] : $value;
-                            ?>
-                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $platform_active, $value ); ?>>
-                                <?php echo esc_html( $label ); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                <?php endif; ?>
+                        <?php if ( $has_platform_filter ) : ?>
+                            <label for="<?php echo esc_attr( $container_id ); ?>-platform" class="screen-reader-text">
+                                <?php esc_html_e( 'Filtrer par plateforme', 'notation-jlg' ); ?>
+                            </label>
+                            <select
+                                id="<?php echo esc_attr( $container_id ); ?>-platform"
+                                name="<?php echo esc_attr( $namespaced_keys['platform'] ); ?>"
+                                data-role="platform"
+                            >
+                                <option value="">
+                                    <?php esc_html_e( 'Toutes les plateformes', 'notation-jlg' ); ?>
+                                </option>
+                                <?php
+                                foreach ( $platforms_list as $platform ) :
+                                    $value = isset( $platform['value'] ) ? (string) $platform['value'] : '';
+                                    $label = isset( $platform['label'] ) ? $platform['label'] : $value;
+                                    ?>
+                                    <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $platform_active, $value ); ?>>
+                                        <?php echo esc_html( $label ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
 
-                <?php if ( $has_availability_filter ) : ?>
-                    <label for="<?php echo esc_attr( $container_id ); ?>-availability" class="screen-reader-text">
-                        <?php esc_html_e( 'Filtrer par disponibilité', 'notation-jlg' ); ?>
-                    </label>
-                    <select
-                        id="<?php echo esc_attr( $container_id ); ?>-availability"
-                        name="<?php echo esc_attr( $namespaced_keys['availability'] ); ?>"
-                        data-role="availability"
-                    >
-                        <option value="">
-                            <?php esc_html_e( 'Toutes les sorties', 'notation-jlg' ); ?>
-                        </option>
-                        <?php foreach ( $availability_options as $value => $label ) : ?>
-                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $availability_active, $value ); ?>>
-                                <?php echo esc_html( $label ); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                <?php endif; ?>
+                        <?php if ( $has_availability_filter ) : ?>
+                            <label for="<?php echo esc_attr( $container_id ); ?>-availability" class="screen-reader-text">
+                                <?php esc_html_e( 'Filtrer par disponibilité', 'notation-jlg' ); ?>
+                            </label>
+                            <select
+                                id="<?php echo esc_attr( $container_id ); ?>-availability"
+                                name="<?php echo esc_attr( $namespaced_keys['availability'] ); ?>"
+                                data-role="availability"
+                            >
+                                <option value="">
+                                    <?php esc_html_e( 'Toutes les sorties', 'notation-jlg' ); ?>
+                                </option>
+                                <?php foreach ( $availability_options as $value => $label ) : ?>
+                                    <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $availability_active, $value ); ?>>
+                                        <?php echo esc_html( $label ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
 
-                <?php if ( $has_search_filter ) : ?>
-                    <div class="jlg-ge-search">
-                        <label for="<?php echo esc_attr( $container_id ); ?>-search">
-                            <?php esc_html_e( 'Rechercher un jeu', 'notation-jlg' ); ?>
-                        </label>
-                        <input
-                            type="search"
-                            id="<?php echo esc_attr( $container_id ); ?>-search"
-                            name="<?php echo esc_attr( $namespaced_keys['search'] ); ?>"
-                            data-role="search"
-                            value="<?php echo esc_attr( $search_active ); ?>"
-                            placeholder="<?php echo esc_attr__( 'Rechercher…', 'notation-jlg' ); ?>"
-                        >
-                    </div>
-                <?php endif; ?>
+                        <?php if ( $has_search_filter ) : ?>
+                            <div class="jlg-ge-search">
+                                <label for="<?php echo esc_attr( $container_id ); ?>-search">
+                                    <?php esc_html_e( 'Rechercher un jeu', 'notation-jlg' ); ?>
+                                </label>
+                                <input
+                                    type="search"
+                                    id="<?php echo esc_attr( $container_id ); ?>-search"
+                                    name="<?php echo esc_attr( $namespaced_keys['search'] ); ?>"
+                                    data-role="search"
+                                    value="<?php echo esc_attr( $search_active ); ?>"
+                                    placeholder="<?php echo esc_attr__( 'Rechercher…', 'notation-jlg' ); ?>"
+                                >
+                            </div>
+                        <?php endif; ?>
 
-                <div class="jlg-ge-filters__actions">
-                    <button type="submit" class="jlg-ge-filters__submit">
-                        <?php esc_html_e( 'Appliquer les filtres', 'notation-jlg' ); ?>
-                    </button>
-                    <a class="jlg-ge-reset" data-role="reset" href="<?php echo esc_url( $reset_url ); ?>">
-                        <?php esc_html_e( 'Réinitialiser', 'notation-jlg' ); ?>
-                    </a>
+                        <div class="jlg-ge-filters__actions">
+                            <button type="submit" class="jlg-ge-filters__submit">
+                                <?php esc_html_e( 'Appliquer les filtres', 'notation-jlg' ); ?>
+                            </button>
+                            <a class="jlg-ge-reset" data-role="reset" href="<?php echo esc_url( $reset_url ); ?>">
+                                <?php esc_html_e( 'Réinitialiser', 'notation-jlg' ); ?>
+                            </a>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     <?php endif; ?>
 

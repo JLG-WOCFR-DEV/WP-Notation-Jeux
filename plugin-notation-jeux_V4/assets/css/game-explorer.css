@@ -77,7 +77,7 @@
     gap: 0.35rem;
 }
 
-.jlg-ge-letter-nav button {
+.jlg-ge-letter-nav button { 
     background: transparent;
     border: 1px solid var(--jlg-ge-card-border);
     color: var(--jlg-ge-text);
@@ -101,7 +101,8 @@
 
 .jlg-ge-letter-nav button:focus-visible,
 .jlg-ge-pagination button:focus-visible,
-.jlg-ge-reset:focus-visible {
+.jlg-ge-reset:focus-visible,
+.jlg-ge-filters-toggle:focus-visible {
     background: var(--jlg-ge-accent);
     border-color: var(--jlg-ge-accent);
     color: #0f172a;
@@ -113,6 +114,52 @@
 .jlg-ge-count {
     font-size: 0.9rem;
     color: var(--jlg-ge-text-muted);
+}
+
+.jlg-ge-filters-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+}
+
+.jlg-ge-filters-toggle {
+    align-self: flex-end;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid var(--jlg-ge-card-border);
+    border-radius: 9999px;
+    color: var(--jlg-ge-text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.45rem 1.1rem;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jlg-ge-filters-toggle:hover {
+    background: var(--jlg-ge-accent);
+    border-color: var(--jlg-ge-accent);
+    color: #0f172a;
+}
+
+.jlg-ge-filters-backdrop {
+    display: none;
+}
+
+.jlg-ge-filters-panel {
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid var(--jlg-ge-card-border);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    transition: box-shadow 0.25s ease;
+}
+
+.jlg-ge-filters-panel:not(.is-collapsed):focus-within {
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
 }
 
 .jlg-ge-filters {
@@ -135,6 +182,104 @@
 .jlg-ge-reset:hover {
     background: var(--jlg-ge-card-border);
     border-color: var(--jlg-ge-accent);
+}
+
+@media (min-width: 768px) {
+    .jlg-ge-filters-toggle {
+        display: none;
+    }
+
+    .jlg-ge-filters-panel.is-collapsed {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .jlg-ge-filters-wrapper {
+        gap: 0.5rem;
+    }
+
+    .jlg-ge-filters-toggle {
+        display: inline-flex;
+        position: relative;
+        z-index: 1002;
+    }
+
+    .jlg-ge-filters-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 1000;
+    }
+
+    .jlg-ge-filters-backdrop.is-active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .jlg-ge-filters-panel {
+        position: fixed;
+        inset: auto 0 0 0;
+        background: rgba(15, 23, 42, 0.96);
+        border-radius: 1.25rem 1.25rem 0 0;
+        box-shadow: 0 -18px 32px rgba(15, 23, 42, 0.85);
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 1.5rem 1.25rem 2rem;
+        transform: translateY(100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.35s ease, opacity 0.35s ease, visibility 0.35s ease;
+        z-index: 1001;
+    }
+
+    .jlg-ge-filters-panel.is-collapsed {
+        transform: translateY(100%);
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .jlg-ge-filters-panel:not(.is-collapsed) {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .jlg-ge-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .jlg-ge-filters select,
+    .jlg-ge-search input {
+        width: 100%;
+    }
+
+    .jlg-ge-filters__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .jlg-ge-filters__submit,
+    .jlg-ge-reset {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jlg-ge-filters-toggle,
+    .jlg-ge-filters-panel,
+    .jlg-ge-filters-backdrop {
+        transition-duration: 0.001ms;
+        transition-delay: 0ms;
+    }
 }
 
 .jlg-ge-grid {
