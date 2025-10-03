@@ -1,0 +1,25 @@
+.jlg-admin-card {
+    background-color: var(--wp-admin-surface-color, #fff);
+    color: var(--wp-admin-page-content-text, #1d2327);
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--wp-admin-border-color, #c3c4c7);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+body.is-dark-theme .jlg-admin-card {
+    background-color: var(--wp-admin-surface-color, #1d2327);
+    color: var(--wp-admin-page-content-text, #f0f0f1);
+    border-color: var(--wp-admin-border-color, #3c434a);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+body.is-dark-theme .jlg-admin-card a {
+    color: var(--wp-admin-theme-color, #72aee6);
+}
+
+body.is-dark-theme .jlg-admin-card a:hover,
+body.is-dark-theme .jlg-admin-card a:focus {
+    color: var(--wp-admin-theme-color-darker-10, #1d8fd1);
+}

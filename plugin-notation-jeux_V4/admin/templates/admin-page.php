@@ -10,7 +10,7 @@ $tab_content = $variables['tab_content'] ?? '';
         <h1><?php echo esc_html($page_title); ?></h1>
     <?php endif; ?>
     <?php echo $tab_navigation; ?>
-    <div style="background:#fff; padding:20px; margin-top:20px; border-radius:8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div class="jlg-admin-card">
         <?php echo $tab_content; ?>
     </div>
 </div>
