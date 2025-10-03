@@ -10,7 +10,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 ## Installation et configuration initiale
 1. **Installer le plugin** depuis ce dépôt (copier `plugin-notation-jeux_V4` dans `wp-content/plugins/`) puis l’activer depuis le menu *Extensions* de WordPress.
 2. **Remplir les metaboxes** dédiées aux notes et aux détails du test dans l’éditeur d’articles : les six catégories sont notées sur 10 et la metabox principale capture fiche technique, plateformes, taglines bilingues, points forts/faibles, etc.
-3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels.
+3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels. La section *Contenus* permet désormais de sélectionner les types de publications (articles, CPT publics…) autorisés pour la notation ; au besoin, un développeur peut toujours compléter ou restreindre cette liste via le filtre PHP `jlg_rated_post_types`.
 4. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
 5. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu.
 

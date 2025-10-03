@@ -106,7 +106,7 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 1. Téléchargez le plugin et décompressez l'archive
 2. Uploadez le dossier `plugin-notation-jeux` dans `/wp-content/plugins/`
 3. Activez le plugin depuis le menu 'Extensions' de WordPress
-4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'
+4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'. La section *Contenus* vous permet de choisir les types de publications (articles, CPT publics…) autorisés pour la notation ; si besoin, un développeur peut ajuster cette liste via le filtre PHP `jlg_rated_post_types`.
 5. Créez votre premier test avec notation !
 
 == Tests manuels de sécurité CSS ==

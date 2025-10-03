@@ -485,6 +485,7 @@ class Helpers {
             'score_layout'                 => 'text',
             'score_max'                    => 10,
             'enable_animations'            => 1,
+            'allowed_post_types'           => array( 'post' ),
             'tagline_font_size'            => 16,
 
             // Couleurs de Thème Sombre personnalisables
@@ -883,16 +884,38 @@ class Helpers {
      * @return string[] List of sanitized post type identifiers.
      */
     public static function get_allowed_post_types() {
-        $post_types = apply_filters( 'jlg_rated_post_types', array( 'post' ) );
+        $defaults         = self::get_default_settings();
+        $default_post_types = isset( $defaults['allowed_post_types'] ) && is_array( $defaults['allowed_post_types'] )
+            ? $defaults['allowed_post_types']
+            : array( 'post' );
+
+        $options    = self::get_plugin_options();
+        $post_types = isset( $options['allowed_post_types'] ) ? $options['allowed_post_types'] : $default_post_types;
+
+        if ( is_string( $post_types ) ) {
+            $post_types = array( $post_types );
+        }
 
         if ( ! is_array( $post_types ) ) {
-            $post_types = array( 'post' );
+            $post_types = $default_post_types;
         }
 
         $post_types = array_values( array_filter( array_map( 'sanitize_key', $post_types ) ) );
 
         if ( empty( $post_types ) ) {
-            $post_types = array( 'post' );
+            $post_types = $default_post_types;
+        }
+
+        $post_types = apply_filters( 'jlg_rated_post_types', $post_types );
+
+        if ( ! is_array( $post_types ) ) {
+            $post_types = $default_post_types;
+        }
+
+        $post_types = array_values( array_filter( array_map( 'sanitize_key', $post_types ) ) );
+
+        if ( empty( $post_types ) ) {
+            $post_types = $default_post_types;
         }
 
         return array_values( array_unique( $post_types ) );
