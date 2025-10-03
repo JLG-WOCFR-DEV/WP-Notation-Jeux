@@ -2,8 +2,13 @@
 
 namespace JLG\Notation\Shortcodes;
 
+use DateTime;
+use DateTimeImmutable;
+use DateTimeZone;
+use Exception;
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
+use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
