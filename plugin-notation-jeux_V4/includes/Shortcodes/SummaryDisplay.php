@@ -10,7 +10,6 @@ namespace JLG\Notation\Shortcodes;
 
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
-use WP_Query;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
@@ -275,7 +274,7 @@ class SummaryDisplay {
         }
 
         try {
-            $query = new WP_Query( $args );
+            $query = new \WP_Query( $args );
         } finally {
             if ( $letter_filter_active ) {
                 self::clear_letter_filter();
