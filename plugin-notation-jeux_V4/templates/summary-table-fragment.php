@@ -422,7 +422,7 @@ else :
                                                 echo esc_html__( 'N/A', 'notation-jlg' );
                                             } else {
                                                 $formatted_score = esc_html( number_format_i18n( $score_value, 1 ) );
-                                                $max_score       = esc_html( '10' );
+                                                $max_score       = esc_html( $score_max_label );
 
                                                 printf(
                                                     /* translators: %1$s: category score value. %2$s: maximum rating value. */
