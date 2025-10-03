@@ -29,6 +29,18 @@ $resolved_score_max = is_numeric( $score_max )
 
 $score_max_label = number_format_i18n( $resolved_score_max );
 
+$display_mode = isset( $display_mode ) && in_array( (string) $display_mode, array( 'absolute', 'percent' ), true )
+    ? $display_mode
+    : 'absolute';
+
+$average_percentage_value = isset( $average_score_percentage ) && is_numeric( $average_score_percentage )
+    ? max( 0, min( 100, (float) $average_score_percentage ) )
+    : null;
+
+$category_percentages = isset( $category_percentages ) && is_array( $category_percentages )
+    ? $category_percentages
+    : array();
+
 $css_variables_string = is_string( $css_variables ) ? $css_variables : '';
 
 if ( $css_variables_string === '' ) {
@@ -51,18 +63,67 @@ if ( $css_variables_string === '' ) {
 }
 
 $style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
+
+$score_max_label_safe       = esc_html( $score_max_label );
+$average_score_display      = esc_html( number_format_i18n( $average_score, 1 ) );
+$average_percentage_display = $average_percentage_value !== null
+    ? esc_html( number_format_i18n( $average_percentage_value, 1 ) )
+    : '';
+
+if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
+    $visible_value = sprintf(
+        /* translators: %s: Global score percentage. */
+        esc_html_x( '%s %%', 'global percentage score', 'notation-jlg' ),
+        $average_percentage_display
+    );
+    $aria_label = sprintf(
+        /* translators: 1: Global score percentage. 2: Global score value. 3: Maximum score. */
+        __( 'Note globale : %1$s %%, soit %2$s sur %3$s', 'notation-jlg' ),
+        $average_percentage_display,
+        $average_score_display,
+        $score_max_label_safe
+    );
+    $sr_text = sprintf(
+        /* translators: 1: Global score value. 2: Maximum score. */
+        __( 'Équivalent à %1$s sur %2$s', 'notation-jlg' ),
+        $average_score_display,
+        $score_max_label_safe
+    );
+    $global_score_markup = '<div class="score-value" aria-label="' . esc_attr( $aria_label ) . '">' . $visible_value
+        . '<span class="screen-reader-text"> ' . esc_html( $sr_text ) . '</span></div>';
+} else {
+    $visible_value = $average_score_display;
+    $aria_label    = sprintf(
+        /* translators: 1: Global score value. 2: Maximum score. */
+        __( 'Note globale : %1$s sur %2$s', 'notation-jlg' ),
+        $average_score_display,
+        $score_max_label_safe
+    );
+    $global_score_markup = '<div class="score-value" aria-label="' . esc_attr( $aria_label ) . '">' . $visible_value;
+
+    if ( $average_percentage_display !== '' ) {
+        $sr_text = sprintf(
+            /* translators: %s: Global score percentage. */
+            __( 'Correspond à %s %%', 'notation-jlg' ),
+            $average_percentage_display
+        );
+        $global_score_markup .= '<span class="screen-reader-text"> ' . esc_html( $sr_text ) . '</span>';
+    }
+
+    $global_score_markup .= '</div>';
+}
 ?>
 
 <div class="review-box-jlg<?php echo $animations_on ? ' jlg-animate' : ''; ?>"<?php echo $style_attribute; ?>>
     <div class="global-score-wrapper">
         <?php if ( $resolved_score_layout === 'circle' ) : ?>
             <div class="score-circle">
-                <div class="score-value"><?php echo esc_html( number_format_i18n( $average_score, 1 ) ); ?></div>
+                <?php echo $global_score_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <div class="score-label"><?php esc_html_e( 'Note Globale', 'notation-jlg' ); ?></div>
             </div>
         <?php else : ?>
             <div class="global-score-text">
-                <div class="score-value"><?php echo esc_html( number_format_i18n( $average_score, 1 ) ); ?></div>
+                <?php echo $global_score_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <div class="score-label"><?php esc_html_e( 'Note Globale', 'notation-jlg' ); ?></div>
             </div>
         <?php endif; ?>
@@ -85,6 +146,14 @@ $style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_va
                 : 1.0;
             $show_weight = abs( $weight - 1.0 ) > 0.001;
             $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
+            $category_id = isset( $category['id'] ) ? (string) $category['id'] : '';
+            $percentage_value = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
+                ? max( 0, min( 100, (float) $category_percentages[ $category_id ] ) )
+                : null;
+            $percentage_display = is_numeric( $percentage_value )
+                ? esc_html( number_format_i18n( $percentage_value, 1 ) )
+                : '';
+            $label_text = wp_strip_all_tags( (string) $label );
             ?>
             <div class="rating-item">
                 <div class="rating-label">
@@ -105,12 +174,60 @@ $style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_va
                     <span>
                         <?php
                         $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
-                        printf(
-                            /* translators: 1: Rating value for a specific category. 2: Maximum possible rating. */
-                            esc_html__( '%1$s / %2$s', 'notation-jlg' ),
-                            $formatted_score_value,
-                            esc_html( $score_max_label )
-                        );
+                        $score_max_for_output = esc_html( $score_max_label );
+
+                        if ( $display_mode === 'percent' && $percentage_display !== '' ) {
+                            $visible_percentage = sprintf(
+                                /* translators: %s: Rating percentage for a category. */
+                                esc_html_x( '%s %%', 'category percentage score', 'notation-jlg' ),
+                                $percentage_display
+                            );
+                            $aria_label = sprintf(
+                                /* translators: 1: Rating category label. 2: Rating percentage. 3: Rating value. 4: Maximum possible rating. */
+                                __( '%1$s : %2$s %%, soit %3$s sur %4$s', 'notation-jlg' ),
+                                $label_text,
+                                $percentage_display,
+                                $formatted_score_value,
+                                $score_max_for_output
+                            );
+                            $sr_equivalent = sprintf(
+                                /* translators: 1: Rating value. 2: Maximum possible rating. */
+                                __( 'Équivalent à %1$s sur %2$s', 'notation-jlg' ),
+                                $formatted_score_value,
+                                $score_max_for_output
+                            );
+
+                            echo '<span aria-label="' . esc_attr( $aria_label ) . '">' . esc_html( $visible_percentage )
+                                . '<span class="screen-reader-text"> ' . esc_html( $sr_equivalent ) . '</span></span>';
+                        } else {
+                            $visible_absolute = sprintf(
+                                /* translators: 1: Rating value. 2: Maximum possible rating. */
+                                __( '%1$s / %2$s', 'notation-jlg' ),
+                                $formatted_score_value,
+                                $score_max_for_output
+                            );
+                            $aria_label = sprintf(
+                                /* translators: 1: Rating category label. 2: Rating value. 3: Maximum possible rating. */
+                                __( '%1$s : %2$s sur %3$s', 'notation-jlg' ),
+                                $label_text,
+                                $formatted_score_value,
+                                $score_max_for_output
+                            );
+
+                            echo '<span aria-label="' . esc_attr( $aria_label ) . '">' . esc_html( $visible_absolute );
+
+                            if ( $percentage_display !== '' ) {
+                                $sr_percentage = sprintf(
+                                    /* translators: %s: Rating percentage for a category. */
+                                    __( 'Correspond à %s %%', 'notation-jlg' ),
+                                    $percentage_display
+                                );
+
+                                echo '<span class="screen-reader-text"> ' . esc_html( $sr_percentage ) . '</span>';
+                            }
+
+                            echo '</span>';
+                        }
                         ?>
                     </span>
                 </div>

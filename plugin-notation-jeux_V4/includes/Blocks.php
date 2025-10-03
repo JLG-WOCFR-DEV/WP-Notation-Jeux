@@ -357,6 +357,13 @@ class Blocks {
             }
         }
 
+        if ( ! empty( $attributes['scoreDisplay'] ) && is_string( $attributes['scoreDisplay'] ) ) {
+            $display_mode = sanitize_key( $attributes['scoreDisplay'] );
+            if ( in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
+                $atts['display_mode'] = $display_mode;
+            }
+        }
+
         if ( array_key_exists( 'showAnimations', $attributes ) ) {
             $is_enabled          = (bool) $attributes['showAnimations'];
             $atts['animations'] = $is_enabled ? 'oui' : 'non';
@@ -481,6 +488,13 @@ class Blocks {
             $style = sanitize_key( $attributes['style'] );
             if ( in_array( $style, array( 'moderne', 'classique', 'compact' ), true ) ) {
                 $atts['style'] = $style;
+            }
+        }
+
+        if ( ! empty( $attributes['scoreDisplay'] ) && is_string( $attributes['scoreDisplay'] ) ) {
+            $display_mode = sanitize_key( $attributes['scoreDisplay'] );
+            if ( in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
+                $atts['display_mode'] = $display_mode;
             }
         }
 
