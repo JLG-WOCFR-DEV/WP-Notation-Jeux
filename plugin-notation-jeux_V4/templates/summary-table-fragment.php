@@ -421,14 +421,13 @@ else :
                                             if ( $score_value === null ) {
                                                 echo esc_html__( 'N/A', 'notation-jlg' );
                                             } else {
-                                                $formatted_score = esc_html( number_format_i18n( $score_value, 1 ) );
-                                                $max_score       = esc_html( $score_max_label );
+                                                $formatted_score = number_format_i18n( $score_value, 1 );
 
                                                 printf(
                                                     /* translators: %1$s: category score value. %2$s: maximum rating value. */
                                                     esc_html__( '%1$s / %2$s', 'notation-jlg' ),
-                                                    $formatted_score,
-                                                    $max_score
+                                                    esc_html( $formatted_score ),
+                                                    esc_html( $score_max_label )
                                                 );
                                             }
 
