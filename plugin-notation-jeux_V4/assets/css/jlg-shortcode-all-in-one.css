@@ -73,16 +73,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     width: auto;
     height: auto;
-    padding: 0;
+    padding: 4px 8px;
     border: 0;
     background: transparent;
     cursor: pointer;
     opacity: 0.4;
     transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
     filter: grayscale(50%);
-    border-radius: 4px;
+    border-radius: 9999px;
 }
 
 .jlg-aio-flag img {
@@ -91,6 +92,22 @@
     display: block;
     min-height: 18px;
     pointer-events: none;
+}
+
+.jlg-aio-flag-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--jlg-aio-tagline-color, #111827);
+    line-height: 1;
+}
+
+.jlg-aio-flag .screen-reader-text {
+    clip: rect(1px, 1px, 1px, 1px);
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
 }
 
 .jlg-aio-flag.active {
@@ -107,6 +124,20 @@
 .jlg-aio-flag:focus-visible {
     outline: 2px solid var(--jlg-aio-tagline-color, #111827);
     outline-offset: 2px;
+}
+
+.screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    white-space: nowrap;
+    word-wrap: normal !important;
 }
 
 @media (max-width: 480px) {
