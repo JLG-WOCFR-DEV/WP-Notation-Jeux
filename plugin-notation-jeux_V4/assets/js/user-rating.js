@@ -66,6 +66,32 @@ jQuery(document).ready(function($) {
         });
     }
 
+    function setInteractionDisabled(ratingBlock, isDisabled) {
+        var radiogroup = ratingBlock.find('.jlg-user-rating-stars');
+        var stars = ratingBlock.find('.jlg-user-star');
+
+        if (isDisabled) {
+            radiogroup.attr('aria-disabled', 'true');
+            stars.each(function() {
+                var starButton = $(this);
+                starButton.attr('aria-disabled', 'true');
+                starButton.prop('disabled', true);
+            });
+        } else {
+            radiogroup.removeAttr('aria-disabled');
+            stars.each(function() {
+                var starButton = $(this);
+                starButton.removeAttr('aria-disabled');
+                starButton.prop('disabled', false);
+            });
+        }
+    }
+
+    function refreshInteractionAccessibility(ratingBlock) {
+        var shouldDisable = ratingBlock.hasClass('is-loading') || ratingBlock.hasClass('has-voted');
+        setInteractionDisabled(ratingBlock, shouldDisable);
+    }
+
     function updateRatingState(ratingBlock, ratingValue) {
         var stars = ratingBlock.find('.jlg-user-star');
 
@@ -91,6 +117,7 @@ jQuery(document).ready(function($) {
 
             var ratingValue = checkedStar.length ? parseInt(checkedStar.data('value'), 10) : null;
             updateRatingState(ratingBlock, ratingValue);
+            refreshInteractionAccessibility(ratingBlock);
 
             ratingBlock.find('.jlg-user-rating-avg-value').attr({
                 'aria-live': 'polite',
@@ -129,6 +156,7 @@ jQuery(document).ready(function($) {
         }
 
         ratingBlock.addClass('is-loading');
+        refreshInteractionAccessibility(ratingBlock);
 
         $.ajax({
             url: jlg_rating_ajax.ajax_url,
@@ -173,12 +201,14 @@ jQuery(document).ready(function($) {
                     }
                     ratingBlock.find('.jlg-user-star').removeClass('hover');
                 }
+                refreshInteractionAccessibility(ratingBlock);
             },
             error: function() {
                 ratingBlock.removeClass('is-loading has-voted');
                 ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
                 updateRatingState(ratingBlock, null);
                 ratingBlock.find('.jlg-user-star').removeClass('hover');
+                refreshInteractionAccessibility(ratingBlock);
             }
         });
     }
@@ -188,6 +218,10 @@ jQuery(document).ready(function($) {
 
     // Activation au clavier (Espace ou Entrée)
     $('.jlg-user-star').on('keydown', function(event) {
+        if (this.disabled) {
+            return;
+        }
+
         if (event.key === ' ' || event.key === 'Enter' || event.key === 'Spacebar') {
             event.preventDefault();
             submitRating.call(this, event);

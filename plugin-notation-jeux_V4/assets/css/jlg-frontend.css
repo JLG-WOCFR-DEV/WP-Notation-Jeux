@@ -201,6 +201,9 @@
 .jlg-user-rating-block.has-voted .jlg-user-star{cursor:default;}
 .jlg-user-rating-block.has-voted .jlg-user-star:hover,
 .jlg-user-rating-block.has-voted .jlg-user-star.hover{color:#52525b;transform:none;}
+.jlg-user-rating-stars[aria-disabled="true"] .jlg-user-star{cursor:not-allowed;opacity:.6;}
+.jlg-user-rating-stars[aria-disabled="true"] .jlg-user-star:hover,
+.jlg-user-rating-stars[aria-disabled="true"] .jlg-user-star.hover{color:inherit;transform:none;}
 .jlg-user-star:hover,
 .jlg-user-star.hover{color:var(--jlg-user-rating-star-color);transform:scale(1.15);}
 .jlg-user-star.selected{color:var(--jlg-user-rating-star-color);}
