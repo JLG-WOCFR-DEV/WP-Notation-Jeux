@@ -29,7 +29,8 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
             $GLOBALS['jlg_test_posts'],
             $GLOBALS['jlg_test_meta'],
             $GLOBALS['jlg_test_meta_updates'],
-            $GLOBALS['jlg_test_transients']
+            $GLOBALS['jlg_test_transients'],
+            $GLOBALS['jlg_test_registered_post_types']
         );
         $_POST = [];
 
@@ -40,11 +41,14 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
 
     public function test_register_metaboxes_respects_allowed_post_types(): void
     {
-        add_filter('jlg_rated_post_types', static function ($types) {
-            $types[] = 'jlg_review';
+        register_post_type('jlg_review', [
+            'public' => true,
+            'labels' => [
+                'singular_name' => 'Critique JLG',
+            ],
+        ]);
 
-            return $types;
-        });
+        $this->configureAllowedPostTypes(['post', 'jlg_review']);
 
         $post_id = 123;
         $post = new WP_Post([
@@ -63,11 +67,14 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
 
     public function test_save_meta_data_persists_notes_and_details_for_allowed_types(): void
     {
-        add_filter('jlg_rated_post_types', static function ($types) {
-            $types[] = 'jlg_review';
+        register_post_type('jlg_review', [
+            'public' => true,
+            'labels' => [
+                'singular_name' => 'Critique JLG',
+            ],
+        ]);
 
-            return $types;
-        });
+        $this->configureAllowedPostTypes(['post', 'jlg_review']);
 
         $post_id = 456;
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
@@ -118,5 +125,15 @@ class AdminMetaboxesAllowedPostTypesTest extends TestCase
         $this->assertSame('Un jeu exceptionnel', $saved_meta['_jlg_tagline_fr']);
         $this->assertSame('An exceptional game', $saved_meta['_jlg_tagline_en']);
         $this->assertSame(['PC', 'Xbox One'], $saved_meta['_jlg_plateformes']);
+    }
+
+    private function configureAllowedPostTypes(array $types): void
+    {
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
+        $defaults['allowed_post_types'] = array_values($types);
+
+        $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $defaults;
+
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 }

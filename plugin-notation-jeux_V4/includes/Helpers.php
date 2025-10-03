@@ -935,41 +935,76 @@ class Helpers {
      * @return string[] List of sanitized post type identifiers.
      */
     public static function get_allowed_post_types() {
-        $defaults         = self::get_default_settings();
-        $default_post_types = isset( $defaults['allowed_post_types'] ) && is_array( $defaults['allowed_post_types'] )
-            ? $defaults['allowed_post_types']
-            : array( 'post' );
+        $defaults = self::get_default_settings();
 
-        $options    = self::get_plugin_options();
-        $post_types = isset( $options['allowed_post_types'] ) ? $options['allowed_post_types'] : $default_post_types;
+        $default_post_types = self::sanitize_post_type_list(
+            isset( $defaults['allowed_post_types'] ) ? $defaults['allowed_post_types'] : array( 'post' )
+        );
 
-        if ( is_string( $post_types ) ) {
+        if ( empty( $default_post_types ) ) {
+            $default_post_types = array( 'post' );
+        }
+
+        $options          = self::get_plugin_options();
+        $configured_types = isset( $options['allowed_post_types'] )
+            ? $options['allowed_post_types']
+            : $default_post_types;
+
+        $base_post_types = self::sanitize_post_type_list( $configured_types );
+
+        if ( empty( $base_post_types ) ) {
+            $base_post_types = $default_post_types;
+        }
+
+        $filtered_post_types = apply_filters( 'jlg_rated_post_types', $base_post_types );
+
+        if ( ! is_array( $filtered_post_types ) ) {
+            $filtered_post_types = $base_post_types;
+        } else {
+            $filtered_post_types = self::sanitize_post_type_list( $filtered_post_types );
+
+            if ( empty( $filtered_post_types ) ) {
+                $filtered_post_types = $base_post_types;
+            }
+        }
+
+        if ( empty( $filtered_post_types ) ) {
+            $filtered_post_types = $default_post_types;
+        }
+
+        if ( empty( $filtered_post_types ) ) {
+            $filtered_post_types = array( 'post' );
+        }
+
+        return $filtered_post_types;
+    }
+
+    private static function sanitize_post_type_list( $post_types ) {
+        if ( is_string( $post_types ) || is_numeric( $post_types ) ) {
             $post_types = array( $post_types );
         }
 
         if ( ! is_array( $post_types ) ) {
-            $post_types = $default_post_types;
+            return array();
         }
 
-        $post_types = array_values( array_filter( array_map( 'sanitize_key', $post_types ) ) );
+        $sanitized = array();
 
-        if ( empty( $post_types ) ) {
-            $post_types = $default_post_types;
+        foreach ( $post_types as $type ) {
+            if ( is_array( $type ) ) {
+                continue;
+            }
+
+            $key = sanitize_key( (string) $type );
+
+            if ( $key === '' ) {
+                continue;
+            }
+
+            $sanitized[] = $key;
         }
 
-        $post_types = apply_filters( 'jlg_rated_post_types', $post_types );
-
-        if ( ! is_array( $post_types ) ) {
-            $post_types = $default_post_types;
-        }
-
-        $post_types = array_values( array_filter( array_map( 'sanitize_key', $post_types ) ) );
-
-        if ( empty( $post_types ) ) {
-            $post_types = $default_post_types;
-        }
-
-        return array_values( array_unique( $post_types ) );
+        return array_values( array_unique( $sanitized ) );
     }
 
     public static function flush_plugin_options_cache() {

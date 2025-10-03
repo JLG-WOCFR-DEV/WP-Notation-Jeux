@@ -162,24 +162,80 @@ class FormRenderer {
 
         $selected = array_map( 'sanitize_key', $selected );
 
-        $post_types = \get_post_types( array( 'public' => true ), 'objects' );
+        $choices = array();
 
-        if ( ! is_array( $post_types ) ) {
-            $post_types = array();
+        if ( isset( $args['choices'] ) && is_array( $args['choices'] ) ) {
+            foreach ( $args['choices'] as $slug => $label ) {
+                $slug = sanitize_key( (string) $slug );
+
+                if ( $slug === '' ) {
+                    continue;
+                }
+
+                if ( ! is_string( $label ) ) {
+                    $label = '';
+                }
+
+                $label = trim( $label );
+
+                if ( $label === '' ) {
+                    $label = ucwords( str_replace( array( '-', '_' ), ' ', $slug ) );
+                }
+
+                $choices[ $slug ] = $label;
+            }
+        }
+
+        if ( empty( $choices ) && function_exists( 'get_post_types' ) ) {
+            $post_types = \get_post_types( array( 'public' => true ), 'objects' );
+
+            if ( is_array( $post_types ) ) {
+                foreach ( $post_types as $slug => $post_type ) {
+                    $slug = sanitize_key( (string) $slug );
+
+                    if ( $slug === '' ) {
+                        continue;
+                    }
+
+                    $label = '';
+
+                    if ( isset( $post_type->labels->singular_name ) && is_string( $post_type->labels->singular_name ) ) {
+                        $label = trim( $post_type->labels->singular_name );
+                    }
+
+                    if ( $label === '' && isset( $post_type->label ) && is_string( $post_type->label ) ) {
+                        $label = trim( $post_type->label );
+                    }
+
+                    if ( $label === '' ) {
+                        $label = ucwords( str_replace( array( '-', '_' ), ' ', $slug ) );
+                    }
+
+                    $choices[ $slug ] = $label;
+                }
+            }
+        }
+
+        if ( empty( $choices ) ) {
+            $choices = array( 'post' => 'post' );
+        }
+
+        $size = count( $choices );
+        if ( $size < 4 ) {
+            $size = 4;
+        } elseif ( $size > 12 ) {
+            $size = 12;
         }
 
         printf(
-            '<select name="%s[%s][]" id="%s" multiple="multiple" size="6" class="regular-text">',
+            '<select name="%s[%s][]" id="%s" multiple="multiple" size="%d" class="regular-text">',
             esc_attr( self::$option_name ),
             esc_attr( $field_id ),
-            esc_attr( $field_id )
+            esc_attr( $field_id ),
+            (int) $size
         );
 
-        foreach ( $post_types as $slug => $post_type ) {
-            $label = isset( $post_type->labels->singular_name ) && $post_type->labels->singular_name
-                ? $post_type->labels->singular_name
-                : $post_type->label;
-
+        foreach ( $choices as $slug => $label ) {
             printf(
                 '<option value="%s"%s>%s</option>',
                 esc_attr( $slug ),

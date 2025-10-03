@@ -20,6 +20,7 @@ class ShortcodeAllowedPostTypesTest extends TestCase
         $GLOBALS['jlg_test_options'] = [];
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $GLOBALS['jlg_test_filters'] = [];
+        $GLOBALS['jlg_test_registered_post_types'] = [];
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
@@ -33,17 +34,24 @@ class ShortcodeAllowedPostTypesTest extends TestCase
             $GLOBALS['jlg_test_meta'],
             $GLOBALS['jlg_test_options'],
             $GLOBALS['jlg_test_current_post_id'],
-            $GLOBALS['jlg_test_filters']
+            $GLOBALS['jlg_test_filters'],
+            $GLOBALS['jlg_test_registered_post_types']
         );
     }
 
     public function test_tagline_renders_for_custom_allowed_type(): void
     {
-        add_filter('jlg_rated_post_types', static function ($types) {
-            $types[] = 'jlg_review';
+        register_post_type('jlg_review', [
+            'public' => true,
+            'labels' => [
+                'singular_name' => 'Critique JLG',
+            ],
+        ]);
 
-            return $types;
-        });
+        $this->configureOptions([
+            'allowed_post_types' => ['post', 'jlg_review'],
+            'tagline_enabled'    => 1,
+        ]);
 
         $post_id = 501;
 
@@ -58,12 +66,6 @@ class ShortcodeAllowedPostTypesTest extends TestCase
             '_jlg_tagline_en' => 'Custom tagline EN',
         ];
 
-        $defaults = \JLG\Notation\Helpers::get_default_settings();
-        $GLOBALS['jlg_test_options']['notation_jlg_settings'] = array_merge($defaults, [
-            'tagline_enabled' => 1,
-        ]);
-        \JLG\Notation\Helpers::flush_plugin_options_cache();
-
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
         $shortcode = new \JLG\Notation\Shortcodes\Tagline();
@@ -76,6 +78,8 @@ class ShortcodeAllowedPostTypesTest extends TestCase
 
     public function test_rating_block_rejects_disallowed_type(): void
     {
+        $this->configureOptions([]);
+
         $post_id = 777;
 
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
@@ -101,11 +105,16 @@ class ShortcodeAllowedPostTypesTest extends TestCase
 
     public function test_game_info_renders_for_custom_allowed_type(): void
     {
-        add_filter('jlg_rated_post_types', static function ($types) {
-            $types[] = 'jlg_review';
+        register_post_type('jlg_review', [
+            'public' => true,
+            'labels' => [
+                'singular_name' => 'Critique JLG',
+            ],
+        ]);
 
-            return $types;
-        });
+        $this->configureOptions([
+            'allowed_post_types' => ['post', 'jlg_review'],
+        ]);
 
         $post_id = 888;
 
@@ -123,20 +132,19 @@ class ShortcodeAllowedPostTypesTest extends TestCase
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
         $shortcode = new \JLG\Notation\Shortcodes\GameInfo();
+        $output     = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
 
-        try {
-            $output = $shortcode->render();
-
-            $this->assertNotSame('', $output);
-            $this->assertStringContainsString('Studio Test', $output);
-            $this->assertStringContainsString('Publisher Test', $output);
-        } finally {
-            unset($GLOBALS['jlg_test_filters']['jlg_rated_post_types']);
-        }
+        $this->assertNotSame('', $output);
+        $this->assertStringContainsString('Studio Test', $output);
+        $this->assertStringContainsString('Publisher Test', $output);
     }
 
     public function test_game_info_rejects_disallowed_type(): void
     {
+        $this->configureOptions([]);
+
         $post_id = 889;
 
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
@@ -159,11 +167,16 @@ class ShortcodeAllowedPostTypesTest extends TestCase
 
     public function test_user_rating_renders_for_custom_allowed_type(): void
     {
-        add_filter('jlg_rated_post_types', static function ($types) {
-            $types[] = 'jlg_review';
+        register_post_type('jlg_review', [
+            'public' => true,
+            'labels' => [
+                'singular_name' => 'Critique JLG',
+            ],
+        ]);
 
-            return $types;
-        });
+        $this->configureOptions([
+            'allowed_post_types' => ['post', 'jlg_review'],
+        ]);
 
         $post_id = 990;
 
@@ -181,15 +194,29 @@ class ShortcodeAllowedPostTypesTest extends TestCase
         $GLOBALS['jlg_test_current_post_id'] = $post_id;
 
         $shortcode = new \JLG\Notation\Shortcodes\UserRating();
+        $output     = $shortcode->render();
 
-        try {
-            $output = $shortcode->render();
+        $this->assertNotSame('', $output);
+        $this->assertStringContainsString('4.5', $output);
+        $this->assertStringContainsString('120', $output);
+    }
 
-            $this->assertNotSame('', $output);
-            $this->assertStringContainsString('4.5', $output);
-            $this->assertStringContainsString('120', $output);
-        } finally {
-            unset($GLOBALS['jlg_test_filters']['jlg_rated_post_types']);
+    private function configureOptions(array $overrides): void
+    {
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
+        $options  = array_merge($defaults, $overrides);
+
+        if (isset($options['allowed_post_types'])) {
+            $allowed = $options['allowed_post_types'];
+            if (!is_array($allowed)) {
+                $allowed = [$allowed];
+            }
+
+            $options['allowed_post_types'] = array_values($allowed);
         }
+
+        $GLOBALS['jlg_test_options']['notation_jlg_settings'] = $options;
+
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 }

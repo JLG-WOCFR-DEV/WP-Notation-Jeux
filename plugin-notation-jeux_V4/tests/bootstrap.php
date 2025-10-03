@@ -276,6 +276,109 @@ if (!function_exists('register_post_type')) {
     }
 }
 
+if (!function_exists('get_post_types')) {
+    function get_post_types($args = [], $output = 'names', $operator = 'and') {
+        unset($operator);
+
+        $args   = is_array($args) ? $args : [];
+        $output = $output === 'objects' ? 'objects' : 'names';
+
+        $registered = $GLOBALS['jlg_test_registered_post_types'] ?? [];
+
+        $built_in = [
+            'post' => [
+                'public' => true,
+                'labels' => [
+                    'name'          => 'Articles',
+                    'singular_name' => 'Article',
+                ],
+            ],
+            'page' => [
+                'public' => true,
+                'labels' => [
+                    'name'          => 'Pages',
+                    'singular_name' => 'Page',
+                ],
+            ],
+        ];
+
+        $all     = array_merge($built_in, $registered);
+        $results = [];
+
+        foreach ($all as $slug => $data) {
+            $slug = sanitize_key($slug);
+
+            if ($slug === '') {
+                continue;
+            }
+
+            $data = is_array($data) ? $data : [];
+
+            $labels = $data['labels'] ?? [];
+            if (!is_array($labels)) {
+                $labels = [];
+            }
+
+            $default_label = ucwords(str_replace(['-', '_'], ' ', $slug));
+            $labels = array_merge(
+                [
+                    'name'          => $default_label,
+                    'singular_name' => $default_label,
+                ],
+                $labels
+            );
+
+            $object = (object) array_merge(
+                [
+                    'name'   => $slug,
+                    'label'  => $labels['name'],
+                    'labels' => (object) $labels,
+                    'public' => $data['public'] ?? true,
+                ],
+                $data
+            );
+
+            $matches = true;
+            foreach ($args as $key => $value) {
+                $property = $object->$key ?? null;
+
+                if (is_bool($value)) {
+                    if ((bool) $property !== $value) {
+                        $matches = false;
+                        break;
+                    }
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    if (!in_array($property, $value, true)) {
+                        $matches = false;
+                        break;
+                    }
+                    continue;
+                }
+
+                if ($property !== $value) {
+                    $matches = false;
+                    break;
+                }
+            }
+
+            if (!$matches) {
+                continue;
+            }
+
+            if ($output === 'objects') {
+                $results[$slug] = $object;
+            } else {
+                $results[$slug] = $slug;
+            }
+        }
+
+        return $results;
+    }
+}
+
 if (!function_exists('post_type_exists')) {
     function post_type_exists($post_type) {
         $post_type = sanitize_key($post_type);
