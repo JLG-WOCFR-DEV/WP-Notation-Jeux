@@ -74,6 +74,26 @@ class Settings {
 
         $sanitized['rating_categories'] = $this->sanitize_rating_categories( $raw_categories, $default_categories, $current_categories );
 
+        $public_post_types_objects   = \get_post_types( array( 'public' => true ) );
+        $available_public_post_types = is_array( $public_post_types_objects ) ? array_keys( $public_post_types_objects ) : array();
+        if ( isset( $input['allowed_post_types'] ) ) {
+            $raw_allowed_post_types = $input['allowed_post_types'];
+        } elseif ( isset( $current_options['allowed_post_types'] ) ) {
+            $raw_allowed_post_types = $current_options['allowed_post_types'];
+        } else {
+            $raw_allowed_post_types = $defaults['allowed_post_types'] ?? array();
+        }
+
+        $default_allowed_post_types = isset( $defaults['allowed_post_types'] ) && is_array( $defaults['allowed_post_types'] )
+            ? $defaults['allowed_post_types']
+            : array( 'post' );
+
+        $sanitized['allowed_post_types'] = $this->sanitize_allowed_post_types(
+            $raw_allowed_post_types,
+            $default_allowed_post_types,
+            $available_public_post_types
+        );
+
         // Traiter les autres champs
         foreach ( $defaults as $key => $default_value ) {
             // Skip les champs déjà traités
@@ -82,6 +102,10 @@ class Settings {
             }
 
             if ( $key === 'rating_categories' ) {
+                continue;
+            }
+
+            if ( $key === 'allowed_post_types' ) {
                 continue;
             }
 
@@ -188,6 +212,53 @@ class Settings {
 
         // Texte par défaut
         return sanitize_text_field( $value );
+    }
+
+    private function sanitize_allowed_post_types( $raw_value, array $defaults, array $allowed_slugs ) {
+        if ( is_string( $raw_value ) || is_numeric( $raw_value ) ) {
+            $raw_value = array( $raw_value );
+        }
+
+        if ( ! is_array( $raw_value ) ) {
+            $raw_value = array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $raw_value as $value ) {
+            if ( is_array( $value ) ) {
+                continue;
+            }
+
+            $unslashed = wp_unslash( (string) $value );
+            $key       = sanitize_key( $unslashed );
+
+            if ( $key !== '' ) {
+                $sanitized[] = $key;
+            }
+        }
+
+        if ( ! empty( $allowed_slugs ) ) {
+            $sanitized = array_values( array_intersect( $sanitized, $allowed_slugs ) );
+        } else {
+            $sanitized = array_values( array_unique( $sanitized ) );
+        }
+
+        if ( empty( $sanitized ) ) {
+            $fallback = array_values( array_intersect( $defaults, $allowed_slugs ) );
+
+            if ( empty( $fallback ) ) {
+                $fallback = $defaults;
+            }
+
+            if ( empty( $fallback ) ) {
+                $fallback = array( 'post' );
+            }
+
+            $sanitized = array_values( array_unique( $fallback ) );
+        }
+
+        return $sanitized;
     }
 
     private function normalize_numeric_value( $key, $value, $default_value ) {
@@ -316,8 +387,30 @@ class Settings {
             )
         );
 
-        // Section 2: Présentation de la Note Globale
-        add_settings_section( 'jlg_layout', '2. 🎨 Présentation de la Note Globale', null, 'notation_jlg_page' );
+        // Section 2: Contenus
+        add_settings_section(
+            'jlg_content',
+            '2. 📚 Contenus',
+            function () {
+                echo '<p class="description">' . esc_html__( 'Sélectionnez les types de contenus qui peuvent utiliser les notations du plugin.', 'notation-jlg' ) . '</p>';
+            },
+            'notation_jlg_page'
+        );
+        add_settings_field(
+            'allowed_post_types',
+            __( 'Types de contenus autorisés', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_content',
+            array(
+                'id'   => 'allowed_post_types',
+                'type' => 'post_types',
+                'desc' => __( 'Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs types.', 'notation-jlg' ),
+            )
+        );
+
+        // Section 3: Présentation de la Note Globale
+        add_settings_section( 'jlg_layout', '3. 🎨 Présentation de la Note Globale', null, 'notation_jlg_page' );
         $score_max_field_args = array(
             'id'    => 'score_max',
             'type'  => 'number',
@@ -402,8 +495,8 @@ class Settings {
             )
         );
 
-        // Section 3: Couleurs & Thèmes
-        add_settings_section( 'jlg_colors', '3. 🌈 Couleurs & Thèmes', null, 'notation_jlg_page' );
+        // Section 4: Couleurs & Thèmes
+        add_settings_section( 'jlg_colors', '4. 🌈 Couleurs & Thèmes', null, 'notation_jlg_page' );
         add_settings_field(
             'visual_theme',
             'Thème Visuel Principal',
@@ -489,8 +582,8 @@ class Settings {
             );
         }
 
-        // Section 4: Effet Glow/Neon (Mode Texte)
-        add_settings_section( 'jlg_glow_text', '4. ✨ Effet Neon - Mode Texte', null, 'notation_jlg_page' );
+        // Section 5: Effet Glow/Neon (Mode Texte)
+        add_settings_section( 'jlg_glow_text', '5. ✨ Effet Neon - Mode Texte', null, 'notation_jlg_page' );
         add_settings_field(
             'text_glow_enabled',
             'Activer l\'effet Neon',
@@ -575,8 +668,8 @@ class Settings {
         );
         $this->store_field_constraints( $text_glow_speed_args );
 
-        // Section 5: Effet Glow/Neon (Mode Cercle)
-        add_settings_section( 'jlg_glow_circle', '5. ✨ Effet Neon - Mode Cercle', null, 'notation_jlg_page' );
+        // Section 6: Effet Glow/Neon (Mode Cercle)
+        add_settings_section( 'jlg_glow_circle', '6. ✨ Effet Neon - Mode Cercle', null, 'notation_jlg_page' );
         add_settings_field(
             'circle_glow_enabled',
             'Activer l\'effet Neon',
@@ -660,8 +753,8 @@ class Settings {
         );
         $this->store_field_constraints( $circle_glow_speed_args );
 
-        // Section 6: Modules
-        add_settings_section( 'jlg_modules', '6. 🧩 Modules', null, 'notation_jlg_page' );
+        // Section 7: Modules
+        add_settings_section( 'jlg_modules', '7. 🧩 Modules', null, 'notation_jlg_page' );
         $module_fields = array(
             'user_rating_enabled' => 'Notation utilisateurs',
             'tagline_enabled'     => 'Taglines bilingues',
@@ -682,8 +775,8 @@ class Settings {
             );
         }
 
-        // Section 7: Modules - Tagline
-        add_settings_section( 'jlg_tagline_section', '7. 💬 Module Tagline', null, 'notation_jlg_page' );
+        // Section 8: Modules - Tagline
+        add_settings_section( 'jlg_tagline_section', '8. 💬 Module Tagline', null, 'notation_jlg_page' );
         $tagline_font_size_args = array(
 			'id'   => 'tagline_font_size',
 			'type' => 'number',
@@ -722,8 +815,8 @@ class Settings {
 			)
         );
 
-        // Section 8: Modules - Notation Utilisateurs
-        add_settings_section( 'jlg_user_rating_section', '8. ⭐ Module Notation Utilisateurs', null, 'notation_jlg_page' );
+        // Section 9: Modules - Notation Utilisateurs
+        add_settings_section( 'jlg_user_rating_section', '9. ⭐ Module Notation Utilisateurs', null, 'notation_jlg_page' );
         add_settings_field(
             'user_rating_title_color',
             'Couleur du titre',
@@ -758,8 +851,8 @@ class Settings {
 			)
         );
 
-        // Section 9: Tableau Récapitulatif
-        add_settings_section( 'jlg_table', '9. 📊 Tableau Récapitulatif', null, 'notation_jlg_page' );
+        // Section 10: Tableau Récapitulatif
+        add_settings_section( 'jlg_table', '10. 📊 Tableau Récapitulatif', null, 'notation_jlg_page' );
         add_settings_field(
             'table_header_bg_color',
             'Fond de l\'en-tête',
@@ -862,8 +955,8 @@ class Settings {
         );
         $this->store_field_constraints( $table_border_width_args );
 
-        // Section 10: Style des Vignettes
-        add_settings_section( 'jlg_thumbnail_section', '10. 🖼️ Style des Vignettes', null, 'notation_jlg_page' );
+        // Section 11: Style des Vignettes
+        add_settings_section( 'jlg_thumbnail_section', '11. 🖼️ Style des Vignettes', null, 'notation_jlg_page' );
         add_settings_field(
             'thumb_text_color',
             'Couleur du texte',
@@ -923,8 +1016,8 @@ class Settings {
         );
         $this->store_field_constraints( $thumb_border_radius_args );
 
-        // Section 11: CSS Personnalisé
-        add_settings_section( 'jlg_custom', '11. 🎨 CSS Personnalisé', null, 'notation_jlg_page' );
+        // Section 12: CSS Personnalisé
+        add_settings_section( 'jlg_custom', '12. 🎨 CSS Personnalisé', null, 'notation_jlg_page' );
         add_settings_field(
             'custom_css',
             'Votre CSS',
@@ -938,8 +1031,8 @@ class Settings {
 			)
         );
 
-        // Section 12: SEO
-        add_settings_section( 'jlg_seo_section', '12. 🔍 SEO', null, 'notation_jlg_page' );
+        // Section 13: SEO
+        add_settings_section( 'jlg_seo_section', '13. 🔍 SEO', null, 'notation_jlg_page' );
         add_settings_field(
             'seo_schema_enabled',
             'Activer le schéma de notation (JSON-LD)',
@@ -953,8 +1046,8 @@ class Settings {
 			)
         );
 
-        // Section 13: API
-        add_settings_section( 'jlg_api_section', '13. 🌐 API', null, 'notation_jlg_page' );
+        // Section 14: API
+        add_settings_section( 'jlg_api_section', '14. 🌐 API', null, 'notation_jlg_page' );
         add_settings_field(
             'rawg_api_key',
             'Clé API RAWG.io',
@@ -968,8 +1061,8 @@ class Settings {
 			)
         );
 
-        // Section 14: Debug
-        add_settings_section( 'jlg_debug_section', '14. 🔧 Debug', null, 'notation_jlg_page' );
+        // Section 15: Debug
+        add_settings_section( 'jlg_debug_section', '15. 🔧 Debug', null, 'notation_jlg_page' );
         add_settings_field(
             'debug_mode_enabled',
             'Activer le mode debug',
@@ -986,8 +1079,8 @@ class Settings {
         // Ajout d'un bouton de debug pour voir les options actuelles
         add_settings_field( 'debug_current_options', 'Options actuelles', array( $this, 'render_debug_info' ), 'notation_jlg_page', 'jlg_debug_section' );
 
-        // Section 15: Game Explorer
-        add_settings_section( 'jlg_game_explorer', '15. 🧭 Game Explorer', null, 'notation_jlg_page' );
+        // Section 16: Game Explorer
+        add_settings_section( 'jlg_game_explorer', '16. 🧭 Game Explorer', null, 'notation_jlg_page' );
 
         $game_explorer_columns_args = array(
 			'id'   => 'game_explorer_columns',

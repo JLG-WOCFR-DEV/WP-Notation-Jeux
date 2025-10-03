@@ -93,6 +93,54 @@ class FormRenderer {
         self::render_description( $args );
     }
 
+    public static function post_types_field( $args ) {
+        $field_id = $args['id'];
+        $options  = Helpers::get_plugin_options();
+        $defaults = Helpers::get_default_settings();
+
+        $selected = $options[ $field_id ] ?? ( $defaults[ $field_id ] ?? array() );
+
+        if ( is_string( $selected ) ) {
+            $selected = array( $selected );
+        }
+
+        if ( ! is_array( $selected ) ) {
+            $selected = array();
+        }
+
+        $selected = array_map( 'sanitize_key', $selected );
+
+        $post_types = \get_post_types( array( 'public' => true ), 'objects' );
+
+        if ( ! is_array( $post_types ) ) {
+            $post_types = array();
+        }
+
+        printf(
+            '<select name="%s[%s][]" id="%s" multiple="multiple" size="6" class="regular-text">',
+            esc_attr( self::$option_name ),
+            esc_attr( $field_id ),
+            esc_attr( $field_id )
+        );
+
+        foreach ( $post_types as $slug => $post_type ) {
+            $label = isset( $post_type->labels->singular_name ) && $post_type->labels->singular_name
+                ? $post_type->labels->singular_name
+                : $post_type->label;
+
+            printf(
+                '<option value="%s"%s>%s</option>',
+                esc_attr( $slug ),
+                selected( in_array( $slug, $selected, true ), true, false ),
+                esc_html( $label )
+            );
+        }
+
+        echo '</select>';
+
+        self::render_description( $args );
+    }
+
     public static function number_field( $args ) {
         $options = Helpers::get_plugin_options();
         $min     = $args['min'] ?? 0;
