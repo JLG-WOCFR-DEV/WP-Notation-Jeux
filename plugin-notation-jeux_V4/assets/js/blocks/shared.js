@@ -7,6 +7,8 @@
     var Fragment = wp.element.Fragment;
     var useState = wp.element.useState;
     var useMemo = wp.element.useMemo;
+    var useEffect = wp.element.useEffect;
+    var useRef = wp.element.useRef;
     var useSelect = wp.data.useSelect;
     var __ = wp.i18n.__;
     var ComboboxControl = wp.components.ComboboxControl;
@@ -148,10 +150,32 @@
         );
     };
 
+    var ensureDynamicPreviewReady = function ensureDynamicPreviewReady(root) {
+        if (!root || !root.querySelectorAll) {
+            return;
+        }
+
+        var animatedElements = root.querySelectorAll('.jlg-animate:not(.is-in-view), .animate-in:not(.is-visible)');
+
+        if (!animatedElements.length) {
+            return;
+        }
+
+        animatedElements.forEach(function (element) {
+            if (element.classList.contains('jlg-animate')) {
+                element.classList.add('is-in-view');
+            }
+            if (element.classList.contains('animate-in')) {
+                element.classList.add('is-visible');
+            }
+        });
+    };
+
     var BlockPreview = function BlockPreview(props) {
         var blockName = props.block;
         var attributes = props.attributes || {};
         var label = props.label || __('Prévisualisation du bloc', 'notation-jlg');
+        var containerRef = useRef(null);
 
         if (!ServerSideRender) {
             return createElement(
@@ -161,9 +185,36 @@
             );
         }
 
+        useEffect(
+            function () {
+                var node = containerRef.current;
+                if (!node) {
+                    return;
+                }
+
+                var rafId = window.requestAnimationFrame(function () {
+                    ensureDynamicPreviewReady(node);
+                });
+
+                var observer = new MutationObserver(function () {
+                    ensureDynamicPreviewReady(node);
+                });
+
+                observer.observe(node, { childList: true, subtree: true });
+
+                return function () {
+                    if (rafId) {
+                        window.cancelAnimationFrame(rafId);
+                    }
+                    observer.disconnect();
+                };
+            },
+            [blockName, JSON.stringify(attributes)]
+        );
+
         return createElement(
             'div',
-            { className: 'notation-jlg-block-preview' },
+            { className: 'notation-jlg-block-preview', ref: containerRef },
             createElement(ServerSideRender, { block: blockName, attributes: attributes })
         );
     };
@@ -171,4 +222,5 @@
     window.jlgBlocks = window.jlgBlocks || {};
     window.jlgBlocks.PostPicker = PostPicker;
     window.jlgBlocks.BlockPreview = BlockPreview;
+    window.jlgBlocks.ensureDynamicPreviewReady = ensureDynamicPreviewReady;
 })(window.wp);
