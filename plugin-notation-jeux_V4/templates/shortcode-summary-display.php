@@ -154,7 +154,7 @@ $letters = range( 'A', 'Z' );
         </div>
     <?php endif; ?>
 
-    <div class="jlg-summary-content">
+    <div class="jlg-summary-content" role="status" aria-live="polite" aria-busy="false">
         <?php
         echo \JLG\Notation\Frontend::get_template_html(
             'summary-table-fragment',
