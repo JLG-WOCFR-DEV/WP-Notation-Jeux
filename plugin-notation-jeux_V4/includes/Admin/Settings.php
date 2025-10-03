@@ -74,8 +74,7 @@ class Settings {
 
         $sanitized['rating_categories'] = $this->sanitize_rating_categories( $raw_categories, $default_categories, $current_categories );
 
-        $public_post_types_objects   = \get_post_types( array( 'public' => true ) );
-        $available_public_post_types = is_array( $public_post_types_objects ) ? array_keys( $public_post_types_objects ) : array();
+        $available_public_post_types = $this->get_public_post_type_slugs();
         if ( isset( $input['allowed_post_types'] ) ) {
             $raw_allowed_post_types = $input['allowed_post_types'];
         } elseif ( isset( $current_options['allowed_post_types'] ) ) {
@@ -261,6 +260,56 @@ class Settings {
         return $sanitized;
     }
 
+    private function get_public_post_type_choices() {
+        if ( ! function_exists( 'get_post_types' ) ) {
+            return array();
+        }
+
+        $post_types = \get_post_types( array( 'public' => true ), 'objects' );
+
+        if ( ! is_array( $post_types ) ) {
+            return array();
+        }
+
+        $choices = array();
+
+        foreach ( $post_types as $slug => $object ) {
+            $slug = sanitize_key( (string) $slug );
+
+            if ( $slug === '' ) {
+                continue;
+            }
+
+            $label = '';
+
+            if ( isset( $object->labels->singular_name ) && is_string( $object->labels->singular_name ) ) {
+                $label = trim( $object->labels->singular_name );
+            }
+
+            if ( $label === '' && isset( $object->label ) && is_string( $object->label ) ) {
+                $label = trim( $object->label );
+            }
+
+            if ( $label === '' ) {
+                $label = ucwords( str_replace( array( '-', '_' ), ' ', $slug ) );
+            }
+
+            $choices[ $slug ] = $label;
+        }
+
+        return $choices;
+    }
+
+    private function get_public_post_type_slugs() {
+        $choices = $this->get_public_post_type_choices();
+
+        if ( empty( $choices ) ) {
+            return array();
+        }
+
+        return array_keys( $choices );
+    }
+
     private function normalize_numeric_value( $key, $value, $default_value ) {
         $constraints = $this->field_constraints[ $key ];
 
@@ -403,9 +452,10 @@ class Settings {
             'notation_jlg_page',
             'jlg_content',
             array(
-                'id'   => 'allowed_post_types',
-                'type' => 'post_types',
-                'desc' => __( 'Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs types.', 'notation-jlg' ),
+                'id'      => 'allowed_post_types',
+                'type'    => 'post_types',
+                'choices' => $this->get_public_post_type_choices(),
+                'desc'    => __( 'Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs types.', 'notation-jlg' ),
             )
         );
 
