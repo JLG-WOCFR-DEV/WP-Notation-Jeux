@@ -4,7 +4,11 @@ jQuery(document).ready(function($) {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var toggleTagline = function($trigger) {
-        var selectedLang = $trigger.data('lang');
+        var selectedLang = $trigger.attr('data-lang');
+
+        if (!selectedLang) {
+            return;
+        }
         var $taglineBlock = $trigger.closest('.jlg-tagline-block');
 
         if ($trigger.hasClass('active')) {

@@ -38,6 +38,7 @@ $data_attributes  = sprintf(
                 aria-label="<?php echo esc_attr__( 'Français', 'notation-jlg' ); ?>"
             >
                 <img src="<?php echo esc_url( JLG_NOTATION_PLUGIN_URL . 'assets/flags/fr.svg' ); ?>" alt="">
+                <span class="jlg-aio-flag-label"><?php echo esc_html__( 'Français', 'notation-jlg' ); ?></span>
             </button>
             <button
                 type="button"
@@ -47,6 +48,7 @@ $data_attributes  = sprintf(
                 aria-label="<?php echo esc_attr__( 'English', 'notation-jlg' ); ?>"
             >
                 <img src="<?php echo esc_url( JLG_NOTATION_PLUGIN_URL . 'assets/flags/gb.svg' ); ?>" alt="">
+                <span class="jlg-aio-flag-label"><?php echo esc_html__( 'English', 'notation-jlg' ); ?></span>
             </button>
         </div>
         <?php endif; ?>
