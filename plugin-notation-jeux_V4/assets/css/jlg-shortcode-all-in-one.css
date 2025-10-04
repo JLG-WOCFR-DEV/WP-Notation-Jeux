@@ -60,6 +60,42 @@
     padding: 0 clamp(16px, 8vw, 40px);
 }
 
+.jlg-aio-video {
+    padding: 0 30px 30px;
+}
+
+.jlg-all-in-one-block.style-compact .jlg-aio-video {
+    padding: 0 20px 20px;
+}
+
+.jlg-aio-video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 12px 30px -12px rgba(15, 23, 42, 0.35);
+}
+
+.jlg-aio-video-wrapper iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.jlg-aio-video-fallback {
+    margin: 0;
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: var(--jlg-aio-bg-secondary, #f4f4f5);
+    color: var(--jlg-aio-text-color-secondary, #4b5563);
+    text-align: center;
+    font-style: italic;
+}
+
 .jlg-aio-flags {
     position: absolute;
     top: 15px;

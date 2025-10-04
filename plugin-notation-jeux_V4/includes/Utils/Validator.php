@@ -2,6 +2,7 @@
 
 namespace JLG\Notation\Utils;
 
+use DateTime;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,6 +11,28 @@ exit;
 
 class Validator {
     private static $allowed_pegi_values = array( '3', '7', '12', '16', '18' );
+    private static $allowed_video_providers = array(
+        'youtube' => array(
+            'label'   => 'YouTube',
+            'domains' => array(
+                'youtube.com',
+                'www.youtube.com',
+                'm.youtube.com',
+                'youtu.be',
+                'www.youtu.be',
+                'youtube-nocookie.com',
+                'www.youtube-nocookie.com',
+            ),
+        ),
+        'vimeo'   => array(
+            'label'   => 'Vimeo',
+            'domains' => array(
+                'vimeo.com',
+                'www.vimeo.com',
+                'player.vimeo.com',
+            ),
+        ),
+    );
 
     public static function is_valid_score( $score, $allow_empty = true ) {
         if ( ( $score === '' || $score === null ) && $allow_empty ) {
@@ -191,6 +214,133 @@ class Validator {
 
         $sanitized = array_map( 'sanitize_text_field', $platforms );
         return array_values( array_intersect( $sanitized, $allowed_platforms ) );
+    }
+
+    public static function get_allowed_video_providers() {
+        return array_keys( self::$allowed_video_providers );
+    }
+
+    public static function get_video_provider_label( $provider ) {
+        $provider = self::sanitize_video_provider( $provider );
+
+        if ( $provider === '' ) {
+            return '';
+        }
+
+        return isset( self::$allowed_video_providers[ $provider ]['label'] )
+            ? self::$allowed_video_providers[ $provider ]['label']
+            : '';
+    }
+
+    public static function sanitize_video_provider( $provider ) {
+        if ( ! is_string( $provider ) ) {
+            return '';
+        }
+
+        $provider = strtolower( trim( $provider ) );
+
+        return isset( self::$allowed_video_providers[ $provider ] ) ? $provider : '';
+    }
+
+    public static function detect_video_provider_from_url( $url ) {
+        if ( ! is_string( $url ) || $url === '' ) {
+            return '';
+        }
+
+        $host = wp_parse_url( $url, PHP_URL_HOST );
+        if ( ! is_string( $host ) || $host === '' ) {
+            return '';
+        }
+
+        $host = strtolower( $host );
+        $host = preg_replace( '/^www\./', '', $host );
+
+        foreach ( self::$allowed_video_providers as $provider => $definition ) {
+            foreach ( $definition['domains'] as $domain ) {
+                $domain = strtolower( $domain );
+
+                if ( $host === $domain || substr( $host, - strlen( $domain ) ) === $domain ) {
+                    return $provider;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    public static function sanitize_review_video_data( $url, $provider = '' ) {
+        $raw_url      = is_string( $url ) ? trim( $url ) : '';
+        $sanitized_provider = self::sanitize_video_provider( $provider );
+
+        if ( $raw_url === '' ) {
+            return array(
+                'url'      => '',
+                'provider' => $sanitized_provider,
+                'error'    => null,
+            );
+        }
+
+        $sanitized_url = esc_url_raw( $raw_url );
+
+        if ( $sanitized_url === '' || ! self::is_valid_http_url( $sanitized_url ) ) {
+            return array(
+                'url'      => '',
+                'provider' => '',
+                'error'    => __( 'URL de vidéo invalide. Utilisez un lien complet commençant par http ou https.', 'notation-jlg' ),
+            );
+        }
+
+        $detected_provider = self::detect_video_provider_from_url( $sanitized_url );
+
+        if ( $sanitized_provider !== '' && $detected_provider !== '' && $sanitized_provider !== $detected_provider ) {
+            return array(
+                'url'      => '',
+                'provider' => '',
+                'error'    => __( 'Le fournisseur sélectionné ne correspond pas à l\'URL fournie.', 'notation-jlg' ),
+            );
+        }
+
+        if ( $sanitized_provider === '' ) {
+            $sanitized_provider = $detected_provider;
+        }
+
+        if ( $sanitized_provider === '' ) {
+            $labels = array();
+
+            foreach ( self::$allowed_video_providers as $definition ) {
+                if ( isset( $definition['label'] ) ) {
+                    $labels[] = $definition['label'];
+                }
+            }
+
+            return array(
+                'url'      => '',
+                'provider' => '',
+                'error'    => sprintf(
+                    /* translators: %s: list of allowed video providers. */
+                    __( 'Fournisseur vidéo non reconnu. Fournisseurs acceptés : %s.', 'notation-jlg' ),
+                    implode( ', ', $labels )
+                ),
+            );
+        }
+
+        return array(
+            'url'      => $sanitized_url,
+            'provider' => $sanitized_provider,
+            'error'    => null,
+        );
+    }
+
+    public static function is_valid_http_url( $url ) {
+        if ( ! is_string( $url ) || $url === '' ) {
+            return false;
+        }
+
+        if ( function_exists( 'wp_http_validate_url' ) ) {
+            return (bool) wp_http_validate_url( $url );
+        }
+
+        return filter_var( $url, FILTER_VALIDATE_URL ) !== false;
     }
 
     public static function validate_date( $date, $allow_empty = true ) {

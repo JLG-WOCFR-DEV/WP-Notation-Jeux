@@ -49,5 +49,7 @@ class UninstallCleanupTest extends TestCase
         require dirname(__DIR__) . '/uninstall.php';
 
         $this->assertContains('_jlg_game_title', $wpdb_stub->deleted_meta_keys);
+        $this->assertContains('_jlg_review_video_url', $wpdb_stub->deleted_meta_keys);
+        $this->assertContains('_jlg_review_video_provider', $wpdb_stub->deleted_meta_keys);
     }
 }

@@ -6,6 +6,8 @@
 
 namespace JLG\Notation;
 
+use JLG\Notation\Utils\Validator;
+
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
 }
@@ -60,6 +62,165 @@ class Helpers {
         self::$rating_meta_keys_cache = array_values( array_unique( $meta_keys ) );
 
         return self::$rating_meta_keys_cache;
+    }
+
+    public static function get_review_video_embed_data( $video_url, $provider = '' ) {
+        $video_url = is_string( $video_url ) ? trim( $video_url ) : '';
+        $provider  = Validator::sanitize_video_provider( $provider );
+
+        if ( $video_url === '' ) {
+            return self::get_empty_video_embed_data();
+        }
+
+        $sanitized_url = esc_url_raw( $video_url );
+
+        if ( $sanitized_url === '' ) {
+            return self::get_empty_video_embed_data( __( 'La vidéo renseignée est indisponible.', 'notation-jlg' ) );
+        }
+
+        $detected_provider = Validator::detect_video_provider_from_url( $sanitized_url );
+        if ( $provider === '' ) {
+            $provider = $detected_provider;
+        }
+
+        if ( $provider === '' ) {
+            return self::get_empty_video_embed_data( __( 'La vidéo renseignée est indisponible.', 'notation-jlg' ) );
+        }
+
+        $provider_label = Validator::get_video_provider_label( $provider );
+        $iframe_src     = '';
+        $fallback       = __( 'La vidéo renseignée est indisponible.', 'notation-jlg' );
+
+        if ( $provider === 'youtube' ) {
+            $video_id = self::extract_youtube_video_id( $sanitized_url );
+
+            if ( $video_id === '' ) {
+                return self::get_empty_video_embed_data( $fallback );
+            }
+
+            $iframe_src = add_query_arg(
+                array(
+                    'rel'            => 0,
+                    'modestbranding' => 1,
+                    'enablejsapi'    => 1,
+                ),
+                'https://www.youtube-nocookie.com/embed/' . rawurlencode( $video_id )
+            );
+        } elseif ( $provider === 'vimeo' ) {
+            $video_id = self::extract_vimeo_video_id( $sanitized_url );
+
+            if ( $video_id === '' ) {
+                return self::get_empty_video_embed_data( $fallback );
+            }
+
+            $iframe_src = add_query_arg(
+                array(
+                    'dnt' => 1,
+                ),
+                'https://player.vimeo.com/video/' . rawurlencode( $video_id )
+            );
+        } else {
+            return self::get_empty_video_embed_data( $fallback );
+        }
+
+        if ( ! is_string( $iframe_src ) || $iframe_src === '' ) {
+            return self::get_empty_video_embed_data( $fallback );
+        }
+
+        $title = sprintf(
+            /* translators: %s: video provider name. */
+            __( 'Lecteur vidéo %s', 'notation-jlg' ),
+            $provider_label !== '' ? $provider_label : strtoupper( $provider )
+        );
+
+        return array(
+            'has_embed'               => true,
+            'provider'                => $provider,
+            'provider_label'          => $provider_label,
+            'iframe_src'              => esc_url( $iframe_src ),
+            'iframe_title'            => $title,
+            'iframe_allow'            => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+            'iframe_allowfullscreen'  => true,
+            'iframe_loading'          => 'lazy',
+            'iframe_referrerpolicy'   => 'strict-origin-when-cross-origin',
+            'fallback_message'        => '',
+            'original_url'            => esc_url( $sanitized_url ),
+        );
+    }
+
+    private static function get_empty_video_embed_data( $message = '' ) {
+        return array(
+            'has_embed'              => false,
+            'provider'               => '',
+            'provider_label'         => '',
+            'iframe_src'             => '',
+            'iframe_title'           => '',
+            'iframe_allow'           => '',
+            'iframe_allowfullscreen' => false,
+            'iframe_loading'         => 'lazy',
+            'iframe_referrerpolicy'  => 'strict-origin-when-cross-origin',
+            'fallback_message'       => is_string( $message ) ? $message : '',
+            'original_url'           => '',
+        );
+    }
+
+    private static function extract_youtube_video_id( $url ) {
+        $parts = wp_parse_url( $url );
+        if ( ! is_array( $parts ) ) {
+            return '';
+        }
+
+        $candidate = '';
+
+        if ( isset( $parts['query'] ) ) {
+            parse_str( $parts['query'], $query_vars );
+
+            if ( isset( $query_vars['v'] ) && is_string( $query_vars['v'] ) ) {
+                $candidate = $query_vars['v'];
+            }
+        }
+
+        if ( $candidate === '' && isset( $parts['path'] ) ) {
+            $path = trim( $parts['path'], '/' );
+            $segments = explode( '/', $path );
+
+            if ( isset( $segments[0] ) ) {
+                if ( $segments[0] === 'embed' && isset( $segments[1] ) ) {
+                    $candidate = $segments[1];
+                } elseif ( $segments[0] === 'shorts' && isset( $segments[1] ) ) {
+                    $candidate = $segments[1];
+                } else {
+                    $candidate = $segments[ count( $segments ) - 1 ];
+                }
+            }
+        }
+
+        if ( ! is_string( $candidate ) ) {
+            return '';
+        }
+
+        $candidate = trim( $candidate );
+
+        return preg_match( '/^[A-Za-z0-9_-]{6,}$/', $candidate ) ? $candidate : '';
+    }
+
+    private static function extract_vimeo_video_id( $url ) {
+        $parts = wp_parse_url( $url );
+        if ( ! is_array( $parts ) || ! isset( $parts['path'] ) ) {
+            return '';
+        }
+
+        $path     = trim( $parts['path'], '/' );
+        $segments = array_values( array_filter( explode( '/', $path ) ) );
+
+        if ( empty( $segments ) ) {
+            return '';
+        }
+
+        $candidate = end( $segments );
+        $candidate = is_string( $candidate ) ? trim( $candidate ) : '';
+
+        return preg_match( '/^[0-9]{6,}$/', $candidate ) ? $candidate : '';
     }
 
     private static function get_theme_defaults() {

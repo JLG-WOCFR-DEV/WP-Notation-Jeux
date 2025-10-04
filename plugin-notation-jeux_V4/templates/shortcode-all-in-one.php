@@ -44,6 +44,20 @@ $average_percentage_display = $average_percentage_value !== null
     ? esc_html( number_format_i18n( $average_percentage_value, 1 ) )
     : '';
 
+$review_video_data   = isset( $review_video ) && is_array( $review_video ) ? $review_video : array();
+$video_has_embed     = ! empty( $review_video_data['has_embed'] );
+$video_fallback      = isset( $review_video_data['fallback_message'] ) ? (string) $review_video_data['fallback_message'] : '';
+$video_should_render = ( isset( $atts['afficher_video'] ) && $atts['afficher_video'] === 'oui' ) && ( $video_has_embed || $video_fallback !== '' );
+$video_iframe_src    = $video_has_embed && ! empty( $review_video_data['iframe_src'] ) ? $review_video_data['iframe_src'] : '';
+$video_iframe_title  = $video_has_embed && ! empty( $review_video_data['iframe_title'] ) ? $review_video_data['iframe_title'] : '';
+$video_iframe_allow  = $video_has_embed && ! empty( $review_video_data['iframe_allow'] ) ? $review_video_data['iframe_allow'] : '';
+$video_iframe_ref    = $video_has_embed && ! empty( $review_video_data['iframe_referrerpolicy'] ) ? $review_video_data['iframe_referrerpolicy'] : '';
+$video_provider_name = ! empty( $review_video_data['provider_label'] ) ? $review_video_data['provider_label'] : '';
+$video_region_label  = $video_provider_name !== ''
+    ? sprintf( /* translators: %s is the video provider label. */ __( 'Vidéo de test hébergée par %s', 'notation-jlg' ), $video_provider_name )
+    : __( 'Vidéo de test', 'notation-jlg' );
+$video_region_id     = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-aio-video-label-' ) : 'jlg-aio-video-label-' . uniqid();
+
 if ( $average_score_display !== '' ) {
     if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
         $visible_value = sprintf(
@@ -134,6 +148,30 @@ if ( $average_score_display !== '' ) {
         </div>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
+
+    <?php if ( $video_should_render ) : ?>
+    <section class="jlg-aio-video" role="group" aria-labelledby="<?php echo esc_attr( $video_region_id ); ?>">
+        <span id="<?php echo esc_attr( $video_region_id ); ?>" class="screen-reader-text"><?php echo esc_html( $video_region_label ); ?></span>
+        <?php if ( $video_has_embed && $video_iframe_src !== '' ) : ?>
+        <div class="jlg-aio-video-wrapper">
+            <iframe
+                src="<?php echo esc_url( $video_iframe_src ); ?>"
+                title="<?php echo esc_attr( $video_iframe_title ); ?>"
+                <?php if ( $video_iframe_allow !== '' ) : ?>
+                allow="<?php echo esc_attr( $video_iframe_allow ); ?>"
+                <?php endif; ?>
+                loading="lazy"
+                <?php if ( $video_iframe_ref !== '' ) : ?>
+                referrerpolicy="<?php echo esc_attr( $video_iframe_ref ); ?>"
+                <?php endif; ?>
+                allowfullscreen
+            ></iframe>
+        </div>
+        <?php elseif ( $video_fallback !== '' ) : ?>
+        <p class="jlg-aio-video-fallback"><?php echo esc_html( $video_fallback ); ?></p>
+        <?php endif; ?>
+    </section>
     <?php endif; ?>
 
     <?php if ( $show_rating ) : ?>

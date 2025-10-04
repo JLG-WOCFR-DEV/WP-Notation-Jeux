@@ -4,6 +4,7 @@ namespace JLG\Notation;
 
 use JLG\Notation\Helpers;
 use JLG\Notation\Frontend;
+use JLG\Notation\Utils\Validator;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -311,7 +312,7 @@ class Blocks {
     }
 
     private function render_shortcode( $shortcode, array $atts = array() ) {
-        if ( ! shortcode_exists( $shortcode ) ) {
+        if ( function_exists( 'shortcode_exists' ) && ! shortcode_exists( $shortcode ) ) {
             return '';
         }
 
@@ -476,6 +477,7 @@ class Blocks {
             'showRating'   => 'afficher_notation',
             'showProsCons' => 'afficher_points',
             'showTagline'  => 'afficher_tagline',
+            'showVideo'    => 'afficher_video',
         );
 
         foreach ( $bool_attributes as $attr_key => $shortcode_key ) {
@@ -519,7 +521,7 @@ class Blocks {
 
         if ( ! empty( $attributes['ctaUrl'] ) && is_string( $attributes['ctaUrl'] ) ) {
             $url = esc_url_raw( $attributes['ctaUrl'] );
-            if ( $url !== '' && wp_http_validate_url( $url ) ) {
+            if ( $url !== '' && Validator::is_valid_http_url( $url ) ) {
                 $atts['cta_url'] = $url;
             }
         }

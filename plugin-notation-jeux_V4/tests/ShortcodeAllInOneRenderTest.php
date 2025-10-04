@@ -185,6 +185,37 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $this->assertStringContainsString('class="review-box-jlg jlg-animate"', $output);
     }
 
+    public function test_render_includes_review_video_when_configured(): void
+    {
+        $post_id = 2005;
+        $this->seedPost($post_id);
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_review_video_url'] = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_review_video_provider'] = 'youtube';
+
+        $this->setPluginOptions([
+            'score_layout'      => 'text',
+            'visual_theme'      => 'dark',
+            'score_gradient_1'  => '#336699',
+            'score_gradient_2'  => '#9933cc',
+            'color_high'        => '#22c55e',
+            'color_low'         => '#ef4444',
+            'tagline_font_size' => 18,
+            'enable_animations' => 0,
+        ]);
+
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
+        $output    = $shortcode->render([
+            'post_id'        => (string) $post_id,
+            'afficher_video' => 'oui',
+        ]);
+
+        $this->assertNotSame('', $output);
+        $this->assertStringContainsString('youtube-nocookie.com/embed', $output);
+        $this->assertMatchesRegularExpression('/aria-labelledby="jlg-aio-video-label-[^"]+"/', $output);
+        $this->assertMatchesRegularExpression('/<iframe[^>]+allowfullscreen/i', $output);
+        $this->assertStringContainsString('Vidéo de test hébergée par YouTube', $output);
+    }
+
     private function seedPost(int $post_id, string $post_type = 'post'): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
@@ -194,10 +225,14 @@ class ShortcodeAllInOneRenderTest extends TestCase
         ]);
 
         $GLOBALS['jlg_test_meta'][$post_id] = [
-            '_jlg_tagline_fr'     => 'Meilleur jeu de l\'année',
-            '_jlg_tagline_en'     => 'Game of the year contender',
-            '_jlg_points_forts'   => "Univers immersif\nCombats dynamiques",
-            '_jlg_points_faibles' => "Quêtes répétitives\nQuelques bugs",
+            '_jlg_tagline_fr'            => 'Meilleur jeu de l\'année',
+            '_jlg_tagline_en'            => 'Game of the year contender',
+            '_jlg_points_forts'          => "Univers immersif\nCombats dynamiques",
+            '_jlg_points_faibles'        => "Quêtes répétitives\nQuelques bugs",
+            '_jlg_cta_label'             => 'Découvrir',
+            '_jlg_cta_url'               => 'https://example.com',
+            '_jlg_review_video_url'      => '',
+            '_jlg_review_video_provider' => '',
         ];
 
         $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();

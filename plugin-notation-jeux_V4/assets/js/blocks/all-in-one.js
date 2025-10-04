@@ -125,6 +125,13 @@
                             onChange: function (value) {
                                 setAttributes({ showTagline: !!value });
                             },
+                        }),
+                        createElement(ToggleControl, {
+                            label: __('Afficher la vidéo de test', 'notation-jlg'),
+                            checked: typeof attributes.showVideo === 'boolean' ? attributes.showVideo : true,
+                            onChange: function (value) {
+                                setAttributes({ showVideo: !!value });
+                            },
                         })
                     ),
                     colorControl,
@@ -194,6 +201,7 @@
                             showRating: typeof attributes.showRating === 'boolean' ? attributes.showRating : true,
                             showProsCons: typeof attributes.showProsCons === 'boolean' ? attributes.showProsCons : true,
                             showTagline: typeof attributes.showTagline === 'boolean' ? attributes.showTagline : true,
+                            showVideo: typeof attributes.showVideo === 'boolean' ? attributes.showVideo : true,
                             style: attributes.style || 'moderne',
                             scoreDisplay: attributes.scoreDisplay || 'absolute',
                             accentColor: attributes.accentColor || '',
