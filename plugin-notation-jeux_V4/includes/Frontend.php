@@ -1400,6 +1400,8 @@ class Frontend {
             'letter'       => $context['current_filters']['letter'] ?? '',
             'category'     => $context['current_filters']['category'] ?? '',
             'platform'     => $context['current_filters']['platform'] ?? '',
+            'developer'    => $context['current_filters']['developer'] ?? '',
+            'publisher'    => $context['current_filters']['publisher'] ?? '',
             'availability' => $context['current_filters']['availability'] ?? '',
             'search'       => $context['current_filters']['search'] ?? '',
             'paged'        => $context['pagination']['current'] ?? 1,

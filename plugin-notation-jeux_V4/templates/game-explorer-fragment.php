@@ -34,6 +34,8 @@ $namespaced_keys = array(
     'letter'       => isset( $request_keys['letter'] ) ? $request_keys['letter'] : 'letter',
     'category'     => isset( $request_keys['category'] ) ? $request_keys['category'] : 'category',
     'platform'     => isset( $request_keys['platform'] ) ? $request_keys['platform'] : 'platform',
+    'developer'    => isset( $request_keys['developer'] ) ? $request_keys['developer'] : 'developer',
+    'publisher'    => isset( $request_keys['publisher'] ) ? $request_keys['publisher'] : 'publisher',
     'availability' => isset( $request_keys['availability'] ) ? $request_keys['availability'] : 'availability',
     'search'       => isset( $request_keys['search'] ) ? $request_keys['search'] : 'search',
     'paged'        => isset( $request_keys['paged'] ) ? $request_keys['paged'] : 'paged',
@@ -65,6 +67,8 @@ if ( empty( $base_query_params ) ) {
         'letter'       => isset( $current_filters['letter'] ) ? $current_filters['letter'] : '',
         'category'     => isset( $current_filters['category'] ) ? $current_filters['category'] : '',
         'platform'     => isset( $current_filters['platform'] ) ? $current_filters['platform'] : '',
+        'developer'    => isset( $current_filters['developer'] ) ? $current_filters['developer'] : '',
+        'publisher'    => isset( $current_filters['publisher'] ) ? $current_filters['publisher'] : '',
         'availability' => isset( $current_filters['availability'] ) ? $current_filters['availability'] : '',
         'search'       => isset( $current_filters['search'] ) ? $current_filters['search'] : '',
     );

@@ -14,8 +14,10 @@ $filters_enabled      = is_array( $filters_enabled ) ? $filters_enabled : array(
 $current_filters      = is_array( $current_filters ) ? $current_filters : array();
 $letters              = is_array( $letters ) ? $letters : array();
 $sort_options         = is_array( $sort_options ) ? $sort_options : array();
-$categories_list      = is_array( $categories_list ) ? $categories_list : array();
-$platforms_list       = is_array( $platforms_list ) ? $platforms_list : array();
+$categories_list      = isset( $categories_list ) && is_array( $categories_list ) ? $categories_list : array();
+$developers_list      = isset( $developers_list ) && is_array( $developers_list ) ? $developers_list : array();
+$publishers_list      = isset( $publishers_list ) && is_array( $publishers_list ) ? $publishers_list : array();
+$platforms_list       = isset( $platforms_list ) && is_array( $platforms_list ) ? $platforms_list : array();
 $availability_options = is_array( $availability_options ) ? $availability_options : array();
 $total_items          = isset( $total_items ) ? (int) $total_items : 0;
 $sort_key             = isset( $sort_key ) ? $sort_key : 'date';
@@ -33,12 +35,16 @@ if ( $config_json === false ) {
 
 $has_category_filter     = ! empty( $filters_enabled['category'] ) && ! empty( $categories_list );
 $has_platform_filter     = ! empty( $filters_enabled['platform'] ) && ! empty( $platforms_list );
+$has_developer_filter    = ! empty( $filters_enabled['developer'] ) && ! empty( $developers_list );
+$has_publisher_filter    = ! empty( $filters_enabled['publisher'] ) && ! empty( $publishers_list );
 $has_availability_filter = ! empty( $filters_enabled['availability'] );
 $has_search_filter       = ! empty( $filters_enabled['search'] );
-$has_filters             = $has_category_filter || $has_platform_filter || $has_availability_filter || $has_search_filter;
+$has_filters             = $has_category_filter || $has_platform_filter || $has_developer_filter || $has_publisher_filter || $has_availability_filter || $has_search_filter;
 $letter_active           = isset( $current_filters['letter'] ) ? $current_filters['letter'] : '';
 $category_active         = isset( $current_filters['category'] ) ? $current_filters['category'] : '';
 $platform_active         = isset( $current_filters['platform'] ) ? $current_filters['platform'] : '';
+$developer_active        = isset( $current_filters['developer'] ) ? $current_filters['developer'] : '';
+$publisher_active        = isset( $current_filters['publisher'] ) ? $current_filters['publisher'] : '';
 $availability_active     = isset( $current_filters['availability'] ) ? $current_filters['availability'] : '';
 $search_active           = isset( $current_filters['search'] ) ? $current_filters['search'] : '';
 $request_keys            = is_array( $request_keys ) ? $request_keys : array();
@@ -48,6 +54,8 @@ $namespaced_keys         = array(
     'letter'       => isset( $request_keys['letter'] ) ? $request_keys['letter'] : 'letter',
     'category'     => isset( $request_keys['category'] ) ? $request_keys['category'] : 'category',
     'platform'     => isset( $request_keys['platform'] ) ? $request_keys['platform'] : 'platform',
+    'developer'    => isset( $request_keys['developer'] ) ? $request_keys['developer'] : 'developer',
+    'publisher'    => isset( $request_keys['publisher'] ) ? $request_keys['publisher'] : 'publisher',
     'availability' => isset( $request_keys['availability'] ) ? $request_keys['availability'] : 'availability',
     'search'       => isset( $request_keys['search'] ) ? $request_keys['search'] : 'search',
     'paged'        => isset( $request_keys['paged'] ) ? $request_keys['paged'] : 'paged',
@@ -67,6 +75,8 @@ $filter_values = array(
     'letter'       => $letter_active,
     'category'     => $category_active,
     'platform'     => $platform_active,
+    'developer'    => $developer_active,
+    'publisher'    => $publisher_active,
     'availability' => $availability_active,
     'search'       => $search_active,
 );
@@ -118,7 +128,7 @@ $render_hidden_inputs = static function( array $params ) {
     }
 };
 
-$reset_url = remove_query_arg( array_values( $namespaced_keys ) );
+$reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
 ?>
 
 <div
@@ -277,6 +287,8 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ) );
                             array(
                                 $namespaced_keys['category'],
                                 $namespaced_keys['platform'],
+                                $namespaced_keys['developer'],
+                                $namespaced_keys['publisher'],
                                 $namespaced_keys['availability'],
                                 $namespaced_keys['search'],
                                 $namespaced_keys['paged'],
@@ -326,6 +338,54 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ) );
                                     $label = isset( $platform['label'] ) ? $platform['label'] : $value;
                                     ?>
                                     <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $platform_active, $value ); ?>>
+                                        <?php echo esc_html( $label ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <?php if ( $has_developer_filter ) : ?>
+                            <label for="<?php echo esc_attr( $container_id ); ?>-developer" class="screen-reader-text">
+                                <?php esc_html_e( 'Filtrer par développeur', 'notation-jlg' ); ?>
+                            </label>
+                            <select
+                                id="<?php echo esc_attr( $container_id ); ?>-developer"
+                                name="<?php echo esc_attr( $namespaced_keys['developer'] ); ?>"
+                                data-role="developer"
+                            >
+                                <option value="">
+                                    <?php esc_html_e( 'Tous les studios', 'notation-jlg' ); ?>
+                                </option>
+                                <?php
+                                foreach ( $developers_list as $developer ) :
+                                    $value = isset( $developer['value'] ) ? (string) $developer['value'] : '';
+                                    $label = isset( $developer['label'] ) ? $developer['label'] : $value;
+                                    ?>
+                                    <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $developer_active, $value ); ?>>
+                                        <?php echo esc_html( $label ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
+
+                        <?php if ( $has_publisher_filter ) : ?>
+                            <label for="<?php echo esc_attr( $container_id ); ?>-publisher" class="screen-reader-text">
+                                <?php esc_html_e( 'Filtrer par éditeur', 'notation-jlg' ); ?>
+                            </label>
+                            <select
+                                id="<?php echo esc_attr( $container_id ); ?>-publisher"
+                                name="<?php echo esc_attr( $namespaced_keys['publisher'] ); ?>"
+                                data-role="publisher"
+                            >
+                                <option value="">
+                                    <?php esc_html_e( 'Tous les éditeurs', 'notation-jlg' ); ?>
+                                </option>
+                                <?php
+                                foreach ( $publishers_list as $publisher ) :
+                                    $value = isset( $publisher['value'] ) ? (string) $publisher['value'] : '';
+                                    $label = isset( $publisher['label'] ) ? $publisher['label'] : $value;
+                                    ?>
+                                    <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $publisher_active, $value ); ?>>
                                         <?php echo esc_html( $label ); ?>
                                     </option>
                                 <?php endforeach; ?>
