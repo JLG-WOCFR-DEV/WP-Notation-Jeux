@@ -4,6 +4,8 @@ namespace JLG\Notation\Utils;
 
 use DateTime;
 use JLG\Notation\Helpers;
+use ReflectionException;
+use ReflectionMethod;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
