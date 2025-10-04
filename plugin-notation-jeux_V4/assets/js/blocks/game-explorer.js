@@ -45,6 +45,8 @@
         { value: 'date|ASC', label: __('Plus anciens', 'notation-jlg') },
         { value: 'score|DESC', label: __('Meilleures notes', 'notation-jlg') },
         { value: 'score|ASC', label: __('Notes les plus basses', 'notation-jlg') },
+        { value: 'popularity|DESC', label: __('Popularité (plus de votes)', 'notation-jlg') },
+        { value: 'popularity|ASC', label: __('Popularité (moins de votes)', 'notation-jlg') },
         { value: 'title|ASC', label: __('Titre (A-Z)', 'notation-jlg') },
         { value: 'title|DESC', label: __('Titre (Z-A)', 'notation-jlg') },
     ];

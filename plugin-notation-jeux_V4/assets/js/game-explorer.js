@@ -80,7 +80,7 @@
 
         if (key === 'orderby') {
             const normalized = value.toString().trim().toLowerCase();
-            const allowed = ['date', 'score', 'title'];
+            const allowed = ['date', 'score', 'title', 'popularity'];
             if (allowed.includes(normalized)) {
                 return normalized;
             }

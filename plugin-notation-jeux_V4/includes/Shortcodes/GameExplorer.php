@@ -273,6 +273,18 @@ class GameExplorer {
                 'label'   => esc_html__( 'Notes les plus basses', 'notation-jlg' ),
             ),
             array(
+                'value'   => 'popularity|DESC',
+                'orderby' => 'popularity',
+                'order'   => 'DESC',
+                'label'   => esc_html__( 'Popularité (plus de votes)', 'notation-jlg' ),
+            ),
+            array(
+                'value'   => 'popularity|ASC',
+                'orderby' => 'popularity',
+                'order'   => 'ASC',
+                'label'   => esc_html__( 'Popularité (moins de votes)', 'notation-jlg' ),
+            ),
+            array(
                 'value'   => 'title|ASC',
                 'orderby' => 'title',
                 'order'   => 'ASC',
@@ -757,7 +769,7 @@ class GameExplorer {
      * Builds the render context used by the [jlg_game_explorer] shortcode.
      *
      * Supported request parameters (optionally namespaced with the container prefix):
-     * - orderby: Sorting key (date, score or title).
+     * - orderby: Sorting key (date, score, title or popularity).
      * - order: Sorting direction (ASC or DESC).
      * - letter: Letter filter applied to the list.
      * - category: Category identifier or slug filter.
@@ -851,7 +863,10 @@ class GameExplorer {
             $letter_filter = $forced_letter;
         }
 
-        $allowed_orderby = array( 'date', 'score', 'title' );
+        $allowed_orderby = self::get_allowed_sort_keys();
+        if ( empty( $allowed_orderby ) ) {
+            $allowed_orderby = array( 'date', 'score', 'title' );
+        }
         if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
             $orderby = 'date';
         }
@@ -1041,6 +1056,36 @@ class GameExplorer {
             $query_args['meta_key']  = '_jlg_average_score';
             $query_args['orderby']   = 'meta_value_num';
             $query_args['meta_type'] = 'DECIMAL';
+        } elseif ( $orderby === 'popularity' ) {
+            $popularity_meta_key = '_jlg_user_rating_count';
+
+            $has_popularity_meta = false;
+            foreach ( $matched_post_ids as $post_id ) {
+                if ( metadata_exists( 'post', $post_id, $popularity_meta_key ) ) {
+                    $has_popularity_meta = true;
+                    break;
+                }
+            }
+
+            if ( $has_popularity_meta ) {
+                $query_args['meta_query'] = array(
+                    'relation'                        => 'OR',
+                    'popularity_clause'               => array(
+                        'key'  => $popularity_meta_key,
+                        'type' => 'NUMERIC',
+                    ),
+                    'popularity_missing_clause'       => array(
+                        'key'     => $popularity_meta_key,
+                        'compare' => 'NOT EXISTS',
+                    ),
+                );
+                $query_args['orderby'] = array(
+                    'popularity_clause' => $order,
+                    'date'              => 'DESC',
+                );
+            } else {
+                $query_args['orderby'] = 'date';
+            }
         } elseif ( $orderby === 'title' ) {
             $query_args['orderby'] = 'title';
         }
