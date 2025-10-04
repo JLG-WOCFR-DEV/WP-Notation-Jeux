@@ -23,6 +23,7 @@ if (!function_exists('_n')) {
 if (!class_exists('WP_Query')) {
     class WP_Query
     {
+        public $args = [];
         public $posts = [];
         public $post_count = 0;
         public $found_posts = 0;
@@ -32,6 +33,7 @@ if (!class_exists('WP_Query')) {
 
         public function __construct($args = [])
         {
+            $this->args = is_array($args) ? $args : [];
             $post_ids = isset($args['post__in']) ? (array) $args['post__in'] : [];
             $per_page = isset($args['posts_per_page']) ? (int) $args['posts_per_page'] : count($post_ids);
             $all_posts = $GLOBALS['jlg_test_posts'] ?? [];

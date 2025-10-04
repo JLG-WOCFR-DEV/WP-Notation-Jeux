@@ -389,6 +389,9 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'upcoming'   => esc_html__('À venir', 'notation-jlg'),
             'unknown'    => esc_html__('À confirmer', 'notation-jlg'),
         ], $context['availability_options'], 'Availability options should remain available for the filters.');
+        $this->assertNotEmpty($context['years_list'], 'Years list should be exposed when year filters are enabled.');
+        $this->assertSame('2023', $context['years_list'][0]['value']);
+        $this->assertSame(1, $context['years_list'][0]['count']);
         $this->assertSame('<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>', $context['message']);
     }
 
@@ -514,6 +517,54 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame('Studio Alpha', $response['config']['state']['developer'] ?? null);
         $this->assertStringContainsString('Studio Alpha', $response['html'] ?? '');
         $this->assertStringNotContainsString('Studio Beta', $response['html'] ?? '');
+    }
+
+    public function test_handle_game_explorer_sort_filters_by_year(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the year filter.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the year filter.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'] = [
+            101 => [
+                '_jlg_average_score'   => 8.2,
+                '_jlg_cover_image_url' => 'https://example.com/alpha-year.jpg',
+                '_jlg_date_sortie'     => '2023-02-14',
+                '_jlg_developpeur'     => 'Studio Alpha',
+                '_jlg_editeur'         => 'Publisher A',
+                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+            ],
+            202 => [
+                '_jlg_average_score'   => 7.1,
+                '_jlg_cover_image_url' => 'https://example.com/beta-year.jpg',
+                '_jlg_date_sortie'     => '2022-11-10',
+                '_jlg_developpeur'     => 'Studio Beta',
+                '_jlg_editeur'         => 'Publisher B',
+                '_jlg_plateformes'     => ['PC'],
+            ],
+        ];
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'year-filter',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'year'           => '2023',
+            'paged'          => '1',
+        ]);
+
+        $this->assertArrayHasKey('state', $response);
+        $this->assertSame('2023', $response['state']['year'] ?? null);
+        $this->assertSame(1, $response['state']['total_items'] ?? 0);
+        $this->assertArrayHasKey('config', $response);
+        $this->assertSame('2023', $response['config']['state']['year'] ?? null);
+        $this->assertStringContainsString('Alpha Quest', $response['html'] ?? '');
+        $this->assertStringNotContainsString('Beta Strike', $response['html'] ?? '');
     }
 
     public function test_score_position_modifier_reflects_configuration(): void
@@ -719,6 +770,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
                     'publisher'        => 'Publisher A',
                     'publisher_key'    => 'publisher a',
                     'release_iso'      => '2023-02-14',
+                    'release_year'     => 2023,
                     'availability'     => 'available',
                     'search_haystack'  => 'alpha quest studio alpha publisher a action pc playstation 5',
                 ],
@@ -734,6 +786,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
                     'publisher'        => 'Publisher B',
                     'publisher_key'    => 'publisher b',
                     'release_iso'      => '2022-11-10',
+                    'release_year'     => 2022,
                     'availability'     => 'available',
                     'search_haystack'  => 'beta strike studio beta publisher b action pc',
                 ],
@@ -743,6 +796,14 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'platforms_map'  => ['pc' => 'PC', 'playstation-5' => 'PlayStation 5'],
             'developers_map' => ['studio alpha' => 'Studio Alpha', 'studio beta' => 'Studio Beta'],
             'publishers_map' => ['publisher a' => 'Publisher A', 'publisher b' => 'Publisher B'],
+            'years'          => [
+                'min'     => 2022,
+                'max'     => 2023,
+                'buckets' => [
+                    2022 => 1,
+                    2023 => 1,
+                ],
+            ],
         ];
     }
 

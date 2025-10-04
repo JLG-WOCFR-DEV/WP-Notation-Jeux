@@ -4,6 +4,7 @@ namespace JLG\Notation\Shortcodes;
 
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
+use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;

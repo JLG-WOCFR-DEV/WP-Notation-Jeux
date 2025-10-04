@@ -1403,6 +1403,7 @@ class Frontend {
             'developer'    => $context['current_filters']['developer'] ?? '',
             'publisher'    => $context['current_filters']['publisher'] ?? '',
             'availability' => $context['current_filters']['availability'] ?? '',
+            'year'         => $context['current_filters']['year'] ?? '',
             'search'       => $context['current_filters']['search'] ?? '',
             'paged'        => $context['pagination']['current'] ?? 1,
             'total_pages'  => $context['pagination']['total'] ?? 0,

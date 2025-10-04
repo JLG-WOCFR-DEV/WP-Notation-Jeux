@@ -19,8 +19,8 @@ class Helpers {
     public const SCORE_SCALE_EVENT_HOOK       = 'jlg_process_score_scale_migration';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
-    private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'search' );
-    private const GAME_EXPLORER_DEFAULT_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'search' );
+    private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search' );
+    private const GAME_EXPLORER_DEFAULT_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search' );
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
     private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
 

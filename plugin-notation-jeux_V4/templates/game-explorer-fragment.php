@@ -160,15 +160,13 @@ if ( empty( $games ) ) {
                     <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
                         <?php echo esc_html( $score_display ); ?>
                         <?php if ( $has_score ) : ?>
-                            <span class="jlg-ge-card__score-outof">
-                                <?php
+                            <span class="jlg-ge-card__score-outof"><?php
                                 printf(
                                     /* translators: %s: Maximum possible rating value. */
                                     esc_html__( '/%s', 'notation-jlg' ),
                                     esc_html( $score_max_label )
                                 );
-                                ?>
-                            </span>
+                            ?></span>
                         <?php endif; ?>
                     </span>
                 <?php endif; ?>

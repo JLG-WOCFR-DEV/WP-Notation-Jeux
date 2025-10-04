@@ -18,6 +18,8 @@ $categories_list      = isset( $categories_list ) && is_array( $categories_list 
 $developers_list      = isset( $developers_list ) && is_array( $developers_list ) ? $developers_list : array();
 $publishers_list      = isset( $publishers_list ) && is_array( $publishers_list ) ? $publishers_list : array();
 $platforms_list       = isset( $platforms_list ) && is_array( $platforms_list ) ? $platforms_list : array();
+$years_list           = isset( $years_list ) && is_array( $years_list ) ? $years_list : array();
+$years_meta           = isset( $years_meta ) && is_array( $years_meta ) ? $years_meta : array();
 $availability_options = is_array( $availability_options ) ? $availability_options : array();
 $total_items          = isset( $total_items ) ? (int) $total_items : 0;
 $sort_key             = isset( $sort_key ) ? $sort_key : 'date';
@@ -38,14 +40,16 @@ $has_platform_filter     = ! empty( $filters_enabled['platform'] ) && ! empty( $
 $has_developer_filter    = ! empty( $filters_enabled['developer'] ) && ! empty( $developers_list );
 $has_publisher_filter    = ! empty( $filters_enabled['publisher'] ) && ! empty( $publishers_list );
 $has_availability_filter = ! empty( $filters_enabled['availability'] );
+$has_year_filter         = ! empty( $filters_enabled['year'] ) && ! empty( $years_list );
 $has_search_filter       = ! empty( $filters_enabled['search'] );
-$has_filters             = $has_category_filter || $has_platform_filter || $has_developer_filter || $has_publisher_filter || $has_availability_filter || $has_search_filter;
+$has_filters             = $has_category_filter || $has_platform_filter || $has_developer_filter || $has_publisher_filter || $has_availability_filter || $has_year_filter || $has_search_filter;
 $letter_active           = isset( $current_filters['letter'] ) ? $current_filters['letter'] : '';
 $category_active         = isset( $current_filters['category'] ) ? $current_filters['category'] : '';
 $platform_active         = isset( $current_filters['platform'] ) ? $current_filters['platform'] : '';
 $developer_active        = isset( $current_filters['developer'] ) ? $current_filters['developer'] : '';
 $publisher_active        = isset( $current_filters['publisher'] ) ? $current_filters['publisher'] : '';
 $availability_active     = isset( $current_filters['availability'] ) ? $current_filters['availability'] : '';
+$year_active             = isset( $current_filters['year'] ) ? $current_filters['year'] : '';
 $search_active           = isset( $current_filters['search'] ) ? $current_filters['search'] : '';
 $request_keys            = is_array( $request_keys ) ? $request_keys : array();
 $namespaced_keys         = array(
@@ -57,6 +61,7 @@ $namespaced_keys         = array(
     'developer'    => isset( $request_keys['developer'] ) ? $request_keys['developer'] : 'developer',
     'publisher'    => isset( $request_keys['publisher'] ) ? $request_keys['publisher'] : 'publisher',
     'availability' => isset( $request_keys['availability'] ) ? $request_keys['availability'] : 'availability',
+    'year'         => isset( $request_keys['year'] ) ? $request_keys['year'] : 'year',
     'search'       => isset( $request_keys['search'] ) ? $request_keys['search'] : 'search',
     'paged'        => isset( $request_keys['paged'] ) ? $request_keys['paged'] : 'paged',
 );
@@ -78,6 +83,7 @@ $filter_values = array(
     'developer'    => $developer_active,
     'publisher'    => $publisher_active,
     'availability' => $availability_active,
+    'year'         => $year_active,
     'search'       => $search_active,
 );
 
@@ -290,6 +296,7 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
                                 $namespaced_keys['developer'],
                                 $namespaced_keys['publisher'],
                                 $namespaced_keys['availability'],
+                                $namespaced_keys['year'],
                                 $namespaced_keys['search'],
                                 $namespaced_keys['paged'],
                             )
@@ -410,6 +417,48 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                        <?php endif; ?>
+
+                        <?php if ( $has_year_filter ) : ?>
+                            <div class="jlg-ge-year">
+                                <label for="<?php echo esc_attr( $container_id ); ?>-year">
+                                    <?php esc_html_e( 'Filtrer par année de sortie', 'notation-jlg' ); ?>
+                                </label>
+                                <select
+                                    id="<?php echo esc_attr( $container_id ); ?>-year"
+                                    name="<?php echo esc_attr( $namespaced_keys['year'] ); ?>"
+                                    data-role="year"
+                                    aria-describedby="<?php echo esc_attr( $container_id ); ?>-year-hint"
+                                >
+                                    <option value="">
+                                        <?php esc_html_e( 'Toutes les années', 'notation-jlg' ); ?>
+                                    </option>
+                                    <?php
+                                    foreach ( $years_list as $year_option ) :
+                                        $value = isset( $year_option['value'] ) ? (string) $year_option['value'] : '';
+                                        $label = isset( $year_option['label'] ) ? $year_option['label'] : $value;
+                                        ?>
+                                        <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $year_active, $value ); ?>>
+                                            <?php echo esc_html( $label ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php if ( isset( $years_meta['min'] ) && isset( $years_meta['max'] ) && (int) $years_meta['min'] > 0 && (int) $years_meta['max'] > 0 ) : ?>
+                                    <p class="jlg-ge-year__hint" id="<?php echo esc_attr( $container_id ); ?>-year-hint">
+                                        <?php
+                                        printf(
+                                            esc_html__( 'Période couverte : %1$d – %2$d', 'notation-jlg' ),
+                                            (int) $years_meta['min'],
+                                            (int) $years_meta['max']
+                                        );
+                                        ?>
+                                    </p>
+                                <?php else : ?>
+                                    <span class="screen-reader-text" id="<?php echo esc_attr( $container_id ); ?>-year-hint">
+                                        <?php esc_html_e( 'Sélectionnez une année pour filtrer les résultats.', 'notation-jlg' ); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
 
                         <?php if ( $has_search_filter ) : ?>

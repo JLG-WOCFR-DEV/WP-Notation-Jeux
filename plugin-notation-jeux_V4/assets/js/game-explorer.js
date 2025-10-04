@@ -4,7 +4,7 @@
     const nonce = l10n.nonce || '';
     const strings = l10n.strings || {};
 
-    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'search', 'paged'];
+    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search', 'paged'];
     const activeRequestControllers = new WeakMap();
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const MOBILE_BREAKPOINT = 768;
@@ -88,6 +88,15 @@
             return typeof baseState.orderby === 'string' && baseState.orderby !== ''
                 ? baseState.orderby
                 : 'date';
+        }
+
+        if (key === 'year') {
+            const trimmed = value.toString().trim();
+            if (trimmed === '') {
+                return '';
+            }
+
+            return /^\d{4}$/.test(trimmed) ? trimmed : '';
         }
 
         return value.toString();
@@ -350,6 +359,7 @@
         parsed.state.developer = parsed.state.developer || '';
         parsed.state.publisher = parsed.state.publisher || '';
         parsed.state.availability = parsed.state.availability || '';
+        parsed.state.year = parsed.state.year || '';
         parsed.state.search = parsed.state.search || '';
 
         parsed.atts.id = parsed.atts.id || container.id || ('jlg-game-explorer-' + Math.random().toString(36).slice(2));
@@ -360,6 +370,8 @@
         parsed.atts.plateforme = parsed.atts.plateforme || '';
         parsed.atts.lettre = parsed.atts.lettre || '';
         parsed.atts.score_position = parsed.atts.score_position || 'bottom-right';
+
+        parsed.meta = parsed.meta || {};
 
         const totalItems = parseInt(container.dataset.totalItems || '0', 10);
         if (Number.isInteger(totalItems)) {
@@ -449,6 +461,10 @@
 
         if (refs.availabilitySelect) {
             refs.availabilitySelect.value = state.availability || '';
+        }
+
+        if (refs.yearSelect) {
+            refs.yearSelect.value = state.year || '';
         }
 
         if (refs.searchInput) {
@@ -766,6 +782,7 @@
         payload.set(getRequestKey(config, 'developer'), config.state.developer);
         payload.set(getRequestKey(config, 'publisher'), config.state.publisher);
         payload.set(getRequestKey(config, 'availability'), config.state.availability);
+        payload.set(getRequestKey(config, 'year'), config.state.year);
         payload.set(getRequestKey(config, 'search'), config.state.search);
         payload.set(getRequestKey(config, 'paged'), config.state.paged);
 
@@ -809,14 +826,18 @@
                 }
 
                 if (responseData.config && typeof responseData.config === 'object') {
-                    if (responseData.config.atts && typeof responseData.config.atts === 'object') {
-                        config.atts = Object.assign({}, config.atts, responseData.config.atts);
-                    }
-
-                    if (responseData.config.request && typeof responseData.config.request === 'object') {
-                        config.request = Object.assign({}, config.request, responseData.config.request);
-                    }
+                if (responseData.config.atts && typeof responseData.config.atts === 'object') {
+                    config.atts = Object.assign({}, config.atts, responseData.config.atts);
                 }
+
+                if (responseData.config.request && typeof responseData.config.request === 'object') {
+                    config.request = Object.assign({}, config.request, responseData.config.request);
+                }
+
+                if (responseData.config.meta && typeof responseData.config.meta === 'object') {
+                    config.meta = Object.assign({}, config.meta || {}, responseData.config.meta);
+                }
+            }
 
                 writeConfig(container, config);
                 updateCount(container, config.state);
@@ -886,6 +907,7 @@
             developerSelect: container.querySelector('[data-role="developer"]'),
             publisherSelect: container.querySelector('[data-role="publisher"]'),
             availabilitySelect: container.querySelector('[data-role="availability"]'),
+            yearSelect: container.querySelector('[data-role="year"]'),
             searchInput: container.querySelector('[data-role="search"]'),
             resetButton: container.querySelector('[data-role="reset"]'),
             filtersWrapper: container.querySelector('[data-role="filters-wrapper"]'),
@@ -997,6 +1019,16 @@
             });
         }
 
+        if (refs.yearSelect) {
+            refs.yearSelect.addEventListener('change', () => {
+                config.state.year = refs.yearSelect.value || '';
+                config.state.paged = 1;
+                writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
+                refreshResults(container, config, refs);
+            });
+        }
+
         if (refs.searchInput) {
             const scheduleSearchRefresh = debounce(() => {
                 refreshResults(container, config, refs);
@@ -1055,6 +1087,10 @@
 
                 if (refs.availabilitySelect) {
                     config.state.availability = refs.availabilitySelect.value || '';
+                }
+
+                if (refs.yearSelect) {
+                    config.state.year = refs.yearSelect.value || '';
                 }
 
                 if (refs.searchInput) {
