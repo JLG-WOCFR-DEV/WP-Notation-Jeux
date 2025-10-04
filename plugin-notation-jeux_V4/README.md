@@ -65,6 +65,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 - `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs avec histogramme dynamique (barres accessibles ARIA, mise à jour en temps réel après chaque vote)
 - `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les en-têtes permettent désormais de trier par titre, date, note moyenne ainsi que par métadonnées développeur/éditeur via les paramètres `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
 - `[jlg_game_explorer]` - Game Explorer interactif affichant vos tests sous forme de cartes. Attributs disponibles : `posts_per_page` (nombre d'entrées par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `developer`, `publisher`, `availability`), `categorie`, `plateforme` et `lettre` pour préfiltrer le rendu. La navigation (lettres, filtres, tri et pagination) fonctionne désormais également sans JavaScript via des requêtes GET accessibles. Sur mobile, les filtres sont regroupés dans un panneau masquable pour laisser plus d'espace aux résultats tout en restant utilisables sans JavaScript.
+- `[jlg_score_insights]` - Tableau de bord statistique mettant en avant moyenne, médiane, histogramme et plateformes dominantes sur une période donnée. Attributs : `time_range` (`all`, `last_30_days`, `last_90_days`, `last_365_days`), `platform` (slug enregistré dans Notation → Plateformes), `platform_limit` (1 à 10 plateformes affichées) et `title` pour personnaliser l'entête.
 
 ### Utilisation dans les widgets et blocs
 
@@ -94,6 +95,7 @@ Le plugin propose désormais une collection complète de blocs dynamiques pour l
   d'accent et le format du score (valeur absolue ou pourcentage) pour un rendu cohérent.
 - **Game Explorer** (`notation-jlg/game-explorer`) : définissez le tri initial, les filtres disponibles et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
+- **Score Insights** (`notation-jlg/score-insights`) : ajustez la période analysée, filtrez par plateforme et limitez le classement pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes).
 
 Chaque bloc repose sur le rendu PHP historique (shortcodes) et marque automatiquement l'exécution via
 `JLG_Frontend::mark_shortcode_rendered()` afin que les assets nécessaires soient chargés, y compris dans l'éditeur.
