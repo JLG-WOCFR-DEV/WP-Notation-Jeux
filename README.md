@@ -3,7 +3,7 @@
 Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un système complet de notation destiné aux sites de tests de jeux vidéo. Il fournit un rendu professionnel pour vos reviews avec des shortcodes prêts à l'emploi, un widget et des helpers PHP pour intégrer la note partout dans votre thème.
 
 ## Présentation rapide
-- **Fonctionnalités clés :** 6 catégories de notes personnalisables, bloc complet avec points forts/faibles, fiche technique, widget des derniers tests, tableau récapitulatif, prise en charge de la notation des lecteurs, intégration de l'API RAWG et schema.org pour les rich snippets.
+- **Fonctionnalités clés :** 6 catégories de notes personnalisables, bloc complet avec points forts/faibles, fiche technique, widget des derniers tests, tableau récapitulatif, prise en charge de la notation des lecteurs, badge « Coup de cœur » éditorial à seuil configurable, intégration de l'API RAWG et schema.org pour les rich snippets.
 - **Prérequis techniques :** WordPress 5.0 minimum et PHP 7.4 ou supérieur, vérifiés automatiquement à l’activation du plugin.
 - **Architecture :** le cœur du plugin charge dynamiquement les composants admin et front-office, inclut un widget et expose des fonctions helper globales (`jlg_notation()`, `jlg_get_post_rating()`, `jlg_display_post_rating()`).
 
@@ -17,7 +17,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 ## Utilisation au quotidien
 - **Shortcodes principaux** :
   - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) pour afficher en une seule fois notation, points forts/faibles et tagline avec de nombreux attributs (`post_id`, `style`, `couleur_accent`, etc.).
-  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct).
+  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction et affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction.
 - **Widget « Derniers tests »** : activé automatiquement, il peut être ajouté depuis *Apparence > Widgets* grâce au registre `JLG_Latest_Reviews_Widget`.
 - **Fonctions helper** :
   - `jlg_get_post_rating()` retourne la moyenne /10 pour un article donné ; `jlg_display_post_rating()` affiche la note formatée ; `jlg_display_thumbnail_score()` injecte la note dans vos templates de vignettes.
@@ -26,7 +26,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 ## Personnalisation avancée
 - **Thèmes clair/sombre et palettes complètes** pour adapter l’apparence du bloc de notation, y compris les couleurs sémantiques des notes.
 - **Effets Glow / Neon** configurables pour les modes texte ou cercle (intensité, pulsation, couleur dynamique ou fixe).
-- **Modules optionnels** : activer/désactiver la notation utilisateurs, les taglines, les animations de barres ou le schema SEO JSON-LD directement depuis l’onglet Réglages.
+- **Modules optionnels** : activer/désactiver la notation utilisateurs, le badge « Coup de cœur », les taglines, les animations de barres ou le schema SEO JSON-LD directement depuis l’onglet Réglages.
 - **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes).
 - **Notation des lecteurs** : personnalisez couleurs et textes du module dédié et profitez d'un histogramme accessible mis à jour en direct, avec verrouillage automatique des interactions pendant le traitement AJAX pour éviter les doubles clics.
 
