@@ -445,6 +445,7 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
     <div
         class="jlg-ge-results"
         data-role="results"
+        data-loading-text="<?php echo esc_attr__( 'Chargement…', 'notation-jlg' ); ?>"
         role="status"
         aria-live="polite"
         aria-busy="false"
