@@ -4,9 +4,10 @@ namespace JLG\Notation\Shortcodes;
 
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
+use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class GameInfo {
@@ -31,9 +32,9 @@ class GameInfo {
         $default_fields_order = implode( ',', array_keys( $all_possible_fields ) );
         $atts                 = shortcode_atts(
             array(
-				'titre'   => 'Fiche Technique',
-				'champs'  => $default_fields_order,
-				'post_id' => '',
+                'titre'   => 'Fiche Technique',
+                'champs'  => $default_fields_order,
+                'post_id' => '',
             ),
             $atts,
             'jlg_fiche_technique'
@@ -71,9 +72,9 @@ class GameInfo {
         return Frontend::get_template_html(
             'shortcode-game-info',
             array(
-				'titre'             => sanitize_text_field( $atts['titre'] ),
-				'champs_a_afficher' => $data_to_display,
-			)
+                'titre'             => sanitize_text_field( $atts['titre'] ),
+                'champs_a_afficher' => $data_to_display,
+            )
         );
     }
 

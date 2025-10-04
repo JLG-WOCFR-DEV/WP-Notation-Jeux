@@ -11,7 +11,7 @@ use JLG\Notation\Helpers;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class GameExplorer {
@@ -231,7 +231,7 @@ class GameExplorer {
             Helpers::get_default_game_explorer_filters()
         );
 
-        $filters = implode( ',', $filters_list );
+        $filters        = implode( ',', $filters_list );
         $score_position = Helpers::normalize_game_explorer_score_position(
             $options['game_explorer_score_position'] ?? ''
         );
@@ -315,7 +315,7 @@ class GameExplorer {
     }
 
     protected static function normalize_filters( $filters_string ) {
-        $allowed        = Helpers::get_game_explorer_allowed_filters();
+        $allowed         = Helpers::get_game_explorer_allowed_filters();
         $default_filters = Helpers::get_default_game_explorer_filters();
         $list            = Helpers::normalize_game_explorer_filters( $filters_string, $default_filters );
 
@@ -604,12 +604,12 @@ class GameExplorer {
 
     protected static function build_filters_snapshot() {
         $snapshot = array(
-            'posts'           => array(),
-            'letters_map'     => array(),
-            'categories_map'  => array(),
-            'platforms_map'   => array(),
-            'developers_map'  => array(),
-            'publishers_map'  => array(),
+            'posts'          => array(),
+            'letters_map'    => array(),
+            'categories_map' => array(),
+            'platforms_map'  => array(),
+            'developers_map' => array(),
+            'publishers_map' => array(),
         );
 
         $rated_posts = Helpers::get_rated_post_ids();
@@ -954,7 +954,7 @@ class GameExplorer {
             }
         }
 
-        $developers_map  = isset( $snapshot['developers_map'] ) && is_array( $snapshot['developers_map'] ) ? $snapshot['developers_map'] : array();
+        $developers_map = isset( $snapshot['developers_map'] ) && is_array( $snapshot['developers_map'] ) ? $snapshot['developers_map'] : array();
         if ( $developer_filter_key !== '' && $developer_filter !== '' && ! isset( $developers_map[ $developer_filter_key ] ) ) {
             $developers_map[ $developer_filter_key ] = $developer_filter;
         }
@@ -970,7 +970,7 @@ class GameExplorer {
             }
         }
 
-        $publishers_map  = isset( $snapshot['publishers_map'] ) && is_array( $snapshot['publishers_map'] ) ? $snapshot['publishers_map'] : array();
+        $publishers_map = isset( $snapshot['publishers_map'] ) && is_array( $snapshot['publishers_map'] ) ? $snapshot['publishers_map'] : array();
         if ( $publisher_filter_key !== '' && $publisher_filter !== '' && ! isset( $publishers_map[ $publisher_filter_key ] ) ) {
             $publishers_map[ $publisher_filter_key ] = $publisher_filter;
         }
@@ -1166,17 +1166,17 @@ class GameExplorer {
 
             if ( $has_popularity_meta ) {
                 $query_args['meta_query'] = array(
-                    'relation'                        => 'OR',
-                    'popularity_clause'               => array(
+                    'relation'                  => 'OR',
+                    'popularity_clause'         => array(
                         'key'  => $popularity_meta_key,
                         'type' => 'NUMERIC',
                     ),
-                    'popularity_missing_clause'       => array(
+                    'popularity_missing_clause' => array(
                         'key'     => $popularity_meta_key,
                         'compare' => 'NOT EXISTS',
                     ),
                 );
-                $query_args['orderby'] = array(
+                $query_args['orderby']    = array(
                     'popularity_clause' => $order,
                     'date'              => 'DESC',
                 );
@@ -1209,6 +1209,34 @@ class GameExplorer {
                 $score_color   = $score_value !== null
                     ? Helpers::calculate_color_from_note( $score_value, $options )
                     : ( $options['color_mid'] ?? '#f97316' );
+
+                $user_rating_avg_meta = get_post_meta( $post_id, '_jlg_user_rating_avg', true );
+                $user_rating_avg      = is_numeric( $user_rating_avg_meta ) ? (float) $user_rating_avg_meta : null;
+                $user_rating_count    = (int) get_post_meta( $post_id, '_jlg_user_rating_count', true );
+
+                $user_rating_bounds = apply_filters(
+                    'jlg_user_rating_bounds',
+                    array(
+                        'min' => 1.0,
+                        'max' => 5.0,
+                    ),
+                    $post_id
+                );
+
+                $user_rating_min = isset( $user_rating_bounds['min'] )
+                    ? (float) $user_rating_bounds['min']
+                    : 1.0;
+                $user_rating_max = isset( $user_rating_bounds['max'] )
+                    ? (float) $user_rating_bounds['max']
+                    : 5.0;
+
+                $user_rating_color = '';
+                if ( isset( $options['user_rating_star_color'] ) && is_string( $options['user_rating_star_color'] ) ) {
+                    $user_rating_color = sanitize_hex_color( $options['user_rating_star_color'] );
+                }
+                if ( ! $user_rating_color ) {
+                    $user_rating_color = '#f59e0b';
+                }
 
                 $cover_meta = get_post_meta( $post_id, '_jlg_cover_image_url', true );
                 $cover_url  = '';
@@ -1271,6 +1299,11 @@ class GameExplorer {
                     'availability_label' => $availability_data['label'],
                     'timestamp'          => get_post_time( 'U', true, $post ),
                     'search_haystack'    => isset( $post_info['search_haystack'] ) ? $post_info['search_haystack'] : '',
+                    'user_rating_avg'    => $user_rating_avg,
+                    'user_rating_count'  => $user_rating_count,
+                    'user_rating_min'    => $user_rating_min,
+                    'user_rating_max'    => $user_rating_max,
+                    'user_rating_color'  => $user_rating_color,
                 );
             }
             wp_reset_postdata();

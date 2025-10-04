@@ -3,26 +3,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$games       = is_array( $games ) ? $games : array();
-$message     = isset( $message ) ? $message : '';
-$pagination  = is_array( $pagination ) ? $pagination : array(
-        'current' => 1,
-        'total'   => 0,
+$games           = is_array( $games ) ? $games : array();
+$message         = isset( $message ) ? $message : '';
+$pagination      = is_array( $pagination ) ? $pagination : array(
+	'current' => 1,
+	'total'   => 0,
 );
-$total_items = isset( $total_items ) ? (int) $total_items : 0;
-$score_position = isset( $score_position )
+$total_items     = isset( $total_items ) ? (int) $total_items : 0;
+$score_position  = isset( $score_position )
     ? \JLG\Notation\Helpers::normalize_game_explorer_score_position( $score_position )
     : \JLG\Notation\Helpers::normalize_game_explorer_score_position( '' );
-$score_max_value  = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
-$score_max_label  = number_format_i18n( $score_max_value );
-$score_classes = array(
-    'jlg-ge-card__score',
-    'jlg-ge-card__score--' . sanitize_html_class( $score_position ),
+$score_max_value = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
+$score_max_label = number_format_i18n( $score_max_value );
+
+$score_container_classes = array(
+    'jlg-ge-card__ratings',
+    'jlg-ge-card__ratings--' . sanitize_html_class( $score_position ),
 );
-$current_filters = isset( $current_filters ) && is_array( $current_filters ) ? $current_filters : array();
-$request_keys    = isset( $request_keys ) && is_array( $request_keys ) ? $request_keys : array();
-$sort_key        = isset( $sort_key ) && is_string( $sort_key ) ? $sort_key : 'date';
-$sort_order      = isset( $sort_order ) && is_string( $sort_order ) ? strtoupper( $sort_order ) : 'DESC';
+
+$editorial_score_classes = array(
+    'jlg-ge-card__score',
+    'jlg-ge-card__score--editorial',
+);
+
+$readers_score_classes = array(
+    'jlg-ge-card__score',
+    'jlg-ge-card__score--readers',
+);
+$current_filters       = isset( $current_filters ) && is_array( $current_filters ) ? $current_filters : array();
+$request_keys          = isset( $request_keys ) && is_array( $request_keys ) ? $request_keys : array();
+$sort_key              = isset( $sort_key ) && is_string( $sort_key ) ? $sort_key : 'date';
+$sort_order            = isset( $sort_order ) && is_string( $sort_order ) ? strtoupper( $sort_order ) : 'DESC';
 if ( ! in_array( $sort_order, array( 'ASC', 'DESC' ), true ) ) {
     $sort_order = 'DESC';
 }
@@ -86,7 +97,7 @@ if ( isset( $pagination['current'] ) && (int) $pagination['current'] > 1 ) {
     $base_query_params[ $namespaced_keys['paged'] ] = (string) (int) $pagination['current'];
 }
 
-$prepare_hidden_params = static function( array $exclude = array(), array $overrides = array() ) use ( $base_query_params ) {
+$prepare_hidden_params = static function ( array $exclude = array(), array $overrides = array() ) use ( $base_query_params ) {
     $params = $base_query_params;
 
     foreach ( $exclude as $exclude_key ) {
@@ -105,7 +116,7 @@ $prepare_hidden_params = static function( array $exclude = array(), array $overr
     return $params;
 };
 
-$render_hidden_inputs = static function( array $params ) {
+$render_hidden_inputs = static function ( array $params ) {
     foreach ( $params as $name => $value ) {
         $value_string = (string) $value;
 
@@ -129,25 +140,63 @@ if ( empty( $games ) ) {
 <div class="jlg-ge-grid">
     <?php
     foreach ( $games as $game ) :
-        $permalink           = isset( $game['permalink'] ) ? $game['permalink'] : '';
-        $title               = isset( $game['title'] ) ? $game['title'] : '';
-        $score_display       = isset( $game['score_display'] ) ? $game['score_display'] : '';
-        $score_color         = isset( $game['score_color'] ) ? $game['score_color'] : '';
-        $has_score           = isset( $game['has_score'] )
+        $permalink         = isset( $game['permalink'] ) ? $game['permalink'] : '';
+        $title             = isset( $game['title'] ) ? $game['title'] : '';
+        $score_display     = isset( $game['score_display'] ) ? $game['score_display'] : '';
+        $score_color       = isset( $game['score_color'] ) ? $game['score_color'] : '';
+        $has_score         = isset( $game['has_score'] )
             ? (bool) $game['has_score']
             : ( isset( $game['score_value'] ) && is_numeric( $game['score_value'] ) );
-        $cover_url           = isset( $game['cover_url'] ) ? $game['cover_url'] : '';
-        $release_display     = isset( $game['release_display'] ) ? $game['release_display'] : '';
-        $developer           = isset( $game['developer'] ) ? $game['developer'] : '';
-        $publisher           = isset( $game['publisher'] ) ? $game['publisher'] : '';
-        $platforms           = isset( $game['platforms'] ) && is_array( $game['platforms'] ) ? $game['platforms'] : array();
-        $platform_count      = count( $platforms );
-        $display_platforms   = array_slice( $platforms, 0, 4 );
-        $extra_platforms     = max( 0, $platform_count - count( $display_platforms ) );
-        $genre               = isset( $game['genre'] ) ? $game['genre'] : '';
-        $availability_label  = isset( $game['availability_label'] ) ? $game['availability_label'] : '';
-        $availability_status = isset( $game['availability'] ) ? $game['availability'] : '';
-        $excerpt             = isset( $game['excerpt'] ) ? $game['excerpt'] : '';
+        $user_rating_avg   = isset( $game['user_rating_avg'] ) ? $game['user_rating_avg'] : null;
+        $user_rating_count = isset( $game['user_rating_count'] ) ? (int) $game['user_rating_count'] : 0;
+        $user_rating_max   = isset( $game['user_rating_max'] ) ? (float) $game['user_rating_max'] : 5.0;
+        $user_rating_color = isset( $game['user_rating_color'] ) ? sanitize_hex_color( $game['user_rating_color'] ) : '';
+        if ( ! $user_rating_color ) {
+            $user_rating_color = '#f59e0b';
+        }
+        $has_user_rating           = is_numeric( $user_rating_avg ) && $user_rating_count > 0;
+        $user_rating_display       = $has_user_rating ? number_format_i18n( (float) $user_rating_avg, 1 ) : '—';
+        $user_rating_max_display   = number_format_i18n( $user_rating_max, 1 );
+        $user_rating_count_display = number_format_i18n( $user_rating_count );
+        $user_rating_votes_label   = $has_user_rating
+            ? sprintf(
+                _n( '%s vote', '%s votes', $user_rating_count, 'notation-jlg' ),
+                $user_rating_count_display
+            )
+            : __( 'Aucun vote', 'notation-jlg' );
+        $user_rating_aria_label    = $has_user_rating
+            ? sprintf(
+                _n(
+                    'Note des lecteurs : %1$s sur %2$s (%3$s vote)',
+                    'Note des lecteurs : %1$s sur %2$s (%3$s votes)',
+                    $user_rating_count,
+                    'notation-jlg'
+                ),
+                $user_rating_display,
+                $user_rating_max_display,
+                $user_rating_count_display
+            )
+            : __( 'Note des lecteurs : en attente de votes', 'notation-jlg' );
+        $editorial_aria_label      = $has_score
+            ? sprintf(
+                __( 'Note de la rédaction : %1$s sur %2$s', 'notation-jlg' ),
+                $score_display,
+                $score_max_label
+            )
+            : __( 'Note de la rédaction : non disponible', 'notation-jlg' );
+        $ratings_group_label       = __( 'Comparaison des notes', 'notation-jlg' );
+        $cover_url                 = isset( $game['cover_url'] ) ? $game['cover_url'] : '';
+        $release_display           = isset( $game['release_display'] ) ? $game['release_display'] : '';
+        $developer                 = isset( $game['developer'] ) ? $game['developer'] : '';
+        $publisher                 = isset( $game['publisher'] ) ? $game['publisher'] : '';
+        $platforms                 = isset( $game['platforms'] ) && is_array( $game['platforms'] ) ? $game['platforms'] : array();
+        $platform_count            = count( $platforms );
+        $display_platforms         = array_slice( $platforms, 0, 4 );
+        $extra_platforms           = max( 0, $platform_count - count( $display_platforms ) );
+        $genre                     = isset( $game['genre'] ) ? $game['genre'] : '';
+        $availability_label        = isset( $game['availability_label'] ) ? $game['availability_label'] : '';
+        $availability_status       = isset( $game['availability'] ) ? $game['availability'] : '';
+        $excerpt                   = isset( $game['excerpt'] ) ? $game['excerpt'] : '';
         ?>
         <article class="jlg-ge-card" data-post-id="<?php echo esc_attr( $game['post_id'] ); ?>">
             <a class="jlg-ge-card__media" href="<?php echo esc_url( $permalink ); ?>">
@@ -156,21 +205,46 @@ if ( empty( $games ) ) {
                 <?php else : ?>
                     <span class="jlg-ge-card__placeholder"><?php esc_html_e( 'Visuel indisponible', 'notation-jlg' ); ?></span>
                 <?php endif; ?>
-                <?php if ( $score_display !== '' ) : ?>
-                    <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
-                        <?php echo esc_html( $score_display ); ?>
-                        <?php if ( $has_score ) : ?>
-                            <span class="jlg-ge-card__score-outof">
-                                <?php
-                                printf(
-                                    /* translators: %s: Maximum possible rating value. */
-                                    esc_html__( '/%s', 'notation-jlg' ),
-                                    esc_html( $score_max_label )
-                                );
-                                ?>
+                <?php if ( $score_display !== '' || $user_rating_display !== '' ) : ?>
+                    <div class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_container_classes ) ) ); ?>" role="group" aria-label="<?php echo esc_attr( $ratings_group_label ); ?>">
+                        <?php if ( $score_display !== '' ) : ?>
+                            <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $editorial_score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;" aria-label="<?php echo esc_attr( $editorial_aria_label ); ?>">
+                                <span class="jlg-ge-card__score-label"><?php esc_html_e( 'Rédaction', 'notation-jlg' ); ?></span>
+                                <span class="jlg-ge-card__score-main">
+                                    <span class="jlg-ge-card__score-value"><?php echo esc_html( $score_display ); ?></span>
+                                    <?php if ( $has_score ) : ?>
+                                        <span class="jlg-ge-card__score-outof">
+                                            <?php
+                                            printf(
+                                                /* translators: %s: Maximum possible rating value. */
+                                                esc_html__( '/%s', 'notation-jlg' ),
+                                                esc_html( $score_max_label )
+                                            );
+                                            ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </span>
                             </span>
                         <?php endif; ?>
-                    </span>
+                        <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $readers_score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $user_rating_color ); ?>;" aria-label="<?php echo esc_attr( $user_rating_aria_label ); ?>">
+                            <span class="jlg-ge-card__score-label"><?php esc_html_e( 'Lecteurs', 'notation-jlg' ); ?></span>
+                            <span class="jlg-ge-card__score-main">
+                                <span class="jlg-ge-card__score-value"><?php echo esc_html( $user_rating_display ); ?></span>
+                                <?php if ( $has_user_rating ) : ?>
+                                    <span class="jlg-ge-card__score-outof">
+                                        <?php
+                                        printf(
+                                            /* translators: %s: Maximum possible user rating value. */
+                                            esc_html__( '/%s', 'notation-jlg' ),
+                                            esc_html( $user_rating_max_display )
+                                        );
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+                            </span>
+                            <span class="jlg-ge-card__score-extra"><?php echo esc_html( $user_rating_votes_label ); ?></span>
+                        </span>
+                    </div>
                 <?php endif; ?>
             </a>
             <div class="jlg-ge-card__body">
@@ -235,10 +309,10 @@ $current_page = isset( $pagination['current'] ) ? (int) $pagination['current'] :
 $total_pages  = isset( $pagination['total'] ) ? (int) $pagination['total'] : 0;
 
 if ( $total_pages > 1 ) :
-    $prev_page      = max( 1, $current_page - 1 );
-    $next_page      = min( $total_pages, $current_page + 1 );
-    $prev_disabled  = ( $current_page <= 1 );
-    $next_disabled  = ( $current_page >= $total_pages );
+    $prev_page     = max( 1, $current_page - 1 );
+    $next_page     = min( $total_pages, $current_page + 1 );
+    $prev_disabled = ( $current_page <= 1 );
+    $next_disabled = ( $current_page >= $total_pages );
     ?>
     <nav class="jlg-ge-pagination" data-role="pagination" aria-label="<?php esc_attr_e( 'Navigation des pages du Game Explorer', 'notation-jlg' ); ?>">
         <form method="get" class="jlg-ge-pagination__form">

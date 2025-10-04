@@ -5,6 +5,7 @@
     --jlg-ge-text-muted: #9ca3af;
     --jlg-ge-accent: #60a5fa;
     --jlg-ge-accent-alt: #c084fc;
+    --jlg-ge-user-rating-color: #f59e0b;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -344,75 +345,125 @@
     padding: 0.75rem;
 }
 
-.jlg-ge-card__score {
+.jlg-ge-card__ratings {
     position: absolute;
-    background: linear-gradient(135deg, var(--jlg-ge-accent), var(--jlg-ge-accent-alt));
-    color: #0f172a;
-    font-weight: 700;
-    padding: 0.45rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 1rem;
-    box-shadow: 0 0 25px rgba(96, 165, 250, 0.3);
-    transform: none;
-    max-width: calc(100% - 1.5rem);
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    z-index: 2;
+    width: calc(100% - 1.5rem);
 }
 
-.jlg-ge-card__score--top-left,
-.jlg-ge-card__score--middle-left,
-.jlg-ge-card__score--bottom-left {
+.jlg-ge-card__ratings--top-left,
+.jlg-ge-card__ratings--middle-left,
+.jlg-ge-card__ratings--bottom-left {
     left: 0.75rem;
-    right: auto;
+    align-items: flex-start;
 }
 
-.jlg-ge-card__score--top-right,
-.jlg-ge-card__score--middle-right,
-.jlg-ge-card__score--bottom-right {
+.jlg-ge-card__ratings--top-right,
+.jlg-ge-card__ratings--middle-right,
+.jlg-ge-card__ratings--bottom-right {
     right: 0.75rem;
-    left: auto;
+    align-items: flex-end;
 }
 
-.jlg-ge-card__score--top-left,
-.jlg-ge-card__score--top-right {
+.jlg-ge-card__ratings--top-left,
+.jlg-ge-card__ratings--top-right {
     top: 0.75rem;
-    bottom: auto;
-    transform: none;
 }
 
-.jlg-ge-card__score--bottom-left,
-.jlg-ge-card__score--bottom-right {
+.jlg-ge-card__ratings--bottom-left,
+.jlg-ge-card__ratings--bottom-right {
     bottom: 0.75rem;
-    top: auto;
-    transform: none;
 }
 
-.jlg-ge-card__score--middle-left,
-.jlg-ge-card__score--middle-right {
+.jlg-ge-card__ratings--middle-left,
+.jlg-ge-card__ratings--middle-right {
     top: 50%;
-    bottom: auto;
     transform: translateY(-50%);
 }
 
-@media (max-width: 640px) {
-    .jlg-ge-card__score {
-        font-size: 0.9rem;
-        padding: 0.4rem 0.65rem;
-    }
+.jlg-ge-card__score {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, var(--jlg-ge-score-color, var(--jlg-ge-accent)), var(--jlg-ge-accent-alt));
+    color: #0f172a;
+    font-weight: 700;
+    padding: 0.5rem 0.8rem;
+    border-radius: 1rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+    min-width: 7rem;
+}
+
+.jlg-ge-card__ratings--top-right .jlg-ge-card__score,
+.jlg-ge-card__ratings--middle-right .jlg-ge-card__score,
+.jlg-ge-card__ratings--bottom-right .jlg-ge-card__score {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.jlg-ge-card__score--readers {
+    background: linear-gradient(135deg, var(--jlg-ge-score-color, var(--jlg-ge-user-rating-color)), rgba(96, 165, 250, 0.75));
+    box-shadow: 0 12px 30px rgba(192, 132, 252, 0.25);
 }
 
 .jlg-ge-card__score::before {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 9999px;
+    border-radius: inherit;
     background: var(--jlg-ge-score-color, var(--jlg-ge-accent));
-    opacity: 0.25;
+    opacity: 0.18;
     z-index: -1;
 }
 
-.jlg-ge-card__score-outof {
+.jlg-ge-card__score-label {
     font-size: 0.7rem;
-    margin-left: 0.15rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.jlg-ge-card__score-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+}
+
+.jlg-ge-card__score-value {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.jlg-ge-card__score-outof {
+    font-size: 0.75rem;
+    opacity: 0.85;
+}
+
+.jlg-ge-card__score-extra {
+    font-size: 0.7rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+    .jlg-ge-card__ratings {
+        gap: 0.3rem;
+        width: calc(100% - 1rem);
+    }
+
+    .jlg-ge-card__score {
+        padding: 0.45rem 0.65rem;
+        min-width: 0;
+    }
+
+    .jlg-ge-card__score-value {
+        font-size: 1.1rem;
+    }
 }
 
 .jlg-ge-card__body {

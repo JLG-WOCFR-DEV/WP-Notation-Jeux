@@ -260,6 +260,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 '_jlg_developpeur'     => 'Studio Alpha',
                 '_jlg_editeur'         => 'Publisher A',
                 '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+                '_jlg_user_rating_avg'   => 4.4,
+                '_jlg_user_rating_count' => 58,
             ],
             202 => [
                 '_jlg_average_score'   => 7.4,
@@ -268,6 +270,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 '_jlg_developpeur'     => 'Studio Beta',
                 '_jlg_editeur'         => 'Publisher B',
                 '_jlg_plateformes'     => ['PC'],
+                '_jlg_user_rating_avg'   => 3.7,
+                '_jlg_user_rating_count' => 24,
             ],
         ];
 
@@ -484,6 +488,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 '_jlg_developpeur'     => 'Studio Alpha',
                 '_jlg_editeur'         => 'Publisher A',
                 '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+                '_jlg_user_rating_avg'   => 4.8,
+                '_jlg_user_rating_count' => 80,
             ],
             202 => [
                 '_jlg_average_score'   => 7.4,
@@ -492,6 +498,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 '_jlg_developpeur'     => 'Studio Beta',
                 '_jlg_editeur'         => 'Publisher B',
                 '_jlg_plateformes'     => ['PC'],
+                '_jlg_user_rating_avg'   => 3.2,
+                '_jlg_user_rating_count' => 9,
             ],
         ];
 
@@ -532,6 +540,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 '_jlg_developpeur'     => 'Studio Alpha',
                 '_jlg_editeur'         => 'Publisher A',
                 '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+                '_jlg_user_rating_avg'   => 4.3,
+                '_jlg_user_rating_count' => 61,
             ],
             202 => [
                 '_jlg_average_score'   => 7.2,
@@ -540,6 +550,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 '_jlg_developpeur'     => 'Studio Beta',
                 '_jlg_editeur'         => 'Publisher B',
                 '_jlg_plateformes'     => ['PC'],
+                '_jlg_user_rating_avg'   => 3.9,
+                '_jlg_user_rating_count' => 18,
             ],
         ];
 
@@ -556,7 +568,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
         $defaultResponse = $this->dispatchExplorerAjax($basePost);
         $this->assertArrayHasKey('html', $defaultResponse);
-        $this->assertStringContainsString('jlg-ge-card__score--bottom-right', $defaultResponse['html']);
+        $this->assertStringContainsString('jlg-ge-card__ratings--bottom-right', $defaultResponse['html']);
         $this->assertSame('bottom-right', $defaultResponse['config']['atts']['score_position'] ?? null);
 
         $GLOBALS['jlg_test_options']['notation_jlg_settings']['game_explorer_score_position'] = 'top-left';
@@ -564,7 +576,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
         $topLeftResponse = $this->dispatchExplorerAjax($basePost);
         $this->assertArrayHasKey('html', $topLeftResponse);
-        $this->assertStringContainsString('jlg-ge-card__score--top-left', $topLeftResponse['html']);
+        $this->assertStringContainsString('jlg-ge-card__ratings--top-left', $topLeftResponse['html']);
         $this->assertSame('top-left', $topLeftResponse['config']['atts']['score_position'] ?? null);
 
         $overridePost = $basePost;
@@ -572,8 +584,60 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
         $overrideResponse = $this->dispatchExplorerAjax($overridePost);
         $this->assertArrayHasKey('html', $overrideResponse);
-        $this->assertStringContainsString('jlg-ge-card__score--middle-right', $overrideResponse['html']);
+        $this->assertStringContainsString('jlg-ge-card__ratings--middle-right', $overrideResponse['html']);
         $this->assertSame('middle-right', $overrideResponse['config']['atts']['score_position'] ?? null);
+    }
+
+    public function test_render_context_exposes_user_rating_payload(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for user ratings.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for user ratings.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'] = [
+            101 => [
+                '_jlg_game_title'        => 'Alpha Quest',
+                '_jlg_average_score'     => 8.4,
+                '_jlg_cover_image_url'   => 'https://example.com/alpha.jpg',
+                '_jlg_date_sortie'       => '2023-02-14',
+                '_jlg_developpeur'       => 'Studio Alpha',
+                '_jlg_editeur'           => 'Publisher A',
+                '_jlg_plateformes'       => ['PC', 'PlayStation 5'],
+                '_jlg_user_rating_avg'   => 4.6,
+                '_jlg_user_rating_count' => 42,
+            ],
+            202 => [
+                '_jlg_game_title'        => 'Beta Strike',
+                '_jlg_average_score'     => 7.1,
+                '_jlg_cover_image_url'   => '',
+                '_jlg_date_sortie'       => '2022-11-10',
+                '_jlg_developpeur'       => 'Studio Beta',
+                '_jlg_editeur'           => 'Publisher B',
+                '_jlg_plateformes'       => ['PC'],
+                '_jlg_user_rating_avg'   => 0,
+                '_jlg_user_rating_count' => 0,
+            ],
+        ];
+
+        $atts = \JLG\Notation\Shortcodes\GameExplorer::get_default_atts();
+        $request = [
+            'orderby' => 'date',
+            'order'   => 'DESC',
+        ];
+
+        $context = \JLG\Notation\Shortcodes\GameExplorer::get_render_context($atts, $request);
+
+        $this->assertNotEmpty($context['games'], 'At least one game should be present in the render context.');
+
+        $firstGame = $context['games'][0];
+        $this->assertArrayHasKey('user_rating_avg', $firstGame);
+        $this->assertArrayHasKey('user_rating_count', $firstGame);
+        $this->assertArrayHasKey('user_rating_max', $firstGame);
+        $this->assertSame(4.6, $firstGame['user_rating_avg']);
+        $this->assertSame(42, $firstGame['user_rating_count']);
+        $this->assertSame(5.0, $firstGame['user_rating_max']);
     }
 
     private function dispatchExplorerAjax(array $post): array

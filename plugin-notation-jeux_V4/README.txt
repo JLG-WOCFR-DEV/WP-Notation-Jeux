@@ -60,7 +60,13 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[jlg_points_forts_faibles]` - Points positifs et négatifs
 * `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs avec histogramme dynamique (barres accessibles ARIA, mise à jour en temps réel après chaque vote)
 * `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les entêtes sont triables par titre, date, note moyenne et métadonnées développeur/éditeur via `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
-* `[jlg_game_explorer]` - Game Explorer interactif avec cartes et filtres dynamiques. Attributs : `posts_per_page` (nombre d'articles par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `developer`, `publisher`, `availability`), `categorie`, `plateforme` et `lettre` pour forcer un filtrage initial. La navigation (lettres, filtres, tri et pagination) reste pleinement fonctionnelle sans JavaScript grâce à des requêtes GET accessibles. Sur mobile, les filtres se replient dans un panneau masquable pour libérer l'écran tout en conservant l'accessibilité sans JavaScript.
+* `[jlg_game_explorer]` - Game Explorer interactif avec cartes et filtres dynamiques. Attributs : `posts_per_page` (nombre d'articles par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `developer`, `publisher`, `availability`), `categorie`, `plateforme` et `lettre` pour forcer un filtrage initial. La navigation (lettres, filtres, tri et pagination) reste pleinement fonctionnelle sans JavaScript grâce à des requêtes GET accessibles. Sur mobile, les filtres se replient dans un panneau masquable pour libérer l'écran tout en conservant l'accessibilité sans JavaScript. Les cartes juxtaposent désormais la note rédactionnelle et, si le module **Notation utilisateurs** est activé, la moyenne/5 ainsi que le volume de votes lecteurs avec un intitulé ARIA dédié.
+
+=== FAQ — Afficher la note des lecteurs dans le Game Explorer ===
+
+1. Activez l'option **Notation utilisateurs** dans `Notation JLG > Réglages` (onglet *Modules*). Les votes saisis via `[notation_utilisateurs_jlg]` alimentent les métadonnées `_jlg_user_rating_avg` et `_jlg_user_rating_count`.
+2. Ajoutez `[jlg_game_explorer]` sur une page ou un modèle. Le shortcode lit automatiquement ces valeurs pour afficher un badge « Lecteurs » /5 avec le nombre d'avis, ou « Aucun vote » tant qu'aucun retour n'est enregistré.
+3. Les badges « Rédaction » et « Lecteurs » sont regroupés avec `role="group"` et une description ARIA afin d'annoncer clairement la comparaison des notes aux technologies d'assistance.
 
 == Utilisation dans les widgets et blocs ==
 
