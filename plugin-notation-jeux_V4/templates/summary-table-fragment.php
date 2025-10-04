@@ -27,6 +27,17 @@ $has_genre_taxonomy    = ! empty( $genre_taxonomy ) && taxonomy_exists( $genre_t
 $default_empty_message = '<p>' . esc_html__( 'Aucun article trouvé pour cette sélection.', 'notation-jlg' ) . '</p>';
 $empty_message         = ! empty( $error_message ) ? $error_message : $default_empty_message;
 $columns_count         = count( $columns );
+$opencritic_map        = isset( $opencritic_map ) && is_array( $opencritic_map ) ? $opencritic_map : array();
+$opencritic_strings    = isset( $opencritic_strings ) && is_array( $opencritic_strings ) ? $opencritic_strings : array();
+$opencritic_view_label = isset( $opencritic_strings['view_label'] ) && $opencritic_strings['view_label'] !== ''
+    ? $opencritic_strings['view_label']
+    : esc_html__( 'Voir sur OpenCritic', 'notation-jlg' );
+$opencritic_view_label_for = isset( $opencritic_strings['view_label_for'] ) && $opencritic_strings['view_label_for'] !== ''
+    ? $opencritic_strings['view_label_for']
+    : esc_html__( 'Voir la fiche OpenCritic de %s', 'notation-jlg' );
+$opencritic_score_fallback = isset( $opencritic_strings['score_fallback'] ) && $opencritic_strings['score_fallback'] !== ''
+    ? $opencritic_strings['score_fallback']
+    : esc_html__( 'N/A', 'notation-jlg' );
 
 $category_column_map = array();
 
@@ -275,7 +286,7 @@ if ( $layout === 'grid' ) :
         <?php
         if ( $query instanceof WP_Query && $query->have_posts() ) :
             while ( $query->have_posts() ) :
-				$query->the_post();
+                                $query->the_post();
                 $post_id    = get_the_ID();
                 $game_title = \JLG\Notation\Helpers::get_game_title( $post_id );
                 $score_data = \JLG\Notation\Helpers::get_resolved_average_score( $post_id );
@@ -290,20 +301,64 @@ if ( $layout === 'grid' ) :
                 }
                 $genre_terms       = $has_genre_taxonomy ? get_the_terms( $post_id, $genre_taxonomy ) : array();
                 $genre_badges_html = jlg_render_genre_badges( $genre_terms );
+                $opencritic        = isset( $opencritic_map[ $post_id ] ) ? $opencritic_map[ $post_id ] : \JLG\Notation\Helpers::get_opencritic_display_data( $post_id );
+                $opencritic_status = isset( $opencritic['status'] ) ? $opencritic['status'] : 'unlinked';
+                $opencritic_label  = isset( $opencritic['status_label'] ) ? $opencritic['status_label'] : '';
+                $opencritic_score  = isset( $opencritic['score_display'] ) ? $opencritic['score_display'] : '';
+                $opencritic_url    = isset( $opencritic['url'] ) ? $opencritic['url'] : '';
+                $opencritic_title  = isset( $opencritic['title'] ) && $opencritic['title'] !== '' ? $opencritic['title'] : $game_title;
+                $opencritic_color  = isset( $opencritic['status_color'] ) && $opencritic['status_color'] !== '' ? $opencritic['status_color'] : '#94a3b8';
+                $opencritic_bg     = isset( $opencritic['status_background'] ) && $opencritic['status_background'] !== '' ? $opencritic['status_background'] : 'rgba(148, 163, 184, 0.16)';
+                $opencritic_border = isset( $opencritic['status_border'] ) && $opencritic['status_border'] !== '' ? $opencritic['status_border'] : 'rgba(148, 163, 184, 0.38)';
+                $opencritic_style  = sprintf(
+                    '--jlg-opencritic-color:%1$s;--jlg-opencritic-bg:%2$s;--jlg-opencritic-border:%3$s;',
+                    $opencritic_color,
+                    $opencritic_bg,
+                    $opencritic_border
+                );
+                $opencritic_link_label = $opencritic_view_label;
+                if ( $opencritic_view_label_for !== '' && strpos( $opencritic_view_label_for, '%s' ) !== false ) {
+                    $opencritic_link_label = sprintf( $opencritic_view_label_for, $opencritic_title );
+                }
+                $display_opencritic = $opencritic_status !== 'unlinked';
                 ?>
-                <a href="<?php the_permalink(); ?>" class="jlg-game-card">
-                    <div class="jlg-game-card-score"><?php echo esc_html( $score_display ); ?></div>
-                    <?php if ( $cover_url ) : ?>
-                        <img src="<?php echo esc_url( $cover_url ); ?>" alt="<?php echo esc_attr( $game_title ); ?>" loading="lazy">
+                <div class="jlg-game-card">
+                    <a href="<?php the_permalink(); ?>" class="jlg-game-card__main">
+                        <div class="jlg-game-card-score"><?php echo esc_html( $score_display ); ?></div>
+                        <?php if ( $cover_url ) : ?>
+                            <img class="jlg-game-card__image" src="<?php echo esc_url( $cover_url ); ?>" alt="<?php echo esc_attr( $game_title ); ?>" loading="lazy">
+                        <?php endif; ?>
+                        <div class="jlg-game-card-title">
+                            <span><?php echo esc_html( $game_title ); ?></span>
+                        </div>
+                        <?php if ( $genre_badges_html !== '' ) : ?>
+                            <?php echo wp_kses_post( $genre_badges_html ); ?>
+                        <?php endif; ?>
+                    </a>
+                    <?php if ( $display_opencritic ) : ?>
+                        <div class="jlg-game-card__opencritic" data-opencritic-status="<?php echo esc_attr( $opencritic_status ); ?>">
+                            <span class="jlg-opencritic-chip" style="<?php echo esc_attr( $opencritic_style ); ?>">
+                                <span class="jlg-opencritic-chip__score"><?php echo esc_html( $opencritic_score !== '' ? $opencritic_score : $opencritic_score_fallback ); ?></span>
+                                <?php if ( $opencritic_label !== '' ) : ?>
+                                    <span class="jlg-opencritic-chip__label"><?php echo esc_html( $opencritic_label ); ?></span>
+                                <?php endif; ?>
+                            </span>
+                            <?php if ( $opencritic_url !== '' ) : ?>
+                                <a
+                                    class="jlg-opencritic-link jlg-game-card__opencritic-link"
+                                    href="<?php echo esc_url( $opencritic_url ); ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-opencritic-title="<?php echo esc_attr( $opencritic_title ); ?>"
+                                    aria-label="<?php echo esc_attr( $opencritic_link_label ); ?>"
+                                >
+                                    <?php echo esc_html( $opencritic_view_label ); ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
-                    <div class="jlg-game-card-title">
-                        <span><?php echo esc_html( $game_title ); ?></span>
-                    </div>
-                    <?php if ( $genre_badges_html !== '' ) : ?>
-                        <?php echo wp_kses_post( $genre_badges_html ); ?>
-                    <?php endif; ?>
-                </a>
-				<?php
+                </div>
+                                <?php
             endwhile;
         else :
             echo wp_kses_post( $empty_message );
@@ -339,10 +394,29 @@ else :
                 <?php
                 if ( $query instanceof WP_Query && $query->have_posts() ) :
                     while ( $query->have_posts() ) :
-						$query->the_post();
+                                                $query->the_post();
                         $post_id           = get_the_ID();
                         $genre_terms       = $has_genre_taxonomy ? get_the_terms( $post_id, $genre_taxonomy ) : array();
                         $genre_badges_html = jlg_render_genre_badges( $genre_terms );
+                        $opencritic_data   = isset( $opencritic_map[ $post_id ] ) ? $opencritic_map[ $post_id ] : \JLG\Notation\Helpers::get_opencritic_display_data( $post_id );
+                        $opencritic_status = isset( $opencritic_data['status'] ) ? $opencritic_data['status'] : 'unlinked';
+                        $opencritic_label  = isset( $opencritic_data['status_label'] ) ? $opencritic_data['status_label'] : '';
+                        $opencritic_score  = isset( $opencritic_data['score_display'] ) ? $opencritic_data['score_display'] : '';
+                        $opencritic_url    = isset( $opencritic_data['url'] ) ? $opencritic_data['url'] : '';
+                        $opencritic_title  = isset( $opencritic_data['title'] ) && $opencritic_data['title'] !== '' ? $opencritic_data['title'] : \JLG\Notation\Helpers::get_game_title( $post_id );
+                        $opencritic_color  = isset( $opencritic_data['status_color'] ) && $opencritic_data['status_color'] !== '' ? $opencritic_data['status_color'] : '#94a3b8';
+                        $opencritic_bg     = isset( $opencritic_data['status_background'] ) && $opencritic_data['status_background'] !== '' ? $opencritic_data['status_background'] : 'rgba(148, 163, 184, 0.16)';
+                        $opencritic_border = isset( $opencritic_data['status_border'] ) && $opencritic_data['status_border'] !== '' ? $opencritic_data['status_border'] : 'rgba(148, 163, 184, 0.38)';
+                        $opencritic_style  = sprintf(
+                            '--jlg-opencritic-color:%1$s;--jlg-opencritic-bg:%2$s;--jlg-opencritic-border:%3$s;',
+                            $opencritic_color,
+                            $opencritic_bg,
+                            $opencritic_border
+                        );
+                        $opencritic_link_label = $opencritic_view_label;
+                        if ( $opencritic_view_label_for !== '' && strpos( $opencritic_view_label_for, '%s' ) !== false ) {
+                            $opencritic_link_label = sprintf( $opencritic_view_label_for, $opencritic_title );
+                        }
                         ?>
                         <tr>
                             <?php
@@ -391,6 +465,26 @@ else :
                                     case 'editeur':
                                         $publisher = get_post_meta( $post_id, '_jlg_editeur', true ) ?: __( '-', 'notation-jlg' );
                                         echo esc_html( $publisher );
+                                        break;
+                                    case 'opencritic':
+                                        if ( $opencritic_status === 'unlinked' ) {
+                                            echo esc_html( $opencritic_score_fallback );
+                                            break;
+                                        }
+
+                                        echo '<span class="jlg-opencritic-chip" style="' . esc_attr( $opencritic_style ) . '">';
+                                        echo '<span class="jlg-opencritic-chip__score">' . esc_html( $opencritic_score !== '' ? $opencritic_score : $opencritic_score_fallback ) . '</span>';
+                                        if ( $opencritic_label !== '' ) {
+                                            echo '<span class="jlg-opencritic-chip__label">' . esc_html( $opencritic_label ) . '</span>';
+                                        }
+                                        echo '</span>';
+
+                                        if ( $opencritic_url !== '' ) {
+                                            echo '<a class="jlg-opencritic-link jlg-opencritic-chip__link" href="' . esc_url( $opencritic_url ) . '" target="_blank" rel="noopener noreferrer" data-opencritic-title="' . esc_attr( $opencritic_title ) . '" aria-label="' . esc_attr( $opencritic_link_label ) . '">';
+                                            echo esc_html( $opencritic_view_label );
+                                            echo '</a>';
+                                        }
+
                                         break;
                                     default:
                                         if ( isset( $category_column_map[ $col ] ) ) {

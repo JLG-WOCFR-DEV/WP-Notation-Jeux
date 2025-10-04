@@ -370,6 +370,17 @@ class SummaryDisplay {
                     'aliases'  => array( 'note' ),
                 ),
             ),
+            'opencritic'  => array(
+                'label'    => __( 'Score OpenCritic', 'notation-jlg' ),
+                'sortable' => true,
+                'sort'     => array(
+                    'key'      => 'opencritic',
+                    'orderby'  => 'meta_value_num',
+                    'meta_key' => '_jlg_opencritic_score',
+                    'type'     => 'NUMERIC',
+                    'aliases'  => array( 'opencritic', 'opencritic_score' ),
+                ),
+            ),
             'developpeur' => array(
                 'label'    => __( 'Développeur', 'notation-jlg' ),
                 'sortable' => true,

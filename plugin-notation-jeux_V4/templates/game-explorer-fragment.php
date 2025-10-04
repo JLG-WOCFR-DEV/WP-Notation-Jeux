@@ -27,6 +27,16 @@ if ( ! in_array( $sort_order, array( 'ASC', 'DESC' ), true ) ) {
     $sort_order = 'DESC';
 }
 $query_params = isset( $query_params ) && is_array( $query_params ) ? $query_params : array();
+$opencritic_strings = isset( $opencritic_strings ) && is_array( $opencritic_strings ) ? $opencritic_strings : array();
+$opencritic_view_label = isset( $opencritic_strings['view_label'] ) && $opencritic_strings['view_label'] !== ''
+    ? $opencritic_strings['view_label']
+    : esc_html__( 'Voir sur OpenCritic', 'notation-jlg' );
+$opencritic_view_label_for = isset( $opencritic_strings['view_label_for'] ) && $opencritic_strings['view_label_for'] !== ''
+    ? $opencritic_strings['view_label_for']
+    : esc_html__( 'Voir la fiche OpenCritic de %s', 'notation-jlg' );
+$opencritic_score_fallback = isset( $opencritic_strings['score_fallback'] ) && $opencritic_strings['score_fallback'] !== ''
+    ? $opencritic_strings['score_fallback']
+    : esc_html__( 'N/A', 'notation-jlg' );
 
 $namespaced_keys = array(
     'orderby'      => isset( $request_keys['orderby'] ) ? $request_keys['orderby'] : 'orderby',
@@ -144,6 +154,32 @@ if ( empty( $games ) ) {
         $availability_label  = isset( $game['availability_label'] ) ? $game['availability_label'] : '';
         $availability_status = isset( $game['availability'] ) ? $game['availability'] : '';
         $excerpt             = isset( $game['excerpt'] ) ? $game['excerpt'] : '';
+        $opencritic          = isset( $game['opencritic'] ) && is_array( $game['opencritic'] ) ? $game['opencritic'] : array();
+        $opencritic_status   = isset( $opencritic['status'] ) ? $opencritic['status'] : 'unlinked';
+        $opencritic_label    = isset( $opencritic['status_label'] ) ? $opencritic['status_label'] : '';
+        $opencritic_score    = isset( $opencritic['score_display'] ) ? $opencritic['score_display'] : '';
+        $opencritic_url      = isset( $opencritic['url'] ) ? $opencritic['url'] : '';
+        $opencritic_title    = isset( $opencritic['title'] ) && $opencritic['title'] !== '' ? $opencritic['title'] : $title;
+        $opencritic_color    = isset( $opencritic['status_color'] ) && $opencritic['status_color'] !== ''
+            ? $opencritic['status_color']
+            : '#94a3b8';
+        $opencritic_bg       = isset( $opencritic['status_background'] ) && $opencritic['status_background'] !== ''
+            ? $opencritic['status_background']
+            : 'rgba(148, 163, 184, 0.16)';
+        $opencritic_border   = isset( $opencritic['status_border'] ) && $opencritic['status_border'] !== ''
+            ? $opencritic['status_border']
+            : 'rgba(148, 163, 184, 0.38)';
+        $opencritic_style    = sprintf(
+            '--jlg-opencritic-color:%1$s;--jlg-opencritic-bg:%2$s;--jlg-opencritic-border:%3$s;',
+            $opencritic_color,
+            $opencritic_bg,
+            $opencritic_border
+        );
+        $should_display_opencritic = $opencritic_status !== 'unlinked';
+        $opencritic_link_label     = $opencritic_view_label;
+        if ( $opencritic_view_label_for !== '' && strpos( $opencritic_view_label_for, '%s' ) !== false ) {
+            $opencritic_link_label = sprintf( $opencritic_view_label_for, $opencritic_title );
+        }
         ?>
         <article class="jlg-ge-card" data-post-id="<?php echo esc_attr( $game['post_id'] ); ?>">
             <a class="jlg-ge-card__media" href="<?php echo esc_url( $permalink ); ?>">
@@ -222,6 +258,30 @@ if ( empty( $games ) ) {
                         </span>
                     <?php endif; ?>
                 </div>
+                <?php if ( $should_display_opencritic ) : ?>
+                    <div class="jlg-ge-opencritic" data-opencritic-status="<?php echo esc_attr( $opencritic_status ); ?>">
+                        <span class="jlg-opencritic-chip" style="<?php echo esc_attr( $opencritic_style ); ?>">
+                            <span class="jlg-opencritic-chip__score">
+                                <?php echo esc_html( $opencritic_score !== '' ? $opencritic_score : $opencritic_score_fallback ); ?>
+                            </span>
+                            <?php if ( $opencritic_label !== '' ) : ?>
+                                <span class="jlg-opencritic-chip__label"><?php echo esc_html( $opencritic_label ); ?></span>
+                            <?php endif; ?>
+                        </span>
+                        <?php if ( $opencritic_url !== '' ) : ?>
+                            <a
+                                class="jlg-ge-opencritic__link jlg-opencritic-link"
+                                href="<?php echo esc_url( $opencritic_url ); ?>"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-opencritic-title="<?php echo esc_attr( $opencritic_title ); ?>"
+                                aria-label="<?php echo esc_attr( $opencritic_link_label ); ?>"
+                            >
+                                <?php echo esc_html( $opencritic_view_label ); ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </article>
     <?php endforeach; ?>

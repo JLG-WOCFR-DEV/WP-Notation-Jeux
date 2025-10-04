@@ -3,6 +3,7 @@
 namespace JLG\Notation\Admin;
 
 use JLG\Notation\Helpers;
+use JLG\Notation\Utils\OpenCriticClient;
 use JLG\Notation\Utils\Validator;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -13,6 +14,7 @@ class Ajax {
 
     public function __construct() {
         add_action( 'wp_ajax_jlg_search_rawg_games', array( $this, 'handle_rawg_search' ) );
+        add_action( 'wp_ajax_jlg_search_opencritic_games', array( $this, 'handle_opencritic_search' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_ajax_assets' ) );
     }
 
@@ -183,6 +185,106 @@ class Ajax {
         set_transient( $cache_key, $payload, 15 * MINUTE_IN_SECONDS );
 
         wp_send_json_success( $payload );
+    }
+
+    public function handle_opencritic_search() {
+        check_ajax_referer( 'jlg_admin_ajax_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error(
+                array(
+                    'message' => __( 'Permissions insuffisantes.', 'notation-jlg' ),
+                ),
+                403
+            );
+        }
+
+        $search_term = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
+
+        if ( mb_strlen( $search_term ) < 3 ) {
+            wp_send_json_error(
+                array(
+                    'message' => __( 'Veuillez saisir au moins 3 caractères.', 'notation-jlg' ),
+                ),
+                400
+            );
+        }
+
+        $options = Helpers::get_plugin_options();
+        $api_key = isset( $options['opencritic_api_key'] ) ? (string) $options['opencritic_api_key'] : '';
+
+        $client = new OpenCriticClient( $api_key );
+        $limit  = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 6;
+        $limit  = $limit > 0 ? $limit : 6;
+
+        $results = $client->search_games( $search_term, $limit );
+
+        if ( is_wp_error( $results ) ) {
+            wp_send_json_error(
+                array(
+                    'message' => $results->get_error_message(),
+                ),
+                502
+            );
+        }
+
+        $games = array();
+
+        foreach ( $results as $entry ) {
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+
+            $id   = isset( $entry['id'] ) ? absint( $entry['id'] ) : 0;
+            $name = isset( $entry['name'] ) ? sanitize_text_field( $entry['name'] ) : '';
+            $slug = isset( $entry['slug'] ) ? sanitize_title( $entry['slug'] ) : '';
+
+            $score = null;
+            if ( isset( $entry['topCriticScore'] ) ) {
+                $raw_score = $entry['topCriticScore'];
+                if ( is_string( $raw_score ) ) {
+                    $raw_score = str_replace( ',', '.', $raw_score );
+                }
+                if ( is_numeric( $raw_score ) ) {
+                    $score = round( max( 0, min( 100, (float) $raw_score ) ), 1 );
+                }
+            }
+
+            $release_year = null;
+            if ( isset( $entry['releaseYear'] ) && is_numeric( $entry['releaseYear'] ) ) {
+                $release_year = (int) $entry['releaseYear'];
+            }
+
+            $games[] = array(
+                'id'           => $id,
+                'name'         => $name,
+                'slug'         => $slug,
+                'score'        => $score,
+                'tier'         => isset( $entry['tier'] ) ? sanitize_text_field( $entry['tier'] ) : '',
+                'release_year' => $release_year,
+                'url'          => isset( $entry['url'] ) ? esc_url_raw( $entry['url'] ) : '',
+            );
+        }
+
+        if ( empty( $games ) ) {
+            wp_send_json_success(
+                array(
+                    'games'   => array(),
+                    'message' => __( 'Aucun jeu correspondant n’a été trouvé sur OpenCritic.', 'notation-jlg' ),
+                )
+            );
+        }
+
+        $message = $client->is_mock_mode()
+            ? __( 'Résultats simulés. Ajoutez une clé API OpenCritic pour obtenir les données réelles.', 'notation-jlg' )
+            : __( 'Résultats OpenCritic récupérés.', 'notation-jlg' );
+
+        wp_send_json_success(
+            array(
+                'games'   => $games,
+                'message' => $message,
+            )
+        );
     }
 
     private function transform_rawg_game( array $raw_game ) {

@@ -168,12 +168,16 @@ class Assets {
 					'loadingText'        => __( 'Chargement...', 'notation-jlg' ),
 					'searchButtonLabel'  => __( 'Rechercher', 'notation-jlg' ),
 					'securityFailed'     => __( 'Vérification de sécurité échouée. Actualisez la page.', 'notation-jlg' ),
-					'selectLabel'        => __( 'Choisir', 'notation-jlg' ),
-					'communicationError' => __( 'Erreur de communication.', 'notation-jlg' ),
-					'filledMessage'      => __( 'Fiche technique remplie !', 'notation-jlg' ),
-					'notAvailableLabel'  => __( 'N/A', 'notation-jlg' ),
-				);
-			}
+                                'selectLabel'        => __( 'Choisir', 'notation-jlg' ),
+                                'communicationError' => __( 'Erreur de communication.', 'notation-jlg' ),
+                                'filledMessage'      => __( 'Fiche technique remplie !', 'notation-jlg' ),
+                                'notAvailableLabel'  => __( 'N/A', 'notation-jlg' ),
+                                'openCriticNoResults' => __( 'Aucun résultat OpenCritic.', 'notation-jlg' ),
+                                'openCriticScoreLabel' => __( 'Score', 'notation-jlg' ),
+                                'openCriticLinked'     => __( 'Jeu OpenCritic associé !', 'notation-jlg' ),
+                                'openCriticViewLink'   => __( 'Voir sur OpenCritic', 'notation-jlg' ),
+                        );
+                    }
         );
 
         $this->register_localization(
@@ -188,11 +192,13 @@ class Assets {
 						'noResults'     => esc_html__( 'Aucun jeu ne correspond à votre sélection.', 'notation-jlg' ),
 						'reset'         => esc_html__( 'Réinitialiser les filtres', 'notation-jlg' ),
 						'genericError'  => esc_html__( 'Impossible de charger les jeux pour le moment.', 'notation-jlg' ),
-						'countSingular' => esc_html__( '%d jeu', 'notation-jlg' ),
-						'countPlural'   => esc_html__( '%d jeux', 'notation-jlg' ),
-					),
-				);
-			}
+                                                'countSingular' => esc_html__( '%d jeu', 'notation-jlg' ),
+                                                'countPlural'   => esc_html__( '%d jeux', 'notation-jlg' ),
+                                                'openCriticView'    => esc_html__( 'Voir sur OpenCritic', 'notation-jlg' ),
+                                                'openCriticViewFor' => esc_html__( 'Voir la fiche OpenCritic de %s', 'notation-jlg' ),
+                                        ),
+                                );
+                        }
         );
     }
 }

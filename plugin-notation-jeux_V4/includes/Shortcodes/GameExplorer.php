@@ -1174,6 +1174,7 @@ class GameExplorer {
                     'availability_label' => $availability_data['label'],
                     'timestamp'          => get_post_time( 'U', true, $post ),
                     'search_haystack'    => isset( $post_info['search_haystack'] ) ? $post_info['search_haystack'] : '',
+                    'opencritic'         => Helpers::get_opencritic_display_data( $post_id ),
                 );
             }
             wp_reset_postdata();

@@ -241,7 +241,7 @@ class Settings {
         }
 
         // API Key
-        if ( $key === 'rawg_api_key' ) {
+        if ( $key === 'rawg_api_key' || $key === 'opencritic_api_key' ) {
             return sanitize_text_field( $value );
         }
 
@@ -1141,10 +1141,23 @@ class Settings {
             'notation_jlg_page',
             'jlg_api_section',
             array(
-				'id'   => 'rawg_api_key',
-				'type' => 'text',
-				'desc' => 'Obtenez votre clé API gratuite sur rawg.io/apidocs',
-			)
+                                'id'   => 'rawg_api_key',
+                                'type' => 'text',
+                                'desc' => 'Obtenez votre clé API gratuite sur rawg.io/apidocs',
+                        )
+        );
+
+        add_settings_field(
+            'opencritic_api_key',
+            __( 'Clé API OpenCritic', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_api_section',
+            array(
+                'id'   => 'opencritic_api_key',
+                'type' => 'text',
+                'desc' => __( 'Générez une clé développeur sur opencritic.com/developers.', 'notation-jlg' ),
+            )
         );
 
         // Section 15: Debug

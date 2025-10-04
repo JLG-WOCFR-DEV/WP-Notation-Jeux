@@ -481,6 +481,29 @@
     flex-wrap: wrap;
     gap: 0.4rem;
 }
+.jlg-ge-opencritic {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.jlg-ge-opencritic .jlg-opencritic-chip {
+    background-color: var(--jlg-opencritic-bg, rgba(148, 163, 184, 0.18));
+    border-color: var(--jlg-opencritic-border, rgba(148, 163, 184, 0.4));
+    color: var(--jlg-opencritic-color, var(--jlg-ge-text));
+}
+.jlg-ge-opencritic__link {
+    color: var(--jlg-ge-text);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+.jlg-ge-opencritic__link:hover,
+.jlg-ge-opencritic__link:focus-visible {
+    color: var(--jlg-opencritic-color, var(--jlg-ge-accent));
+    text-decoration: underline;
+}
 
 .jlg-ge-badge {
     font-size: 0.75rem;

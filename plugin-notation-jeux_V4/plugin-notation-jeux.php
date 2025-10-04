@@ -100,6 +100,7 @@ final class JLG_Plugin_De_Notation_Main {
         add_action( 'updated_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
         add_action( 'deleted_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
         add_action( 'transition_post_status', array( $helpers_class, 'maybe_clear_rated_post_ids_cache_for_status_change' ), 20, 3 );
+        add_action( $helpers_class::OPENCRITIC_SYNC_HOOK, array( $helpers_class, 'sync_opencritic_score' ), 10, 1 );
 
         $game_explorer_class = \JLG\Notation\Shortcodes\GameExplorer::class;
 
@@ -174,6 +175,7 @@ final class JLG_Plugin_De_Notation_Main {
         if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
             wp_clear_scheduled_hook( 'jlg_process_v5_migration' );
             wp_clear_scheduled_hook( \JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK );
+            wp_clear_scheduled_hook( \JLG\Notation\Helpers::OPENCRITIC_SYNC_HOOK );
         }
 
         delete_option( 'jlg_migration_v5_queue' );

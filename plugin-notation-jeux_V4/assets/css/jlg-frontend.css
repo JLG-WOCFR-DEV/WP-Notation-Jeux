@@ -87,9 +87,9 @@
     .jlg-game-card,
     .jlg-game-card:hover,
     .jlg-game-card:focus-visible,
-    .jlg-game-card img,
-    .jlg-game-card:hover img,
-    .jlg-game-card:focus-visible img,
+    .jlg-game-card__image,
+    .jlg-game-card:hover .jlg-game-card__image,
+    .jlg-game-card:focus-visible .jlg-game-card__image,
     .jlg-user-star,
     .jlg-user-star:hover,
     .jlg-user-star.hover,
@@ -165,16 +165,37 @@
 
 @keyframes jlg-summary-spinner{0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
 .jlg-summary-grid-wrapper{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-.jlg-game-card{position:relative;display:block;overflow:hidden;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.3);transition:all .2s ease;}
+.jlg-game-card{position:relative;display:flex;flex-direction:column;overflow:hidden;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.3);transition:transform .2s ease,box-shadow .2s ease;background-color:var(--jlg-table-row-bg-color);}
+.jlg-game-card__main{position:relative;display:block;overflow:hidden;border-radius:8px 8px 0 0;flex:1 1 auto;}
+.jlg-game-card__image{width:100%;height:100%;object-fit:cover;transition:transform .3s ease;display:block;}
 .jlg-game-card:hover{transform:translateY(-5px);box-shadow:0 8px 12px rgba(0,0,0,.4);}
-.jlg-game-card img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease;}
-.jlg-game-card:hover img{transform:scale(1.05);}
+.jlg-game-card:hover .jlg-game-card__image{transform:scale(1.05);}
+.jlg-game-card__opencritic{padding:0.75rem 1rem 1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;background-color:var(--jlg-table-row-bg-color);}
+.jlg-game-card__opencritic-link{font-size:0.85rem;}
 .jlg-game-card-score{position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,.8);color:#fff;font-weight:bold;font-size:1.2rem;padding:5px 10px;border-radius:6px;backdrop-filter:blur(5px);}
 .jlg-game-card-title span{color:#fff;font-weight:600;text-decoration:none;font-size:1.1rem;}
 .jlg-pagination{text-align:center;margin-top:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
 .jlg-pagination .page-numbers{padding:8px 12px;margin:0 2px;border:1px solid var(--jlg-border-color);background-color:var(--jlg-bg-color-secondary);color:var(--jlg-secondary-text-color);text-decoration:none;border-radius:4px;}
 .jlg-pagination .page-numbers:hover,
 .jlg-pagination .page-numbers.current{background-color:var(--jlg-score-gradient-1);border-color:var(--jlg-score-gradient-1);color:#fff;}
+
+/* OpenCritic badges */
+.jlg-opencritic-chip{--jlg-opencritic-color:#94a3b8;--jlg-opencritic-bg:rgba(148,163,184,0.16);--jlg-opencritic-border:rgba(148,163,184,0.38);display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:9999px;border:1px solid var(--jlg-opencritic-border);background-color:var(--jlg-opencritic-bg);color:var(--jlg-opencritic-color);font-size:0.8125rem;font-weight:600;line-height:1.2;letter-spacing:0.01em;}
+.jlg-opencritic-chip__score{font-size:1rem;line-height:1;}
+.jlg-opencritic-chip__label{text-transform:uppercase;letter-spacing:0.06em;font-size:0.7rem;}
+.jlg-opencritic-link,
+.jlg-opencritic-chip__link{color:var(--jlg-opencritic-color,currentColor);font-weight:600;text-decoration:none;font-size:0.8rem;}
+.jlg-opencritic-link:hover,
+.jlg-opencritic-link:focus-visible,
+.jlg-opencritic-chip__link:hover,
+.jlg-opencritic-chip__link:focus-visible{text-decoration:underline;}
+
+/* Widget latest reviews */
+.jlg-widget-review-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0.75rem;}
+.jlg-widget-review{display:flex;flex-direction:column;gap:0.4rem;}
+.jlg-widget-review__meta{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
+.jlg-widget-review__title{font-weight:600;display:inline-block;}
+.jlg-widget-review__link{font-size:0.8rem;}
 
 @media (max-width:768px){
     .jlg-summary-table{border:0;background-color:transparent;}

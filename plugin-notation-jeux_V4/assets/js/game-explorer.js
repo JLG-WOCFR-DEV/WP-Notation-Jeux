@@ -412,6 +412,36 @@
         container.dataset.totalItems = String(total);
     }
 
+    function enhanceOpenCriticLinks(root) {
+        if (!root) {
+            return;
+        }
+
+        const links = root.querySelectorAll('[data-opencritic-title]');
+        if (!links.length) {
+            return;
+        }
+
+        const template = typeof strings.openCriticViewFor === 'string' ? strings.openCriticViewFor : '';
+        const fallback = typeof strings.openCriticView === 'string' ? strings.openCriticView : '';
+
+        links.forEach((link) => {
+            const title = link.getAttribute('data-opencritic-title') || '';
+            if (title === '') {
+                return;
+            }
+
+            if (template && template.indexOf('%s') !== -1) {
+                link.setAttribute('aria-label', template.replace('%s', title));
+                return;
+            }
+
+            if (fallback) {
+                link.setAttribute('aria-label', fallback + ' – ' + title);
+            }
+        });
+    }
+
     function updateActiveFilters(container, config, refs) {
         const state = config.state;
         const letterButtons = container.querySelectorAll('.jlg-ge-letter-nav button[data-letter]');
@@ -794,6 +824,7 @@
                     }
                     setResultsBusyState(refs.resultsNode, false);
                     updatePaginationAccessibility(refs);
+                    enhanceOpenCriticLinks(refs.resultsNode);
                 }
 
                 if (responseData.state) {
@@ -1029,6 +1060,8 @@
                 refreshResults(container, config, refs);
             });
         }
+
+        enhanceOpenCriticLinks(refs.resultsNode);
 
         updateActiveFilters(container, config, refs);
         updateCount(container, config.state);

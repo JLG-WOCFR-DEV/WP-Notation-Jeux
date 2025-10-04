@@ -210,4 +210,189 @@ jQuery(document).ready(function($) {
                 );
         }
     });
+
+    var openCriticResultsStore = [];
+
+    $('#jlg-opencritic-search-button').on('click', function() {
+        var searchInput = $('#jlg_opencritic_search');
+        var resultsContainer = $('#jlg-opencritic-search-results');
+        var searchTerm = searchInput.val();
+        var button = $(this);
+
+        var ajaxEndpoint = '';
+        if (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.ajax_url) {
+            ajaxEndpoint = jlg_admin_ajax.ajax_url;
+        } else if (typeof ajaxurl !== 'undefined') {
+            ajaxEndpoint = ajaxurl;
+        }
+
+        if (!ajaxEndpoint) {
+            resultsContainer
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text(getString('invalidAjaxConfig', 'Configuration AJAX invalide.'))
+                );
+            return;
+        }
+
+        var nonce = (typeof jlg_admin_ajax !== 'undefined' && jlg_admin_ajax.nonce) ? jlg_admin_ajax.nonce : '';
+
+        if (!nonce) {
+            resultsContainer
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text(getString('missingNonce', 'Nonce de sécurité manquant. Actualisez la page.'))
+                );
+            return;
+        }
+
+        if (!searchTerm || searchTerm.length < 3) {
+            resultsContainer
+                .empty()
+                .append(
+                    $('<p>')
+                        .css('color', 'red')
+                        .text(getString('minCharsMessage', 'Veuillez entrer au moins 3 caractères.'))
+                );
+            return;
+        }
+
+        button.text(getString('searchingText', 'Recherche...')).prop('disabled', true);
+        resultsContainer.text(getString('loadingText', 'Chargement...'));
+
+        $.ajax({
+            url: ajaxEndpoint,
+            type: 'POST',
+            data: {
+                action: 'jlg_search_opencritic_games',
+                nonce: nonce,
+                search: searchTerm,
+                limit: 6
+            },
+            success: function(response) {
+                button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
+
+                if (response === '-1') {
+                    resultsContainer
+                        .empty()
+                        .append(
+                            $('<p>')
+                                .css('color', 'red')
+                                .text(getString('securityFailed', 'Vérification de sécurité échouée. Actualisez la page.'))
+                        );
+                    return;
+                }
+
+                if (!response || !response.success) {
+                    var errorText = response && response.data && response.data.message
+                        ? String(response.data.message)
+                        : getString('communicationError', 'Erreur de communication.');
+                    resultsContainer
+                        .empty()
+                        .append(
+                            $('<p>')
+                                .css('color', 'red')
+                                .text(errorText)
+                        );
+                    openCriticResultsStore = [];
+                    return;
+                }
+
+                var payload = response.data || {};
+                var games = Array.isArray(payload.games) ? payload.games : [];
+                openCriticResultsStore = games;
+
+                if (!games.length) {
+                    resultsContainer
+                        .empty()
+                        .append(
+                            $('<p>').text(payload.message || getString('openCriticNoResults', 'Aucun résultat OpenCritic.'))
+                        );
+                    return;
+                }
+
+                var list = $('<ul>').addClass('jlg-opencritic-results-list').css({
+                    'list-style': 'disc',
+                    'padding-left': '20px'
+                });
+
+                games.forEach(function(game, index) {
+                    var item = $('<li>');
+                    var name = game && game.name ? String(game.name) : '';
+                    var label = name;
+                    if (game && game.release_year) {
+                        label += ' (' + game.release_year + ')';
+                    }
+                    item.append($('<strong>').text(label));
+
+                    if (game && typeof game.score === 'number') {
+                        item.append(document.createTextNode(' – ' + getString('openCriticScoreLabel', 'Score') + ' : ' + game.score));
+                    }
+
+                    var buttonSelect = $('<button>')
+                        .attr('type', 'button')
+                        .addClass('button button-small jlg-assign-opencritic')
+                        .attr('data-index', index)
+                        .text(getString('selectLabel', 'Choisir'));
+
+                    item.append(' ');
+                    item.append(buttonSelect);
+                    list.append(item);
+                });
+
+                resultsContainer.empty();
+                if (payload.message) {
+                    resultsContainer.append($('<p>').text(String(payload.message)));
+                }
+                resultsContainer.append(list);
+            },
+            error: function() {
+                button.text(getString('searchButtonLabel', 'Rechercher')).prop('disabled', false);
+                resultsContainer
+                    .empty()
+                    .append(
+                        $('<p>')
+                            .css('color', 'red')
+                            .text(getString('communicationError', 'Erreur de communication.'))
+                    );
+                openCriticResultsStore = [];
+            }
+        });
+    });
+
+    $(document).on('click', '.jlg-assign-opencritic', function() {
+        var index = $(this).data('index');
+        if (!Array.isArray(openCriticResultsStore) || typeof openCriticResultsStore[index] === 'undefined') {
+            return;
+        }
+
+        var game = openCriticResultsStore[index] || {};
+        $('#jlg_opencritic_id').val(game.id || '');
+        $('#jlg_opencritic_slug').val(game.slug || '');
+        if (game.name) {
+            $('#jlg_opencritic_title').val(game.name);
+        }
+
+        var resultsContainer = $('#jlg-opencritic-search-results');
+        var successMessage = $('<p>')
+            .css({ color: 'green', 'font-weight': 'bold' })
+            .text(getString('openCriticLinked', 'Jeu OpenCritic associé !'));
+        resultsContainer.empty().append(successMessage);
+
+        if (game.url) {
+            resultsContainer.append(
+                $('<p>').append(
+                    $('<a>')
+                        .attr('href', game.url)
+                        .attr('target', '_blank')
+                        .attr('rel', 'noopener noreferrer')
+                        .text(getString('openCriticViewLink', 'Voir sur OpenCritic'))
+                )
+            );
+        }
+    });
 });

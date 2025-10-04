@@ -37,6 +37,7 @@
         { value: 'titre', label: __('Titre du jeu', 'notation-jlg') },
         { value: 'date', label: __('Date', 'notation-jlg') },
         { value: 'note', label: __('Note moyenne', 'notation-jlg') },
+        { value: 'opencritic', label: __('Score OpenCritic', 'notation-jlg') },
         { value: 'developpeur', label: __('Développeur', 'notation-jlg') },
         { value: 'editeur', label: __('Éditeur', 'notation-jlg') },
     ];

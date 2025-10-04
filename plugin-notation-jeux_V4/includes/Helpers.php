@@ -6,6 +6,8 @@
 
 namespace JLG\Notation;
 
+use JLG\Notation\Utils\OpenCriticClient;
+
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
 }
@@ -15,12 +17,21 @@ class Helpers {
     public const SCORE_SCALE_MIGRATION_OPTION = 'jlg_score_scale_migration';
     public const SCORE_SCALE_QUEUE_OPTION     = 'jlg_score_scale_queue';
     public const SCORE_SCALE_EVENT_HOOK       = 'jlg_process_score_scale_migration';
+    public const OPENCRITIC_SYNC_HOOK         = 'jlg_sync_opencritic_score';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'availability', 'search' );
     private const GAME_EXPLORER_DEFAULT_FILTERS        = array( 'letter', 'category', 'platform', 'availability', 'search' );
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
     private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
+    private const OPENCRITIC_ID_META                   = '_jlg_opencritic_id';
+    private const OPENCRITIC_SLUG_META                 = '_jlg_opencritic_slug';
+    private const OPENCRITIC_TITLE_META                = '_jlg_opencritic_title';
+    private const OPENCRITIC_SCORE_META                = '_jlg_opencritic_score';
+    private const OPENCRITIC_TIER_META                 = '_jlg_opencritic_tier';
+    private const OPENCRITIC_URL_META                  = '_jlg_opencritic_url';
+    private const OPENCRITIC_SYNCED_META               = '_jlg_opencritic_synced_at';
+    private const OPENCRITIC_ERROR_META                = '_jlg_opencritic_last_error';
 
     private static $option_name                = 'notation_jlg_settings';
     private static $options_cache              = null;
@@ -568,6 +579,7 @@ class Helpers {
             'seo_schema_enabled'           => 1,
             'debug_mode_enabled'           => 0,
             'rawg_api_key'                 => '',
+            'opencritic_api_key'           => '',
         );
 
         return self::$default_settings_cache;
@@ -1779,6 +1791,445 @@ class Helpers {
         }
 
         return array_values( $unique_terms );
+    }
+
+    /**
+     * Retourne les informations OpenCritic mises en forme pour un article.
+     *
+     * @param int $post_id Identifiant de l'article.
+     * @return array<string, mixed>
+     */
+    public static function get_opencritic_display_data( $post_id ) {
+        $post_id = (int) $post_id;
+
+        $defaults = array(
+            'id'                => '',
+            'slug'              => '',
+            'title'             => '',
+            'score'             => null,
+            'score_display'     => '',
+            'status'            => 'unlinked',
+            'status_label'      => __( 'Non lié', 'notation-jlg' ),
+            'status_color'      => '#94a3b8',
+            'status_background' => self::hex_to_rgba( '#94a3b8', 0.16 ),
+            'status_border'     => self::hex_to_rgba( '#94a3b8', 0.38 ),
+            'url'               => '',
+            'tier'              => '',
+            'synced_at'         => 0,
+            'synced_at_display' => '',
+            'last_error'        => '',
+            'is_linked'         => false,
+        );
+
+        if ( $post_id <= 0 ) {
+            return $defaults;
+        }
+
+        $raw_identifier = get_post_meta( $post_id, self::OPENCRITIC_ID_META, true );
+        $identifier     = is_string( $raw_identifier ) ? preg_replace( '/[^0-9]/', '', $raw_identifier ) : '';
+        $id_int         = $identifier !== '' ? absint( $identifier ) : 0;
+        $identifier     = $id_int > 0 ? (string) $id_int : '';
+
+        $slug = get_post_meta( $post_id, self::OPENCRITIC_SLUG_META, true );
+        $slug = is_string( $slug ) ? sanitize_title( $slug ) : '';
+
+        $title = get_post_meta( $post_id, self::OPENCRITIC_TITLE_META, true );
+        $title = is_string( $title ) ? sanitize_text_field( $title ) : '';
+
+        $score_meta  = get_post_meta( $post_id, self::OPENCRITIC_SCORE_META, true );
+        $score_value = self::normalize_opencritic_score( $score_meta );
+
+        $tier = get_post_meta( $post_id, self::OPENCRITIC_TIER_META, true );
+        $tier = is_string( $tier ) ? sanitize_text_field( $tier ) : '';
+
+        $url = get_post_meta( $post_id, self::OPENCRITIC_URL_META, true );
+        $url = is_string( $url ) ? esc_url_raw( $url ) : '';
+
+        if ( $url === '' && $identifier !== '' ) {
+            $url = self::build_opencritic_url( $identifier, $slug );
+        }
+
+        $synced_at         = (int) get_post_meta( $post_id, self::OPENCRITIC_SYNCED_META, true );
+        $synced_at_display = '';
+
+        if ( $synced_at > 0 ) {
+            $date_format = get_option( 'date_format', 'Y-m-d' );
+            $time_format = get_option( 'time_format', 'H:i' );
+            $synced_at_display = date_i18n( trim( $date_format . ' ' . $time_format ), $synced_at );
+        }
+
+        $last_error = get_post_meta( $post_id, self::OPENCRITIC_ERROR_META, true );
+        $last_error = is_string( $last_error ) ? wp_strip_all_tags( $last_error ) : '';
+
+        $status = array(
+            'slug'  => 'unlinked',
+            'label' => __( 'Non lié', 'notation-jlg' ),
+            'color' => '#94a3b8',
+        );
+
+        if ( $identifier !== '' ) {
+            if ( $score_value !== null ) {
+                $status = self::get_opencritic_status_from_score( $score_value );
+            } else {
+                $status = array(
+                    'slug'  => 'pending',
+                    'label' => __( 'En attente', 'notation-jlg' ),
+                    'color' => '#9ca3af',
+                );
+            }
+        }
+
+        $score_display = '';
+        if ( $score_value !== null ) {
+            $score_display = number_format_i18n( $score_value, 0 );
+        }
+
+        $background = self::hex_to_rgba( $status['color'], 0.16 );
+        $border     = self::hex_to_rgba( $status['color'], 0.38 );
+
+        $data = array(
+            'id'                => $identifier,
+            'slug'              => $slug,
+            'title'             => $title,
+            'score'             => $score_value,
+            'score_display'     => $score_display,
+            'status'            => $status['slug'],
+            'status_label'      => $status['label'],
+            'status_color'      => $status['color'],
+            'status_background' => $background,
+            'status_border'     => $border,
+            'url'               => $url,
+            'tier'              => $tier,
+            'synced_at'         => $synced_at,
+            'synced_at_display' => $synced_at_display,
+            'last_error'        => $last_error,
+            'is_linked'         => $identifier !== '',
+        );
+
+        return apply_filters( 'jlg_opencritic_display_data', $data, $post_id );
+    }
+
+    /**
+     * Retourne les informations d'état associées à un score OpenCritic.
+     *
+     * @param float $score Score OpenCritic (0-100).
+     * @return array{slug:string,label:string,color:string}
+     */
+    public static function get_opencritic_status_from_score( $score ) {
+        if ( ! is_numeric( $score ) ) {
+            return array(
+                'slug'  => 'unknown',
+                'label' => __( 'Indisponible', 'notation-jlg' ),
+                'color' => '#94a3b8',
+            );
+        }
+
+        $score   = max( 0, min( 100, (float) $score ) );
+        $options = self::get_plugin_options();
+
+        $color_high = isset( $options['color_high'] ) ? (string) $options['color_high'] : '#22c55e';
+        $color_mid  = isset( $options['color_mid'] ) ? (string) $options['color_mid'] : '#f97316';
+        $color_low  = isset( $options['color_low'] ) ? (string) $options['color_low'] : '#ef4444';
+
+        $recommended_color = self::adjust_hex_brightness( $color_high, -20 );
+        if ( empty( $recommended_color ) ) {
+            $recommended_color = $color_high;
+        }
+
+        if ( $score >= 85 ) {
+            $status = array(
+                'slug'  => 'excellent',
+                'label' => __( 'Excellent', 'notation-jlg' ),
+                'color' => $color_high,
+            );
+        } elseif ( $score >= 75 ) {
+            $status = array(
+                'slug'  => 'recommended',
+                'label' => __( 'Recommandé', 'notation-jlg' ),
+                'color' => $recommended_color,
+            );
+        } elseif ( $score >= 60 ) {
+            $status = array(
+                'slug'  => 'mixed',
+                'label' => __( 'Mitigé', 'notation-jlg' ),
+                'color' => $color_mid,
+            );
+        } else {
+            $status = array(
+                'slug'  => 'weak',
+                'label' => __( 'Faible', 'notation-jlg' ),
+                'color' => $color_low,
+            );
+        }
+
+        return apply_filters( 'jlg_opencritic_status', $status, $score );
+    }
+
+    /**
+     * Planifie une synchronisation OpenCritic asynchrone.
+     *
+     * @param int      $post_id Identifiant du contenu.
+     * @param int|null $delay   Délai en secondes avant exécution.
+     */
+    public static function schedule_opencritic_sync( $post_id, $delay = null ) {
+        if ( ! function_exists( 'wp_schedule_single_event' ) || ! function_exists( 'wp_next_scheduled' ) ) {
+            return;
+        }
+
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $default_delay  = $delay === null ? 60 : (int) $delay;
+        $delay_seconds  = (int) apply_filters( 'jlg_opencritic_sync_delay', $default_delay, $post_id );
+        $delay_seconds  = max( 0, $delay_seconds );
+        $scheduled_args = array( $post_id );
+
+        if ( wp_next_scheduled( self::OPENCRITIC_SYNC_HOOK, $scheduled_args ) ) {
+            return;
+        }
+
+        $now       = time();
+        $timestamp = $now + $delay_seconds;
+
+        if ( $timestamp <= $now ) {
+            $timestamp = $now + 5;
+        }
+
+        wp_schedule_single_event( $timestamp, self::OPENCRITIC_SYNC_HOOK, $scheduled_args );
+    }
+
+    /**
+     * Récupère et met à jour les métadonnées OpenCritic pour un contenu.
+     *
+     * @param int $post_id Identifiant du contenu.
+     */
+    public static function sync_opencritic_score( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $raw_identifier = get_post_meta( $post_id, self::OPENCRITIC_ID_META, true );
+        $identifier     = is_string( $raw_identifier ) ? preg_replace( '/[^0-9]/', '', $raw_identifier ) : '';
+        $id_int         = $identifier !== '' ? absint( $identifier ) : 0;
+
+        if ( $id_int <= 0 ) {
+            self::reset_opencritic_metadata( $post_id, true );
+            return;
+        }
+
+        $client = self::get_opencritic_client_instance();
+
+        if ( ! $client instanceof OpenCriticClient ) {
+            return;
+        }
+
+        $result = $client->get_game_details( $id_int );
+
+        if ( is_wp_error( $result ) ) {
+            update_post_meta( $post_id, self::OPENCRITIC_ERROR_META, $result->get_error_message() );
+            return;
+        }
+
+        $score_value = null;
+        if ( isset( $result['topCriticScore'] ) ) {
+            $score_value = self::normalize_opencritic_score( $result['topCriticScore'] );
+        }
+
+        if ( $score_value !== null ) {
+            update_post_meta( $post_id, self::OPENCRITIC_SCORE_META, $score_value );
+        } else {
+            delete_post_meta( $post_id, self::OPENCRITIC_SCORE_META );
+        }
+
+        if ( isset( $result['slug'] ) && is_string( $result['slug'] ) ) {
+            update_post_meta( $post_id, self::OPENCRITIC_SLUG_META, sanitize_title( $result['slug'] ) );
+        }
+
+        if ( isset( $result['name'] ) && is_string( $result['name'] ) ) {
+            update_post_meta( $post_id, self::OPENCRITIC_TITLE_META, sanitize_text_field( $result['name'] ) );
+        }
+
+        if ( isset( $result['tier'] ) && is_string( $result['tier'] ) ) {
+            update_post_meta( $post_id, self::OPENCRITIC_TIER_META, sanitize_text_field( $result['tier'] ) );
+        } else {
+            delete_post_meta( $post_id, self::OPENCRITIC_TIER_META );
+        }
+
+        $slug = get_post_meta( $post_id, self::OPENCRITIC_SLUG_META, true );
+        $slug = is_string( $slug ) ? sanitize_title( $slug ) : '';
+
+        $url = '';
+        if ( isset( $result['url'] ) && is_string( $result['url'] ) ) {
+            $url = esc_url_raw( $result['url'] );
+        }
+
+        if ( $url === '' ) {
+            $url = self::build_opencritic_url( $id_int, $slug );
+        }
+
+        if ( $url !== '' ) {
+            update_post_meta( $post_id, self::OPENCRITIC_URL_META, $url );
+        } else {
+            delete_post_meta( $post_id, self::OPENCRITIC_URL_META );
+        }
+
+        update_post_meta( $post_id, self::OPENCRITIC_SYNCED_META, current_time( 'timestamp' ) );
+        delete_post_meta( $post_id, self::OPENCRITIC_ERROR_META );
+    }
+
+    /**
+     * Supprime les métadonnées OpenCritic stockées pour un contenu.
+     *
+     * @param int  $post_id            Identifiant du contenu.
+     * @param bool $include_identifier Supprime également l'identifiant lié.
+     */
+    public static function reset_opencritic_metadata( $post_id, $include_identifier = false ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $keys = array(
+            self::OPENCRITIC_SCORE_META,
+            self::OPENCRITIC_TIER_META,
+            self::OPENCRITIC_URL_META,
+            self::OPENCRITIC_SYNCED_META,
+            self::OPENCRITIC_TITLE_META,
+            self::OPENCRITIC_ERROR_META,
+        );
+
+        if ( $include_identifier ) {
+            $keys[] = self::OPENCRITIC_ID_META;
+            $keys[] = self::OPENCRITIC_SLUG_META;
+        }
+
+        foreach ( $keys as $meta_key ) {
+            delete_post_meta( $post_id, $meta_key );
+        }
+    }
+
+    /**
+     * Convertit un code hexadécimal en représentation RGBA.
+     *
+     * @param string $hex   Couleur hexadécimale.
+     * @param float  $alpha Opacité entre 0 et 1.
+     * @return string
+     */
+    public static function hex_to_rgba( $hex, $alpha ) {
+        $hex = is_string( $hex ) ? trim( $hex ) : '';
+
+        if ( $hex === '' ) {
+            return '';
+        }
+
+        $hex = ltrim( $hex, '#' );
+
+        if ( strlen( $hex ) === 3 ) {
+            $hex = str_repeat( substr( $hex, 0, 1 ), 2 ) .
+                str_repeat( substr( $hex, 1, 1 ), 2 ) .
+                str_repeat( substr( $hex, 2, 1 ), 2 );
+        }
+
+        if ( strlen( $hex ) !== 6 ) {
+            return '';
+        }
+
+        $alpha = (float) $alpha;
+        if ( $alpha < 0 ) {
+            $alpha = 0.0;
+        }
+        if ( $alpha > 1 ) {
+            $alpha = 1.0;
+        }
+
+        $r = hexdec( substr( $hex, 0, 2 ) );
+        $g = hexdec( substr( $hex, 2, 2 ) );
+        $b = hexdec( substr( $hex, 4, 2 ) );
+
+        return sprintf( 'rgba(%d, %d, %d, %.2f)', $r, $g, $b, $alpha );
+    }
+
+    /**
+     * Instancie le client OpenCritic en fonction des réglages.
+     *
+     * @return OpenCriticClient|null
+     */
+    private static function get_opencritic_client_instance() {
+        if ( ! class_exists( OpenCriticClient::class ) ) {
+            return null;
+        }
+
+        $options = self::get_plugin_options();
+        $api_key = isset( $options['opencritic_api_key'] ) ? (string) $options['opencritic_api_key'] : '';
+
+        return new OpenCriticClient( $api_key );
+    }
+
+    /**
+     * Normalise la valeur de score OpenCritic.
+     *
+     * @param mixed $value Valeur brute.
+     * @return float|null
+     */
+    private static function normalize_opencritic_score( $value ) {
+        if ( is_array( $value ) ) {
+            return null;
+        }
+
+        if ( $value === null || $value === '' ) {
+            return null;
+        }
+
+        if ( is_string( $value ) ) {
+            $value = str_replace( ',', '.', $value );
+        }
+
+        if ( ! is_numeric( $value ) ) {
+            return null;
+        }
+
+        $score = (float) $value;
+
+        if ( $score < 0 ) {
+            $score = 0.0;
+        }
+
+        if ( $score > 100 ) {
+            $score = 100.0;
+        }
+
+        return round( $score, 1 );
+    }
+
+    /**
+     * Construit l'URL publique OpenCritic pour un couple identifiant/slug.
+     *
+     * @param int|string $identifier Identifiant numérique OpenCritic.
+     * @param string     $slug       Slug éventuel.
+     * @return string
+     */
+    private static function build_opencritic_url( $identifier, $slug ) {
+        $id = is_numeric( $identifier ) ? absint( $identifier ) : 0;
+
+        if ( $id <= 0 ) {
+            return '';
+        }
+
+        $slug = is_string( $slug ) ? sanitize_title( $slug ) : '';
+
+        $url = sprintf( 'https://opencritic.com/game/%d', $id );
+
+        if ( $slug !== '' ) {
+            $url .= '/' . rawurlencode( $slug );
+        }
+
+        return apply_filters( 'jlg_opencritic_game_url', $url, $id, $slug, array() );
     }
 
     /**

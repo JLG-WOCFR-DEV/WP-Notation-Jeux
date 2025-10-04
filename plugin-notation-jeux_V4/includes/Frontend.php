@@ -1756,10 +1756,28 @@ class Frontend {
                 'config_payload'       => array(),
                 'message'              => '',
                 'score_position'       => Helpers::normalize_game_explorer_score_position( '' ),
+                'opencritic_map'       => array(),
+                'opencritic_strings'   => self::get_opencritic_strings(),
             );
 
             // Fusionner les arguments fournis avec les valeurs par défaut.
             $prepared_args = array_merge( $template_defaults, $args );
+
+            if ( ! empty( $prepared_args['games'] ) && is_array( $prepared_args['games'] ) ) {
+                $prepared_args['games'] = self::attach_opencritic_to_games( $prepared_args['games'] );
+            }
+
+            if ( empty( $prepared_args['opencritic_map'] ) ) {
+                if ( $template_name === 'summary-table-fragment' && $prepared_args['query'] instanceof WP_Query ) {
+                    $prepared_args['opencritic_map'] = self::build_opencritic_map_from_query( $prepared_args['query'] );
+                } elseif ( $template_name === 'widget-latest-reviews' && $prepared_args['latest_reviews'] instanceof WP_Query ) {
+                    $prepared_args['opencritic_map'] = self::build_opencritic_map_from_query( $prepared_args['latest_reviews'] );
+                }
+            }
+
+            if ( empty( $prepared_args['opencritic_strings'] ) || ! is_array( $prepared_args['opencritic_strings'] ) ) {
+                $prepared_args['opencritic_strings'] = self::get_opencritic_strings();
+            }
 
             // Rendre chaque variable explicitement disponible pour le template.
             foreach ( $template_defaults as $var_name => $default_value ) {
@@ -1779,5 +1797,74 @@ class Frontend {
 
         // Retourner le contenu capturé
         return ob_get_clean();
+    }
+
+    /**
+     * Ajoute les informations OpenCritic enrichies pour chaque jeu.
+     *
+     * @param array<int, array<string, mixed>> $games
+     * @return array<int, array<string, mixed>>
+     */
+    private static function attach_opencritic_to_games( array $games ) {
+        foreach ( $games as $index => $game ) {
+            if ( isset( $game['opencritic'] ) && is_array( $game['opencritic'] ) ) {
+                continue;
+            }
+
+            $post_id = isset( $game['post_id'] ) ? (int) $game['post_id'] : 0;
+
+            if ( $post_id <= 0 ) {
+                continue;
+            }
+
+            $games[ $index ]['opencritic'] = Helpers::get_opencritic_display_data( $post_id );
+        }
+
+        return $games;
+    }
+
+    /**
+     * Construit une table de correspondance OpenCritic pour les contenus d'une requête.
+     *
+     * @param WP_Query $query Requête WP contenant des posts à analyser.
+     * @return array<int, array<string, mixed>>
+     */
+    private static function build_opencritic_map_from_query( $query ) {
+        if ( ! $query instanceof WP_Query ) {
+            return array();
+        }
+
+        $map = array();
+
+        foreach ( $query->posts as $post ) {
+            if ( $post instanceof WP_Post ) {
+                $post_id = (int) $post->ID;
+            } elseif ( is_numeric( $post ) ) {
+                $post_id = (int) $post;
+            } else {
+                continue;
+            }
+
+            if ( $post_id <= 0 ) {
+                continue;
+            }
+
+            $map[ $post_id ] = Helpers::get_opencritic_display_data( $post_id );
+        }
+
+        return $map;
+    }
+
+    /**
+     * Fournit les chaînes communes liées à OpenCritic pour les templates.
+     *
+     * @return array<string, string>
+     */
+    private static function get_opencritic_strings() {
+        return array(
+            'view_label'      => esc_html__( 'Voir sur OpenCritic', 'notation-jlg' ),
+            'view_label_for'  => esc_html__( 'Voir la fiche OpenCritic de %s', 'notation-jlg' ),
+            'score_fallback'  => esc_html__( 'N/A', 'notation-jlg' ),
+        );
     }
 }

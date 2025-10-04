@@ -190,6 +190,75 @@ class Metaboxes {
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 
+        $opencritic_display = Helpers::get_opencritic_display_data( $post->ID );
+        $opencritic_id       = get_post_meta( $post->ID, '_jlg_opencritic_id', true );
+        $opencritic_slug     = get_post_meta( $post->ID, '_jlg_opencritic_slug', true );
+        $opencritic_title    = get_post_meta( $post->ID, '_jlg_opencritic_title', true );
+
+        echo '<div class="jlg-opencritic-meta" style="margin-bottom:20px;">';
+        echo '<h3>' . esc_html__( '🌐 OpenCritic', 'notation-jlg' ) . '</h3>';
+        echo '<p class="description" style="margin:4px 0 12px;">' . esc_html__( 'Associez la fiche OpenCritic correspondante pour synchroniser automatiquement le metascore.', 'notation-jlg' ) . '</p>';
+        echo '<label for="jlg_opencritic_id"><strong>' . esc_html__( 'Identifiant OpenCritic', 'notation-jlg' ) . '</strong></label><br>';
+        echo '<input type="text" id="jlg_opencritic_id" name="jlg_opencritic_id" value="' . esc_attr( $opencritic_id ) . '" style="width:100%;" placeholder="1234">';
+        echo '<input type="hidden" id="jlg_opencritic_slug" name="jlg_opencritic_slug" value="' . esc_attr( $opencritic_slug ) . '">';
+        echo '<input type="hidden" id="jlg_opencritic_title" name="jlg_opencritic_title" value="' . esc_attr( $opencritic_title ) . '">';
+        echo '<p class="description" style="margin:5px 0 10px;">' . esc_html__( 'Laissez vide pour supprimer le lien. Tapez quelques lettres puis utilisez la recherche pour préremplir.', 'notation-jlg' ) . '</p>';
+
+        echo '<div class="jlg-opencritic-search" style="margin-bottom:12px;">';
+        echo '<label for="jlg_opencritic_search"><strong>' . esc_html__( 'Recherche OpenCritic', 'notation-jlg' ) . '</strong></label><br>';
+        echo '<div style="display:flex; gap:0.5rem; align-items:center;">';
+        echo '<input type="text" id="jlg_opencritic_search" value="" style="flex:1;" placeholder="' . esc_attr__( 'Nom du jeu…', 'notation-jlg' ) . '">';
+        echo '<button type="button" class="button" id="jlg-opencritic-search-button">' . esc_html__( 'Rechercher', 'notation-jlg' ) . '</button>';
+        echo '</div>';
+        echo '<div id="jlg-opencritic-search-results" class="jlg-opencritic-results" style="margin-top:8px;"></div>';
+        echo '</div>';
+
+        if ( is_array( $opencritic_display ) && ! empty( $opencritic_display['status_label'] ) ) {
+            $status_color      = isset( $opencritic_display['status_color'] ) ? (string) $opencritic_display['status_color'] : '#94a3b8';
+            $status_background = isset( $opencritic_display['status_background'] ) && $opencritic_display['status_background'] !== ''
+                ? $opencritic_display['status_background']
+                : Helpers::hex_to_rgba( $status_color, 0.16 );
+            $status_border     = isset( $opencritic_display['status_border'] ) && $opencritic_display['status_border'] !== ''
+                ? $opencritic_display['status_border']
+                : Helpers::hex_to_rgba( $status_color, 0.38 );
+
+            $badge_style = sprintf(
+                ' style="--jlg-opencritic-color:%1$s;--jlg-opencritic-bg:%2$s;--jlg-opencritic-border:%3$s;"',
+                esc_attr( $status_color ),
+                esc_attr( $status_background ),
+                esc_attr( $status_border )
+            );
+
+            echo '<div class="jlg-opencritic-status" style="display:flex; flex-direction:column; gap:6px;">';
+            echo '<span class="jlg-opencritic-badge"' . $badge_style . '>';
+            $score_display = isset( $opencritic_display['score_display'] ) && $opencritic_display['score_display'] !== ''
+                ? $opencritic_display['score_display']
+                : '—';
+            echo '<span class="jlg-opencritic-badge__score">' . esc_html( $score_display ) . '</span>';
+            echo '<span class="jlg-opencritic-badge__label">' . esc_html( $opencritic_display['status_label'] ) . '</span>';
+            echo '</span>';
+
+            if ( ! empty( $opencritic_display['synced_at_display'] ) ) {
+                echo '<span class="description" style="margin:0;">' . sprintf(
+                    /* translators: %s is the human readable sync date. */
+                    esc_html__( 'Dernière synchronisation : %s', 'notation-jlg' ),
+                    esc_html( $opencritic_display['synced_at_display'] )
+                ) . '</span>';
+            }
+
+            if ( ! empty( $opencritic_display['url'] ) ) {
+                echo '<a href="' . esc_url( $opencritic_display['url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Voir sur OpenCritic', 'notation-jlg' ) . '</a>';
+            }
+
+            if ( ! empty( $opencritic_display['last_error'] ) ) {
+                echo '<span class="notice notice-error" style="display:block; padding:6px 8px;">' . esc_html( $opencritic_display['last_error'] ) . '</span>';
+            }
+
+            echo '</div>';
+        }
+
+        echo '</div>';
+
         // Fiche technique
         echo '<h3>' . esc_html__( '📋 Fiche Technique', 'notation-jlg' ) . '</h3>';
         echo '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:20px;">';
@@ -486,6 +555,42 @@ class Metaboxes {
                     update_post_meta( $post_id, '_jlg_cta_label', $cta_label );
                     update_post_meta( $post_id, '_jlg_cta_url', esc_url_raw( $validated_url ) );
                 }
+            }
+
+            $raw_opencritic_id    = isset( $_POST['jlg_opencritic_id'] ) ? wp_unslash( $_POST['jlg_opencritic_id'] ) : '';
+            $raw_opencritic_slug  = isset( $_POST['jlg_opencritic_slug'] ) ? wp_unslash( $_POST['jlg_opencritic_slug'] ) : '';
+            $raw_opencritic_title = isset( $_POST['jlg_opencritic_title'] ) ? wp_unslash( $_POST['jlg_opencritic_title'] ) : '';
+
+            $normalized_id = is_string( $raw_opencritic_id ) ? preg_replace( '/[^0-9]/', '', $raw_opencritic_id ) : '';
+            $normalized_id = $normalized_id !== '' ? (string) absint( $normalized_id ) : '';
+
+            $normalized_slug = is_string( $raw_opencritic_slug ) ? sanitize_title( $raw_opencritic_slug ) : '';
+            $normalized_name = is_string( $raw_opencritic_title ) ? sanitize_text_field( $raw_opencritic_title ) : '';
+
+            $current_id = get_post_meta( $post_id, '_jlg_opencritic_id', true );
+
+            if ( $normalized_id === '' ) {
+                if ( $current_id !== '' ) {
+                    Helpers::reset_opencritic_metadata( $post_id, true );
+                }
+            } else {
+                update_post_meta( $post_id, '_jlg_opencritic_id', $normalized_id );
+
+                if ( $normalized_slug !== '' ) {
+                    update_post_meta( $post_id, '_jlg_opencritic_slug', $normalized_slug );
+                } else {
+                    delete_post_meta( $post_id, '_jlg_opencritic_slug' );
+                }
+
+                if ( $normalized_name !== '' ) {
+                    update_post_meta( $post_id, '_jlg_opencritic_title', $normalized_name );
+                }
+
+                if ( (string) $current_id !== $normalized_id ) {
+                    Helpers::reset_opencritic_metadata( $post_id );
+                }
+
+                Helpers::schedule_opencritic_sync( $post_id, 30 );
             }
 
             // Plateformes (checkboxes)
