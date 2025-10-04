@@ -461,11 +461,7 @@
             return;
         }
 
-        if (isBusy) {
-            resultsNode.setAttribute('aria-busy', 'true');
-        } else {
-            resultsNode.removeAttribute('aria-busy');
-        }
+        resultsNode.setAttribute('aria-busy', isBusy ? 'true' : 'false');
     }
 
     function focusUpdatedResults(refs) {
