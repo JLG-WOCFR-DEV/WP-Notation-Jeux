@@ -218,6 +218,14 @@ if (!function_exists('add_shortcode')) {
     }
 }
 
+if (!function_exists('shortcode_exists')) {
+    function shortcode_exists($tag) {
+        unset($tag);
+
+        return true;
+    }
+}
+
 if (!function_exists('shortcode_atts')) {
     function shortcode_atts($pairs, $atts, $shortcode = '') {
         if (!is_array($atts)) {
@@ -902,10 +910,39 @@ if (!function_exists('add_query_arg')) {
 }
 
 if (!function_exists('remove_query_arg')) {
-    function remove_query_arg($key, $url) {
-        unset($key);
+    function remove_query_arg($key, $url = '') {
+        $base = $url === '' ? 'https://example.com/' : (string) $url;
 
-        return (string) $url;
+        $parts = wp_parse_url($base);
+
+        if ($parts === false) {
+            return $base;
+        }
+
+        $query = [];
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $query);
+        }
+
+        foreach ((array) $key as $item) {
+            $query[$item] = null;
+            unset($query[$item]);
+        }
+
+        $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
+        $host   = $parts['host'] ?? '';
+        $port   = isset($parts['port']) ? ':' . $parts['port'] : '';
+        $path   = $parts['path'] ?? '';
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        $query_string = http_build_query($query);
+        $rebuilt      = $scheme . $host . $port . $path;
+
+        if ($query_string !== '') {
+            $rebuilt .= '?' . $query_string;
+        }
+
+        return $rebuilt . $fragment;
     }
 }
 

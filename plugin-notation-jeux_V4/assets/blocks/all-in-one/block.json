@@ -27,6 +27,14 @@
       "type": "boolean",
       "default": true
     },
+    "showVerdict": {
+      "type": "boolean",
+      "default": true
+    },
+    "showEditorBadge": {
+      "type": "boolean",
+      "default": true
+    },
     "style": {
       "type": "string",
       "default": "moderne"

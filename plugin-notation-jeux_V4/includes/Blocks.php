@@ -476,6 +476,8 @@ class Blocks {
             'showRating'   => 'afficher_notation',
             'showProsCons' => 'afficher_points',
             'showTagline'  => 'afficher_tagline',
+            'showVerdict'  => 'afficher_verdict',
+            'showEditorBadge' => 'afficher_badge',
         );
 
         foreach ( $bool_attributes as $attr_key => $shortcode_key ) {

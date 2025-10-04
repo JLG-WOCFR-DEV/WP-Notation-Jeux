@@ -125,6 +125,20 @@
                             onChange: function (value) {
                                 setAttributes({ showTagline: !!value });
                             },
+                        }),
+                        createElement(ToggleControl, {
+                            label: __('Afficher le verdict', 'notation-jlg'),
+                            checked: typeof attributes.showVerdict === 'boolean' ? attributes.showVerdict : true,
+                            onChange: function (value) {
+                                setAttributes({ showVerdict: !!value });
+                            },
+                        }),
+                        createElement(ToggleControl, {
+                            label: __('Afficher le badge “Recommandé”', 'notation-jlg'),
+                            checked: typeof attributes.showEditorBadge === 'boolean' ? attributes.showEditorBadge : true,
+                            onChange: function (value) {
+                                setAttributes({ showEditorBadge: !!value });
+                            },
                         })
                     ),
                     colorControl,
@@ -194,6 +208,8 @@
                             showRating: typeof attributes.showRating === 'boolean' ? attributes.showRating : true,
                             showProsCons: typeof attributes.showProsCons === 'boolean' ? attributes.showProsCons : true,
                             showTagline: typeof attributes.showTagline === 'boolean' ? attributes.showTagline : true,
+                            showVerdict: typeof attributes.showVerdict === 'boolean' ? attributes.showVerdict : true,
+                            showEditorBadge: typeof attributes.showEditorBadge === 'boolean' ? attributes.showEditorBadge : true,
                             style: attributes.style || 'moderne',
                             scoreDisplay: attributes.scoreDisplay || 'absolute',
                             accentColor: attributes.accentColor || '',

@@ -198,9 +198,9 @@ class Validator {
             return $allow_empty;
         }
 
-        $date_time = DateTime::createFromFormat( 'Y-m-d', $date );
+        $date_time = \DateTime::createFromFormat( 'Y-m-d', $date );
 
-        return $date_time instanceof DateTime && $date_time->format( 'Y-m-d' ) === $date;
+        return $date_time instanceof \DateTime && $date_time->format( 'Y-m-d' ) === $date;
     }
 
     public static function sanitize_date( $date ) {
@@ -208,7 +208,7 @@ class Validator {
             return null;
         }
 
-        $date_time = DateTime::createFromFormat( 'Y-m-d', $date );
+        $date_time = \DateTime::createFromFormat( 'Y-m-d', $date );
 
         return $date_time ? $date_time->format( 'Y-m-d' ) : null;
     }

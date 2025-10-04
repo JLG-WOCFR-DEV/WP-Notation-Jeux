@@ -42,7 +42,7 @@ class ShortcodeGameExplorerScoreDisplayTest extends TestCase
         ]);
 
         $score_max_label = number_format_i18n( \JLG\Notation\Helpers::get_score_max() );
-        $pattern         = '/<span class="jlg-ge-card__score-outof">\s*\/' . preg_quote( $score_max_label, '/' ) . '<\/span>/';
+        $pattern         = '/<span class="jlg-ge-card__score-outof">\s*\/' . preg_quote( $score_max_label, '/' ) . '\s*<\/span>/';
 
         $this->assertMatchesRegularExpression(
             $pattern,

@@ -1046,6 +1046,74 @@ class Helpers {
         return apply_filters( 'jlg_game_title', (string) $resolved_title, $post_id, $raw_meta_title );
     }
 
+    /**
+     * Retrieve the editorial verdict stored for a given post.
+     *
+     * @param int $post_id The post identifier.
+     * @return string Sanitized verdict text.
+     */
+    public static function get_review_verdict( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return '';
+        }
+
+        $raw_verdict = get_post_meta( $post_id, '_jlg_verdict', true );
+        $verdict     = '';
+
+        if ( is_string( $raw_verdict ) ) {
+            $normalized = str_replace( array( "\r\n", "\r" ), "\n", $raw_verdict );
+            $verdict    = sanitize_textarea_field( $normalized );
+            $verdict    = trim( str_replace( array( "\r\n", "\r" ), "\n", $verdict ) );
+
+            if ( strpos( $verdict, "\n" ) === false && strpos( $normalized, "\n" ) !== false ) {
+                $lines = array_map( 'sanitize_text_field', explode( "\n", $normalized ) );
+                $lines = array_filter(
+                    array_map( 'trim', $lines ),
+                    static function ( $line ) {
+                        return $line !== '';
+                    }
+                );
+
+                if ( ! empty( $lines ) ) {
+                    $verdict = implode( "\n", $lines );
+                }
+            }
+        }
+
+        return apply_filters( 'jlg_review_verdict', $verdict, $post_id, $raw_verdict );
+    }
+
+    /**
+     * Determine whether the "editor choice" badge is enabled for a post.
+     *
+     * @param int $post_id The post identifier.
+     * @return bool True when the badge should be displayed, false otherwise.
+     */
+    public static function is_editor_choice( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return false;
+        }
+
+        $raw_value = get_post_meta( $post_id, '_jlg_editor_choice', true );
+
+        if ( is_bool( $raw_value ) ) {
+            $enabled = $raw_value;
+        } elseif ( is_numeric( $raw_value ) ) {
+            $enabled = ( (int) $raw_value ) === 1;
+        } elseif ( is_string( $raw_value ) ) {
+            $normalized = strtolower( trim( $raw_value ) );
+            $enabled    = in_array( $normalized, array( '1', 'true', 'yes', 'on', 'oui' ), true );
+        } else {
+            $enabled = false;
+        }
+
+        return (bool) apply_filters( 'jlg_is_editor_choice', $enabled, $post_id, $raw_value );
+    }
+
     public static function get_color_palette() {
         $options        = self::get_plugin_options();
         $theme          = $options['visual_theme'] ?? 'dark';

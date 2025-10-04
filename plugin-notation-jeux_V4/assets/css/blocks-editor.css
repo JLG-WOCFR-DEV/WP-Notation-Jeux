@@ -32,3 +32,22 @@
     opacity: 1;
     transform: none;
 }
+.editor-styles-wrapper .jlg-all-in-one-block .jlg-aio-verdict-wrapper {
+    margin-top: 16px;
+    gap: 10px;
+}
+.editor-styles-wrapper .jlg-all-in-one-block .jlg-aio-editor-badge,
+.editor-styles-wrapper .review-box-jlg .review-editor-badge {
+    background: rgba(34, 197, 94, 0.14);
+    color: #166534;
+}
+.editor-styles-wrapper .review-box-jlg .review-verdict {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+}
+.editor-styles-wrapper .review-box-jlg .review-verdict-text {
+    line-height: 1.6;
+}

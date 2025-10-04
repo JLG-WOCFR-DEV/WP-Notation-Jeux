@@ -177,7 +177,7 @@ class Metaboxes {
 
         // Récupérer les métadonnées
         $meta = array();
-        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url', 'cta_label', 'cta_url' );
+        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'verdict', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url', 'cta_label', 'cta_url', 'editor_choice' );
         foreach ( $keys as $key ) {
             $meta[ $key ] = get_post_meta( $post->ID, '_jlg_' . $key, true );
         }
@@ -276,6 +276,21 @@ class Metaboxes {
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Renseignez une URL absolue (https://...).', 'notation-jlg' ) . '</p>';
         echo '</div>';
         echo '</div>';
+        echo '</div>';
+
+        echo '<div style="margin-bottom:20px;">';
+        echo '<label for="jlg_verdict"><strong>' . esc_html__( 'Verdict final', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<textarea id="jlg_verdict" name="jlg_verdict" rows="4" style="width:100%;" placeholder="' . esc_attr__( 'Une conclusion synthétique de votre test…', 'notation-jlg' ) . '">' . esc_textarea( $meta['verdict'] ?? '' ) . '</textarea>';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Sera affiché sous la note globale.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+
+        $editor_choice_checked = ! empty( $meta['editor_choice'] );
+        echo '<div style="margin-bottom:20px;">';
+        echo '<label style="display:flex; align-items:center; gap:8px;">';
+        echo '<input type="checkbox" name="jlg_editor_choice" value="1" ' . checked( $editor_choice_checked, true, false ) . ' />';
+        echo '<span>' . esc_html__( 'Afficher le badge “Recommandé”', 'notation-jlg' ) . '</span>';
+        echo '</label>';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Met en avant les coups de cœur de la rédaction.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 
         // Points forts/faibles
@@ -448,11 +463,11 @@ class Metaboxes {
             }
 
             // Champs textarea
-            $textarea_fields = array( 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles' );
+            $textarea_fields = array( 'tagline_fr', 'tagline_en', 'verdict', 'points_forts', 'points_faibles' );
             foreach ( $textarea_fields as $field ) {
                 if ( isset( $_POST[ 'jlg_' . $field ] ) ) {
                     $raw_value = wp_unslash( $_POST[ 'jlg_' . $field ] );
-                    $value     = sanitize_textarea_field( $raw_value );
+                    $value     = trim( sanitize_textarea_field( $raw_value ) );
                     if ( ! empty( $value ) ) {
                         update_post_meta( $post_id, '_jlg_' . $field, $value );
                     } else {
@@ -496,6 +511,14 @@ class Metaboxes {
                 update_post_meta( $post_id, '_jlg_plateformes', $platforms );
             } else {
                 delete_post_meta( $post_id, '_jlg_plateformes' );
+            }
+
+            $editor_choice = isset( $_POST['jlg_editor_choice'] ) ? wp_unslash( $_POST['jlg_editor_choice'] ) : '';
+            $editor_choice = is_string( $editor_choice ) ? trim( $editor_choice ) : '';
+            if ( $editor_choice !== '' ) {
+                update_post_meta( $post_id, '_jlg_editor_choice', '1' );
+            } else {
+                delete_post_meta( $post_id, '_jlg_editor_choice' );
             }
         }
 

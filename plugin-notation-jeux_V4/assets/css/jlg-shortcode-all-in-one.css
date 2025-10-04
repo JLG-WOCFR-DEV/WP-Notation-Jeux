@@ -205,6 +205,38 @@
     color: var(--jlg-aio-score-label-color, #6b7280);
     font-weight: 600;
 }
+.jlg-aio-verdict-wrapper {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+.jlg-aio-editor-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--jlg-aio-editor-badge-bg, rgba(34, 197, 94, 0.14));
+    color: var(--jlg-aio-editor-badge-color, #16a34a);
+    box-shadow: var(--jlg-aio-editor-badge-shadow, none);
+}
+.jlg-aio-verdict-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--jlg-aio-text-color, #111827);
+}
+.jlg-aio-verdict-text p {
+    margin: 0;
+}
+.jlg-aio-verdict-text p + p {
+    margin-top: 0.6em;
+}
 
 .jlg-aio-scores-grid {
     display: grid;

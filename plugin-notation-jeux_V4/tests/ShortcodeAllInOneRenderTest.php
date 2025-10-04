@@ -79,6 +79,10 @@ class ShortcodeAllInOneRenderTest extends TestCase
         );
         $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="fr"[^>]*>/i', $output);
         $this->assertMatchesRegularExpression('/<div class="jlg-aio-tagline" data-lang="en"[^>]*>/', $output);
+        $this->assertMatchesRegularExpression('/class="jlg-aio-editor-badge"/i', $output);
+        $this->assertMatchesRegularExpression('/class="jlg-aio-verdict-text"/i', $output);
+        $this->assertStringContainsString('Une conclusion inspirante', $output);
+        $this->assertStringContainsString('À découvrir d&#039;urgence', $output);
         $scripts = $GLOBALS['jlg_test_scripts'] ?? [];
         $this->assertArrayHasKey('jlg-all-in-one', $scripts['enqueued'] ?? [], 'Main All-in-One script should be enqueued.');
         $this->assertArrayHasKey('jlg-all-in-one', $scripts['registered'] ?? [], 'All-in-One script should be registered.');
@@ -183,6 +187,8 @@ class ShortcodeAllInOneRenderTest extends TestCase
 
         $this->assertNotSame('', $output);
         $this->assertStringContainsString('class="review-box-jlg jlg-animate"', $output);
+        $this->assertStringContainsString('class="review-editor-badge"', $output);
+        $this->assertStringContainsString("Une conclusion inspirante", $output);
     }
 
     private function seedPost(int $post_id, string $post_type = 'post'): void
@@ -196,8 +202,10 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $GLOBALS['jlg_test_meta'][$post_id] = [
             '_jlg_tagline_fr'     => 'Meilleur jeu de l\'année',
             '_jlg_tagline_en'     => 'Game of the year contender',
+            '_jlg_verdict'        => "Une conclusion inspirante\nÀ découvrir d'urgence",
             '_jlg_points_forts'   => "Univers immersif\nCombats dynamiques",
             '_jlg_points_faibles' => "Quêtes répétitives\nQuelques bugs",
+            '_jlg_editor_choice'  => '1',
         ];
 
         $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();

@@ -63,6 +63,13 @@ if ( $css_variables_string === '' ) {
 }
 
 $style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
+$verdict_markup = isset( $verdict_markup ) && is_string( $verdict_markup ) ? $verdict_markup : '';
+$show_editor_choice_badge = ! empty( $show_editor_choice_badge );
+$has_verdict = $verdict_markup !== '';
+$editor_choice_label = isset( $editor_choice_label ) && is_string( $editor_choice_label )
+    ? $editor_choice_label
+    : esc_html__( 'Recommandé', 'notation-jlg' );
+$editor_choice_label_text = wp_strip_all_tags( (string) $editor_choice_label );
 
 $score_max_label_safe       = esc_html( $score_max_label );
 $average_score_display      = esc_html( number_format_i18n( $average_score, 1 ) );
@@ -128,9 +135,24 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
             </div>
         <?php endif; ?>
     </div>
-    
+
+    <?php if ( $show_editor_choice_badge || $has_verdict ) : ?>
+    <div class="review-verdict">
+        <?php if ( $show_editor_choice_badge ) : ?>
+        <span class="review-editor-badge" aria-label="<?php echo esc_attr( sprintf( __( 'Badge recommandé : %s', 'notation-jlg' ), $editor_choice_label_text ) ); ?>">
+            <?php echo esc_html( $editor_choice_label ); ?>
+        </span>
+        <?php endif; ?>
+        <?php if ( $has_verdict ) : ?>
+        <div class="review-verdict-text">
+            <?php echo wp_kses_post( $verdict_markup ); ?>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <hr>
-    
+
     <div class="rating-breakdown">
         <?php foreach ( $category_scores as $category ) : ?>
             <?php

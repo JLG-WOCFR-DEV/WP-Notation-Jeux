@@ -27,6 +27,11 @@
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-fill-color:transparent;
 }
 .review-box-jlg .score-label { font-size:1.125rem; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; margin-top:4px; }
+.review-box-jlg .review-verdict { margin-top:16px; display:flex; flex-direction:column; gap:12px; align-items:flex-start; }
+.review-box-jlg .review-editor-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:9999px; font-size:0.8rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; background:var(--jlg-editor-badge-bg, rgba(34,197,94,0.16)); color:var(--jlg-editor-badge-color, #15803d); box-shadow:var(--jlg-editor-badge-shadow, none); }
+.review-box-jlg .review-verdict-text { font-size:0.95rem; line-height:1.6; color:var(--jlg-main-text-color); }
+.review-box-jlg .review-verdict-text p { margin:0; }
+.review-box-jlg .review-verdict-text p + p { margin-top:0.6em; }
 .review-box-jlg .rating-breakdown { display:grid; grid-template-columns:1fr; gap:16px; }
 @media (min-width:520px){ .review-box-jlg .rating-breakdown{ grid-template-columns:1fr 1fr; } }
 .review-box-jlg .rating-item { display:flex; flex-direction:column; }

@@ -37,6 +37,13 @@ $data_attributes  = sprintf(
     esc_attr( $animations_enabled ? 'true' : 'false' ),
     esc_attr( $has_dual_tagline ? 'true' : 'false' )
 );
+$show_verdict_section    = ! empty( $show_verdict );
+$verdict_markup          = isset( $verdict_markup ) && is_string( $verdict_markup ) ? $verdict_markup : '';
+$show_editor_choice_badge = ! empty( $show_editor_choice_badge );
+$editor_choice_label      = isset( $editor_choice_label ) && is_string( $editor_choice_label )
+    ? $editor_choice_label
+    : esc_html__( 'Recommandé', 'notation-jlg' );
+$editor_choice_label_text = wp_strip_all_tags( (string) $editor_choice_label );
 
 $score_max_label_safe       = esc_html( $score_max_label );
 $average_score_display      = $average_score !== null ? esc_html( number_format_i18n( $average_score, 1 ) ) : '';
@@ -147,6 +154,20 @@ if ( $average_score_display !== '' ) {
             <?php else : ?>
             <?php echo $global_score_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <div class="jlg-aio-score-label"><?php echo esc_html__( 'Note Globale', 'notation-jlg' ); ?></div>
+            <?php endif; ?>
+            <?php if ( $show_editor_choice_badge || ( $show_verdict_section && $verdict_markup !== '' ) ) : ?>
+            <div class="jlg-aio-verdict-wrapper">
+                <?php if ( $show_editor_choice_badge ) : ?>
+                <span class="jlg-aio-editor-badge" aria-label="<?php echo esc_attr( sprintf( __( 'Badge recommandé : %s', 'notation-jlg' ), $editor_choice_label_text ) ); ?>">
+                    <?php echo esc_html( $editor_choice_label ); ?>
+                </span>
+                <?php endif; ?>
+                <?php if ( $show_verdict_section && $verdict_markup !== '' ) : ?>
+                <div class="jlg-aio-verdict-text">
+                    <?php echo wp_kses_post( $verdict_markup ); ?>
+                </div>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
 

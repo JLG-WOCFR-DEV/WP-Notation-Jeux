@@ -68,6 +68,35 @@ class RatingBlock {
 
         $category_scores = Helpers::get_category_scores_for_display( $post_id );
         $score_map       = array();
+        $verdict_text    = Helpers::get_review_verdict( $post_id );
+        $format_verdict  = static function ( $text ) {
+            $sanitized = esc_html( $text );
+
+            if ( $sanitized === '' ) {
+                return '';
+            }
+
+            if ( function_exists( 'wpautop' ) ) {
+                return wpautop( $sanitized );
+            }
+
+            $paragraphs = array_filter( preg_split( '/\r?\n/', $sanitized ) );
+
+            if ( empty( $paragraphs ) ) {
+                return '<p>' . $sanitized . '</p>';
+            }
+
+            $paragraphs = array_map(
+                static function ( $paragraph ) {
+                    return trim( $paragraph );
+                },
+                $paragraphs
+            );
+
+            return '<p>' . implode( '<br />', $paragraphs ) . '</p>';
+        };
+        $verdict_markup  = $verdict_text !== '' ? $format_verdict( $verdict_text ) : '';
+        $editor_choice   = Helpers::is_editor_choice( $post_id );
 
         foreach ( $category_scores as $category_score ) {
             if ( isset( $category_score['id'], $category_score['score'] ) ) {
@@ -145,6 +174,11 @@ class RatingBlock {
 
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
+        $editor_choice_label = apply_filters( 'jlg_editor_choice_badge_label', __( 'Recommandé', 'notation-jlg' ), $post_id );
+        if ( ! is_string( $editor_choice_label ) || $editor_choice_label === '' ) {
+            $editor_choice_label = __( 'Recommandé', 'notation-jlg' );
+        }
+
         return Frontend::get_template_html(
             'shortcode-rating-block',
             array(
@@ -160,6 +194,10 @@ class RatingBlock {
                 'animations_enabled'   => $animations_enabled,
                 'css_variables'        => $css_variables,
                 'score_max'            => $score_max,
+                'verdict_markup'       => $verdict_markup,
+                'verdict_text'         => $verdict_text,
+                'show_editor_choice_badge' => $editor_choice,
+                'editor_choice_label'  => $editor_choice_label,
             )
         );
     }
@@ -171,6 +209,7 @@ class RatingBlock {
             '--jlg-color-high'       => isset( $options['color_high'] ) ? (string) $options['color_high'] : '',
             '--jlg-color-mid'        => isset( $options['color_mid'] ) ? (string) $options['color_mid'] : '',
             '--jlg-color-low'        => isset( $options['color_low'] ) ? (string) $options['color_low'] : '',
+            '--jlg-editor-badge-color' => isset( $options['color_high'] ) ? (string) $options['color_high'] : '',
         );
 
         $rules = array();

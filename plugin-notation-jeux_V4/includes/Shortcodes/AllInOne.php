@@ -95,6 +95,8 @@ class AllInOne {
                                 'afficher_notation'    => 'oui',
                                 'afficher_points'      => 'oui',
                                 'afficher_tagline'     => 'oui',
+                                'afficher_verdict'     => 'oui',
+                                'afficher_badge'       => 'oui',
                                 'titre_points_forts'   => 'Points Forts',
                                 'titre_points_faibles' => 'Points Faibles',
                                 'style'                => 'moderne', // moderne, classique, compact
@@ -113,6 +115,8 @@ class AllInOne {
         $atts['afficher_notation']    = sanitize_text_field( $atts['afficher_notation'] );
         $atts['afficher_points']      = sanitize_text_field( $atts['afficher_points'] );
         $atts['afficher_tagline']     = sanitize_text_field( $atts['afficher_tagline'] );
+        $atts['afficher_verdict']     = sanitize_text_field( $atts['afficher_verdict'] );
+        $atts['afficher_badge']       = sanitize_text_field( $atts['afficher_badge'] );
         $atts['titre_points_forts']   = sanitize_text_field( $atts['titre_points_forts'] );
         $atts['titre_points_faibles'] = sanitize_text_field( $atts['titre_points_faibles'] );
         $atts['style']                = sanitize_text_field( $atts['style'] );
@@ -164,6 +168,8 @@ class AllInOne {
         $cons          = get_post_meta( $post_id, '_jlg_points_faibles', true );
         $cta_label     = get_post_meta( $post_id, '_jlg_cta_label', true );
         $cta_url       = get_post_meta( $post_id, '_jlg_cta_url', true );
+        $verdict_text  = Helpers::get_review_verdict( $post_id );
+        $editor_choice = Helpers::is_editor_choice( $post_id );
 
         $cta_label = is_string( $cta_label ) ? sanitize_text_field( $cta_label ) : '';
         $cta_label = $cta_label !== '' ? trim( $cta_label ) : '';
@@ -182,8 +188,53 @@ class AllInOne {
 
         $has_cta = ( $cta_label !== '' && $cta_url !== '' );
 
+        $normalize_bool = static function ( $value ) {
+            if ( is_bool( $value ) ) {
+                return $value;
+            }
+
+            $value = is_string( $value ) ? strtolower( trim( $value ) ) : (string) $value;
+
+            return in_array( $value, array( '1', 'true', 'on', 'yes', 'oui' ), true );
+        };
+
+        $show_verdict_option = $normalize_bool( $atts['afficher_verdict'] );
+        $show_badge_option   = $normalize_bool( $atts['afficher_badge'] );
+
+        $has_verdict = $show_verdict_option && $verdict_text !== '';
+        $show_badge  = $show_badge_option && $editor_choice;
+
+        $format_verdict_text = static function ( $text ) {
+            $sanitized = esc_html( $text );
+
+            if ( $sanitized === '' ) {
+                return '';
+            }
+
+            if ( function_exists( 'wpautop' ) ) {
+                return wpautop( $sanitized );
+            }
+
+            $paragraphs = array_filter( preg_split( '/\r?\n/', $sanitized ) );
+
+            if ( empty( $paragraphs ) ) {
+                return '<p>' . $sanitized . '</p>';
+            }
+
+            $paragraphs = array_map(
+                static function ( $paragraph ) {
+                    return trim( $paragraph );
+                },
+                $paragraphs
+            );
+
+            return '<p>' . implode( '<br />', $paragraphs ) . '</p>';
+        };
+
+        $verdict_markup = $has_verdict ? $format_verdict_text( $verdict_text ) : '';
+
         // Si aucune donnée, ne rien afficher
-        if ( $average_score === null && empty( $tagline_fr ) && empty( $tagline_en ) && empty( $pros ) && empty( $cons ) && ! $has_cta ) {
+        if ( $average_score === null && empty( $tagline_fr ) && empty( $tagline_en ) && empty( $pros ) && empty( $cons ) && ! $has_cta && ! $has_verdict && ! $show_badge ) {
             return '';
         }
 
@@ -282,6 +333,8 @@ class AllInOne {
             '--jlg-aio-circle-shadow'         => $this->build_circle_shadow( $accent_color ),
             '--jlg-aio-cta-bg'                => $accent_color,
             '--jlg-aio-cta-text'              => '#ffffff',
+            '--jlg-aio-editor-badge-bg'       => $this->hex_to_rgba( $color_high, 0.18 ),
+            '--jlg-aio-editor-badge-color'    => $color_high,
         );
 
         if ( $score_layout === 'circle' ) {
@@ -387,6 +440,14 @@ class AllInOne {
             $block_classes[] = 'animate-in';
         }
 
+        if ( $has_verdict ) {
+            $block_classes[] = 'has-verdict';
+        }
+
+        if ( $show_badge ) {
+            $block_classes[] = 'has-editor-badge';
+        }
+
         $block_classes = implode( ' ', array_map( 'sanitize_html_class', array_filter( $block_classes ) ) );
 
         $css_variables_string = $this->format_css_variables( $css_variables );
@@ -413,6 +474,11 @@ class AllInOne {
         $tag = $shortcode_tag !== '' ? $shortcode_tag : 'jlg_bloc_complet';
         Frontend::mark_shortcode_rendered( $tag );
 
+        $editor_choice_label = apply_filters( 'jlg_editor_choice_badge_label', __( 'Recommandé', 'notation-jlg' ), $post_id );
+        if ( ! is_string( $editor_choice_label ) || $editor_choice_label === '' ) {
+            $editor_choice_label = __( 'Recommandé', 'notation-jlg' );
+        }
+
         return Frontend::get_template_html(
             'shortcode-all-in-one',
             array(
@@ -431,6 +497,11 @@ class AllInOne {
                                 'cta_url'            => $cta_url,
                                 'cta_role'           => $atts['cta_role'],
                                 'cta_rel'            => $atts['cta_rel'],
+                                'verdict_markup'     => $verdict_markup,
+                                'verdict_text'       => $verdict_text,
+                                'show_verdict'       => $has_verdict,
+                                'show_editor_choice_badge' => $show_badge,
+                                'editor_choice_label' => $editor_choice_label,
                                 'atts'               => $atts,
                                 'block_classes'      => $block_classes,
                                 'css_variables'      => $css_variables_string,
