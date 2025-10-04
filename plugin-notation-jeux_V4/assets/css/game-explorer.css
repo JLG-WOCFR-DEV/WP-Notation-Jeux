@@ -68,6 +68,24 @@
     min-width: 180px;
 }
 
+.jlg-ge-year {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 200px;
+}
+
+.jlg-ge-year label {
+    font-size: 0.875rem;
+    color: var(--jlg-ge-text-muted);
+}
+
+.jlg-ge-year__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--jlg-ge-text-muted);
+}
+
 .jlg-ge-letter-nav ul {
     list-style: none;
     margin: 0;
@@ -264,6 +282,11 @@
     .jlg-ge-filters select,
     .jlg-ge-search input {
         width: 100%;
+    }
+
+    .jlg-ge-year {
+        width: 100%;
+        min-width: 0;
     }
 
     .jlg-ge-filters__actions {
