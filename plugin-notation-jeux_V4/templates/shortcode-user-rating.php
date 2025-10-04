@@ -1,18 +1,32 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+        exit;
 }
 ?>
 
 <?php
 $is_interaction_disabled = $has_voted;
+
+if ( ! is_array( $rating_breakdown ) ) {
+        $rating_breakdown = array();
+}
+
+$normalized_breakdown = array();
+
+for ( $i = 1; $i <= 5; $i++ ) {
+        $key   = array_key_exists( $i, $rating_breakdown ) ? $i : (string) $i;
+        $value = isset( $rating_breakdown[ $key ] ) && is_numeric( $rating_breakdown[ $key ] ) ? intval( $rating_breakdown[ $key ] ) : 0;
+
+        $normalized_breakdown[ $i ] = max( 0, $value );
+}
+
+$total_breakdown_votes  = array_sum( $normalized_breakdown );
+$vote_singular_template = __( '%s vote', 'notation-jlg' );
+$vote_plural_template   = __( '%s votes', 'notation-jlg' );
+$progress_template      = __( '%1$s : %2$s (%3$s%%)', 'notation-jlg' );
+$meter_max_value        = max( $total_breakdown_votes, 1 );
 ?>
-<div class="jlg-user-rating-block
-<?php
-if ( $has_voted ) {
-        echo esc_attr( 'has-voted' );}
-?>
-">
+<div class="jlg-user-rating-block<?php echo $has_voted ? ' has-voted' : ''; ?>">
     <div class="jlg-user-rating-title"><?php esc_html_e( 'Votre avis nous intéresse !', 'notation-jlg' ); ?></div>
     <div
         class="jlg-user-rating-stars"
@@ -22,9 +36,9 @@ if ( $has_voted ) {
         <?php echo $is_interaction_disabled ? 'aria-disabled="true"' : ''; ?>
     >
         <?php for ( $i = 1; $i <= 5; $i++ ) :
-            $is_selected      = $has_voted && $i <= $user_vote;
-            $is_checked_radio = $has_voted && intval( $user_vote ) === $i;
-            ?>
+                $is_selected      = $has_voted && $i <= $user_vote;
+                $is_checked_radio = $has_voted && intval( $user_vote ) === $i;
+                ?>
             <button
                 type="button"
                 class="jlg-user-star<?php echo $is_selected ? ' selected' : ''; ?>"
@@ -38,6 +52,49 @@ if ( $has_voted ) {
                 ?>"
             >★</button>
         <?php endfor; ?>
+    </div>
+    <div
+        class="jlg-user-rating-breakdown"
+        role="group"
+        aria-live="polite"
+        aria-label="<?php echo esc_attr__( 'Répartition des votes', 'notation-jlg' ); ?>"
+        data-vote-singular="<?php echo esc_attr( $vote_singular_template ); ?>"
+        data-vote-plural="<?php echo esc_attr( $vote_plural_template ); ?>"
+        data-progress-template="<?php echo esc_attr( $progress_template ); ?>"
+        data-total-votes="<?php echo esc_attr( $total_breakdown_votes ); ?>"
+    >
+        <ul class="jlg-user-rating-breakdown-list" role="list">
+            <?php for ( $star = 5; $star >= 1; $star-- ) :
+                $count_for_star = isset( $normalized_breakdown[ $star ] ) ? $normalized_breakdown[ $star ] : 0;
+                $percent_value  = $total_breakdown_votes > 0 ? ( $count_for_star / $total_breakdown_votes ) * 100 : 0;
+                $percent_label  = $total_breakdown_votes > 0 ? number_format_i18n( $percent_value, 1 ) : number_format_i18n( 0 );
+                $star_label     = sprintf( _n( '%s étoile', '%s étoiles', $star, 'notation-jlg' ), number_format_i18n( $star ) );
+                $count_label    = sprintf( _n( '%s vote', '%s votes', $count_for_star, 'notation-jlg' ), number_format_i18n( $count_for_star ) );
+                ?>
+                <li class="jlg-user-rating-breakdown-item" role="listitem" data-stars="<?php echo esc_attr( $star ); ?>">
+                    <span class="jlg-user-rating-breakdown-label">
+                        <span class="jlg-user-rating-breakdown-star"><?php echo esc_html( $star_label ); ?></span>
+                        <span class="jlg-user-rating-breakdown-count" data-count="<?php echo esc_attr( $count_for_star ); ?>">
+                            <?php echo esc_html( $count_label ); ?>
+                        </span>
+                    </span>
+                    <div
+                        class="jlg-user-rating-breakdown-meter"
+                        role="meter"
+                        aria-valuemin="0"
+                        aria-valuemax="<?php echo esc_attr( $meter_max_value ); ?>"
+                        aria-valuenow="<?php echo esc_attr( $count_for_star ); ?>"
+                        aria-label="<?php echo esc_attr( sprintf( $progress_template, $star_label, $count_label, $percent_label ) ); ?>"
+                        data-percent="<?php echo esc_attr( $percent_value ); ?>"
+                        data-star-label="<?php echo esc_attr( $star_label ); ?>"
+                    >
+                        <span class="jlg-user-rating-breakdown-track">
+                            <span class="jlg-user-rating-breakdown-fill" style="width: <?php echo esc_attr( $percent_value ); ?>%;"></span>
+                        </span>
+                    </div>
+                </li>
+            <?php endfor; ?>
+        </ul>
     </div>
     <div class="jlg-user-rating-summary">
         <?php

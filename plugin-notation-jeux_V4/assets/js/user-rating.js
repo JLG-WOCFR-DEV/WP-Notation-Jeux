@@ -90,6 +90,12 @@ jQuery(document).ready(function($) {
     function refreshInteractionAccessibility(ratingBlock) {
         var shouldDisable = ratingBlock.hasClass('is-loading') || ratingBlock.hasClass('has-voted');
         setInteractionDisabled(ratingBlock, shouldDisable);
+
+        if (ratingBlock.hasClass('is-loading')) {
+            ratingBlock.attr('aria-busy', 'true');
+        } else {
+            ratingBlock.removeAttr('aria-busy');
+        }
     }
 
     function updateRatingState(ratingBlock, ratingValue) {
@@ -127,6 +133,105 @@ jQuery(document).ready(function($) {
     }
 
     initializeAriaStates();
+
+    function getBreakdownContainer(ratingBlock) {
+        return ratingBlock.find('.jlg-user-rating-breakdown');
+    }
+
+    function getVoteTemplates(container) {
+        return {
+            singular: container.data('voteSingular') || '%s vote',
+            plural: container.data('votePlural') || '%s votes',
+            progress: container.data('progressTemplate') || '%1$s: %2$s (%3$s%%)'
+        };
+    }
+
+    function formatVoteCount(container, count) {
+        var templates = getVoteTemplates(container);
+        var template = (count === 1) ? templates.singular : templates.plural;
+        var formattedCount = (typeof count === 'number' && typeof count.toLocaleString === 'function') ? count.toLocaleString() : String(count);
+
+        return template.replace('%s', formattedCount);
+    }
+
+    function formatPercentLabel(value) {
+        var numericValue = (typeof value === 'number' && !isNaN(value)) ? value : 0;
+        var rounded = Math.round(numericValue * 10) / 10;
+
+        if (Math.abs(rounded - Math.round(rounded)) < 0.05) {
+            rounded = Math.round(rounded);
+        }
+
+        if (typeof rounded.toLocaleString === 'function') {
+            var minimumFractionDigits = (rounded % 1 === 0) ? 0 : 1;
+
+            return rounded.toLocaleString(undefined, {
+                minimumFractionDigits: minimumFractionDigits,
+                maximumFractionDigits: 1
+            });
+        }
+
+        return String(rounded);
+    }
+
+    function updateBreakdown(ratingBlock, breakdown) {
+        var container = getBreakdownContainer(ratingBlock);
+
+        if (!container.length) {
+            return;
+        }
+
+        var normalized = {};
+        var total = 0;
+
+        for (var star = 1; star <= 5; star++) {
+            var value = 0;
+
+            if (breakdown && typeof breakdown === 'object') {
+                if (Object.prototype.hasOwnProperty.call(breakdown, star)) {
+                    value = parseInt(breakdown[star], 10);
+                } else if (Object.prototype.hasOwnProperty.call(breakdown, String(star))) {
+                    value = parseInt(breakdown[String(star)], 10);
+                }
+            }
+
+            if (isNaN(value) || value < 0) {
+                value = 0;
+            }
+
+            normalized[star] = value;
+            total += value;
+        }
+
+        container.attr('data-total-votes', total);
+
+        container.find('.jlg-user-rating-breakdown-item').each(function() {
+            var item = $(this);
+            var starValue = parseInt(item.data('stars'), 10);
+            var count = normalized[starValue] || 0;
+            var percent = total > 0 ? (count / total) * 100 : 0;
+            var percentLabel = formatPercentLabel(percent);
+            var starLabel = item.find('.jlg-user-rating-breakdown-star').first().text();
+            var countElement = item.find('.jlg-user-rating-breakdown-count');
+            var countLabel = formatVoteCount(container, count);
+
+            countElement.attr('data-count', count);
+            countElement.text(countLabel);
+
+            var meter = item.find('.jlg-user-rating-breakdown-meter');
+            var fill = item.find('.jlg-user-rating-breakdown-fill');
+            var templates = getVoteTemplates(container);
+
+            meter.attr('aria-valuenow', count);
+            meter.attr('aria-valuemax', Math.max(total, 1));
+            meter.attr('data-percent', percent);
+            meter.attr('aria-label', templates.progress.replace('%1$s', starLabel).replace('%2$s', countLabel).replace('%3$s', percentLabel));
+
+            if (fill.length) {
+                fill.css('width', percent + '%');
+            }
+        });
+    }
 
     // Effet de survol des étoiles
     $('.jlg-user-star').on('mouseover', function() {
@@ -184,6 +289,10 @@ jQuery(document).ready(function($) {
 
                     if (typeof responseData.new_count !== 'undefined') {
                         ratingBlock.find('.jlg-user-rating-count-value').text(responseData.new_count);
+                    }
+
+                    if (typeof responseData.new_breakdown !== 'undefined') {
+                        updateBreakdown(ratingBlock, responseData.new_breakdown);
                     }
 
                     ratingBlock.find('.jlg-rating-message').text(successMessage).show();

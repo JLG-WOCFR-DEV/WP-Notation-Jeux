@@ -20,7 +20,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 * **Système de notation flexible** : 6 catégories personnalisables avec un barème ajustable (par défaut sur 10)
 * **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
-* **Notation utilisateurs** : Permettez à vos lecteurs de voter
+* **Notation utilisateurs** : Permettez à vos lecteurs de voter, visualisez la répartition des notes dans un histogramme accessible mis à jour en direct et laissez le script AJAX empêcher les doubles soumissions
 * **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
 * **Nom de jeu personnalisé** : Remplacez le titre WordPress dans les tableaux, widgets et données structurées
 * **Widget** : Affichez vos derniers tests notés
@@ -31,6 +31,10 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **Accessibilité renforcée** : Les animations respectent la préférence système "réduire les mouvements" et la navigation du Game Explorer annonce désormais la page active (aria-current) tout en proposant des repères de focus visibles, y compris sur mobile. Sur smartphone, un bouton « Filtres » accessible (aria-expanded/aria-controls) ouvre un panneau coulissant qui se referme automatiquement après application et replace le focus sur la liste de résultats.
 * **Gestion dynamique des plateformes** : Ajoutez, triez et réinitialisez vos plateformes depuis l'onglet Plateformes
 * **Responsive** : Parfaitement adapté mobile et tablette
+
+= Histogramme des votes lecteurs =
+
+Le shortcode `[notation_utilisateurs_jlg]` affiche désormais un histogramme 1→5 étoiles accessible (ARIA) afin de détailler la répartition des votes. Chaque participation déclenche un rafraîchissement instantané des barres, respecte la préférence `prefers-reduced-motion` et bloque l'interface pendant l'appel AJAX pour éviter tout double envoi.
 
 = Gestion des plateformes =
 
@@ -54,7 +58,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[jlg_fiche_technique]` - Fiche technique du jeu. Attributs : `post_id` (optionnel, ID d'un test publié à afficher ; sinon l'article courant est utilisé), `champs` (liste de champs séparés par des virgules) et `titre`.
 * `[tagline_notation_jlg]` - Phrase d'accroche bilingue
 * `[jlg_points_forts_faibles]` - Points positifs et négatifs
-* `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs
+* `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs avec histogramme dynamique (barres accessibles ARIA, mise à jour en temps réel après chaque vote)
 * `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les entêtes sont triables par titre, date, note moyenne et métadonnées développeur/éditeur via `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
 * `[jlg_game_explorer]` - Game Explorer interactif avec cartes et filtres dynamiques. Attributs : `posts_per_page` (nombre d'articles par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `availability`), `categorie`, `plateforme` et `lettre` pour forcer un filtrage initial. La navigation (lettres, filtres, tri et pagination) reste pleinement fonctionnelle sans JavaScript grâce à des requêtes GET accessibles. Sur mobile, les filtres se replient dans un panneau masquable pour libérer l'écran tout en conservant l'accessibilité sans JavaScript.
 

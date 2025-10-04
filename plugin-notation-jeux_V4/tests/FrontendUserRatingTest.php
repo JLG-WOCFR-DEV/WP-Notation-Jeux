@@ -200,7 +200,31 @@ class FrontendUserRatingTest extends TestCase
             $this->assertNull($exception->status);
             $this->assertSame('5.00', $exception->data['new_average']);
             $this->assertSame(1, $exception->data['new_count']);
+            $this->assertArrayHasKey('new_breakdown', $exception->data);
+            $this->assertSame(
+                [
+                    1 => 0,
+                    2 => 0,
+                    3 => 0,
+                    4 => 0,
+                    5 => 1,
+                ],
+                $exception->data['new_breakdown']
+            );
         }
+
+        $this->assertArrayHasKey($post_id, $GLOBALS['jlg_test_meta']);
+        $this->assertArrayHasKey('_jlg_user_rating_breakdown', $GLOBALS['jlg_test_meta'][$post_id]);
+        $this->assertSame(
+            [
+                1 => 0,
+                2 => 0,
+                3 => 0,
+                4 => 0,
+                5 => 1,
+            ],
+            $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_breakdown']
+        );
     }
 
     public function test_handle_user_rating_accepts_vote_on_custom_post_type(): void
@@ -238,9 +262,66 @@ class FrontendUserRatingTest extends TestCase
             $this->assertNull($exception->status);
             $this->assertSame('3.00', $exception->data['new_average']);
             $this->assertSame(1, $exception->data['new_count']);
+            $this->assertArrayHasKey('new_breakdown', $exception->data);
+            $this->assertSame(
+                [
+                    1 => 0,
+                    2 => 0,
+                    3 => 1,
+                    4 => 0,
+                    5 => 0,
+                ],
+                $exception->data['new_breakdown']
+            );
         } finally {
             remove_all_filters('jlg_rated_post_types');
         }
+
+        $this->assertArrayHasKey($post_id, $GLOBALS['jlg_test_meta']);
+        $this->assertArrayHasKey('_jlg_user_rating_breakdown', $GLOBALS['jlg_test_meta'][$post_id]);
+        $this->assertSame(
+            [
+                1 => 0,
+                2 => 0,
+                3 => 1,
+                4 => 0,
+                5 => 0,
+            ],
+            $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_breakdown']
+        );
+    }
+
+    public function test_get_user_rating_breakdown_retrofills_missing_meta(): void
+    {
+        $post_id = 2468;
+        $token_hash = str_repeat('a', 64);
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_ratings'] = [
+            $token_hash => 4,
+            '__meta' => [
+                'version'    => 2,
+                'timestamps' => [
+                    $token_hash => time(),
+                ],
+            ],
+        ];
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $breakdown = \JLG\Notation\Frontend::get_user_rating_breakdown_for_post($post_id);
+
+        $this->assertSame(
+            [
+                1 => 0,
+                2 => 0,
+                3 => 0,
+                4 => 1,
+                5 => 0,
+            ],
+            $breakdown
+        );
+
+        $this->assertArrayHasKey('_jlg_user_rating_breakdown', $GLOBALS['jlg_test_meta'][$post_id]);
+        $this->assertSame($breakdown, $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_breakdown']);
     }
 
     public function test_weighted_average_is_calculated_from_category_scores(): void

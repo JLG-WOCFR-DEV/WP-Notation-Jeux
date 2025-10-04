@@ -17,7 +17,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 ## Utilisation au quotidien
 - **Shortcodes principaux** :
   - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) pour afficher en une seule fois notation, points forts/faibles et tagline avec de nombreux attributs (`post_id`, `style`, `couleur_accent`, etc.).
-  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]` pour construire des mises en page modulaires.
+  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct).
 - **Widget « Derniers tests »** : activé automatiquement, il peut être ajouté depuis *Apparence > Widgets* grâce au registre `JLG_Latest_Reviews_Widget`.
 - **Fonctions helper** :
   - `jlg_get_post_rating()` retourne la moyenne /10 pour un article donné ; `jlg_display_post_rating()` affiche la note formatée ; `jlg_display_thumbnail_score()` injecte la note dans vos templates de vignettes.
@@ -28,7 +28,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 - **Effets Glow / Neon** configurables pour les modes texte ou cercle (intensité, pulsation, couleur dynamique ou fixe).
 - **Modules optionnels** : activer/désactiver la notation utilisateurs, les taglines, les animations de barres ou le schema SEO JSON-LD directement depuis l’onglet Réglages.
 - **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes).
-- **Notation des lecteurs** : personnalisez couleurs et textes du module dédié lorsque `Notation utilisateurs` est actif.
+- **Notation des lecteurs** : personnalisez couleurs et textes du module dédié et profitez d'un histogramme accessible mis à jour en direct, avec verrouillage automatique des interactions pendant le traitement AJAX pour éviter les doubles clics.
 
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).
