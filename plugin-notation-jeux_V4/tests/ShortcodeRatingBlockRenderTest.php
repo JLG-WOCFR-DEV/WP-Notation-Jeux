@@ -114,6 +114,42 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertStringContainsString('Notation JLG', $output, 'Metabox reference should guide editors.');
     }
 
+    public function test_render_hides_badge_when_threshold_not_met(): void
+    {
+        $post_id = 1205;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 8.5,
+            'graphismes' => 8.5,
+        ]);
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_avg'] = '8.2';
+
+        $this->setPluginOptions([
+            'rating_badge_enabled'   => 1,
+            'rating_badge_threshold' => 9.0,
+        ]);
+
+        $editorial_average = \JLG\Notation\Helpers::get_average_score_for_post($post_id);
+        $this->assertNotNull($editorial_average, 'Average score should exist when ratings are provided.');
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertStringNotContainsString('rating-badge', $output, 'Badge markup should stay hidden below the configured threshold.');
+        $this->assertStringContainsString('Note des lecteurs', $output, 'User rating summary should display when average exists.');
+
+        $delta_value    = 8.2 - (float) $editorial_average;
+        $expected_delta = number_format_i18n($delta_value, 1);
+        if ($delta_value > 0) {
+            $expected_delta = '+' . $expected_delta;
+        }
+
+        $this->assertStringContainsString($expected_delta, $output, 'Delta should remain visible even if the badge is hidden.');
+    }
+
     public function test_render_displays_badge_and_user_rating_when_threshold_met(): void
     {
         $post_id = 1204;
