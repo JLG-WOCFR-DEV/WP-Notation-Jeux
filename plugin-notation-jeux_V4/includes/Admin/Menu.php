@@ -10,6 +10,7 @@ namespace JLG\Notation\Admin;
 
 use JLG\Notation\Helpers;
 use JLG\Notation\Utils\TemplateLoader;
+use WP_Query;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
@@ -114,9 +115,10 @@ class Menu {
             return TemplateLoader::get_admin_template(
                 'tabs/posts-list',
                 array(
-					'has_rated_posts' => false,
-					'empty_state'     => $empty_state,
-				)
+                                        'has_rated_posts' => false,
+                                        'empty_state'     => $empty_state,
+                                        'insights'        => Helpers::get_posts_score_insights( array() ),
+                                )
             );
         }
 
@@ -213,19 +215,20 @@ class Menu {
         return TemplateLoader::get_admin_template(
             'tabs/posts-list',
             array(
-				'has_rated_posts'    => true,
-				'empty_state'        => $empty_state,
-				'stats'              => array(
-					'total_items'   => $total_items,
-					'current_page'  => $current_page,
-					'total_pages'   => $total_pages,
-					'display_count' => count( $posts ),
-				),
-				'columns'            => $this->get_sortable_columns( $orderby, $order ),
-				'posts'              => $posts,
-				'pagination'         => $pagination,
-				'print_button_label' => __( '🖨️ Imprimer cette liste', 'notation-jlg' ),
-			)
+                                'has_rated_posts'    => true,
+                                'empty_state'        => $empty_state,
+                                'stats'              => array(
+                                        'total_items'   => $total_items,
+                                        'current_page'  => $current_page,
+                                        'total_pages'   => $total_pages,
+                                        'display_count' => count( $posts ),
+                                ),
+                                'insights'           => Helpers::get_posts_score_insights( $rated_posts ),
+                                'columns'            => $this->get_sortable_columns( $orderby, $order ),
+                                'posts'              => $posts,
+                                'pagination'         => $pagination,
+                                'print_button_label' => __( '🖨️ Imprimer cette liste', 'notation-jlg' ),
+                        )
         );
     }
 
