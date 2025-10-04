@@ -11,6 +11,7 @@ use JLG\Notation\Shortcodes\GameExplorer;
 use JLG\Notation\Shortcodes\GameInfo;
 use JLG\Notation\Shortcodes\ProsCons;
 use JLG\Notation\Shortcodes\RatingBlock;
+use JLG\Notation\Shortcodes\ScoreInsights;
 use JLG\Notation\Shortcodes\SummaryDisplay;
 use JLG\Notation\Shortcodes\Tagline;
 use JLG\Notation\Shortcodes\UserRating;
@@ -109,6 +110,7 @@ class Frontend {
             UserRating::class,
             Tagline::class,
             SummaryDisplay::class,
+            ScoreInsights::class,
             AllInOne::class,
             GameExplorer::class,
         );
@@ -164,6 +166,7 @@ class Frontend {
             'jlg_bloc_complet',
             'bloc_notation_complet',
             'jlg_game_explorer',
+            'jlg_score_insights',
         );
     }
 

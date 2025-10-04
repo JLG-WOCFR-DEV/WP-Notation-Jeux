@@ -62,6 +62,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[notation_utilisateurs_jlg]` - Système de vote pour les lecteurs avec histogramme dynamique (barres accessibles ARIA, mise à jour en temps réel après chaque vote)
 * `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les entêtes sont triables par titre, date, note moyenne et métadonnées développeur/éditeur via `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
 * `[jlg_game_explorer]` - Game Explorer interactif avec cartes et filtres dynamiques. Attributs : `posts_per_page` (nombre d'articles par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `developer`, `publisher`, `availability`), `categorie`, `plateforme` et `lettre` pour forcer un filtrage initial. La navigation (lettres, filtres, tri et pagination) reste pleinement fonctionnelle sans JavaScript grâce à des requêtes GET accessibles. Sur mobile, les filtres se replient dans un panneau masquable pour libérer l'écran tout en conservant l'accessibilité sans JavaScript.
+* `[jlg_score_insights]` - Tableau de bord statistique mettant en avant moyenne, médiane, histogramme et plateformes dominantes sur une période donnée. Attributs : `time_range` (`all`, `last_30_days`, `last_90_days`, `last_365_days`), `platform` (slug défini dans Notation → Plateformes), `platform_limit` (1 à 10 plateformes) et `title` pour personnaliser l'entête.
 
 == Utilisation dans les widgets et blocs ==
 
@@ -75,7 +76,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 
 == Blocs Gutenberg ==
 
-Le plugin expose huit blocs dynamiques prêts à l'emploi :
+Le plugin expose neuf blocs dynamiques prêts à l'emploi :
 
 * **Bloc de notation** (`notation-jlg/rating-block`) — choisissez l'article ciblé ou laissez le champ vide pour utiliser le
   contenu courant, définissez la disposition (`texte` ou `cercle`), activez/désactivez les animations et sélectionnez le format du score (valeur absolue ou pourcentage).
@@ -89,6 +90,8 @@ Le plugin expose huit blocs dynamiques prêts à l'emploi :
 * **Bloc tout-en-un** (`notation-jlg/all-in-one`) — activez/désactivez chaque sous-bloc, modifiez le style, la couleur d'accent, les titres et le format du score (valeur absolue ou pourcentage).
 * **Game Explorer** (`notation-jlg/game-explorer`) — configurez le tri initial, les filtres proposés et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
+* **Score Insights** (`notation-jlg/score-insights`) — sélectionnez la période analysée, filtrez par plateforme et limitez le nombre de plateformes listées pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes).
+ 
 
 Chaque bloc délègue le rendu à la logique PHP historique (shortcodes) tout en appelant `JLG_Frontend::mark_shortcode_rendered()`
 afin de charger automatiquement les scripts et feuilles de style requis dans l'éditeur.

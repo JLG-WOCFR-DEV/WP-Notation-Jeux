@@ -86,6 +86,12 @@ class Blocks {
             'script'    => 'notation-jlg-game-explorer-editor',
             'callback'  => 'render_game_explorer_block',
         ),
+        'score-insights'  => array(
+            'name'      => 'notation-jlg/score-insights',
+            'shortcode' => 'jlg_score_insights',
+            'script'    => 'notation-jlg-score-insights-editor',
+            'callback'  => 'render_score_insights_block',
+        ),
     );
 
     public function __construct() {
@@ -626,5 +632,33 @@ class Blocks {
         }
 
         return $output;
+    }
+
+    public function render_score_insights_block( $attributes ) {
+        $atts = array();
+
+        if ( ! empty( $attributes['title'] ) && is_string( $attributes['title'] ) ) {
+            $atts['title'] = sanitize_text_field( $attributes['title'] );
+        }
+
+        if ( ! empty( $attributes['timeRange'] ) && is_string( $attributes['timeRange'] ) ) {
+            $atts['time_range'] = sanitize_key( $attributes['timeRange'] );
+        }
+
+        if ( isset( $attributes['platform'] ) && is_string( $attributes['platform'] ) ) {
+            $platform = sanitize_title( $attributes['platform'] );
+            if ( $platform !== '' ) {
+                $atts['platform'] = $platform;
+            }
+        }
+
+        if ( isset( $attributes['platformLimit'] ) ) {
+            $limit = (int) $attributes['platformLimit'];
+            if ( $limit > 0 ) {
+                $atts['platform_limit'] = min( 10, $limit );
+            }
+        }
+
+        return $this->render_shortcode( 'jlg_score_insights', $atts );
     }
 }
