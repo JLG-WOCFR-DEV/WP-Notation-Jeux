@@ -650,6 +650,8 @@ class Helpers {
             'enable_animations'            => 1,
             'allowed_post_types'           => array( 'post' ),
             'tagline_font_size'            => 16,
+            'rating_badge_enabled'         => 0,
+            'rating_badge_threshold'       => 8,
 
             // Couleurs de Thème Sombre personnalisables
             'dark_bg_color'                => $dark_defaults['bg_color'],

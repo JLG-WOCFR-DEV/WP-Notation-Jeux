@@ -66,6 +66,17 @@ class RatingBlock {
             return '';
         }
 
+        $raw_user_rating     = get_post_meta( $post_id, '_jlg_user_rating_avg', true );
+        $user_rating_average = null;
+
+        if ( is_string( $raw_user_rating ) ) {
+            $raw_user_rating = trim( $raw_user_rating );
+        }
+
+        if ( is_numeric( $raw_user_rating ) ) {
+            $user_rating_average = (float) $raw_user_rating;
+        }
+
         $category_scores = Helpers::get_category_scores_for_display( $post_id );
         $score_map       = array();
 
@@ -121,6 +132,19 @@ class RatingBlock {
         $css_variables       = $this->build_css_variables( $options );
         $score_max           = Helpers::get_score_max( $options );
 
+        $badge_threshold = isset( $options['rating_badge_threshold'] ) && is_numeric( $options['rating_badge_threshold'] )
+            ? (float) $options['rating_badge_threshold']
+            : (float) ( $defaults['rating_badge_threshold'] ?? 0 );
+
+        $should_show_badge = ! empty( $options['rating_badge_enabled'] )
+            && is_numeric( $average_score )
+            && $average_score >= $badge_threshold;
+
+        $user_rating_delta = null;
+        if ( $user_rating_average !== null && is_numeric( $average_score ) ) {
+            $user_rating_delta = $user_rating_average - (float) $average_score;
+        }
+
         $display_mode = is_string( $atts['display_mode'] ) ? sanitize_key( $atts['display_mode'] ) : '';
         if ( ! in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
             $display_mode = 'absolute';
@@ -160,6 +184,10 @@ class RatingBlock {
                 'animations_enabled'   => $animations_enabled,
                 'css_variables'        => $css_variables,
                 'score_max'            => $score_max,
+                'should_show_rating_badge' => $should_show_badge,
+                'user_rating_average'  => $user_rating_average,
+                'user_rating_delta'    => $user_rating_delta,
+                'rating_badge_threshold' => $badge_threshold,
             )
         );
     }

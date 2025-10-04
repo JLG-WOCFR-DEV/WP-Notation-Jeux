@@ -842,10 +842,11 @@ class Settings {
         // Section 7: Modules
         add_settings_section( 'jlg_modules', '7. 🧩 Modules', null, 'notation_jlg_page' );
         $module_fields = array(
-            'user_rating_enabled' => 'Notation utilisateurs',
-            'tagline_enabled'     => 'Taglines bilingues',
-            'seo_schema_enabled'  => 'Schéma SEO (étoiles Google)',
-            'enable_animations'   => 'Animations des barres',
+            'user_rating_enabled'   => 'Notation utilisateurs',
+            'rating_badge_enabled'  => 'Badge « Coup de cœur »',
+            'tagline_enabled'       => 'Taglines bilingues',
+            'seo_schema_enabled'    => 'Schéma SEO (étoiles Google)',
+            'enable_animations'     => 'Animations des barres',
         );
         foreach ( $module_fields as $id => $title ) {
             add_settings_field(
@@ -855,11 +856,29 @@ class Settings {
                 'notation_jlg_page',
                 'jlg_modules',
                 array(
-					'id'   => $id,
-					'type' => 'checkbox',
-				)
+                                        'id'   => $id,
+                                        'type' => 'checkbox',
+                                )
             );
         }
+
+        $rating_badge_threshold_args = array(
+                        'id'   => 'rating_badge_threshold',
+                        'type' => 'number',
+                        'min'  => 0,
+                        'max'  => Helpers::get_score_max(),
+                        'step' => 0.1,
+                        'desc' => __( 'Le badge apparaît lorsque la note globale atteint ce seuil. Utilisez le même barème que vos tests (ex. 8 pour un barème sur 10).', 'notation-jlg' ),
+                );
+        add_settings_field(
+            'rating_badge_threshold',
+            __( 'Seuil du badge', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            $rating_badge_threshold_args
+        );
+        $this->store_field_constraints( $rating_badge_threshold_args );
 
         // Section 8: Modules - Tagline
         add_settings_section( 'jlg_tagline_section', '8. 💬 Module Tagline', null, 'notation_jlg_page' );
