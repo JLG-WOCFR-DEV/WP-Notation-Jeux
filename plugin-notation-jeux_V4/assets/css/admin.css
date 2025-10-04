@@ -23,3 +23,115 @@ body.is-dark-theme .jlg-admin-card a:hover,
 body.is-dark-theme .jlg-admin-card a:focus {
     color: var(--wp-admin-theme-color-darker-10, #1d8fd1);
 }
+
+.jlg-admin-insights {
+    margin-bottom: 24px;
+}
+
+.jlg-admin-insights__description {
+    color: var(--wp-admin-page-content-meta, #50575e);
+    margin: 0 0 12px;
+}
+
+.jlg-admin-insights__grid {
+    display: grid;
+    gap: 16px;
+}
+
+@media (min-width: 782px) {
+    .jlg-admin-insights__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.jlg-admin-insight-card {
+    background: var(--wp-admin-surface-color, #fff);
+    border: 1px solid var(--wp-admin-border-color, #dcdcde);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.jlg-admin-insight-card__value {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.jlg-admin-insight-card__legend {
+    margin: 0;
+    color: var(--wp-admin-page-content-meta, #50575e);
+}
+
+.jlg-score-distribution {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.jlg-score-distribution__item {
+    display: grid;
+    gap: 6px;
+}
+
+.jlg-score-distribution__label {
+    font-weight: 600;
+}
+
+.jlg-score-distribution__bar {
+    display: block;
+    height: 6px;
+    background: var(--wp-admin-border-color, #dcdcde);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.jlg-score-distribution__bar-fill {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #8b5cf6);
+}
+
+.jlg-score-distribution__value {
+    font-size: 0.9rem;
+    color: var(--wp-admin-page-content-meta, #50575e);
+}
+
+.jlg-platform-ranking {
+    list-style: decimal inside;
+    margin: 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 6px;
+}
+
+.jlg-platform-ranking__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+@media (min-width: 600px) {
+    .jlg-platform-ranking__item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+    }
+}
+
+.jlg-platform-ranking__name {
+    font-weight: 600;
+}
+
+.jlg-platform-ranking__score {
+    font-variant-numeric: tabular-nums;
+}
+
+.jlg-platform-ranking__count {
+    color: var(--wp-admin-page-content-meta, #50575e);
+}

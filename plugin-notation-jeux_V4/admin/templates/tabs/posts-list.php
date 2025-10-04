@@ -7,6 +7,7 @@ $score_max_label = number_format_i18n($score_max);
 $has_rated_posts = $variables['has_rated_posts'] ?? false;
 $empty_state = isset($variables['empty_state']) && is_array($variables['empty_state']) ? $variables['empty_state'] : [];
 $stats = isset($variables['stats']) && is_array($variables['stats']) ? $variables['stats'] : [];
+$insights = isset($variables['insights']) && is_array($variables['insights']) ? $variables['insights'] : [];
 $columns = isset($variables['columns']) && is_array($variables['columns']) ? $variables['columns'] : [];
 $posts = isset($variables['posts']) && is_array($variables['posts']) ? $variables['posts'] : [];
 $pagination = $variables['pagination'] ?? '';
@@ -22,6 +23,89 @@ $column_count = count($columns) + 2;
         <a href="<?php echo esc_url($empty_state['create_post_url'] ?? admin_url('post-new.php')); ?>" class="button button-primary">✏️ Créer un Test</a>
     </div>
 <?php else : ?>
+    <?php
+    $insight_total = isset($insights['total']) ? (int) $insights['total'] : 0;
+    $insight_mean = isset($insights['mean']['formatted']) ? $insights['mean']['formatted'] : null;
+    $insight_median = isset($insights['median']['formatted']) ? $insights['median']['formatted'] : null;
+    $distribution = isset($insights['distribution']) && is_array($insights['distribution']) ? $insights['distribution'] : [];
+    $platform_rankings = isset($insights['platform_rankings']) && is_array($insights['platform_rankings']) ? $insights['platform_rankings'] : [];
+    ?>
+    <section class="jlg-admin-insights" role="region" aria-labelledby="jlg-admin-insights-title">
+        <h3 id="jlg-admin-insights-title"><?php echo esc_html__('Synthèse des notes', 'notation-jlg'); ?></h3>
+        <p class="jlg-admin-insights__description">
+            <?php
+            printf(
+                esc_html(_n('%d article analysé.', '%d articles analysés.', $insight_total, 'notation-jlg')),
+                (int) $insight_total
+            );
+            ?>
+        </p>
+        <div class="jlg-admin-insights__grid">
+            <article class="jlg-admin-insight-card" aria-labelledby="jlg-insight-mean-title" aria-describedby="jlg-insight-mean-desc">
+                <h4 id="jlg-insight-mean-title"><?php echo esc_html__('Score moyen', 'notation-jlg'); ?></h4>
+                <p class="jlg-admin-insight-card__value" aria-live="polite"><?php echo $insight_mean !== null ? esc_html($insight_mean) : esc_html__('N/A', 'notation-jlg'); ?></p>
+                <p id="jlg-insight-mean-desc" class="jlg-admin-insight-card__legend"><?php esc_html_e('Moyenne pondérée des notes finales.', 'notation-jlg'); ?></p>
+            </article>
+            <article class="jlg-admin-insight-card" aria-labelledby="jlg-insight-median-title" aria-describedby="jlg-insight-median-desc">
+                <h4 id="jlg-insight-median-title"><?php echo esc_html__('Médiane', 'notation-jlg'); ?></h4>
+                <p class="jlg-admin-insight-card__value"><?php echo $insight_median !== null ? esc_html($insight_median) : esc_html__('N/A', 'notation-jlg'); ?></p>
+                <p id="jlg-insight-median-desc" class="jlg-admin-insight-card__legend"><?php esc_html_e('Score central sur l’ensemble des publications.', 'notation-jlg'); ?></p>
+            </article>
+            <article class="jlg-admin-insight-card" aria-labelledby="jlg-insight-distribution-title">
+                <h4 id="jlg-insight-distribution-title"><?php echo esc_html__('Répartition des notes', 'notation-jlg'); ?></h4>
+                <ul class="jlg-score-distribution" role="list" aria-describedby="jlg-insight-distribution-title">
+                    <?php foreach ($distribution as $bucket) :
+                        $bucket_label = $bucket['label'] ?? '';
+                        $bucket_count = isset($bucket['count']) ? (int) $bucket['count'] : 0;
+                        $bucket_percentage = isset($bucket['percentage']) ? (float) $bucket['percentage'] : 0.0;
+                        $bar_width = max(0, min(100, $bucket_percentage));
+                        $sr_text = sprintf(
+                            esc_html__('%1$s : %2$d articles, %3$s%% du total', 'notation-jlg'),
+                            $bucket_label,
+                            $bucket_count,
+                            number_format_i18n($bucket_percentage, 1)
+                        );
+                        ?>
+                        <li class="jlg-score-distribution__item">
+                            <span class="jlg-score-distribution__label"><?php echo esc_html($bucket_label); ?></span>
+                            <span class="jlg-score-distribution__bar" aria-hidden="true">
+                                <span class="jlg-score-distribution__bar-fill" style="width: <?php echo esc_attr($bar_width); ?>%;"></span>
+                            </span>
+                            <span class="jlg-score-distribution__value" aria-hidden="true"><?php echo esc_html(number_format_i18n($bucket_percentage, 1)); ?>%</span>
+                            <span class="screen-reader-text"><?php echo esc_html($sr_text); ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </article>
+            <article class="jlg-admin-insight-card" aria-labelledby="jlg-insight-platform-title">
+                <h4 id="jlg-insight-platform-title"><?php echo esc_html__('Classement par plateforme', 'notation-jlg'); ?></h4>
+                <ol class="jlg-platform-ranking" aria-label="<?php echo esc_attr__('Classement des plateformes les mieux notées', 'notation-jlg'); ?>">
+                    <?php
+                    $rank_slice = array_slice($platform_rankings, 0, 5);
+                    foreach ($rank_slice as $platform) :
+                        $platform_label = $platform['label'] ?? '';
+                        $platform_avg = $platform['average_formatted'] ?? null;
+                        $platform_count = isset($platform['count']) ? (int) $platform['count'] : 0;
+                        $count_label = sprintf(
+                            esc_html(_n('%d jeu noté', '%d jeux notés', $platform_count, 'notation-jlg')),
+                            $platform_count
+                        );
+                        ?>
+                        <li class="jlg-platform-ranking__item">
+                            <span class="jlg-platform-ranking__name"><?php echo esc_html($platform_label); ?></span>
+                            <span class="jlg-platform-ranking__score"><?php echo $platform_avg !== null ? esc_html($platform_avg) : esc_html__('N/A', 'notation-jlg'); ?></span>
+                            <span class="jlg-platform-ranking__count"><?php echo esc_html($count_label); ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                    <?php if (empty($rank_slice)) : ?>
+                        <li class="jlg-platform-ranking__item">
+                            <span class="jlg-platform-ranking__name"><?php esc_html_e('Pas encore de plateforme renseignée.', 'notation-jlg'); ?></span>
+                        </li>
+                    <?php endif; ?>
+                </ol>
+            </article>
+        </div>
+    </section>
     <?php if (!empty($stats)) : ?>
         <div style="background:#f0f6fc; padding:15px; border-radius:4px; margin-bottom:20px;">
             <?php

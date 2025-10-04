@@ -1692,6 +1692,276 @@ class Helpers {
     }
 
     /**
+     * Calcule des statistiques globales sur les notes attribuées aux articles.
+     *
+     * @param int[]|null $post_ids Identifiants d'articles à analyser. Par défaut tous les articles notés.
+     *
+     * @return array{
+     *     total:int,
+     *     mean:array{value:float|null,formatted:string|null},
+     *     median:array{value:float|null,formatted:string|null},
+     *     distribution:array<int, array{
+     *         label:string,
+     *         from:float,
+     *         to:float,
+     *         count:int,
+     *         percentage:float
+     *     }>,
+     *     platform_rankings:array<int, array{
+     *         slug:string,
+     *         label:string,
+     *         count:int,
+     *         average:float|null,
+     *         average_formatted:string|null
+     *     }>
+     * }
+     */
+    public static function get_posts_score_insights( $post_ids = null ) {
+        if ( $post_ids === null ) {
+            $post_ids = self::get_rated_post_ids();
+        }
+
+        if ( ! is_array( $post_ids ) ) {
+            $post_ids = array( $post_ids );
+        }
+
+        $post_ids = array_values(
+            array_filter(
+                array_map( 'intval', $post_ids ),
+                static function ( $post_id ) {
+                    return $post_id > 0;
+                }
+            )
+        );
+
+        $score_max = max( 1, (float) self::get_score_max() );
+        $scores    = array();
+        $platforms = array();
+
+        $registered_platforms = self::get_registered_platform_labels();
+        $unknown_slug         = 'sans-plateforme';
+        $unknown_label        = _x( 'Sans plateforme', 'Fallback platform label', 'notation-jlg' );
+
+        foreach ( $post_ids as $post_id ) {
+            $score_data = self::get_resolved_average_score( $post_id );
+            $score      = isset( $score_data['value'] ) && is_numeric( $score_data['value'] )
+                ? (float) $score_data['value']
+                : null;
+
+            if ( $score === null ) {
+                continue;
+            }
+
+            $scores[] = $score;
+
+            $platform_meta = get_post_meta( $post_id, '_jlg_plateformes', true );
+            $labels        = array();
+
+            if ( is_array( $platform_meta ) ) {
+                foreach ( $platform_meta as $value ) {
+                    if ( ! is_string( $value ) ) {
+                        continue;
+                    }
+
+                    $label = sanitize_text_field( $value );
+
+                    if ( $label === '' ) {
+                        continue;
+                    }
+
+                    $labels[] = $label;
+                }
+            } elseif ( is_string( $platform_meta ) && $platform_meta !== '' ) {
+                $pieces = array_map( 'trim', explode( ',', $platform_meta ) );
+
+                foreach ( $pieces as $piece ) {
+                    if ( $piece === '' ) {
+                        continue;
+                    }
+
+                    $labels[] = sanitize_text_field( $piece );
+                }
+            }
+
+            if ( empty( $labels ) ) {
+                $labels = array( $unknown_label );
+            }
+
+            foreach ( $labels as $label ) {
+                $slug = sanitize_title( $label );
+
+                if ( $slug === '' ) {
+                    $slug = $unknown_slug;
+                    $label = $unknown_label;
+                }
+
+                if ( isset( $registered_platforms[ $slug ] ) ) {
+                    $label = $registered_platforms[ $slug ];
+                }
+
+                if ( ! isset( $platforms[ $slug ] ) ) {
+                    $platforms[ $slug ] = array(
+                        'slug'  => $slug,
+                        'label' => $label,
+                        'count' => 0,
+                        'sum'   => 0.0,
+                    );
+                }
+
+                ++$platforms[ $slug ]['count'];
+                $platforms[ $slug ]['sum'] += $score;
+            }
+        }
+
+        $total_scores = count( $scores );
+
+        if ( $total_scores === 0 ) {
+            return array(
+                'total'             => 0,
+                'mean'              => array(
+                    'value'     => null,
+                    'formatted' => null,
+                ),
+                'median'            => array(
+                    'value'     => null,
+                    'formatted' => null,
+                ),
+                'distribution'      => self::build_score_distribution( array(), $score_max ),
+                'platform_rankings' => array(),
+            );
+        }
+
+        sort( $scores );
+
+        $mean_value = array_sum( $scores ) / $total_scores;
+        $median_value = self::calculate_median_from_sorted_scores( $scores );
+
+        $distribution = self::build_score_distribution( $scores, $score_max );
+
+        $platform_rankings = array();
+        foreach ( $platforms as $data ) {
+            $average = $data['count'] > 0 ? $data['sum'] / $data['count'] : null;
+            $platform_rankings[] = array(
+                'slug'              => $data['slug'],
+                'label'             => $data['label'],
+                'count'             => $data['count'],
+                'average'           => $average !== null ? round( $average, 1 ) : null,
+                'average_formatted' => $average !== null ? number_format_i18n( $average, 1 ) : null,
+            );
+        }
+
+        usort(
+            $platform_rankings,
+            static function ( $a, $b ) {
+                $avg_a = $a['average'] ?? null;
+                $avg_b = $b['average'] ?? null;
+
+                if ( $avg_a === $avg_b ) {
+                    if ( $a['count'] === $b['count'] ) {
+                        return strcmp( (string) $a['label'], (string) $b['label'] );
+                    }
+
+                    return $b['count'] <=> $a['count'];
+                }
+
+                if ( $avg_a === null ) {
+                    return 1;
+                }
+
+                if ( $avg_b === null ) {
+                    return -1;
+                }
+
+                return $avg_b <=> $avg_a;
+            }
+        );
+
+        return array(
+            'total'             => $total_scores,
+            'mean'              => array(
+                'value'     => round( $mean_value, 1 ),
+                'formatted' => number_format_i18n( $mean_value, 1 ),
+            ),
+            'median'            => array(
+                'value'     => $median_value,
+                'formatted' => $median_value !== null ? number_format_i18n( $median_value, 1 ) : null,
+            ),
+            'distribution'      => $distribution,
+            'platform_rankings' => $platform_rankings,
+        );
+    }
+
+    private static function calculate_median_from_sorted_scores( array $scores ) {
+        $count = count( $scores );
+
+        if ( $count === 0 ) {
+            return null;
+        }
+
+        $middle = (int) floor( $count / 2 );
+
+        if ( $count % 2 === 0 ) {
+            $median = ( $scores[ $middle - 1 ] + $scores[ $middle ] ) / 2;
+        } else {
+            $median = $scores[ $middle ];
+        }
+
+        return round( $median, 1 );
+    }
+
+    private static function build_score_distribution( array $scores, $score_max ) {
+        $bucket_count = 5;
+        $step         = $bucket_count > 0 ? max( 0.1, $score_max / $bucket_count ) : $score_max;
+        $buckets      = array();
+
+        for ( $i = 0; $i < $bucket_count; $i++ ) {
+            $from  = $i * $step;
+            $to    = ( $i === $bucket_count - 1 ) ? $score_max : ( $from + $step );
+            $label = sprintf(
+                /* translators: 1: start of the score range, 2: end of the score range. */
+                _x( '%1$s – %2$s', 'Score range label', 'notation-jlg' ),
+                number_format_i18n( $from, 0 ),
+                number_format_i18n( $to, 0 )
+            );
+
+            $buckets[ $i ] = array(
+                'label'      => $label,
+                'from'       => (float) $from,
+                'to'         => (float) $to,
+                'count'      => 0,
+                'percentage' => 0.0,
+            );
+        }
+
+        $total_scores = count( $scores );
+
+        if ( $total_scores === 0 ) {
+            return array_values( $buckets );
+        }
+
+        foreach ( $scores as $score ) {
+            $index = (int) floor( $score / $step );
+
+            if ( $index < 0 ) {
+                $index = 0;
+            } elseif ( $index >= $bucket_count ) {
+                $index = $bucket_count - 1;
+            }
+
+            ++$buckets[ $index ]['count'];
+        }
+
+        foreach ( $buckets as $i => $bucket ) {
+            if ( $bucket['count'] > 0 ) {
+                $percentage = ( $bucket['count'] / $total_scores ) * 100;
+                $buckets[ $i ]['percentage'] = round( $percentage, 1 );
+            }
+        }
+
+        return array_values( $buckets );
+    }
+
+    /**
      * Récupère les tags associés à une plateforme donnée.
      *
      * @param string $platform_key Identifiant de la plateforme.
