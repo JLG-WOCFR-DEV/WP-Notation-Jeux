@@ -88,6 +88,8 @@ if ( $delete_data ) {
             '_jlg_version',
             '_jlg_pegi',
             '_jlg_temps_de_jeu',
+            '_jlg_review_video_url',
+            '_jlg_review_video_provider',
             '_jlg_user_ratings',
             '_jlg_user_rating_avg',
             '_jlg_user_rating_count',

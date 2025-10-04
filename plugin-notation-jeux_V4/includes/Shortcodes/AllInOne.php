@@ -11,6 +11,7 @@ namespace JLG\Notation\Shortcodes;
 
 use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
+use JLG\Notation\Utils\Validator;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -95,6 +96,7 @@ class AllInOne {
                                 'afficher_notation'    => 'oui',
                                 'afficher_points'      => 'oui',
                                 'afficher_tagline'     => 'oui',
+                                'afficher_video'       => 'oui',
                                 'titre_points_forts'   => 'Points Forts',
                                 'titre_points_faibles' => 'Points Faibles',
                                 'style'                => 'moderne', // moderne, classique, compact
@@ -113,6 +115,7 @@ class AllInOne {
         $atts['afficher_notation']    = sanitize_text_field( $atts['afficher_notation'] );
         $atts['afficher_points']      = sanitize_text_field( $atts['afficher_points'] );
         $atts['afficher_tagline']     = sanitize_text_field( $atts['afficher_tagline'] );
+        $atts['afficher_video']       = sanitize_text_field( $atts['afficher_video'] );
         $atts['titre_points_forts']   = sanitize_text_field( $atts['titre_points_forts'] );
         $atts['titre_points_faibles'] = sanitize_text_field( $atts['titre_points_faibles'] );
         $atts['style']                = sanitize_text_field( $atts['style'] );
@@ -128,7 +131,7 @@ class AllInOne {
         }
         $atts['display_mode'] = $display_mode;
 
-        if ( $atts['cta_url'] !== '' && ! wp_http_validate_url( $atts['cta_url'] ) ) {
+        if ( $atts['cta_url'] !== '' && ! Validator::is_valid_http_url( $atts['cta_url'] ) ) {
             $atts['cta_url'] = '';
         }
 
@@ -164,11 +167,13 @@ class AllInOne {
         $cons          = get_post_meta( $post_id, '_jlg_points_faibles', true );
         $cta_label     = get_post_meta( $post_id, '_jlg_cta_label', true );
         $cta_url       = get_post_meta( $post_id, '_jlg_cta_url', true );
+        $video_url     = get_post_meta( $post_id, '_jlg_review_video_url', true );
+        $video_provider = get_post_meta( $post_id, '_jlg_review_video_provider', true );
 
         $cta_label = is_string( $cta_label ) ? sanitize_text_field( $cta_label ) : '';
         $cta_label = $cta_label !== '' ? trim( $cta_label ) : '';
         $cta_url   = is_string( $cta_url ) ? trim( $cta_url ) : '';
-        if ( $cta_url !== '' && ! wp_http_validate_url( $cta_url ) ) {
+        if ( $cta_url !== '' && ! Validator::is_valid_http_url( $cta_url ) ) {
             $cta_url = '';
         }
 
@@ -183,7 +188,11 @@ class AllInOne {
         $has_cta = ( $cta_label !== '' && $cta_url !== '' );
 
         // Si aucune donnée, ne rien afficher
-        if ( $average_score === null && empty( $tagline_fr ) && empty( $tagline_en ) && empty( $pros ) && empty( $cons ) && ! $has_cta ) {
+        $review_video_data = Helpers::get_review_video_embed_data( $video_url, $video_provider );
+        $has_video_content = ( ! empty( $review_video_data['has_embed'] ) )
+            || ( isset( $review_video_data['fallback_message'] ) && $review_video_data['fallback_message'] !== '' );
+
+        if ( $average_score === null && empty( $tagline_fr ) && empty( $tagline_en ) && empty( $pros ) && empty( $cons ) && ! $has_cta && ! $has_video_content ) {
             return '';
         }
 
@@ -431,6 +440,7 @@ class AllInOne {
                                 'cta_url'            => $cta_url,
                                 'cta_role'           => $atts['cta_role'],
                                 'cta_rel'            => $atts['cta_rel'],
+                                'review_video'       => $review_video_data,
                                 'atts'               => $atts,
                                 'block_classes'      => $block_classes,
                                 'css_variables'      => $css_variables_string,

@@ -1712,6 +1712,7 @@ class Frontend {
                 'champs_a_afficher'    => array(),
                 'tagline_fr'           => '',
                 'tagline_en'           => '',
+                'review_video'         => array(),
                 'query'                => null,
                 'atts'                 => array(),
                 'block_classes'        => '',

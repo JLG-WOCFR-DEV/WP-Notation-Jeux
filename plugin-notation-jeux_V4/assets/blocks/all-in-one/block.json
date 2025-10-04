@@ -27,6 +27,10 @@
       "type": "boolean",
       "default": true
     },
+    "showVideo": {
+      "type": "boolean",
+      "default": true
+    },
     "style": {
       "type": "string",
       "default": "moderne"

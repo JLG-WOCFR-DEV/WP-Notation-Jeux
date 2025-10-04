@@ -177,7 +177,7 @@ class Metaboxes {
 
         // Récupérer les métadonnées
         $meta = array();
-        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url', 'cta_label', 'cta_url' );
+        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url', 'cta_label', 'cta_url', 'review_video_url', 'review_video_provider' );
         foreach ( $keys as $key ) {
             $meta[ $key ] = get_post_meta( $post->ID, '_jlg_' . $key, true );
         }
@@ -275,6 +275,38 @@ class Metaboxes {
         echo '<input type="url" id="jlg_cta_url" name="jlg_cta_url" value="' . esc_attr( $meta['cta_url'] ?? '' ) . '" style="width:100%;" placeholder="https://">';
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Renseignez une URL absolue (https://...).', 'notation-jlg' ) . '</p>';
         echo '</div>';
+        echo '</div>';
+        echo '</div>';
+
+        echo '<h3>' . esc_html__( '🎬 Vidéo du test', 'notation-jlg' ) . '</h3>';
+        echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
+        echo '<div>';
+        echo '<label for="jlg_review_video_url"><strong>' . esc_html__( 'URL de la vidéo', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="url" id="jlg_review_video_url" name="jlg_review_video_url" value="' . esc_attr( $meta['review_video_url'] ?? '' ) . '" style="width:100%;" placeholder="https://">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'YouTube et Vimeo sont pris en charge. Le mode sans cookie sera appliqué automatiquement quand possible.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+
+        $provider_value = isset( $meta['review_video_provider'] ) ? (string) $meta['review_video_provider'] : '';
+        $provider_value = Validator::sanitize_video_provider( $provider_value );
+        $provider_options = Validator::get_allowed_video_providers();
+
+        echo '<div>';
+        echo '<label for="jlg_review_video_provider"><strong>' . esc_html__( 'Fournisseur', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<select id="jlg_review_video_provider" name="jlg_review_video_provider" style="width:100%;">';
+        echo '<option value="">' . esc_html__( 'Détection automatique', 'notation-jlg' ) . '</option>';
+        foreach ( $provider_options as $option ) {
+            $option_value = Validator::sanitize_video_provider( $option );
+            $label        = Validator::get_video_provider_label( $option_value );
+
+            if ( $option_value === '' || $label === '' ) {
+                continue;
+            }
+
+            $selected = selected( $provider_value, $option_value, false );
+            echo '<option value="' . esc_attr( $option_value ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
+        }
+        echo '</select>';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Sélectionnez le fournisseur si vous devez forcer la détection.', 'notation-jlg' ) . '</p>';
         echo '</div>';
         echo '</div>';
 
@@ -475,16 +507,41 @@ class Metaboxes {
 
                 $validation_errors[] = __( 'Bouton CTA : le texte et l\'URL doivent être renseignés ensemble.', 'notation-jlg' );
             } else {
-                $validated_url = wp_http_validate_url( $cta_url );
-
-                if ( ! $validated_url ) {
+                if ( ! Validator::is_valid_http_url( $cta_url ) ) {
                     delete_post_meta( $post_id, '_jlg_cta_label' );
                     delete_post_meta( $post_id, '_jlg_cta_url' );
 
                     $validation_errors[] = __( 'Bouton CTA : l\'URL doit être absolue et commencer par http ou https.', 'notation-jlg' );
                 } else {
                     update_post_meta( $post_id, '_jlg_cta_label', $cta_label );
-                    update_post_meta( $post_id, '_jlg_cta_url', esc_url_raw( $validated_url ) );
+                    update_post_meta( $post_id, '_jlg_cta_url', esc_url_raw( $cta_url ) );
+                }
+            }
+
+            $video_url_input      = isset( $_POST['jlg_review_video_url'] ) ? wp_unslash( $_POST['jlg_review_video_url'] ) : '';
+            $video_provider_input = isset( $_POST['jlg_review_video_provider'] ) ? wp_unslash( $_POST['jlg_review_video_provider'] ) : '';
+            $video_data           = Validator::sanitize_review_video_data( $video_url_input, $video_provider_input );
+
+            if ( isset( $video_data['error'] ) && $video_data['error'] !== null ) {
+                delete_post_meta( $post_id, '_jlg_review_video_url' );
+                delete_post_meta( $post_id, '_jlg_review_video_provider' );
+
+                $validation_errors[] = $video_data['error'];
+            } else {
+                $sanitized_video_url = isset( $video_data['url'] ) ? (string) $video_data['url'] : '';
+                $sanitized_provider  = isset( $video_data['provider'] ) ? (string) $video_data['provider'] : '';
+
+                if ( $sanitized_video_url === '' ) {
+                    delete_post_meta( $post_id, '_jlg_review_video_url' );
+                    delete_post_meta( $post_id, '_jlg_review_video_provider' );
+                } else {
+                    update_post_meta( $post_id, '_jlg_review_video_url', $sanitized_video_url );
+
+                    if ( $sanitized_provider !== '' ) {
+                        update_post_meta( $post_id, '_jlg_review_video_provider', $sanitized_provider );
+                    } else {
+                        delete_post_meta( $post_id, '_jlg_review_video_provider' );
+                    }
                 }
             }
 
