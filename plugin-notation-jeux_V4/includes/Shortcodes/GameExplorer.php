@@ -34,6 +34,7 @@ class GameExplorer {
         'developer',
         'publisher',
         'availability',
+        'year',
         'search',
         'paged',
     );
@@ -374,6 +375,50 @@ class GameExplorer {
         return strtolower( $value );
     }
 
+    protected static function normalize_year( $value, array $buckets = array(), $min_year = null, $max_year = null ) {
+        if ( $value === null || $value === '' ) {
+            return '';
+        }
+
+        if ( is_int( $value ) || ctype_digit( (string) $value ) ) {
+            $year = (int) $value;
+        } else {
+            $value = trim( (string) $value );
+            if ( $value === '' || ! preg_match( '/^\d{4}$/', $value ) ) {
+                return '';
+            }
+            $year = (int) $value;
+        }
+
+        if ( $year < 1000 || $year > 9999 ) {
+            return '';
+        }
+
+        if ( is_int( $min_year ) && $year < $min_year ) {
+            return '';
+        }
+
+        if ( is_int( $max_year ) && $year > $max_year ) {
+            return '';
+        }
+
+        if ( ! empty( $buckets ) ) {
+            $normalized_buckets = array();
+            foreach ( $buckets as $bucket_year => $count ) {
+                $bucket_year = is_int( $bucket_year ) ? $bucket_year : ( ctype_digit( (string) $bucket_year ) ? (int) $bucket_year : 0 );
+                if ( $bucket_year > 0 ) {
+                    $normalized_buckets[ $bucket_year ] = (int) $count;
+                }
+            }
+
+            if ( empty( $normalized_buckets[ $year ] ) ) {
+                return '';
+            }
+        }
+
+        return (string) $year;
+    }
+
     private static function substr_unicode( $string, $start, $length = null, $encoding = 'UTF-8' ) {
         $string = (string) $string;
 
@@ -610,6 +655,11 @@ class GameExplorer {
             'platforms_map'   => array(),
             'developers_map'  => array(),
             'publishers_map'  => array(),
+            'years'           => array(
+                'min'     => null,
+                'max'     => null,
+                'buckets' => array(),
+            ),
         );
 
         $rated_posts = Helpers::get_rated_post_ids();
@@ -671,6 +721,28 @@ class GameExplorer {
             $release_raw  = get_post_meta( $post_id, '_jlg_date_sortie', true );
             $release_iso  = self::normalize_date( $release_raw );
             $availability = self::determine_availability( $release_iso );
+
+            $release_year = null;
+            if ( $release_iso !== '' && preg_match( '/^(\d{4})-/', $release_iso, $matches ) ) {
+                $year_value = (int) $matches[1];
+                if ( $year_value > 0 ) {
+                    $release_year = $year_value;
+
+                    if ( ! isset( $snapshot['years']['buckets'][ $year_value ] ) ) {
+                        $snapshot['years']['buckets'][ $year_value ] = 0;
+                    }
+
+                    $snapshot['years']['buckets'][ $year_value ]++;
+
+                    if ( ! is_int( $snapshot['years']['min'] ) || $year_value < $snapshot['years']['min'] ) {
+                        $snapshot['years']['min'] = $year_value;
+                    }
+
+                    if ( ! is_int( $snapshot['years']['max'] ) || $year_value > $snapshot['years']['max'] ) {
+                        $snapshot['years']['max'] = $year_value;
+                    }
+                }
+            }
 
             $developer = get_post_meta( $post_id, '_jlg_developpeur', true );
             $developer = is_string( $developer ) ? trim( sanitize_text_field( $developer ) ) : '';
@@ -756,17 +828,33 @@ class GameExplorer {
                 'publisher'       => $publisher,
                 'publisher_key'   => $publisher_key,
                 'release_iso'     => $release_iso,
+                'release_year'    => $release_year,
                 'availability'    => $availability['status'],
                 'search_haystack' => $search_tokens,
             );
         }
 
+        if ( ! empty( $snapshot['years']['buckets'] ) ) {
+            ksort( $snapshot['years']['buckets'], SORT_NUMERIC );
+            $year_keys = array_keys( $snapshot['years']['buckets'] );
+            $first_key = reset( $year_keys );
+            $last_key  = end( $year_keys );
+
+            $snapshot['years']['min'] = $first_key !== false ? (int) $first_key : null;
+            $snapshot['years']['max'] = $last_key !== false ? (int) $last_key : null;
+        } else {
+            $snapshot['years']['min'] = null;
+            $snapshot['years']['max'] = null;
+        }
+
         return $snapshot;
     }
 
-    protected static function filter_snapshot_post_ids( $snapshot, $letter, $category_id, $category_slug, $platform_slug, $developer_key, $publisher_key, $availability, $search ) {
+    protected static function filter_snapshot_post_ids( $snapshot, $letter, $category_id, $category_slug, $platform_slug, $developer_key, $publisher_key, $availability, $year, $search ) {
         $matched_ids = array();
         $search      = is_string( $search ) ? strtolower( $search ) : '';
+        $year        = is_string( $year ) || is_int( $year ) ? (string) $year : '';
+        $year_int    = $year !== '' && ctype_digit( $year ) ? (int) $year : 0;
 
         foreach ( $snapshot['posts'] as $post_id => $data ) {
             if ( $letter !== '' && ( $data['letter'] ?? '' ) !== $letter ) {
@@ -797,6 +885,13 @@ class GameExplorer {
 
             if ( $availability !== '' && ( $data['availability'] ?? '' ) !== $availability ) {
                 continue;
+            }
+
+            if ( $year_int > 0 ) {
+                $post_year = isset( $data['release_year'] ) && is_numeric( $data['release_year'] ) ? (int) $data['release_year'] : 0;
+                if ( $post_year !== $year_int ) {
+                    continue;
+                }
             }
 
             if ( $search !== '' && strpos( $data['search_haystack'] ?? '', $search ) === false ) {
@@ -877,6 +972,7 @@ class GameExplorer {
         $developer_filter    = isset( $request['developer'] ) ? trim( sanitize_text_field( $request['developer'] ) ) : '';
         $publisher_filter    = isset( $request['publisher'] ) ? trim( sanitize_text_field( $request['publisher'] ) ) : '';
         $availability_filter = ( isset( $request['availability'] ) && is_string( $request['availability'] ) ) ? sanitize_key( $request['availability'] ) : '';
+        $year_filter_raw     = isset( $request['year'] ) ? sanitize_text_field( $request['year'] ) : '';
         $search_filter       = isset( $request['search'] ) ? sanitize_text_field( $request['search'] ) : '';
         $paged               = isset( $request['paged'] ) ? max( 1, (int) $request['paged'] ) : 1;
 
@@ -897,6 +993,9 @@ class GameExplorer {
         }
         if ( empty( $filters_enabled['availability'] ) ) {
             $availability_filter = '';
+        }
+        if ( empty( $filters_enabled['year'] ) ) {
+            $year_filter_raw = '';
         }
         if ( empty( $filters_enabled['search'] ) ) {
             $search_filter = '';
@@ -1018,6 +1117,63 @@ class GameExplorer {
             'unknown'   => esc_html__( 'À confirmer', 'notation-jlg' ),
         );
 
+        $years_meta_raw    = isset( $snapshot['years'] ) && is_array( $snapshot['years'] ) ? $snapshot['years'] : array();
+        $year_buckets_raw  = isset( $years_meta_raw['buckets'] ) && is_array( $years_meta_raw['buckets'] ) ? $years_meta_raw['buckets'] : array();
+        $year_buckets      = array();
+        foreach ( $year_buckets_raw as $bucket_year => $bucket_count ) {
+            if ( is_int( $bucket_year ) ) {
+                $year_key = $bucket_year;
+            } elseif ( is_string( $bucket_year ) && ctype_digit( $bucket_year ) ) {
+                $year_key = (int) $bucket_year;
+            } else {
+                $year_key = 0;
+            }
+
+            if ( $year_key <= 0 ) {
+                continue;
+            }
+
+            $year_buckets[ $year_key ] = (int) $bucket_count;
+        }
+
+        $year_min = isset( $years_meta_raw['min'] ) && is_numeric( $years_meta_raw['min'] ) ? (int) $years_meta_raw['min'] : null;
+        $year_max = isset( $years_meta_raw['max'] ) && is_numeric( $years_meta_raw['max'] ) ? (int) $years_meta_raw['max'] : null;
+
+        if ( $year_min !== null && $year_min < 0 ) {
+            $year_min = null;
+        }
+        if ( $year_max !== null && $year_max < 0 ) {
+            $year_max = null;
+        }
+
+        $year_filter = self::normalize_year( $year_filter_raw, $year_buckets, $year_min, $year_max );
+
+        $years_list = array();
+        if ( ! empty( $year_buckets ) ) {
+            $year_values = array_keys( $year_buckets );
+            rsort( $year_values, SORT_NUMERIC );
+
+            foreach ( $year_values as $year_value ) {
+                $count = isset( $year_buckets[ $year_value ] ) ? (int) $year_buckets[ $year_value ] : 0;
+                $label = (string) $year_value;
+
+                if ( $count > 0 ) {
+                    $label = sprintf(
+                        /* translators: 1: Release year, 2: Number of games. */
+                        _n( '%1$s – %2$d jeu', '%1$s – %2$d jeux', $count, 'notation-jlg' ),
+                        $year_value,
+                        $count
+                    );
+                }
+
+                $years_list[] = array(
+                    'value' => (string) $year_value,
+                    'label' => $label,
+                    'count' => $count,
+                );
+            }
+        }
+
         $category_filter_id   = 0;
         $category_filter_slug = '';
         if ( $category_filter !== '' ) {
@@ -1031,6 +1187,7 @@ class GameExplorer {
         $platform_filter_slug = $platform_filter !== '' ? self::resolve_platform_slug( $platform_filter ) : '';
         $letter_filter        = is_string( $letter_filter ) ? $letter_filter : '';
         $availability_filter  = is_string( $availability_filter ) ? $availability_filter : '';
+        $year_filter          = is_string( $year_filter ) ? $year_filter : '';
         $search_filter        = is_string( $search_filter ) ? $search_filter : '';
 
         $matched_post_ids = self::filter_snapshot_post_ids(
@@ -1042,6 +1199,7 @@ class GameExplorer {
             $developer_filter_key,
             $publisher_filter_key,
             $availability_filter,
+            $year_filter,
             $search_filter
         );
 
@@ -1068,6 +1226,7 @@ class GameExplorer {
                     'developer'    => $developer_filter,
                     'publisher'    => $publisher_filter,
                     'availability' => $availability_filter,
+                    'year'         => $year_filter,
                     'search'       => $search_filter,
                 ),
                 'sort_options'         => self::get_sort_options(),
@@ -1103,6 +1262,7 @@ class GameExplorer {
                         'developer'    => $developer_filter,
                         'publisher'    => $publisher_filter,
                         'availability' => $availability_filter,
+                        'year'         => $year_filter,
                         'search'       => $search_filter,
                         'paged'        => 1,
                     ),
@@ -1110,9 +1270,22 @@ class GameExplorer {
                         'prefix' => $request_prefix,
                         'keys'   => $request_keys,
                     ),
+                    'meta'    => array(
+                        'years' => array(
+                            'min'     => $year_min,
+                            'max'     => $year_max,
+                            'buckets' => $year_buckets,
+                        ),
+                    ),
                 ),
                 'request_prefix'       => $request_prefix,
                 'request_keys'         => $request_keys,
+                'years_list'           => $years_list,
+                'years_meta'           => array(
+                    'min'     => $year_min,
+                    'max'     => $year_max,
+                    'buckets' => $year_buckets,
+                ),
             );
         }
 
@@ -1304,12 +1477,20 @@ class GameExplorer {
                 'developer'    => $developer_filter,
                 'publisher'    => $publisher_filter,
                 'availability' => $availability_filter,
+                'year'         => $year_filter,
                 'search'       => $search_filter,
                 'paged'        => $paged,
             ),
             'request' => array(
                 'prefix' => $request_prefix,
                 'keys'   => $request_keys,
+            ),
+            'meta'    => array(
+                'years' => array(
+                    'min'     => $year_min,
+                    'max'     => $year_max,
+                    'buckets' => $year_buckets,
+                ),
             ),
         );
 
@@ -1332,6 +1513,7 @@ class GameExplorer {
                 'developer'    => $developer_filter,
                 'publisher'    => $publisher_filter,
                 'availability' => $availability_filter,
+                'year'         => $year_filter,
                 'search'       => $search_filter,
             ),
             'sort_options'         => self::get_sort_options(),
@@ -1352,6 +1534,12 @@ class GameExplorer {
             'request_prefix'       => $request_prefix,
             'request_keys'         => $request_keys,
             'score_position'       => $score_position,
+            'years_list'           => $years_list,
+            'years_meta'           => array(
+                'min'     => $year_min,
+                'max'     => $year_max,
+                'buckets' => $year_buckets,
+            ),
         );
     }
 
