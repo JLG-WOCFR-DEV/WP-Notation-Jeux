@@ -751,6 +751,179 @@ if (!function_exists('wp_parse_args')) {
     }
 }
 
+if (!class_exists('WP_Error')) {
+    class WP_Error
+    {
+        protected $code;
+        protected $message;
+        protected $data;
+
+        public function __construct($code = '', $message = '', $data = [])
+        {
+            $this->code    = (string) $code;
+            $this->message = (string) $message;
+            $this->data    = is_array($data) ? $data : [$data];
+        }
+
+        public function get_error_code()
+        {
+            return $this->code;
+        }
+
+        public function get_error_message()
+        {
+            return $this->message;
+        }
+
+        public function get_error_data($code = '')
+        {
+            unset($code);
+
+            return $this->data;
+        }
+    }
+}
+
+if (!class_exists('WP_REST_Server')) {
+    class WP_REST_Server
+    {
+        public const READABLE = 'GET';
+        public const CREATABLE = 'POST';
+    }
+}
+
+if (!class_exists('WP_REST_Response')) {
+    class WP_REST_Response
+    {
+        protected $data;
+        protected $status;
+
+        public function __construct($data = null, $status = 200)
+        {
+            $this->data   = $data;
+            $this->status = (int) $status;
+        }
+
+        public function set_status($status)
+        {
+            $this->status = (int) $status;
+        }
+
+        public function get_status()
+        {
+            return $this->status;
+        }
+
+        public function get_data()
+        {
+            return $this->data;
+        }
+    }
+}
+
+if (!class_exists('WP_REST_Request')) {
+    class WP_REST_Request
+    {
+        protected $params = [];
+        protected $headers = [];
+
+        public function __construct(array $params = [], array $headers = [])
+        {
+            $this->params  = $params;
+            $this->headers = array_change_key_case($headers, CASE_LOWER);
+        }
+
+        public function get_params()
+        {
+            return $this->params;
+        }
+
+        public function get_param($key)
+        {
+            return $this->params[$key] ?? null;
+        }
+
+        public function get_header($key)
+        {
+            $key = strtolower((string) $key);
+
+            return $this->headers[$key] ?? '';
+        }
+
+        public function set_param($key, $value)
+        {
+            $this->params[$key] = $value;
+        }
+
+        public function set_header($key, $value)
+        {
+            $this->headers[strtolower((string) $key)] = $value;
+        }
+    }
+}
+
+if (!class_exists('WP_REST_Controller')) {
+    class WP_REST_Controller
+    {
+        public $namespace;
+        public $rest_base;
+
+        protected function error_to_response($error)
+        {
+            if (!($error instanceof WP_Error)) {
+                return rest_ensure_response($error);
+            }
+
+            $status = $error->get_error_data()['status'] ?? 500;
+
+            return new WP_REST_Response(
+                [
+                    'code'    => $error->get_error_code(),
+                    'message' => $error->get_error_message(),
+                    'data'    => $error->get_error_data(),
+                ],
+                $status
+            );
+        }
+    }
+}
+
+if (!function_exists('register_rest_route')) {
+    function register_rest_route($namespace, $route, $args = [], $override = false)
+    {
+        if (!isset($GLOBALS['jlg_test_rest_routes'])) {
+            $GLOBALS['jlg_test_rest_routes'] = [];
+        }
+
+        $GLOBALS['jlg_test_rest_routes'][] = [
+            'namespace' => $namespace,
+            'route'     => $route,
+            'args'      => $args,
+            'override'  => $override,
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('rest_ensure_response')) {
+    function rest_ensure_response($response)
+    {
+        if ($response instanceof WP_REST_Response) {
+            return $response;
+        }
+
+        return new WP_REST_Response($response);
+    }
+}
+
+if (!function_exists('rest_get_ip_address')) {
+    function rest_get_ip_address()
+    {
+        return isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+    }
+}
+
 if (!function_exists('__')) {
     function __($text, $domain = 'default') {
         return (string) $text;
@@ -902,7 +1075,8 @@ if (!function_exists('add_query_arg')) {
 }
 
 if (!function_exists('remove_query_arg')) {
-    function remove_query_arg($key, $url) {
+    function remove_query_arg($key, $url = '')
+    {
         unset($key);
 
         return (string) $url;
@@ -934,10 +1108,9 @@ if (!function_exists('taxonomy_exists')) {
 }
 
 if (!function_exists('is_wp_error')) {
-    function is_wp_error($thing) {
-        unset($thing);
-
-        return false;
+    function is_wp_error($thing)
+    {
+        return $thing instanceof WP_Error;
     }
 }
 
@@ -1390,6 +1563,25 @@ if (!function_exists('has_shortcode')) {
     }
 }
 
+if (!function_exists('shortcode_exists')) {
+    function shortcode_exists($tag)
+    {
+        $registered = [
+            'bloc_notation_jeu',
+            'jlg_points_forts_faibles',
+            'jlg_fiche_technique',
+            'tagline_notation_jlg',
+            'jlg_tableau_recap',
+            'notation_utilisateurs_jlg',
+            'jlg_bloc_complet',
+            'bloc_notation_complet',
+            'jlg_game_explorer',
+        ];
+
+        return in_array($tag, $registered, true);
+    }
+}
+
 if (!class_exists('WP_Post')) {
     #[\AllowDynamicProperties]
     class WP_Post
@@ -1563,3 +1755,7 @@ require_once __DIR__ . '/../includes/Frontend.php';
 require_once __DIR__ . '/../includes/Utils/Validator.php';
 require_once __DIR__ . '/../includes/Admin/Ajax.php';
 require_once __DIR__ . '/../includes/Shortcodes/SummaryDisplay.php';
+require_once __DIR__ . '/../includes/Shortcodes/GameExplorer.php';
+require_once __DIR__ . '/../includes/REST/GameExplorerController.php';
+require_once __DIR__ . '/../includes/REST/SummaryController.php';
+require_once __DIR__ . '/../includes/REST/UserRatingController.php';

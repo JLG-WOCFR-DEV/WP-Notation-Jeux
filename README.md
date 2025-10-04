@@ -13,6 +13,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels. La section *Contenus* permet désormais de sélectionner les types de publications (articles, CPT publics…) autorisés pour la notation ; au besoin, un développeur peut toujours compléter ou restreindre cette liste via le filtre PHP `jlg_rated_post_types`.
 4. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
 5. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu.
+6. **Définir la clé publique REST** dans le même onglet pour autoriser les intégrations externes à interroger les endpoints JSON du plugin. Toute requête GET vers l'API doit présenter cette clé (paramètre `public_key` ou en-tête `X-JLG-Public-Key`).
 
 ## Utilisation au quotidien
 - **Shortcodes principaux** :
@@ -29,6 +30,19 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 - **Modules optionnels** : activer/désactiver la notation utilisateurs, les taglines, les animations de barres ou le schema SEO JSON-LD directement depuis l’onglet Réglages.
 - **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes).
 - **Notation des lecteurs** : personnalisez couleurs et textes du module dédié lorsque `Notation utilisateurs` est actif.
+
+## API REST
+Le plugin expose une API REST maison (`/wp-json/notation-jlg/v1/`) offrant les mêmes payloads JSON que les handlers AJAX historiques.
+
+| Endpoint | Méthode | Authentification | Description |
+| --- | --- | --- | --- |
+| `/game-explorer` | GET | Clé publique via `public_key` ou en-tête `X-JLG-Public-Key` | Retourne le HTML fragmenté, l'état de pagination et la configuration du Game Explorer. |
+| `/summary` | GET | Clé publique via `public_key` ou en-tête `X-JLG-Public-Key` | Retourne les fragments HTML et l'état du tableau récapitulatif (`jlg_tableau_recap`). |
+| `/user-rating` | POST | Jeton + nonce (`token`, `nonce`) | Enregistre un vote lecteur et renvoie la nouvelle moyenne/compte. |
+
+Pour les routes GET, la clé publique est définie dans *Notation – JLG > Réglages > API*. Les paramètres de tri/filtre acceptés sont identiques à ceux envoyés par le JavaScript du plugin (ex: `orderby`, `order`, `categorie`, `lettre`, `plateforme`, etc.).
+
+Pour le vote REST (`/user-rating`), transmettez au minimum `token`, `nonce`, `post_id` et `rating` (1 à 5). Le nonce est généré côté front via `wp_create_nonce( 'jlg_user_rating_nonce_' . $token )`.
 
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).

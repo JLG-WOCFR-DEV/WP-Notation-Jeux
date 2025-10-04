@@ -567,10 +567,30 @@ class Helpers {
             'custom_css'                   => '',
             'seo_schema_enabled'           => 1,
             'debug_mode_enabled'           => 0,
+            'rest_public_key'              => '',
             'rawg_api_key'                 => '',
         );
 
         return self::$default_settings_cache;
+    }
+
+    /**
+     * Returns the configured public key used to authorise REST read requests.
+     *
+     * @return string
+     */
+    public static function get_rest_public_key() {
+        $options = self::get_plugin_options();
+
+        $key = isset( $options['rest_public_key'] ) ? $options['rest_public_key'] : '';
+
+        if ( ! is_string( $key ) ) {
+            $key = '';
+        }
+
+        $key = sanitize_text_field( $key );
+
+        return $key;
     }
 
     public static function get_plugin_options( $force_refresh = false ) {

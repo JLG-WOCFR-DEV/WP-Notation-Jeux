@@ -86,8 +86,29 @@ final class JLG_Plugin_De_Notation_Main {
         add_action( 'jlg_queue_average_rebuild', array( $this, 'queue_additional_posts_for_migration' ) );
         add_action( \JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK, array( $this, 'process_score_scale_migration_batch' ) );
         add_action( 'init', array( $this, 'ensure_migration_schedule' ) );
+        add_action( 'rest_api_init', array( $this, 'register_rest_controllers' ) );
         register_activation_hook( __FILE__, array( $this, 'on_activation' ) );
         register_deactivation_hook( __FILE__, array( $this, 'on_deactivation' ) );
+    }
+
+    public function register_rest_controllers() {
+        $controllers = array(
+            '\\JLG\\Notation\\REST\\GameExplorerController',
+            '\\JLG\\Notation\\REST\\SummaryController',
+            '\\JLG\\Notation\\REST\\UserRatingController',
+        );
+
+        foreach ( $controllers as $controller_class ) {
+            if ( ! class_exists( $controller_class ) ) {
+                continue;
+            }
+
+            $controller = new $controller_class();
+
+            if ( $controller instanceof \WP_REST_Controller ) {
+                $controller->register_routes();
+            }
+        }
     }
 
     private function load_dependencies() {

@@ -312,6 +312,160 @@ class SummaryDisplay {
         );
     }
 
+
+
+    /**
+     * Prépare les attributs à partir d'une requête interactive.
+     *
+     * @param array $input
+     * @param array $defaults
+     * @return array
+     */
+    public static function prepare_interactive_atts( $input, $defaults = array() ) {
+        $default_atts = shortcode_atts( self::get_default_atts(), is_array( $defaults ) ? $defaults : array(), 'jlg_tableau_recap' );
+
+        $posts_per_page = isset( $input['posts_per_page'] ) && ! is_array( $input['posts_per_page'] )
+            ? intval( wp_unslash( $input['posts_per_page'] ) )
+            : intval( $default_atts['posts_per_page'] ?? 12 );
+
+        if ( $posts_per_page < 1 ) {
+            $posts_per_page = intval( $default_atts['posts_per_page'] ?? 12 );
+        }
+
+        $posts_per_page = max( 1, min( $posts_per_page, 50 ) );
+
+        $layout = isset( $input['layout'] ) && ! is_array( $input['layout'] )
+            ? sanitize_text_field( wp_unslash( $input['layout'] ) )
+            : ( $default_atts['layout'] ?? 'table' );
+
+        if ( ! in_array( $layout, array( 'table', 'grid' ), true ) ) {
+            $layout = 'table';
+        }
+
+        $id = isset( $input['table_id'] ) && ! is_array( $input['table_id'] )
+            ? sanitize_html_class( wp_unslash( $input['table_id'] ) )
+            : sanitize_html_class( $default_atts['id'] ?? '' );
+
+        if ( $id === '' ) {
+            $id = 'jlg-table-' . uniqid();
+        }
+
+        $atts = array(
+            'posts_per_page' => $posts_per_page,
+            'layout'         => $layout,
+            'categorie'      => isset( $input['categorie'] ) && ! is_array( $input['categorie'] ) ? sanitize_text_field( wp_unslash( $input['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
+            'colonnes'       => isset( $input['colonnes'] ) && ! is_array( $input['colonnes'] ) ? sanitize_text_field( wp_unslash( $input['colonnes'] ) ) : ( $default_atts['colonnes'] ?? 'titre,date,note' ),
+            'id'             => $id,
+            'letter_filter'  => '',
+            'genre_filter'   => '',
+        );
+
+        return $atts;
+    }
+
+    /**
+     * Normalise la requête interactive et renvoie les paramètres prêts pour le rendu.
+     *
+     * @param array $input
+     * @param string $fallback_url
+     * @return array{atts: array, request: array, base_url: string}
+     */
+    public static function prepare_interactive_arguments( $input, $fallback_url = '' ) {
+        $raw_request = is_array( $input ) ? $input : array();
+        $atts        = self::prepare_interactive_atts( $raw_request );
+
+        $request_prefix = sanitize_title( $atts['id'] );
+        $letter_keys    = array();
+        $genre_keys     = array();
+
+        if ( $request_prefix !== '' ) {
+            $letter_keys[] = 'letter_filter__' . $request_prefix;
+            $genre_keys[]  = 'genre_filter__' . $request_prefix;
+        }
+
+        $letter_keys[] = 'letter_filter';
+        $genre_keys[]  = 'genre_filter';
+
+        foreach ( $letter_keys as $key ) {
+            if ( isset( $raw_request[ $key ] ) && ! is_array( $raw_request[ $key ] ) ) {
+                $atts['letter_filter'] = self::normalize_letter_filter( $raw_request[ $key ] );
+                break;
+            }
+        }
+
+        foreach ( $genre_keys as $key ) {
+            if ( isset( $raw_request[ $key ] ) && ! is_array( $raw_request[ $key ] ) ) {
+                $atts['genre_filter'] = sanitize_text_field( $raw_request[ $key ] );
+                break;
+            }
+        }
+
+        $current_url = '';
+        if ( isset( $raw_request['current_url'] ) && ! is_array( $raw_request['current_url'] ) ) {
+            $current_url = wp_unslash( $raw_request['current_url'] );
+        }
+
+        $base_url = Frontend::sanitize_internal_url( $current_url );
+
+        if ( $base_url === '' && $fallback_url !== '' ) {
+            $base_url = Frontend::sanitize_internal_url( $fallback_url );
+        }
+
+        return array(
+            'atts'     => $atts,
+            'request'  => $raw_request,
+            'base_url' => $base_url,
+        );
+    }
+
+    /**
+     * Prépare la réponse interactive pour AJAX et la REST API.
+     *
+     * @param array $input
+     * @param string $fallback_url
+     * @return array{response: array<string, mixed>, context: array}
+     */
+    public static function prepare_interactive_response( $input, $fallback_url = '' ) {
+        $prepared = self::prepare_interactive_arguments( $input, $fallback_url );
+
+        $context             = self::get_render_context( $prepared['atts'], $prepared['request'], false );
+        $context['base_url'] = $prepared['base_url'];
+
+        $state = array(
+            'orderby'       => $context['orderby'] ?? 'date',
+            'order'         => $context['order'] ?? 'DESC',
+            'paged'         => $context['paged'] ?? 1,
+            'cat_filter'    => $context['cat_filter'] ?? 0,
+            'letter_filter' => $context['letter_filter'] ?? '',
+            'genre_filter'  => $context['genre_filter'] ?? '',
+            'total_pages'   => 0,
+        );
+
+        if ( isset( $context['query'] ) && $context['query'] instanceof WP_Query ) {
+            $state['total_pages'] = intval( $context['query']->max_num_pages );
+        }
+
+        $response = array(
+            'html'  => '',
+            'state' => $state,
+        );
+
+        if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
+            $response['html'] = $context['message'];
+
+            return array(
+                'response' => $response,
+                'context'  => $context,
+            );
+        }
+
+        $response['html'] = Frontend::get_template_html( 'summary-table-fragment', $context );
+
+        return array(
+            'response' => $response,
+            'context'  => $context,
+        );
+    }
     public static function normalize_letter_filter( $value ) {
         if ( $value === null ) {
             return '';

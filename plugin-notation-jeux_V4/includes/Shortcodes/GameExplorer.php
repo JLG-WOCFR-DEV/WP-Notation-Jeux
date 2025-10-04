@@ -246,6 +246,128 @@ class GameExplorer {
         );
     }
 
+
+
+    /**
+     * Prépare les attributs utilisés par l'interface interactive (AJAX / REST).
+     *
+     * @param array $input
+     * @param array $defaults
+     * @return array
+     */
+    public static function prepare_interactive_atts( $input, $defaults = array() ) {
+        $default_atts = shortcode_atts( self::get_default_atts(), is_array( $defaults ) ? $defaults : array(), 'jlg_game_explorer' );
+
+        $atts = array(
+            'id'             => isset( $default_atts['id'] ) ? sanitize_html_class( $default_atts['id'] ) : 'jlg-game-explorer-' . uniqid(),
+            'posts_per_page' => isset( $default_atts['posts_per_page'] ) ? intval( $default_atts['posts_per_page'] ) : 12,
+            'columns'        => isset( $default_atts['columns'] ) ? intval( $default_atts['columns'] ) : 3,
+            'filters'        => isset( $default_atts['filters'] ) ? sanitize_text_field( $default_atts['filters'] ) : '',
+            'score_position' => Helpers::normalize_game_explorer_score_position( $default_atts['score_position'] ?? '' ),
+            'categorie'      => isset( $default_atts['categorie'] ) ? sanitize_text_field( $default_atts['categorie'] ) : '',
+            'plateforme'     => isset( $default_atts['plateforme'] ) ? sanitize_text_field( $default_atts['plateforme'] ) : '',
+            'lettre'         => isset( $default_atts['lettre'] ) ? sanitize_text_field( $default_atts['lettre'] ) : '',
+        );
+
+        $input = is_array( $input ) ? $input : array();
+
+        if ( isset( $input['container_id'] ) && ! is_array( $input['container_id'] ) ) {
+            $sanitized_id = sanitize_html_class( wp_unslash( $input['container_id'] ) );
+            if ( $sanitized_id !== '' ) {
+                $atts['id'] = $sanitized_id;
+            }
+        }
+
+        if ( isset( $input['posts_per_page'] ) && ! is_array( $input['posts_per_page'] ) ) {
+            $atts['posts_per_page'] = intval( wp_unslash( $input['posts_per_page'] ) );
+        }
+
+        if ( $atts['posts_per_page'] < 1 ) {
+            $atts['posts_per_page'] = max( 1, intval( $default_atts['posts_per_page'] ?? 12 ) );
+        }
+
+        if ( isset( $input['columns'] ) && ! is_array( $input['columns'] ) ) {
+            $atts['columns'] = intval( wp_unslash( $input['columns'] ) );
+        }
+
+        if ( $atts['columns'] < 1 ) {
+            $atts['columns'] = max( 1, intval( $default_atts['columns'] ?? 3 ) );
+        }
+
+        if ( isset( $input['filters'] ) && ! is_array( $input['filters'] ) ) {
+            $atts['filters'] = sanitize_text_field( wp_unslash( $input['filters'] ) );
+        }
+
+        if ( isset( $input['score_position'] ) && ! is_array( $input['score_position'] ) ) {
+            $atts['score_position'] = Helpers::normalize_game_explorer_score_position( wp_unslash( $input['score_position'] ) );
+        }
+
+        if ( isset( $input['categorie'] ) && ! is_array( $input['categorie'] ) ) {
+            $atts['categorie'] = sanitize_text_field( wp_unslash( $input['categorie'] ) );
+        }
+
+        if ( isset( $input['plateforme'] ) && ! is_array( $input['plateforme'] ) ) {
+            $atts['plateforme'] = sanitize_text_field( wp_unslash( $input['plateforme'] ) );
+        }
+
+        if ( isset( $input['lettre'] ) && ! is_array( $input['lettre'] ) ) {
+            $atts['lettre'] = sanitize_text_field( wp_unslash( $input['lettre'] ) );
+        }
+
+        if ( $atts['id'] === '' ) {
+            $atts['id'] = 'jlg-game-explorer-' . uniqid();
+        }
+
+        return $atts;
+    }
+
+    /**
+     * Prépare la réponse interactive pour AJAX et la REST API.
+     *
+     * @param array $atts
+     * @param array $request
+     * @return array{response: array<string, mixed>, context: array}
+     */
+    public static function prepare_interactive_response( array $atts, $request = array() ) {
+        $request = is_array( $request ) ? $request : array();
+
+        $context = self::get_render_context( $atts, $request );
+
+        $state = array(
+            'orderby'      => $context['sort_key'] ?? 'date',
+            'order'        => $context['sort_order'] ?? 'DESC',
+            'letter'       => $context['current_filters']['letter'] ?? '',
+            'category'     => $context['current_filters']['category'] ?? '',
+            'platform'     => $context['current_filters']['platform'] ?? '',
+            'availability' => $context['current_filters']['availability'] ?? '',
+            'search'       => $context['current_filters']['search'] ?? '',
+            'paged'        => $context['pagination']['current'] ?? 1,
+            'total_pages'  => $context['pagination']['total'] ?? 0,
+            'total_items'  => $context['total_items'] ?? 0,
+        );
+
+        $response = array(
+            'html'   => '',
+            'state'  => $state,
+            'config' => $context['config_payload'] ?? array(),
+        );
+
+        if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
+            $response['html'] = $context['message'];
+
+            return array(
+                'response' => $response,
+                'context'  => $context,
+            );
+        }
+
+        $response['html'] = Frontend::get_template_html( 'game-explorer-fragment', $context );
+
+        return array(
+            'response' => $response,
+            'context'  => $context,
+        );
+    }
     protected static function get_sort_options() {
         return array(
             array(

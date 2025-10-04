@@ -1141,10 +1141,23 @@ class Settings {
             'notation_jlg_page',
             'jlg_api_section',
             array(
-				'id'   => 'rawg_api_key',
-				'type' => 'text',
-				'desc' => 'Obtenez votre clé API gratuite sur rawg.io/apidocs',
-			)
+                                'id'   => 'rawg_api_key',
+                                'type' => 'text',
+                                'desc' => 'Obtenez votre clé API gratuite sur rawg.io/apidocs',
+                        )
+        );
+
+        add_settings_field(
+            'rest_public_key',
+            'Clé publique REST',
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_api_section',
+            array(
+                                'id'   => 'rest_public_key',
+                                'type' => 'text',
+                                'desc' => 'Requise pour les requêtes REST externes (ex: /wp-json/notation-jlg/v1/*).',
+                        )
         );
 
         // Section 15: Debug

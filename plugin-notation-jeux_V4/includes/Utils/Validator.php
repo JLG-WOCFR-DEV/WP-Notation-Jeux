@@ -2,6 +2,7 @@
 
 namespace JLG\Notation\Utils;
 
+use DateTime;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {

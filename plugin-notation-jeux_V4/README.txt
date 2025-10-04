@@ -106,7 +106,8 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 2. Uploadez le dossier `plugin-notation-jeux` dans `/wp-content/plugins/`
 3. Activez le plugin depuis le menu 'Extensions' de WordPress
 4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'. La section *Contenus* vous permet de choisir les types de publications (articles, CPT publics…) autorisés pour la notation ; si besoin, un développeur peut ajuster cette liste via le filtre PHP `jlg_rated_post_types`.
-5. Créez votre premier test avec notation !
+5. Rendez-vous dans l'onglet *API* pour saisir la clé RAWG (facultatif) et définir la **clé publique REST**. Cette dernière est requise pour interroger les endpoints JSON (`/wp-json/notation-jlg/v1/*`). Fournissez-la via le paramètre `public_key` ou l'en-tête `X-JLG-Public-Key` pour les requêtes GET.
+6. Créez votre premier test avec notation !
 
 == Tests manuels de sécurité CSS ==
 
@@ -143,6 +144,17 @@ Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, t
 = Comment obtenir une clé API RAWG ? =
 
 Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les réglages du plugin.
+
+
+== API REST ==
+
+Le plugin expose une API sous `/wp-json/notation-jlg/v1/` dont les réponses correspondent aux chargements AJAX historiques.
+
+* `/game-explorer` (GET) — nécessite la clé publique configurée dans *Notation – JLG > Réglages > API*. Retourne le fragment HTML, l'état de pagination et la configuration du Game Explorer.
+* `/summary` (GET) — même authentification que ci-dessus, renvoie le fragment HTML et l'état (`orderby`, `order`, `paged`, filtres) du tableau récapitulatif.
+* `/user-rating` (POST) — attend les paramètres `token`, `nonce`, `post_id` et `rating` (1 à 5). Le nonce doit être généré côté front via `wp_create_nonce( 'jlg_user_rating_nonce_' . $token )`.
+
+Les paramètres de tri/filtre (`orderby`, `order`, `categorie`, `lettre`, `plateforme`, etc.) acceptés par les routes GET sont identiques à ceux transmis par les scripts JavaScript du plugin.
 
 == Screenshots ==
 
