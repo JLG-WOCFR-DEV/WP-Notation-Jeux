@@ -114,6 +114,41 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertStringContainsString('Notation JLG', $output, 'Metabox reference should guide editors.');
     }
 
+    public function test_render_displays_badge_and_user_rating_when_threshold_met(): void
+    {
+        $post_id = 1204;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 9.4,
+            'graphismes' => 9.6,
+        ]);
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_avg'] = '9.9';
+
+        $this->setPluginOptions([
+            'rating_badge_enabled'   => 1,
+            'rating_badge_threshold' => 9.0,
+        ]);
+
+        $editorial_average = \JLG\Notation\Helpers::get_average_score_for_post($post_id);
+        $this->assertNotNull($editorial_average, 'Average score should be available for delta expectations.');
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertStringContainsString('rating-badge', $output, 'Badge markup should be present when threshold is met.');
+        $this->assertStringContainsString('Note des lecteurs', $output, 'User rating summary should be displayed.');
+        $this->assertStringContainsString('Δ vs rédaction', $output, 'Delta label should be shown when both scores exist.');
+        $delta_value = 9.9 - (float) $editorial_average;
+        $expected_delta = number_format_i18n($delta_value, 1);
+        if ($delta_value > 0) {
+            $expected_delta = '+' . $expected_delta;
+        }
+        $this->assertStringContainsString($expected_delta, $output, 'Delta should include the signed difference when readers rate higher.');
+    }
+
     private function seedPost(int $post_id): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([

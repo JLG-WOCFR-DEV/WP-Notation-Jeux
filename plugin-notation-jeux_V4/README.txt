@@ -21,6 +21,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **Système de notation flexible** : 6 catégories personnalisables avec un barème ajustable (par défaut sur 10)
 * **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
 * **Notation utilisateurs** : Permettez à vos lecteurs de voter, visualisez la répartition des notes dans un histogramme accessible mis à jour en direct et laissez le script AJAX empêcher les doubles soumissions
+* **Badge coup de cœur** : Activez un badge éditorial lorsque la note dépasse un seuil configurable et affichez en parallèle la moyenne des lecteurs ainsi que l'écart avec la rédaction
 * **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
 * **Nom de jeu personnalisé** : Remplacez le titre WordPress dans les tableaux, widgets et données structurées
 * **Widget** : Affichez vos derniers tests notés
@@ -54,7 +55,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 = Shortcodes disponibles =
 
 * `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`, `display_mode` (`absolute` ou `percent`). Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
-* `[bloc_notation_jeu]` - Bloc de notation principal. Attributs : `post_id` (ID du test), `score_layout` (`text` ou `circle`), `animations` (`oui`/`non`), `accent_color` et `display_mode` (`absolute` ou `percent`) pour choisir entre une note affichée en valeur absolue ou en pourcentage.
+* `[bloc_notation_jeu]` - Bloc de notation principal. Attributs : `post_id` (ID du test), `score_layout` (`text` ou `circle`), `animations` (`oui`/`non`), `accent_color` et `display_mode` (`absolute` ou `percent`) pour choisir entre une note affichée en valeur absolue ou en pourcentage. Lorsque le badge « Coup de cœur » est activé dans les réglages et que la note atteint le seuil défini, le bloc met en avant la sélection de la rédaction et affiche la moyenne lecteurs ainsi que le delta.
 * `[jlg_fiche_technique]` - Fiche technique du jeu. Attributs : `post_id` (optionnel, ID d'un test publié à afficher ; sinon l'article courant est utilisé), `champs` (liste de champs séparés par des virgules) et `titre`.
 * `[tagline_notation_jlg]` - Phrase d'accroche bilingue
 * `[jlg_points_forts_faibles]` - Points positifs et négatifs
@@ -142,7 +143,7 @@ Le plugin est conçu pour être compatible avec tous les thèmes WordPress stand
 
 = Puis-je désactiver certains modules ? =
 
-Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, taglines, animations, schema SEO.
+Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, badge « Coup de cœur », taglines, animations, schema SEO.
 
 = Comment obtenir une clé API RAWG ? =
 

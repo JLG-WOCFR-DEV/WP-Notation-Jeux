@@ -7,6 +7,9 @@
  * - $average_score : Note moyenne calculée
  * - $scores : Tableau des scores par catégorie
  * - $categories : Libellés des catégories
+ * - $should_show_rating_badge : Booléen indiquant si le badge doit être affiché
+ * - $user_rating_average : Moyenne des lecteurs si disponible
+ * - $user_rating_delta : Écart avec la note rédactionnelle si disponible
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -42,6 +45,13 @@ $category_percentages = isset( $category_percentages ) && is_array( $category_pe
     : array();
 
 $css_variables_string = is_string( $css_variables ) ? $css_variables : '';
+$should_display_badge = ! empty( $should_show_rating_badge );
+$user_rating_average_value = isset( $user_rating_average ) && is_numeric( $user_rating_average )
+    ? (float) $user_rating_average
+    : null;
+$user_rating_delta_value = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
+    ? (float) $user_rating_delta
+    : null;
 
 if ( $css_variables_string === '' ) {
     $style_variables = array(
@@ -127,8 +137,46 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                 <div class="score-label"><?php esc_html_e( 'Note Globale', 'notation-jlg' ); ?></div>
             </div>
         <?php endif; ?>
+        <?php if ( $should_display_badge ) : ?>
+            <div class="rating-badge" role="status">
+                <span class="rating-badge__label"><?php esc_html_e( 'Sélection de la rédaction', 'notation-jlg' ); ?></span>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( $user_rating_average_value !== null ) : ?>
+            <div class="user-rating-summary">
+                <span class="user-rating-summary__label"><?php esc_html_e( 'Note des lecteurs', 'notation-jlg' ); ?></span>
+                <span class="user-rating-summary__value">
+                    <?php
+                    printf(
+                        /* translators: 1: reader score. 2: maximum possible score. */
+                        esc_html__( '%1$s / %2$s', 'notation-jlg' ),
+                        esc_html( number_format_i18n( $user_rating_average_value, 1 ) ),
+                        $score_max_label_safe
+                    );
+                    ?>
+                </span>
+                <?php if ( $user_rating_delta_value !== null ) : ?>
+                    <?php
+                    $delta_value = number_format_i18n( $user_rating_delta_value, 1 );
+                    if ( $user_rating_delta_value > 0 ) {
+                        $delta_value = '+' . $delta_value;
+                    }
+                    ?>
+                    <span class="user-rating-summary__delta">
+                        <?php
+                        printf(
+                            /* translators: %s: difference between reader and editorial scores. */
+                            esc_html__( 'Δ vs rédaction : %s', 'notation-jlg' ),
+                            esc_html( $delta_value )
+                        );
+                        ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
-    
+
     <hr>
     
     <div class="rating-breakdown">
