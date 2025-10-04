@@ -4,7 +4,7 @@
     const nonce = l10n.nonce || '';
     const strings = l10n.strings || {};
 
-    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'availability', 'search', 'paged'];
+    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'search', 'paged'];
     const activeRequestControllers = new WeakMap();
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const MOBILE_BREAKPOINT = 768;
@@ -347,6 +347,8 @@
         parsed.state.letter = parsed.state.letter || '';
         parsed.state.category = parsed.state.category || '';
         parsed.state.platform = parsed.state.platform || '';
+        parsed.state.developer = parsed.state.developer || '';
+        parsed.state.publisher = parsed.state.publisher || '';
         parsed.state.availability = parsed.state.availability || '';
         parsed.state.search = parsed.state.search || '';
 
@@ -435,6 +437,14 @@
 
         if (refs.platformSelect) {
             refs.platformSelect.value = state.platform || '';
+        }
+
+        if (refs.developerSelect) {
+            refs.developerSelect.value = state.developer || '';
+        }
+
+        if (refs.publisherSelect) {
+            refs.publisherSelect.value = state.publisher || '';
         }
 
         if (refs.availabilitySelect) {
@@ -757,6 +767,8 @@
         payload.set(getRequestKey(config, 'letter'), config.state.letter);
         payload.set(getRequestKey(config, 'category'), config.state.category);
         payload.set(getRequestKey(config, 'platform'), config.state.platform);
+        payload.set(getRequestKey(config, 'developer'), config.state.developer);
+        payload.set(getRequestKey(config, 'publisher'), config.state.publisher);
         payload.set(getRequestKey(config, 'availability'), config.state.availability);
         payload.set(getRequestKey(config, 'search'), config.state.search);
         payload.set(getRequestKey(config, 'paged'), config.state.paged);
@@ -875,6 +887,8 @@
             sortSelect: container.querySelector('[data-role="sort"]'),
             categorySelect: container.querySelector('[data-role="category"]'),
             platformSelect: container.querySelector('[data-role="platform"]'),
+            developerSelect: container.querySelector('[data-role="developer"]'),
+            publisherSelect: container.querySelector('[data-role="publisher"]'),
             availabilitySelect: container.querySelector('[data-role="availability"]'),
             searchInput: container.querySelector('[data-role="search"]'),
             resetButton: container.querySelector('[data-role="reset"]'),
@@ -957,6 +971,26 @@
             });
         }
 
+        if (refs.developerSelect) {
+            refs.developerSelect.addEventListener('change', () => {
+                config.state.developer = refs.developerSelect.value || '';
+                config.state.paged = 1;
+                writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
+                refreshResults(container, config, refs);
+            });
+        }
+
+        if (refs.publisherSelect) {
+            refs.publisherSelect.addEventListener('change', () => {
+                config.state.publisher = refs.publisherSelect.value || '';
+                config.state.paged = 1;
+                writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
+                refreshResults(container, config, refs);
+            });
+        }
+
         if (refs.availabilitySelect) {
             refs.availabilitySelect.addEventListener('change', () => {
                 config.state.availability = refs.availabilitySelect.value || '';
@@ -1013,6 +1047,14 @@
 
                 if (refs.platformSelect) {
                     config.state.platform = refs.platformSelect.value || '';
+                }
+
+                if (refs.developerSelect) {
+                    config.state.developer = refs.developerSelect.value || '';
+                }
+
+                if (refs.publisherSelect) {
+                    config.state.publisher = refs.publisherSelect.value || '';
                 }
 
                 if (refs.availabilitySelect) {

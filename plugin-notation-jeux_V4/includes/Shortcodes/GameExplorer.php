@@ -31,6 +31,8 @@ class GameExplorer {
         'letter',
         'category',
         'platform',
+        'developer',
+        'publisher',
         'availability',
         'search',
         'paged',
@@ -353,6 +355,25 @@ class GameExplorer {
         return '#';
     }
 
+    protected static function normalize_text_key( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $value = wp_strip_all_tags( $value );
+        $value = trim( preg_replace( '/\s+/u', ' ', $value ) );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'remove_accents' ) ) {
+            $value = remove_accents( $value );
+        }
+
+        return strtolower( $value );
+    }
+
     private static function substr_unicode( $string, $start, $length = null, $encoding = 'UTF-8' ) {
         $string = (string) $string;
 
@@ -583,10 +604,12 @@ class GameExplorer {
 
     protected static function build_filters_snapshot() {
         $snapshot = array(
-            'posts'          => array(),
-            'letters_map'    => array(),
-            'categories_map' => array(),
-            'platforms_map'  => array(),
+            'posts'           => array(),
+            'letters_map'     => array(),
+            'categories_map'  => array(),
+            'platforms_map'   => array(),
+            'developers_map'  => array(),
+            'publishers_map'  => array(),
         );
 
         $rated_posts = Helpers::get_rated_post_ids();
@@ -650,9 +673,20 @@ class GameExplorer {
             $availability = self::determine_availability( $release_iso );
 
             $developer = get_post_meta( $post_id, '_jlg_developpeur', true );
-            $developer = is_string( $developer ) ? sanitize_text_field( $developer ) : '';
+            $developer = is_string( $developer ) ? trim( sanitize_text_field( $developer ) ) : '';
             $publisher = get_post_meta( $post_id, '_jlg_editeur', true );
-            $publisher = is_string( $publisher ) ? sanitize_text_field( $publisher ) : '';
+            $publisher = is_string( $publisher ) ? trim( sanitize_text_field( $publisher ) ) : '';
+
+            $developer_key = $developer !== '' ? self::normalize_text_key( $developer ) : '';
+            $publisher_key = $publisher !== '' ? self::normalize_text_key( $publisher ) : '';
+
+            if ( $developer_key !== '' && ! isset( $snapshot['developers_map'][ $developer_key ] ) ) {
+                $snapshot['developers_map'][ $developer_key ] = $developer;
+            }
+
+            if ( $publisher_key !== '' && ! isset( $snapshot['publishers_map'][ $publisher_key ] ) ) {
+                $snapshot['publishers_map'][ $publisher_key ] = $publisher;
+            }
 
             $platform_meta   = get_post_meta( $post_id, '_jlg_plateformes', true );
             $platform_labels = array();
@@ -718,7 +752,9 @@ class GameExplorer {
                 'platform_labels' => $platform_labels,
                 'platform_slugs'  => $platform_slugs,
                 'developer'       => $developer,
+                'developer_key'   => $developer_key,
                 'publisher'       => $publisher,
+                'publisher_key'   => $publisher_key,
                 'release_iso'     => $release_iso,
                 'availability'    => $availability['status'],
                 'search_haystack' => $search_tokens,
@@ -728,7 +764,7 @@ class GameExplorer {
         return $snapshot;
     }
 
-    protected static function filter_snapshot_post_ids( $snapshot, $letter, $category_id, $category_slug, $platform_slug, $availability, $search ) {
+    protected static function filter_snapshot_post_ids( $snapshot, $letter, $category_id, $category_slug, $platform_slug, $developer_key, $publisher_key, $availability, $search ) {
         $matched_ids = array();
         $search      = is_string( $search ) ? strtolower( $search ) : '';
 
@@ -748,6 +784,14 @@ class GameExplorer {
             }
 
             if ( $platform_slug !== '' && ( empty( $data['platform_slugs'] ) || ! in_array( $platform_slug, $data['platform_slugs'], true ) ) ) {
+                continue;
+            }
+
+            if ( $developer_key !== '' && ( $data['developer_key'] ?? '' ) !== $developer_key ) {
+                continue;
+            }
+
+            if ( $publisher_key !== '' && ( $data['publisher_key'] ?? '' ) !== $publisher_key ) {
                 continue;
             }
 
@@ -774,6 +818,8 @@ class GameExplorer {
      * - letter: Letter filter applied to the list.
      * - category: Category identifier or slug filter.
      * - platform: Platform slug filter.
+     * - developer: Developer name filter.
+     * - publisher: Publisher name filter.
      * - availability: Availability status filter.
      * - search: Search query string.
      * - paged: Current page number.
@@ -828,6 +874,8 @@ class GameExplorer {
         $letter_filter       = isset( $request['letter'] ) ? self::normalize_letter( $request['letter'] ) : '';
         $category_filter     = isset( $request['category'] ) ? sanitize_text_field( $request['category'] ) : '';
         $platform_filter     = isset( $request['platform'] ) ? sanitize_text_field( $request['platform'] ) : '';
+        $developer_filter    = isset( $request['developer'] ) ? trim( sanitize_text_field( $request['developer'] ) ) : '';
+        $publisher_filter    = isset( $request['publisher'] ) ? trim( sanitize_text_field( $request['publisher'] ) ) : '';
         $availability_filter = ( isset( $request['availability'] ) && is_string( $request['availability'] ) ) ? sanitize_key( $request['availability'] ) : '';
         $search_filter       = isset( $request['search'] ) ? sanitize_text_field( $request['search'] ) : '';
         $paged               = isset( $request['paged'] ) ? max( 1, (int) $request['paged'] ) : 1;
@@ -840,6 +888,12 @@ class GameExplorer {
         }
         if ( empty( $filters_enabled['platform'] ) ) {
             $platform_filter = '';
+        }
+        if ( empty( $filters_enabled['developer'] ) ) {
+            $developer_filter = '';
+        }
+        if ( empty( $filters_enabled['publisher'] ) ) {
+            $publisher_filter = '';
         }
         if ( empty( $filters_enabled['availability'] ) ) {
             $availability_filter = '';
@@ -862,6 +916,9 @@ class GameExplorer {
         if ( $forced_letter !== '' ) {
             $letter_filter = $forced_letter;
         }
+
+        $developer_filter_key = $developer_filter !== '' ? self::normalize_text_key( $developer_filter ) : '';
+        $publisher_filter_key = $publisher_filter !== '' ? self::normalize_text_key( $publisher_filter ) : '';
 
         $allowed_orderby = self::get_allowed_sort_keys();
         if ( empty( $allowed_orderby ) ) {
@@ -893,6 +950,38 @@ class GameExplorer {
                 $categories_list[] = array(
                     'value' => (string) $id,
                     'label' => $name,
+                );
+            }
+        }
+
+        $developers_map  = isset( $snapshot['developers_map'] ) && is_array( $snapshot['developers_map'] ) ? $snapshot['developers_map'] : array();
+        if ( $developer_filter_key !== '' && $developer_filter !== '' && ! isset( $developers_map[ $developer_filter_key ] ) ) {
+            $developers_map[ $developer_filter_key ] = $developer_filter;
+        }
+
+        $developers_list = array();
+        if ( ! empty( $developers_map ) ) {
+            asort( $developers_map, SORT_NATURAL | SORT_FLAG_CASE );
+            foreach ( $developers_map as $developer_key => $label ) {
+                $developers_list[] = array(
+                    'value' => $label,
+                    'label' => $label,
+                );
+            }
+        }
+
+        $publishers_map  = isset( $snapshot['publishers_map'] ) && is_array( $snapshot['publishers_map'] ) ? $snapshot['publishers_map'] : array();
+        if ( $publisher_filter_key !== '' && $publisher_filter !== '' && ! isset( $publishers_map[ $publisher_filter_key ] ) ) {
+            $publishers_map[ $publisher_filter_key ] = $publisher_filter;
+        }
+
+        $publishers_list = array();
+        if ( ! empty( $publishers_map ) ) {
+            asort( $publishers_map, SORT_NATURAL | SORT_FLAG_CASE );
+            foreach ( $publishers_map as $publisher_key => $label ) {
+                $publishers_list[] = array(
+                    'value' => $label,
+                    'label' => $label,
                 );
             }
         }
@@ -950,6 +1039,8 @@ class GameExplorer {
             $category_filter_id,
             $category_filter_slug,
             $platform_filter_slug,
+            $developer_filter_key,
+            $publisher_filter_key,
             $availability_filter,
             $search_filter
         );
@@ -974,6 +1065,8 @@ class GameExplorer {
                     'letter'       => $letter_filter,
                     'category'     => $category_filter_value,
                     'platform'     => $platform_filter_slug,
+                    'developer'    => $developer_filter,
+                    'publisher'    => $publisher_filter,
                     'availability' => $availability_filter,
                     'search'       => $search_filter,
                 ),
@@ -985,6 +1078,8 @@ class GameExplorer {
                     'total'   => 0,
                 ),
                 'categories_list'      => $categories_list,
+                'developers_list'      => $developers_list,
+                'publishers_list'      => $publishers_list,
                 'platforms_list'       => $platform_entries,
                 'availability_options' => $availability_options,
                 'total_items'          => 0,
@@ -1005,6 +1100,8 @@ class GameExplorer {
                         'letter'       => $letter_filter,
                         'category'     => $category_filter_value,
                         'platform'     => $platform_filter_slug,
+                        'developer'    => $developer_filter,
+                        'publisher'    => $publisher_filter,
                         'availability' => $availability_filter,
                         'search'       => $search_filter,
                         'paged'        => 1,
@@ -1204,6 +1301,8 @@ class GameExplorer {
                 'letter'       => $letter_filter,
                 'category'     => $category_filter_value,
                 'platform'     => $platform_filter_slug,
+                'developer'    => $developer_filter,
+                'publisher'    => $publisher_filter,
                 'availability' => $availability_filter,
                 'search'       => $search_filter,
                 'paged'        => $paged,
@@ -1230,6 +1329,8 @@ class GameExplorer {
                 'letter'       => $letter_filter,
                 'category'     => $category_filter_value,
                 'platform'     => $platform_filter_slug,
+                'developer'    => $developer_filter,
+                'publisher'    => $publisher_filter,
                 'availability' => $availability_filter,
                 'search'       => $search_filter,
             ),
@@ -1241,6 +1342,8 @@ class GameExplorer {
                 'total'   => $total_pages,
             ),
             'categories_list'      => $categories_list,
+            'developers_list'      => $developers_list,
+            'publishers_list'      => $publishers_list,
             'platforms_list'       => $platform_entries,
             'availability_options' => $availability_options,
             'total_items'          => $total_items,

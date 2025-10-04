@@ -17,5 +17,5 @@ Pour vérifier l'interaction mobile du Game Explorer (`[jlg_game_explorer]`) :
 1. Affichez le shortcode sur une page publique, activez le mode d'émulation mobile (largeur ≤ 767 px).
 2. Vérifiez que le bouton « Filtres » est visible et que son attribut `aria-expanded` alterne entre `true` et `false` lors de l'ouverture/fermeture.
 3. Cliquez sur le bouton : un panneau coulissant doit apparaître depuis le bas de l'écran, avec un fond semi-transparent masquant l'arrière-plan.
-4. Modifiez un filtre (catégorie, plateforme, disponibilité ou recherche) puis validez. Le panneau doit se refermer automatiquement, les résultats se mettre à jour et le focus clavier passer sur le premier élément des résultats.
+4. Modifiez un filtre (catégorie, plateforme, studio, éditeur, disponibilité ou recherche) puis validez. Le panneau doit se refermer automatiquement, les résultats se mettre à jour et le focus clavier passer sur le premier élément des résultats.
 5. Testez le bouton « Réinitialiser » : il doit fermer le panneau, remettre les filtres par défaut et replacer le focus sur les résultats.

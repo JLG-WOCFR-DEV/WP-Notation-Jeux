@@ -276,12 +276,14 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'container_id'   => ' invalid<container>',
             'posts_per_page' => '-3',
             'columns'        => '0',
-            'filters'        => 'letter,category,platform,availability,search',
+            'filters'        => $this->getDefaultFiltersString(),
             'orderby'        => 'score;DROP TABLE',
             'order'          => 'downwards',
             'letter'         => [' alpha '],
             'category'       => [' 11 '],
             'platform'       => ['pc'],
+            'developer'      => [' Studio '],
+            'publisher'      => ['<b>Publisher</b>'],
             'availability'   => ['<script>'],
             'search'         => ['Alpha'],
             'paged'          => '-5',
@@ -303,6 +305,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
             $this->assertSame('', $state['letter'], 'Array letter input should sanitize to empty string.');
             $this->assertSame('', $state['category'], 'Array category input should sanitize to empty string.');
             $this->assertSame('', $state['platform'], 'Array platform input should sanitize to empty string.');
+            $this->assertSame('', $state['developer'] ?? '', 'Array developer input should sanitize to empty string.');
+            $this->assertSame('', $state['publisher'] ?? '', 'Array publisher input should sanitize to empty string.');
             $this->assertSame('', $state['availability'], 'Invalid availability should be dropped.');
             $this->assertSame('', $state['search'], 'Array search input should sanitize to empty string.');
             $this->assertSame(1, $state['paged'], 'Negative paged values should resolve to page 1.');
@@ -319,6 +323,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'letters_map'    => [],
             'categories_map' => [],
             'platforms_map'  => [],
+            'developers_map' => [],
+            'publishers_map' => [],
         ]);
 
         $_POST = [
@@ -451,7 +457,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'container_id'   => 'cover-test',
             'posts_per_page' => '6',
             'columns'        => '3',
-            'filters'        => 'letter,category,platform,availability,search',
+            'filters'        => $this->getDefaultFiltersString(),
             'orderby'        => 'date',
             'order'          => 'DESC',
             'paged'          => '1',
@@ -460,6 +466,54 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertArrayHasKey('html', $response);
         $this->assertStringContainsString('https://example.com/alpha.jpg', $response['html']);
         $this->assertStringContainsString('Visuel indisponible', $response['html']);
+    }
+
+    public function test_handle_game_explorer_sort_filters_by_developer(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the developer filter.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the developer filter.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'] = [
+            101 => [
+                '_jlg_average_score'   => 8.6,
+                '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+                '_jlg_date_sortie'     => '2023-02-14',
+                '_jlg_developpeur'     => 'Studio Alpha',
+                '_jlg_editeur'         => 'Publisher A',
+                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+            ],
+            202 => [
+                '_jlg_average_score'   => 7.4,
+                '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
+                '_jlg_date_sortie'     => '2022-11-10',
+                '_jlg_developpeur'     => 'Studio Beta',
+                '_jlg_editeur'         => 'Publisher B',
+                '_jlg_plateformes'     => ['PC'],
+            ],
+        ];
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'developer-filter',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'developer'      => 'Studio Alpha',
+            'paged'          => '1',
+        ]);
+
+        $this->assertArrayHasKey('state', $response);
+        $this->assertSame('Studio Alpha', $response['state']['developer'] ?? null);
+        $this->assertSame(1, $response['state']['total_items'] ?? 0);
+        $this->assertArrayHasKey('config', $response);
+        $this->assertSame('Studio Alpha', $response['config']['state']['developer'] ?? null);
+        $this->assertStringContainsString('Studio Alpha', $response['html'] ?? '');
+        $this->assertStringNotContainsString('Studio Beta', $response['html'] ?? '');
     }
 
     public function test_score_position_modifier_reflects_configuration(): void
@@ -494,7 +548,7 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'container_id'   => 'position-test',
             'posts_per_page' => '6',
             'columns'        => '3',
-            'filters'        => 'letter,category,platform,availability,search',
+            'filters'        => $this->getDefaultFiltersString(),
             'orderby'        => 'date',
             'order'          => 'DESC',
             'paged'          => '1',
@@ -661,7 +715,9 @@ class FrontendGameExplorerAjaxTest extends TestCase
                     'platform_labels'  => ['PC', 'PlayStation 5'],
                     'platform_slugs'   => ['pc', 'playstation-5'],
                     'developer'        => 'Studio Alpha',
+                    'developer_key'    => 'studio alpha',
                     'publisher'        => 'Publisher A',
+                    'publisher_key'    => 'publisher a',
                     'release_iso'      => '2023-02-14',
                     'availability'     => 'available',
                     'search_haystack'  => 'alpha quest studio alpha publisher a action pc playstation 5',
@@ -674,7 +730,9 @@ class FrontendGameExplorerAjaxTest extends TestCase
                     'platform_labels'  => ['PC'],
                     'platform_slugs'   => ['pc'],
                     'developer'        => 'Studio Beta',
+                    'developer_key'    => 'studio beta',
                     'publisher'        => 'Publisher B',
+                    'publisher_key'    => 'publisher b',
                     'release_iso'      => '2022-11-10',
                     'availability'     => 'available',
                     'search_haystack'  => 'beta strike studio beta publisher b action pc',
@@ -683,7 +741,14 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'letters_map'    => ['A' => true, 'B' => true],
             'categories_map' => [11 => 'Action'],
             'platforms_map'  => ['pc' => 'PC', 'playstation-5' => 'PlayStation 5'],
+            'developers_map' => ['studio alpha' => 'Studio Alpha', 'studio beta' => 'Studio Beta'],
+            'publishers_map' => ['publisher a' => 'Publisher A', 'publisher b' => 'Publisher B'],
         ];
+    }
+
+    private function getDefaultFiltersString(): string
+    {
+        return implode(',', \JLG\Notation\Helpers::get_default_game_explorer_filters());
     }
 
     private function resetEnvironment(): void
