@@ -732,14 +732,17 @@ class Frontend {
 
         $fresh_ratings                     = self::get_post_user_rating_tokens( $post_id );
         list($new_average, $ratings_count) = self::calculate_user_rating_stats( $fresh_ratings );
+        $breakdown                         = self::calculate_user_rating_breakdown( $fresh_ratings );
 
         update_post_meta( $post_id, '_jlg_user_rating_avg', $new_average );
         update_post_meta( $post_id, '_jlg_user_rating_count', $ratings_count );
+        self::update_user_rating_breakdown_meta( $post_id, $breakdown );
 
         wp_send_json_success(
             array(
-				'new_average' => number_format_i18n( $new_average, 2 ),
-				'new_count'   => $ratings_count,
+                'new_average'   => number_format_i18n( $new_average, 2 ),
+                'new_count'     => $ratings_count,
+                'new_breakdown' => $breakdown,
             )
         );
     }
@@ -849,6 +852,8 @@ class Frontend {
                 $meta = $meta_data;
             }
         }
+
+        self::maybe_regenerate_user_rating_breakdown( $post_id, $normalized );
 
         return $normalized;
     }
@@ -1079,6 +1084,103 @@ class Frontend {
         $average = round( array_sum( $values ) / $count, 2 );
 
         return array( $average, $count );
+    }
+
+    private static function calculate_user_rating_breakdown( array $ratings ) {
+        $distribution = array();
+
+        for ( $i = 1; $i <= 5; $i++ ) {
+            $distribution[ $i ] = 0;
+        }
+
+        foreach ( $ratings as $value ) {
+            if ( ! is_numeric( $value ) ) {
+                continue;
+            }
+
+            $bucket = (int) round( (float) $value );
+
+            if ( $bucket < 1 || $bucket > 5 ) {
+                continue;
+            }
+
+            ++$distribution[ $bucket ];
+        }
+
+        return $distribution;
+    }
+
+    private static function normalize_user_rating_breakdown( $breakdown ) {
+        $normalized = array();
+
+        for ( $i = 1; $i <= 5; $i++ ) {
+            $key   = $i;
+            $value = 0;
+
+            if ( is_array( $breakdown ) ) {
+                if ( array_key_exists( $i, $breakdown ) ) {
+                    $value = $breakdown[ $i ];
+                } elseif ( array_key_exists( (string) $i, $breakdown ) ) {
+                    $value = $breakdown[ (string) $i ];
+                }
+            }
+
+            $normalized[ $i ] = max( 0, intval( $value ) );
+        }
+
+        return $normalized;
+    }
+
+    private static function is_valid_user_rating_breakdown( $breakdown ) {
+        if ( ! is_array( $breakdown ) ) {
+            return false;
+        }
+
+        for ( $i = 1; $i <= 5; $i++ ) {
+            if ( array_key_exists( $i, $breakdown ) ) {
+                $value = $breakdown[ $i ];
+            } elseif ( array_key_exists( (string) $i, $breakdown ) ) {
+                $value = $breakdown[ (string) $i ];
+            } else {
+                return false;
+            }
+
+            if ( ! is_numeric( $value ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function maybe_regenerate_user_rating_breakdown( $post_id, array $ratings ) {
+        $stored_breakdown = get_post_meta( $post_id, '_jlg_user_rating_breakdown', true );
+
+        if ( self::is_valid_user_rating_breakdown( $stored_breakdown ) ) {
+            return self::normalize_user_rating_breakdown( $stored_breakdown );
+        }
+
+        $breakdown = self::calculate_user_rating_breakdown( $ratings );
+        self::update_user_rating_breakdown_meta( $post_id, $breakdown );
+
+        return $breakdown;
+    }
+
+    private static function update_user_rating_breakdown_meta( $post_id, array $breakdown ) {
+        $normalized_breakdown = self::normalize_user_rating_breakdown( $breakdown );
+        update_post_meta( $post_id, '_jlg_user_rating_breakdown', $normalized_breakdown );
+    }
+
+    public static function get_user_rating_breakdown_for_post( $post_id ) {
+        $post_id = intval( $post_id );
+
+        if ( $post_id <= 0 ) {
+            return self::normalize_user_rating_breakdown( array() );
+        }
+
+        $ratings = self::get_post_user_rating_tokens( $post_id );
+
+        return self::maybe_regenerate_user_rating_breakdown( $post_id, $ratings );
     }
 
     public static function get_user_vote_for_post( $post_id, $token = '' ) {
@@ -1629,6 +1731,7 @@ class Frontend {
                 'post_id'              => null,
                 'avg_rating'           => null,
                 'count'                => 0,
+                'rating_breakdown'     => array(),
                 'has_voted'            => false,
                 'user_vote'            => 0,
                 'games'                => array(),

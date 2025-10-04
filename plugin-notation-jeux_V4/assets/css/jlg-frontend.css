@@ -71,6 +71,7 @@
     .jlg-game-card,
     .jlg-game-card img,
     .jlg-user-star,
+    .jlg-user-rating-breakdown-fill,
     .jlg-lang-flag {
         transition: none !important;
     }
@@ -198,6 +199,16 @@
 .jlg-user-star{font-size:26px;color:#52525b;transition:color .2s,transform .2s;background:0 0;border:0;padding:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;appearance:none;-webkit-appearance:none;background-color:transparent;min-width:44px;min-height:44px;}
 .jlg-user-star:focus{outline:none;}
 .jlg-user-star:focus-visible{outline:2px solid var(--jlg-user-rating-star-color);outline-offset:4px;}
+.jlg-user-rating-breakdown{margin:16px auto 0;text-align:left;max-width:520px;width:100%;font-size:0.9rem;color:var(--jlg-secondary-text-color);}
+.jlg-user-rating-breakdown-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.jlg-user-rating-breakdown-item{display:flex;flex-direction:column;gap:6px;}
+.jlg-user-rating-breakdown-label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:0.85rem;}
+.jlg-user-rating-breakdown-star{font-weight:600;color:var(--jlg-main-text-color);}
+.jlg-user-rating-breakdown-count{font-variant-numeric:tabular-nums;min-width:4.5rem;text-align:right;}
+.jlg-user-rating-breakdown-meter{position:relative;display:block;width:100%;height:12px;border-radius:9999px;background-color:var(--jlg-bar-bg-color,#e4e4e7);overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,0.15);}
+.jlg-user-rating-breakdown-track{display:block;width:100%;height:100%;background:transparent;}
+.jlg-user-rating-breakdown-fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--jlg-score-gradient-1),var(--jlg-score-gradient-2));transition:width .45s cubic-bezier(.25,1,.5,1);}
+.jlg-user-rating-breakdown-item:focus-within .jlg-user-rating-breakdown-meter{outline:2px solid var(--jlg-user-rating-star-color,#facc15);outline-offset:2px;}
 .jlg-user-rating-block.has-voted .jlg-user-star{cursor:default;}
 .jlg-user-rating-block.has-voted .jlg-user-star:hover,
 .jlg-user-rating-block.has-voted .jlg-user-star.hover{color:#52525b;transform:none;}
