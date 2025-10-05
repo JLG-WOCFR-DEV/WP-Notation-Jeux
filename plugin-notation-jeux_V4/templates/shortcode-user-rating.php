@@ -5,7 +5,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <?php
-$is_interaction_disabled = $has_voted;
+$requires_login_option = ! empty( $options['user_rating_requires_login'] );
+$is_logged_in          = isset( $is_logged_in ) ? (bool) $is_logged_in : ( function_exists( 'is_user_logged_in' ) ? is_user_logged_in() : false );
+$login_required        = isset( $login_required ) ? (bool) $login_required : ( $requires_login_option && ! $is_logged_in );
+$login_url             = isset( $login_url ) && is_string( $login_url ) ? trim( $login_url ) : '';
+
+if ( $login_required && $login_url === '' && function_exists( 'wp_login_url' ) ) {
+        $permalink = function_exists( 'get_permalink' ) ? get_permalink( $post_id ) : '';
+        $login_url = wp_login_url( $permalink );
+}
+
+$login_message_text = __( 'Connectez-vous pour voter.', 'notation-jlg' );
+$login_link_label   = __( 'Se connecter', 'notation-jlg' );
+$login_message_html = '';
+
+if ( $login_required ) {
+        if ( $login_url !== '' ) {
+                $login_message_html = sprintf(
+                        '<span class="jlg-user-rating-login-text">%s</span> <a class="jlg-user-rating-login-link" href="%s">%s</a>',
+                        esc_html( $login_message_text ),
+                        esc_url( $login_url ),
+                        esc_html( $login_link_label )
+                );
+        } else {
+                $login_message_html = esc_html( $login_message_text );
+        }
+}
+
+$is_interaction_disabled = $has_voted || $login_required;
 
 if ( ! is_array( $rating_breakdown ) ) {
         $rating_breakdown = array();
@@ -26,7 +53,28 @@ $vote_plural_template   = __( '%s votes', 'notation-jlg' );
 $progress_template      = __( '%1$s : %2$s (%3$s%%)', 'notation-jlg' );
 $meter_max_value        = max( $total_breakdown_votes, 1 );
 ?>
-<div class="jlg-user-rating-block<?php echo $has_voted ? ' has-voted' : ''; ?>">
+<?php
+$block_classes = array( 'jlg-user-rating-block' );
+
+if ( $has_voted ) {
+        $block_classes[] = 'has-voted';
+}
+
+if ( $login_required ) {
+        $block_classes[] = 'requires-login';
+}
+
+$block_attributes = '';
+
+if ( $login_required ) {
+        $block_attributes .= ' data-requires-login="true"';
+}
+
+if ( $login_required && $login_url !== '' ) {
+        $block_attributes .= ' data-login-url="' . esc_attr( esc_url( $login_url ) ) . '"';
+}
+?>
+<div class="<?php echo esc_attr( implode( ' ', $block_classes ) ); ?>"<?php echo $block_attributes; ?>>
     <div class="jlg-user-rating-title"><?php esc_html_e( 'Votre avis nous intéresse !', 'notation-jlg' ); ?></div>
     <div
         class="jlg-user-rating-stars"
@@ -125,10 +173,16 @@ $meter_max_value        = max( $total_breakdown_votes, 1 );
         );
         ?>
     </div>
-    <div class="jlg-rating-message" role="status" aria-live="polite" aria-atomic="true">
     <?php
+    $message_content = '';
+
     if ( $has_voted ) {
-                esc_html_e( 'Merci pour votre vote !', 'notation-jlg' );}
-        ?>
+            $message_content = esc_html__( 'Merci pour votre vote !', 'notation-jlg' );
+    } elseif ( $login_required && $login_message_html !== '' ) {
+            $message_content = $login_message_html;
+    }
+    ?>
+    <div class="jlg-rating-message" role="status" aria-live="polite" aria-atomic="true">
+        <?php echo wp_kses_post( $message_content ); ?>
     </div>
 </div>

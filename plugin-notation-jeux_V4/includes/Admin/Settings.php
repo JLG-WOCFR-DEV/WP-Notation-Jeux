@@ -266,7 +266,8 @@ class Settings {
             strpos( $key, 'enabled' ) !== false ||
             strpos( $key, 'pulse' ) !== false ||
             strpos( $key, 'striping' ) !== false ||
-            strpos( $key, 'enable_' ) === 0
+            strpos( $key, 'enable_' ) === 0 ||
+            strpos( $key, 'requires_login' ) !== false
         ) {
             return ! empty( $value ) ? 1 : 0;
         }
@@ -987,9 +988,21 @@ class Settings {
             'notation_jlg_page',
             'jlg_user_rating_section',
             array(
-				'id'   => 'user_rating_star_color',
-				'type' => 'color',
-			)
+                                'id'   => 'user_rating_star_color',
+                                'type' => 'color',
+                        )
+        );
+        add_settings_field(
+            'user_rating_requires_login',
+            __( 'Connexion obligatoire avant le vote', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_user_rating_section',
+            array(
+                                'id'   => 'user_rating_requires_login',
+                                'type' => 'checkbox',
+                                'desc' => __( 'Empêche les visiteurs non connectés de voter et leur affiche un lien de connexion.', 'notation-jlg' ),
+                        )
         );
 
         // Section 10: Tableau Récapitulatif

@@ -44,6 +44,21 @@ if (!function_exists('plugin_dir_url')) {
     }
 }
 
+if (!function_exists('wp_login_url')) {
+    /**
+     * Fournit une URL de connexion déterministe avec prise en charge du redirect.
+     */
+    function wp_login_url($redirect = '') {
+        $base = 'https://example.com/wp-login.php';
+
+        if (is_string($redirect) && $redirect !== '') {
+            return $base . '?redirect_to=' . rawurlencode($redirect);
+        }
+
+        return $base;
+    }
+}
+
 if (!function_exists('plugin_basename')) {
     /**
      * Provide plugin_basename so activation hooks can register without errors.
@@ -109,6 +124,15 @@ if (!function_exists('is_admin')) {
      */
     function is_admin() {
         return !empty($GLOBALS['jlg_test_is_admin']);
+    }
+}
+
+if (!function_exists('is_user_logged_in')) {
+    /**
+     * Simule l'état de connexion en fonction du drapeau global dédié aux tests.
+     */
+    function is_user_logged_in() {
+        return !empty($GLOBALS['jlg_test_is_user_logged_in']);
     }
 }
 

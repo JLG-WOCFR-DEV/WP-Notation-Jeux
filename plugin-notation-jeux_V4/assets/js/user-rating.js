@@ -2,6 +2,8 @@ jQuery(document).ready(function($) {
     var ratingMessages = (typeof jlgUserRatingL10n !== 'undefined') ? jlgUserRatingL10n : {};
     var successMessage = ratingMessages.successMessage || 'Merci pour votre vote !';
     var genericErrorMessage = ratingMessages.genericErrorMessage || 'Erreur. Veuillez réessayer.';
+    var loginRequiredMessage = ratingMessages.loginRequiredMessage || 'Connectez-vous pour voter.';
+    var loginLinkLabel = ratingMessages.loginLinkLabel || 'Se connecter';
 
     function getTranslatedAlreadyVotedMessage() {
         if (ratingMessages.alreadyVotedMessage) {
@@ -87,8 +89,33 @@ jQuery(document).ready(function($) {
         }
     }
 
+    function showLoginRequiredMessage(ratingBlock) {
+        var messageElement = ratingBlock.find('.jlg-rating-message');
+
+        if (!messageElement.length) {
+            return;
+        }
+
+        var loginUrl = ratingBlock.data('loginUrl');
+        messageElement.empty();
+
+        if (typeof loginUrl === 'string' && loginUrl !== '') {
+            var textSpan = $('<span>', { 'class': 'jlg-user-rating-login-text', text: loginRequiredMessage + ' ' });
+            messageElement.append(textSpan);
+            $('<a>', {
+                'class': 'jlg-user-rating-login-link',
+                href: loginUrl,
+                text: loginLinkLabel
+            }).appendTo(messageElement);
+        } else {
+            messageElement.text(loginRequiredMessage);
+        }
+
+        messageElement.show();
+    }
+
     function refreshInteractionAccessibility(ratingBlock) {
-        var shouldDisable = ratingBlock.hasClass('is-loading') || ratingBlock.hasClass('has-voted');
+        var shouldDisable = ratingBlock.hasClass('is-loading') || ratingBlock.hasClass('has-voted') || ratingBlock.hasClass('requires-login');
         setInteractionDisabled(ratingBlock, shouldDisable);
 
         if (ratingBlock.hasClass('is-loading')) {
@@ -123,6 +150,10 @@ jQuery(document).ready(function($) {
 
             var ratingValue = checkedStar.length ? parseInt(checkedStar.data('value'), 10) : null;
             updateRatingState(ratingBlock, ratingValue);
+            if (ratingBlock.data('requiresLogin') || ratingBlock.hasClass('requires-login')) {
+                ratingBlock.addClass('requires-login');
+                showLoginRequiredMessage(ratingBlock);
+            }
             refreshInteractionAccessibility(ratingBlock);
 
             ratingBlock.find('.jlg-user-rating-avg-value').attr({
@@ -260,6 +291,12 @@ jQuery(document).ready(function($) {
             return;
         }
 
+        if (ratingBlock.hasClass('requires-login')) {
+            showLoginRequiredMessage(ratingBlock);
+            refreshInteractionAccessibility(ratingBlock);
+            return;
+        }
+
         ratingBlock.addClass('is-loading');
         refreshInteractionAccessibility(ratingBlock);
 
@@ -300,7 +337,12 @@ jQuery(document).ready(function($) {
                     updateRatingState(ratingBlock, parseInt(rating, 10));
                     ratingBlock.find('.jlg-user-star').removeClass('hover');
                 } else {
-                    ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
+                    if (responseData && responseData.requires_login) {
+                        ratingBlock.addClass('requires-login');
+                        showLoginRequiredMessage(ratingBlock);
+                    } else {
+                        ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
+                    }
 
                     if (isAlreadyVotedMessage(errorMessage)) {
                         ratingBlock.addClass('has-voted');
@@ -314,7 +356,11 @@ jQuery(document).ready(function($) {
             },
             error: function() {
                 ratingBlock.removeClass('is-loading has-voted');
-                ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
+                if (ratingBlock.hasClass('requires-login')) {
+                    showLoginRequiredMessage(ratingBlock);
+                } else {
+                    ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
+                }
                 updateRatingState(ratingBlock, null);
                 ratingBlock.find('.jlg-user-star').removeClass('hover');
                 refreshInteractionAccessibility(ratingBlock);
