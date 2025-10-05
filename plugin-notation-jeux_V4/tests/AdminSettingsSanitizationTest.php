@@ -66,4 +66,56 @@ class AdminSettingsSanitizationTest extends TestCase
         $this->assertSame('transparent', $sanitized['table_row_bg_color']);
         $this->assertSame('transparent', $sanitized['table_zebra_bg_color']);
     }
+
+    public function test_rating_badge_threshold_respects_new_score_max(): void
+    {
+        $previous_wpdb = $GLOBALS['wpdb'] ?? null;
+
+        $GLOBALS['wpdb'] = new class() {
+            public $postmeta = 'wp_postmeta';
+            public $posts    = 'wp_posts';
+
+            public function prepare($query, ...$args)
+            {
+                return $query;
+            }
+
+            public function get_col($prepared)
+            {
+                return [];
+            }
+        };
+
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
+
+        update_option('notation_jlg_settings', array_merge($defaults, [
+            'score_max'              => 20,
+            'rating_badge_threshold' => 18,
+        ]));
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $input = [
+            'score_max'              => 20,
+            'rating_badge_threshold' => 18,
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame(20, $sanitized['score_max']);
+        $this->assertSame(18.0, $sanitized['rating_badge_threshold']);
+
+        $input = [
+            'rating_badge_threshold' => 18,
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame(10.0, $sanitized['rating_badge_threshold']);
+
+        if ($previous_wpdb === null) {
+            unset($GLOBALS['wpdb']);
+        } else {
+            $GLOBALS['wpdb'] = $previous_wpdb;
+        }
+    }
 }
