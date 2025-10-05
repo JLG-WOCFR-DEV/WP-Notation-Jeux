@@ -25,6 +25,7 @@ class FrontendUserRatingTest extends TestCase
         delete_option('notation_jlg_settings');
         delete_option('jlg_user_rating_reputation');
         delete_option('jlg_user_rating_banned_tokens');
+        delete_option('jlg_user_rating_activity_log');
         \JLG\Notation\Helpers::flush_plugin_options_cache();
         unset($GLOBALS['jlg_test_is_user_logged_in']);
     }
@@ -124,6 +125,9 @@ class FrontendUserRatingTest extends TestCase
         $this->assertArrayHasKey('__meta', $ratings_meta);
         $this->assertArrayHasKey('weights', $ratings_meta['__meta']);
         $this->assertSame(1.0, $ratings_meta['__meta']['weights'][$token_hash]);
+        $this->assertArrayHasKey('aggregates', $ratings_meta['__meta']);
+        $this->assertSame(1, $ratings_meta['__meta']['aggregates']['count']);
+        $this->assertSame(1.0, $ratings_meta['__meta']['aggregates']['weight_total']);
     }
 
     public function test_handle_user_rating_blocks_second_vote_when_ip_filtered(): void
@@ -217,6 +221,8 @@ class FrontendUserRatingTest extends TestCase
             $this->assertNull($exception->status);
             $this->assertSame('5.00', $exception->data['new_average']);
             $this->assertSame(1, $exception->data['new_count']);
+            $this->assertArrayHasKey('weight_total', $exception->data);
+            $this->assertSame(1.0, $exception->data['weight_total']);
             $this->assertArrayHasKey('new_breakdown', $exception->data);
             $this->assertSame(
                 [
@@ -550,6 +556,201 @@ class FrontendUserRatingTest extends TestCase
             $this->assertSame(403, $exception->status);
             $this->assertStringContainsString('bloqué', $exception->data['message']);
         }
+    }
+
+    public function test_handle_user_rating_throttle_blocks_quick_repeat(): void
+    {
+        $post_id = 9991;
+        $token   = str_repeat('a', 32);
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        add_filter('jlg_user_rating_request_ip', '__return_empty_string');
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $_POST = [
+            'token'   => $token,
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '3',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+        }
+
+        delete_post_meta($post_id, '_jlg_user_ratings');
+        delete_post_meta($post_id, '_jlg_user_rating_ips');
+
+        $_POST = [
+            'token'   => $token,
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '4',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Le throttling devait empêcher le second vote.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(429, $exception->status);
+        } finally {
+            remove_filter('jlg_user_rating_request_ip', '__return_empty_string');
+        }
+
+        $log = get_option('jlg_user_rating_activity_log', []);
+        $this->assertNotEmpty($log);
+        $last_entry = end($log);
+        $this->assertSame($post_id, $last_entry['post_id']);
+        $this->assertSame('token', $last_entry['scope']);
+        $this->assertTrue($last_entry['throttled']);
+    }
+
+    public function test_handle_user_rating_throttle_detects_ip_rotation_for_same_user(): void
+    {
+        $post_id      = 9992;
+        $first_token  = str_repeat('c', 32);
+        $second_token = str_repeat('d', 32);
+
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        $GLOBALS['jlg_test_is_user_logged_in'] = true;
+        $GLOBALS['jlg_test_current_user_id']   = 77;
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.10';
+        $_POST = [
+            'token'   => $first_token,
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '5',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+        }
+
+        delete_post_meta($post_id, '_jlg_user_ratings');
+        delete_post_meta($post_id, '_jlg_user_rating_ips');
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.50';
+        $_POST = [
+            'token'   => $second_token,
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '4',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Un second vote rapide du même utilisateur devait être bloqué.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(429, $exception->status);
+        }
+
+        $log = get_option('jlg_user_rating_activity_log', []);
+        $this->assertNotEmpty($log);
+        $last_entry = end($log);
+        $this->assertSame('user', $last_entry['scope']);
+        $this->assertTrue($last_entry['throttled']);
+        $this->assertSame(77, $last_entry['user_id']);
+    }
+
+    public function test_rest_endpoint_allows_explicit_token_ban(): void
+    {
+        $frontend = new \JLG\Notation\Frontend();
+        $token    = str_repeat('f', 32);
+
+        $request = new class($token) {
+            private $params;
+
+            public function __construct($token)
+            {
+                $this->params = [
+                    'token'    => $token,
+                    'status'   => 'banned',
+                    'note'     => 'suspect rotation',
+                    'expires'  => 600,
+                    '_wpnonce' => 'nonce',
+                ];
+            }
+
+            public function get_param($name)
+            {
+                return $this->params[$name] ?? null;
+            }
+
+            public function get_params()
+            {
+                return $this->params;
+            }
+
+            public function get_url_params()
+            {
+                return [];
+            }
+        };
+
+        $permission = $frontend->user_rating_rest_permission_check($request);
+        $this->assertTrue($permission);
+
+        $response = $frontend->rest_handle_user_rating_token_status($request);
+
+        $this->assertIsArray($response);
+        $this->assertSame('banned', $response['status']);
+        $this->assertTrue($response['success']);
+
+        $token_hash = hash('sha256', $token);
+        $this->assertTrue(\JLG\Notation\Frontend::is_user_rating_token_banned($token_hash));
+
+        $allow_request = new class($token) {
+            private $params;
+
+            public function __construct($token)
+            {
+                $this->params = [
+                    'token'  => $token,
+                    'status' => 'allowed',
+                ];
+            }
+
+            public function get_param($name)
+            {
+                return $this->params[$name] ?? null;
+            }
+
+            public function get_params()
+            {
+                return $this->params;
+            }
+
+            public function get_url_params()
+            {
+                return [];
+            }
+        };
+
+        $response = $frontend->rest_handle_user_rating_token_status($allow_request);
+        $this->assertIsArray($response);
+        $this->assertSame('allowed', $response['status']);
+        $this->assertTrue($response['success']);
     }
 
     public function test_weighted_average_is_calculated_from_category_scores(): void
