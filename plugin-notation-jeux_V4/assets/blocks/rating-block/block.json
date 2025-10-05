@@ -32,6 +32,16 @@
     "showAnimations": {
       "type": "boolean",
       "default": true
+    },
+    "previewTheme": {
+      "type": "string",
+      "default": "auto",
+      "enum": ["auto", "dark", "light"]
+    },
+    "previewAnimations": {
+      "type": "string",
+      "default": "inherit",
+      "enum": ["inherit", "enabled", "disabled"]
     }
   },
   "editorScript": "notation-jlg-rating-block-editor",

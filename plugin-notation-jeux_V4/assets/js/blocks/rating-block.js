@@ -110,6 +110,30 @@
                                 setAttributes({ scoreDisplay: value || 'absolute' });
                             },
                         }),
+                        createElement(SelectControl, {
+                            label: __('Thème de prévisualisation', 'notation-jlg'),
+                            value: attributes.previewTheme || 'auto',
+                            options: [
+                                { value: 'auto', label: __('Selon les réglages du site', 'notation-jlg') },
+                                { value: 'dark', label: __('Forcer le thème sombre', 'notation-jlg') },
+                                { value: 'light', label: __('Forcer le thème clair', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ previewTheme: value || 'auto' });
+                            },
+                        }),
+                        createElement(SelectControl, {
+                            label: __('Animations (aperçu)', 'notation-jlg'),
+                            value: attributes.previewAnimations || 'inherit',
+                            options: [
+                                { value: 'inherit', label: __('Suivre la configuration globale', 'notation-jlg') },
+                                { value: 'enabled', label: __('Toujours activer', 'notation-jlg') },
+                                { value: 'disabled', label: __('Toujours désactiver', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ previewAnimations: value || 'inherit' });
+                            },
+                        }),
                         createElement(ToggleControl, {
                             label: __('Afficher les animations', 'notation-jlg'),
                             checked: typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
@@ -131,6 +155,8 @@
                             scoreDisplay: attributes.scoreDisplay || 'absolute',
                             showAnimations: typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
                             accentColor: attributes.accentColor || '',
+                            previewTheme: attributes.previewTheme || 'auto',
+                            previewAnimations: attributes.previewAnimations || 'inherit',
                         },
                         label: __('Bloc de notation', 'notation-jlg'),
                     })

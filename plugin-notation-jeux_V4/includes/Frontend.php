@@ -1721,6 +1721,7 @@ class Frontend {
                 'atts'                 => array(),
                 'block_classes'        => '',
                 'css_variables'        => '',
+                'extra_classes'        => '',
                 'score_layout'         => 'text',
                 'animations_enabled'   => false,
                 'should_show_rating_badge' => false,
