@@ -75,4 +75,74 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
         $this->assertIsArray($config, 'The configuration payload should be valid JSON.');
         $this->assertSame($search_value, $config['state']['search'] ?? null, 'Search state should be exported in the configuration payload.');
     }
+
+    public function test_search_config_exports_suggestions_and_sorts(): void
+    {
+        $output = \JLG\Notation\Frontend::get_template_html('shortcode-game-explorer', [
+            'atts' => [
+                'id' => 'explorer-test',
+                'posts_per_page' => 6,
+            ],
+            'filters_enabled' => [
+                'search' => true,
+            ],
+            'current_filters' => [
+                'search' => 'épopée légende',
+            ],
+            'config_payload' => [
+                'atts' => [
+                    'id' => 'explorer-test',
+                    'posts_per_page' => 6,
+                    'columns' => 3,
+                    'score_position' => 'bottom-right',
+                    'filters' => 'search,category',
+                    'categorie' => '',
+                    'plateforme' => '',
+                    'lettre' => '',
+                ],
+                'state' => [
+                    'orderby' => 'popularity',
+                    'order' => 'DESC',
+                    'letter' => '',
+                    'category' => '',
+                    'platform' => '',
+                    'search' => 'épopée légende',
+                    'paged' => 1,
+                    'total_items' => 2,
+                    'total_pages' => 1,
+                ],
+                'suggestions' => [
+                    'search' => ['epopee', 'legende'],
+                    'developers' => ['Studio Élan'],
+                    'publishers' => ['Éditions Futur'],
+                    'platforms' => ['PC'],
+                ],
+                'sorts' => [
+                    'options' => [
+                        ['value' => 'date|DESC', 'label' => 'Plus récents'],
+                        ['value' => 'popularity|DESC', 'label' => 'Popularité (plus de votes)'],
+                    ],
+                    'active' => [
+                        'orderby' => 'popularity',
+                        'order' => 'DESC',
+                    ],
+                ],
+            ],
+            'games' => [],
+            'pagination' => [
+                'current' => 1,
+                'total' => 1,
+            ],
+            'total_items' => 0,
+        ]);
+
+        preg_match('/data-config="([^"]+)"/', $output, $matches);
+        $this->assertNotEmpty($matches, 'Configuration payload should be printed as data attribute.');
+
+        $config = json_decode(htmlspecialchars_decode($matches[1], ENT_QUOTES), true);
+        $this->assertIsArray($config, 'JSON configuration should decode into an array.');
+        $this->assertSame('popularity', $config['state']['orderby'] ?? null, 'Active orderby should be exported.');
+        $this->assertContains('epopee', $config['suggestions']['search'] ?? [], 'Accentless search suggestion should be exposed.');
+        $this->assertSame('DESC', $config['sorts']['active']['order'] ?? null, 'Active sort order should be exported.');
+    }
 }

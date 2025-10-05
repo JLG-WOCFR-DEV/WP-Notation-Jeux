@@ -2,29 +2,6 @@
 
 use PHPUnit\Framework\TestCase;
 
-if (!class_exists('WP_Query')) {
-    class WP_Query
-    {
-        public $args;
-        public $max_num_pages = 1;
-
-        public function __construct($args = [])
-        {
-            $this->args = $args;
-        }
-
-        public function have_posts()
-        {
-            return false;
-        }
-
-        public function the_post()
-        {
-            // No-op in tests.
-        }
-    }
-}
-
 if (!function_exists('get_posts')) {
     function get_posts($args)
     {
