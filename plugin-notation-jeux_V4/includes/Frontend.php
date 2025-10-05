@@ -1229,9 +1229,7 @@ class Frontend {
             if ( is_object( $response ) && method_exists( $response, 'set_status' ) ) {
                 $response->set_status( $status );
             } elseif ( is_array( $response ) ) {
-                if ( array_key_exists( 'status', $response ) && $response['status'] !== null && $response['status'] !== '' ) {
-                    $response['_http_status'] = $status;
-                } else {
+                if ( ! array_key_exists( 'status', $response ) ) {
                     $response['status'] = $status;
                 }
             } else {
