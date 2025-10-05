@@ -25,12 +25,14 @@ class Frontend {
     public const FRONTEND_STYLE_HANDLE      = 'jlg-frontend';
     public const GAME_EXPLORER_STYLE_HANDLE = 'jlg-game-explorer';
 
-    private const USER_RATING_MAX_STORED_VOTES   = 250;
-    private const USER_RATING_RETENTION_DAYS     = 180;
-    private const USER_RATING_THROTTLE_WINDOW    = 120;
-    private const USER_RATING_THROTTLE_TTL       = 900;
-    private const USER_RATING_REPUTATION_OPTION  = 'jlg_user_rating_reputation';
-    private const USER_RATING_BANNED_TOKENS_OPTION = 'jlg_user_rating_banned_tokens';
+    private const USER_RATING_MAX_STORED_VOTES       = 250;
+    private const USER_RATING_RETENTION_DAYS         = 180;
+    private const USER_RATING_THROTTLE_WINDOW        = 120;
+    private const USER_RATING_THROTTLE_TTL           = 900;
+    private const USER_RATING_ACTIVITY_OPTION        = 'jlg_user_rating_activity_log';
+    private const USER_RATING_ACTIVITY_MAX_ENTRIES   = 200;
+    private const USER_RATING_REPUTATION_OPTION      = 'jlg_user_rating_reputation';
+    private const USER_RATING_BANNED_TOKENS_OPTION   = 'jlg_user_rating_banned_tokens';
 
     /**
      * Contiendra les erreurs de chargement des shortcodes pour affichage.
@@ -731,6 +733,8 @@ class Frontend {
                 }
             }
 
+            $was_throttled = ( $blocked_entry !== null );
+
             $log[] = array(
                 'post_id'    => (int) $post_id,
                 'token'      => $token_hash,
@@ -739,7 +743,7 @@ class Frontend {
                 'user_agent' => $user_agent,
                 'timestamp'  => $now,
                 'scope'      => $scope,
-                'throttled'  => $blocked_entry !== null,
+                'throttled'  => $was_throttled,
             );
 
             if ( count( $log ) > 20 ) {
@@ -747,6 +751,19 @@ class Frontend {
             }
 
             set_transient( $key, $log, max( $window, self::USER_RATING_THROTTLE_TTL ) );
+
+            self::append_user_rating_activity_log(
+                array(
+                    'post_id'    => (int) $post_id,
+                    'token'      => $token_hash,
+                    'user_id'    => (int) $user_id,
+                    'ip_hash'    => $ip_hash,
+                    'user_agent' => $user_agent,
+                    'timestamp'  => $now,
+                    'scope'      => $scope,
+                    'throttled'  => $was_throttled,
+                )
+            );
 
             if ( $blocked_entry !== null ) {
                 $blocked_scope = array(
@@ -780,6 +797,37 @@ class Frontend {
         }
 
         return 'jlg_ur_throttle_' . substr( $hash, 0, 32 );
+    }
+
+    private static function append_user_rating_activity_log( array $entry ) {
+        $normalized = array(
+            'post_id'    => isset( $entry['post_id'] ) ? (int) $entry['post_id'] : 0,
+            'token'      => isset( $entry['token'] ) && is_string( $entry['token'] ) ? substr( $entry['token'], 0, 64 ) : '',
+            'user_id'    => isset( $entry['user_id'] ) ? (int) $entry['user_id'] : 0,
+            'ip_hash'    => isset( $entry['ip_hash'] ) && is_string( $entry['ip_hash'] ) ? substr( $entry['ip_hash'], 0, 64 ) : '',
+            'user_agent' => isset( $entry['user_agent'] ) && is_string( $entry['user_agent'] ) ? substr( sanitize_text_field( $entry['user_agent'] ), 0, 255 ) : '',
+            'timestamp'  => isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : current_time( 'timestamp' ),
+            'scope'      => isset( $entry['scope'] ) && is_string( $entry['scope'] ) ? substr( $entry['scope'], 0, 32 ) : '',
+            'throttled'  => ! empty( $entry['throttled'] ),
+        );
+
+        $store = get_option( self::USER_RATING_ACTIVITY_OPTION, array() );
+
+        if ( ! is_array( $store ) ) {
+            $store = array();
+        }
+
+        $store[] = $normalized;
+
+        $max_entries = (int) apply_filters( 'jlg_user_rating_activity_max_entries', self::USER_RATING_ACTIVITY_MAX_ENTRIES );
+
+        if ( $max_entries > 0 && count( $store ) > $max_entries ) {
+            $store = array_slice( $store, -$max_entries );
+        }
+
+        update_option( self::USER_RATING_ACTIVITY_OPTION, $store );
+
+        do_action( 'jlg_user_rating_activity_recorded', $normalized );
     }
 
     private function determine_user_rating_weight( $token_hash, $user_id, array $options, array $ratings_meta ) {
@@ -1057,6 +1105,8 @@ class Frontend {
             );
         }
 
+        do_action( 'jlg_user_rating_rest_token_status_request', $token_hash, $status, $request );
+
         if ( $status !== 'allowed' ) {
             $expires_at = 0;
 
@@ -1075,6 +1125,17 @@ class Frontend {
                 )
             );
 
+            do_action(
+                'jlg_user_rating_rest_token_status_changed',
+                array(
+                    'token_hash' => $token_hash,
+                    'status'     => 'banned',
+                    'note'       => $note,
+                    'expires_at' => $expires_at,
+                    'request'    => $request,
+                )
+            );
+
             return $this->prepare_rest_response(
                 array(
                     'success'    => true,
@@ -1088,6 +1149,17 @@ class Frontend {
 
         $unbanned = self::unban_user_rating_token_hash( $token_hash );
 
+        do_action(
+            'jlg_user_rating_rest_token_status_changed',
+            array(
+                'token_hash' => $token_hash,
+                'status'     => 'allowed',
+                'note'       => $note,
+                'expires_at' => 0,
+                'request'    => $request,
+            )
+        );
+
         return $this->prepare_rest_response(
             array(
                 'success'    => (bool) $unbanned,
@@ -1098,8 +1170,22 @@ class Frontend {
         );
     }
 
-    public function user_rating_rest_permission_check() {
-        return current_user_can( 'manage_options' );
+    public function user_rating_rest_permission_check( $request = null ) {
+        $capability = apply_filters( 'jlg_user_rating_rest_capability', 'manage_options', $request );
+
+        if ( ! is_string( $capability ) || $capability === '' ) {
+            $capability = 'manage_options';
+        }
+
+        $nonce = $this->get_rest_request_param( $request, '_wpnonce' );
+
+        if ( is_string( $nonce ) && $nonce !== '' && function_exists( 'wp_verify_nonce' ) ) {
+            if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+                return false;
+            }
+        }
+
+        return current_user_can( $capability );
     }
 
     private function get_rest_request_param( $request, $name ) {
@@ -1523,10 +1609,14 @@ class Frontend {
         $weighted_sum = 0.0;
         $weight_total = 0.0;
 
+        $count = 0;
+
         foreach ( $ratings as $hash => $value ) {
             if ( ! is_numeric( $value ) ) {
                 continue;
             }
+
+            $count++;
 
             $weight = isset( $meta['weights'][ $hash ] ) && is_numeric( $meta['weights'][ $hash ] ) ? (float) $meta['weights'][ $hash ] : 1.0;
             $weight = max( 0.0, $weight );
@@ -1538,9 +1628,20 @@ class Frontend {
         $existing     = isset( $meta['aggregates'] ) && is_array( $meta['aggregates'] ) ? $meta['aggregates'] : array();
         $current_sum  = isset( $existing['weighted_sum'] ) ? (float) $existing['weighted_sum'] : null;
         $current_total = isset( $existing['weight_total'] ) ? (float) $existing['weight_total'] : null;
+        $current_count = isset( $existing['count'] ) ? (int) $existing['count'] : null;
+        $current_average = isset( $existing['average'] ) ? (float) $existing['average'] : null;
         $computed_at  = isset( $existing['computed_at'] ) ? (int) $existing['computed_at'] : current_time( 'timestamp' );
 
+        $average = 0.0;
+
+        if ( $count > 0 && $weight_total > 0.0 ) {
+            $average = round( $weighted_sum / $weight_total, 2 );
+        }
+
         if ( $current_sum === null || abs( $current_sum - $weighted_sum ) > 0.0001 || $current_total === null || abs( $current_total - $weight_total ) > 0.0001 ) {
+            $computed_at = current_time( 'timestamp' );
+            $changed     = true;
+        } elseif ( $current_count === null || $current_count !== $count || $current_average === null || abs( $current_average - $average ) > 0.0001 ) {
             $computed_at = current_time( 'timestamp' );
             $changed     = true;
         }
@@ -1548,6 +1649,8 @@ class Frontend {
         $meta['aggregates'] = array(
             'weighted_sum' => $weighted_sum,
             'weight_total' => $weight_total,
+            'count'        => $count,
+            'average'      => $average,
             'computed_at'  => $computed_at,
         );
 
