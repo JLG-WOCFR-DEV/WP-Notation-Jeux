@@ -25,8 +25,12 @@ class Frontend {
     public const FRONTEND_STYLE_HANDLE      = 'jlg-frontend';
     public const GAME_EXPLORER_STYLE_HANDLE = 'jlg-game-explorer';
 
-    private const USER_RATING_MAX_STORED_VOTES = 250;
-    private const USER_RATING_RETENTION_DAYS   = 180;
+    private const USER_RATING_MAX_STORED_VOTES   = 250;
+    private const USER_RATING_RETENTION_DAYS     = 180;
+    private const USER_RATING_THROTTLE_WINDOW    = 120;
+    private const USER_RATING_THROTTLE_TTL       = 900;
+    private const USER_RATING_REPUTATION_OPTION  = 'jlg_user_rating_reputation';
+    private const USER_RATING_BANNED_TOKENS_OPTION = 'jlg_user_rating_banned_tokens';
 
     /**
      * Contiendra les erreurs de chargement des shortcodes pour affichage.
@@ -90,6 +94,8 @@ class Frontend {
         add_action( 'wp_ajax_jlg_game_explorer_sort', array( $this, 'handle_game_explorer_sort' ) );
         add_action( 'wp_ajax_nopriv_jlg_game_explorer_sort', array( $this, 'handle_game_explorer_sort' ) );
         add_action( 'wp_head', array( $this, 'inject_review_schema' ) );
+
+        add_action( 'rest_api_init', array( $this, 'register_user_rating_rest_routes' ) );
     }
 
     /**
@@ -633,6 +639,524 @@ class Frontend {
     }
 
     /**
+     * Récupère et nettoie l'agent utilisateur associé à la requête courante.
+     *
+     * @return string
+     */
+    private function get_request_user_agent() {
+        $user_agent = '';
+
+        if ( isset( $_SERVER['HTTP_USER_AGENT'] ) ) {
+            $user_agent = wp_unslash( $_SERVER['HTTP_USER_AGENT'] );
+        }
+
+        $user_agent = apply_filters( 'jlg_user_rating_request_user_agent', $user_agent );
+
+        if ( ! is_string( $user_agent ) ) {
+            return '';
+        }
+
+        $user_agent = trim( $user_agent );
+
+        if ( $user_agent === '' ) {
+            return '';
+        }
+
+        $user_agent = sanitize_text_field( $user_agent );
+
+        if ( strlen( $user_agent ) > 255 ) {
+            $user_agent = substr( $user_agent, 0, 255 );
+        }
+
+        return $user_agent;
+    }
+
+    private function evaluate_user_rating_throttle( $post_id, $token_hash, $user_id, $ip_hash, $user_agent ) {
+        $window = (int) apply_filters(
+            'jlg_user_rating_throttle_window',
+            self::USER_RATING_THROTTLE_WINDOW,
+            $post_id,
+            $token_hash,
+            $user_id,
+            $ip_hash
+        );
+
+        if ( $window <= 0 ) {
+            return array( 'allowed' => true );
+        }
+
+        $now           = current_time( 'timestamp' );
+        $blocked_scope = null;
+        $scopes        = array(
+            'token' => $token_hash,
+        );
+
+        if ( $ip_hash !== '' ) {
+            $scopes['ip'] = $ip_hash;
+        }
+
+        if ( $user_id > 0 ) {
+            $scopes['user'] = (string) $user_id;
+        }
+
+        foreach ( $scopes as $scope => $identifier ) {
+            if ( ! is_string( $identifier ) || $identifier === '' ) {
+                continue;
+            }
+
+            $key = $this->get_user_rating_throttle_key( $scope, $identifier );
+
+            if ( $key === '' ) {
+                continue;
+            }
+
+            $log = get_transient( $key );
+
+            if ( ! is_array( $log ) ) {
+                $log = array();
+            }
+
+            $blocked_entry = null;
+
+            foreach ( $log as $entry ) {
+                if ( ! is_array( $entry ) || ! isset( $entry['timestamp'] ) ) {
+                    continue;
+                }
+
+                $timestamp = intval( $entry['timestamp'] );
+
+                if ( $timestamp > 0 && ( $now - $timestamp ) < $window ) {
+                    $blocked_entry = $entry;
+                    break;
+                }
+            }
+
+            $log[] = array(
+                'post_id'    => (int) $post_id,
+                'token'      => $token_hash,
+                'user_id'    => (int) $user_id,
+                'ip_hash'    => $ip_hash,
+                'user_agent' => $user_agent,
+                'timestamp'  => $now,
+                'scope'      => $scope,
+                'throttled'  => $blocked_entry !== null,
+            );
+
+            if ( count( $log ) > 20 ) {
+                $log = array_slice( $log, -20 );
+            }
+
+            set_transient( $key, $log, max( $window, self::USER_RATING_THROTTLE_TTL ) );
+
+            if ( $blocked_entry !== null ) {
+                $blocked_scope = array(
+                    'scope'    => $scope,
+                    'previous' => $blocked_entry,
+                );
+
+                break;
+            }
+        }
+
+        if ( $blocked_scope !== null ) {
+            return array(
+                'allowed'         => false,
+                'blocked_context' => $blocked_scope,
+            );
+        }
+
+        return array( 'allowed' => true );
+    }
+
+    private function get_user_rating_throttle_key( $scope, $identifier ) {
+        if ( ! is_string( $scope ) || $scope === '' || ! is_string( $identifier ) || $identifier === '' ) {
+            return '';
+        }
+
+        $hash = hash( 'sha256', $scope . '|' . $identifier );
+
+        if ( ! is_string( $hash ) || $hash === '' ) {
+            return '';
+        }
+
+        return 'jlg_ur_throttle_' . substr( $hash, 0, 32 );
+    }
+
+    private function determine_user_rating_weight( $token_hash, $user_id, array $options, array $ratings_meta ) {
+        $reputation = self::get_user_rating_reputation_entry( $token_hash );
+
+        if ( $user_id > 0 ) {
+            $weight = (float) apply_filters(
+                'jlg_user_rating_authenticated_weight',
+                1.0,
+                $token_hash,
+                $user_id,
+                $options,
+                $ratings_meta,
+                $reputation
+            );
+
+            return array(
+                'weight'     => max( 0.0, $weight ),
+                'reputation' => $reputation,
+            );
+        }
+
+        $default_guest_weight = 1.0;
+
+        if ( empty( $options['user_rating_weighting_enabled'] ) ) {
+            $guest_weight = (float) apply_filters(
+                'jlg_user_rating_guest_weight',
+                $default_guest_weight,
+                $token_hash,
+                $options,
+                $ratings_meta,
+                $reputation
+            );
+
+            return array(
+                'weight'     => max( 0.0, $guest_weight ),
+                'reputation' => $reputation,
+            );
+        }
+
+        $start     = isset( $options['user_rating_guest_weight_start'] ) ? (float) $options['user_rating_guest_weight_start'] : 0.5;
+        $increment = isset( $options['user_rating_guest_weight_increment'] ) ? (float) $options['user_rating_guest_weight_increment'] : 0.1;
+        $max       = isset( $options['user_rating_guest_weight_max'] ) ? (float) $options['user_rating_guest_weight_max'] : 1.0;
+        $count     = isset( $reputation['count'] ) ? max( 0, (int) $reputation['count'] ) : 0;
+
+        $guest_weight = $start + ( $count * $increment );
+
+        if ( $increment <= 0 && $count > 0 ) {
+            $guest_weight = $start;
+        }
+
+        $guest_weight = min( $max, $guest_weight );
+        $guest_weight = max( 0.0, $guest_weight );
+
+        $guest_weight = (float) apply_filters(
+            'jlg_user_rating_guest_weight',
+            $guest_weight,
+            $token_hash,
+            $options,
+            $ratings_meta,
+            $reputation
+        );
+
+        return array(
+            'weight'     => max( 0.0, $guest_weight ),
+            'reputation' => $reputation,
+        );
+    }
+
+    private static function get_user_rating_reputation_entry( $token_hash ) {
+        if ( ! is_string( $token_hash ) || $token_hash === '' ) {
+            return array();
+        }
+
+        $store = self::get_user_rating_reputation_store();
+
+        return isset( $store[ $token_hash ] ) && is_array( $store[ $token_hash ] ) ? $store[ $token_hash ] : array();
+    }
+
+    private static function get_user_rating_reputation_store() {
+        $store = get_option( self::USER_RATING_REPUTATION_OPTION, array() );
+
+        if ( ! is_array( $store ) ) {
+            return array();
+        }
+
+        return $store;
+    }
+
+    private static function update_user_rating_reputation_store( $token_hash, array $previous_entry, $post_id, $user_id, $weight ) {
+        if ( ! is_string( $token_hash ) || $token_hash === '' ) {
+            return;
+        }
+
+        $store      = self::get_user_rating_reputation_store();
+        $count      = isset( $previous_entry['count'] ) ? max( 0, (int) $previous_entry['count'] ) : 0;
+        $timestamp  = current_time( 'timestamp' );
+        $new_record = array(
+            'count'       => $count + 1,
+            'last_post'   => (int) $post_id,
+            'last_user_id'=> (int) $user_id,
+            'last_weight' => (float) $weight,
+            'updated_at'  => $timestamp,
+        );
+
+        $store[ $token_hash ] = $new_record;
+
+        self::limit_user_rating_reputation_store( $store );
+
+        update_option( self::USER_RATING_REPUTATION_OPTION, $store );
+    }
+
+    private static function limit_user_rating_reputation_store( array &$store ) {
+        $max_entries = (int) apply_filters( 'jlg_user_rating_reputation_max_entries', 500 );
+
+        if ( $max_entries <= 0 || count( $store ) <= $max_entries ) {
+            return;
+        }
+
+        uasort(
+            $store,
+            static function ( $a, $b ) {
+                $a_time = isset( $a['updated_at'] ) ? (int) $a['updated_at'] : 0;
+                $b_time = isset( $b['updated_at'] ) ? (int) $b['updated_at'] : 0;
+
+                if ( $a_time === $b_time ) {
+                    return 0;
+                }
+
+                return ( $a_time < $b_time ) ? -1 : 1;
+            }
+        );
+
+        while ( count( $store ) > $max_entries ) {
+            $first_key = key( $store );
+
+            if ( $first_key === null ) {
+                break;
+            }
+
+            unset( $store[ $first_key ] );
+
+            reset( $store );
+        }
+    }
+
+    public static function is_user_rating_token_banned( $token_hash ) {
+        if ( ! is_string( $token_hash ) || $token_hash === '' ) {
+            return false;
+        }
+
+        $store = self::get_banned_user_rating_tokens();
+
+        if ( ! isset( $store[ $token_hash ] ) || ! is_array( $store[ $token_hash ] ) ) {
+            return false;
+        }
+
+        $record     = $store[ $token_hash ];
+        $expires_at = isset( $record['expires_at'] ) ? (int) $record['expires_at'] : 0;
+
+        if ( $expires_at > 0 && $expires_at < current_time( 'timestamp' ) ) {
+            unset( $store[ $token_hash ] );
+            update_option( self::USER_RATING_BANNED_TOKENS_OPTION, $store );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function ban_user_rating_token_hash( $token_hash, array $context = array() ) {
+        if ( ! is_string( $token_hash ) || $token_hash === '' ) {
+            return false;
+        }
+
+        $store = self::get_banned_user_rating_tokens();
+
+        $record = array(
+            'banned_at'  => current_time( 'timestamp' ),
+            'banned_by'  => isset( $context['user_id'] ) ? (int) $context['user_id'] : 0,
+            'note'       => isset( $context['note'] ) ? sanitize_text_field( $context['note'] ) : '',
+            'expires_at' => isset( $context['expires_at'] ) ? (int) $context['expires_at'] : 0,
+        );
+
+        $store[ $token_hash ] = $record;
+
+        update_option( self::USER_RATING_BANNED_TOKENS_OPTION, $store );
+
+        do_action( 'jlg_user_rating_token_banned', $token_hash, $record );
+
+        return true;
+    }
+
+    public static function unban_user_rating_token_hash( $token_hash ) {
+        if ( ! is_string( $token_hash ) || $token_hash === '' ) {
+            return false;
+        }
+
+        $store = self::get_banned_user_rating_tokens();
+
+        if ( ! isset( $store[ $token_hash ] ) ) {
+            return false;
+        }
+
+        $record = $store[ $token_hash ];
+
+        unset( $store[ $token_hash ] );
+
+        update_option( self::USER_RATING_BANNED_TOKENS_OPTION, $store );
+
+        do_action( 'jlg_user_rating_token_unbanned', $token_hash, $record );
+
+        return true;
+    }
+
+    private static function get_banned_user_rating_tokens() {
+        $store = get_option( self::USER_RATING_BANNED_TOKENS_OPTION, array() );
+
+        if ( ! is_array( $store ) ) {
+            return array();
+        }
+
+        return $store;
+    }
+
+    public function register_user_rating_rest_routes() {
+        if ( ! function_exists( 'register_rest_route' ) ) {
+            return;
+        }
+
+        register_rest_route(
+            'jlg-notation/v1',
+            '/user-ratings/tokens/(?P<token>[A-Fa-f0-9]{32,128})',
+            array(
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'rest_handle_user_rating_token_status' ),
+                    'permission_callback' => array( $this, 'user_rating_rest_permission_check' ),
+                    'args'                => array(
+                        'status'  => array(
+                            'type'    => 'string',
+                            'default' => 'banned',
+                            'enum'    => array( 'banned', 'allowed' ),
+                        ),
+                        'note'    => array(
+                            'type'     => 'string',
+                            'required' => false,
+                        ),
+                        'expires' => array(
+                            'type'     => 'integer',
+                            'required' => false,
+                        ),
+                    ),
+                ),
+            )
+        );
+    }
+
+    public function rest_handle_user_rating_token_status( $request ) {
+        $token      = $this->get_rest_request_param( $request, 'token' );
+        $status     = strtolower( (string) $this->get_rest_request_param( $request, 'status' ) );
+        $note       = (string) $this->get_rest_request_param( $request, 'note' );
+        $expires    = $this->get_rest_request_param( $request, 'expires' );
+        $token      = self::normalize_user_rating_token( $token );
+        $token_hash = self::hash_user_rating_token( $token );
+
+        if ( $token === '' || $token_hash === '' ) {
+            return $this->prepare_rest_response(
+                array(
+                    'success' => false,
+                    'code'    => 'invalid_token',
+                    'message' => esc_html__( 'Jeton invalide.', 'notation-jlg' ),
+                ),
+                400
+            );
+        }
+
+        if ( $status !== 'allowed' ) {
+            $expires_at = 0;
+
+            if ( is_numeric( $expires ) ) {
+                $expires_at = current_time( 'timestamp' ) + max( 0, (int) $expires );
+            }
+
+            $user_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+
+            self::ban_user_rating_token_hash(
+                $token_hash,
+                array(
+                    'user_id'    => $user_id,
+                    'note'       => $note,
+                    'expires_at' => $expires_at,
+                )
+            );
+
+            return $this->prepare_rest_response(
+                array(
+                    'success'    => true,
+                    'status'     => 'banned',
+                    'token_hash' => $token_hash,
+                    'expires_at' => $expires_at,
+                ),
+                200
+            );
+        }
+
+        $unbanned = self::unban_user_rating_token_hash( $token_hash );
+
+        return $this->prepare_rest_response(
+            array(
+                'success'    => (bool) $unbanned,
+                'status'     => 'allowed',
+                'token_hash' => $token_hash,
+            ),
+            200
+        );
+    }
+
+    public function user_rating_rest_permission_check() {
+        return current_user_can( 'manage_options' );
+    }
+
+    private function get_rest_request_param( $request, $name ) {
+        if ( is_object( $request ) ) {
+            if ( method_exists( $request, 'get_param' ) ) {
+                $value = $request->get_param( $name );
+
+                if ( null !== $value ) {
+                    return $value;
+                }
+            }
+
+            if ( method_exists( $request, 'get_params' ) ) {
+                $params = $request->get_params();
+
+                if ( is_array( $params ) && array_key_exists( $name, $params ) ) {
+                    return $params[ $name ];
+                }
+            }
+
+            if ( method_exists( $request, 'get_url_params' ) ) {
+                $params = $request->get_url_params();
+
+                if ( is_array( $params ) && array_key_exists( $name, $params ) ) {
+                    return $params[ $name ];
+                }
+            }
+        }
+
+        if ( is_array( $request ) && array_key_exists( $name, $request ) ) {
+            return $request[ $name ];
+        }
+
+        return null;
+    }
+
+    private function prepare_rest_response( array $data, $status ) {
+        if ( function_exists( 'rest_ensure_response' ) ) {
+            $response = rest_ensure_response( $data );
+
+            if ( is_object( $response ) && method_exists( $response, 'set_status' ) ) {
+                $response->set_status( $status );
+            } elseif ( is_array( $response ) ) {
+                $response['status'] = $status;
+            } else {
+                $response = array_merge( (array) $response, array( 'status' => $status ) );
+            }
+
+            return $response;
+        }
+
+        $data['status'] = $status;
+
+        return $data;
+    }
+
+    /**
      * Gère la notation AJAX des utilisateurs
      */
     public function handle_user_rating() {
@@ -704,9 +1228,13 @@ class Frontend {
             wp_send_json_error( array( 'message' => esc_html__( 'Données invalides.', 'notation-jlg' ) ), 422 );
         }
 
-        $user_ip      = $this->get_request_ip_address();
-        $user_ip_hash = $user_ip ? self::hash_user_ip( $user_ip ) : '';
-        $ip_log       = array();
+        $user_id    = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+        $user_ip    = $this->get_request_ip_address();
+        $user_agent = $this->get_request_user_agent();
+
+        $user_ip_hash       = $user_ip ? self::hash_user_ip( $user_ip ) : '';
+        $ip_log             = array();
+        $ip_has_recent_vote = false;
 
         if ( $user_ip_hash !== '' ) {
             $stored_ip_log = get_post_meta( $post_id, '_jlg_user_rating_ips', true );
@@ -716,16 +1244,20 @@ class Frontend {
             }
 
             if ( isset( $ip_log[ $user_ip_hash ] ) && ( ! is_array( $ip_log[ $user_ip_hash ] ) || empty( $ip_log[ $user_ip_hash ]['legacy'] ) ) ) {
-                wp_send_json_error(
-                    array(
-						'message' => esc_html__( 'Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg' ),
-                    ),
-                    409
-                );
+                $ip_has_recent_vote = true;
             }
         }
 
         $token_hash = self::hash_user_rating_token( $token );
+
+        if ( self::is_user_rating_token_banned( $token_hash ) ) {
+            wp_send_json_error(
+                array(
+                    'message' => esc_html__( 'Ce jeton a été bloqué par la rédaction.', 'notation-jlg' ),
+                ),
+                403
+            );
+        }
 
         $ratings_meta = array();
         $ratings      = self::get_post_user_rating_tokens( $post_id, $ratings_meta );
@@ -734,8 +1266,35 @@ class Frontend {
             wp_send_json_error( array( 'message' => esc_html__( 'Vous avez déjà voté !', 'notation-jlg' ) ), 409 );
         }
 
+        $throttle_check = $this->evaluate_user_rating_throttle( $post_id, $token_hash, $user_id, $user_ip_hash, $user_agent );
+
+        if ( $ip_has_recent_vote ) {
+            wp_send_json_error(
+                array(
+                    'message' => esc_html__( 'Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg' ),
+                ),
+                409
+            );
+        }
+
+        if ( ! $throttle_check['allowed'] ) {
+            do_action( 'jlg_user_rating_vote_throttled', $post_id, $token_hash, $throttle_check['blocked_context'] ?? array() );
+
+            wp_send_json_error(
+                array(
+                    'message' => esc_html__( 'Veuillez patienter avant de voter à nouveau.', 'notation-jlg' ),
+                ),
+                429
+            );
+        }
+
+        $weighting_context   = $this->determine_user_rating_weight( $token_hash, $user_id, $options, $ratings_meta );
+        $vote_weight         = isset( $weighting_context['weight'] ) ? (float) $weighting_context['weight'] : 1.0;
+        $previous_reputation = isset( $weighting_context['reputation'] ) && is_array( $weighting_context['reputation'] ) ? $weighting_context['reputation'] : array();
+
         $ratings[ $token_hash ]                    = $rating;
         $ratings_meta['timestamps'][ $token_hash ] = current_time( 'timestamp' );
+        $ratings_meta['weights'][ $token_hash ]    = $vote_weight;
 
         self::store_post_user_rating_tokens( $post_id, $ratings, $ratings_meta );
 
@@ -743,9 +1302,12 @@ class Frontend {
             self::update_user_rating_ip_log( $post_id, $user_ip_hash, $token_hash, $rating );
         }
 
-        $fresh_ratings                     = self::get_post_user_rating_tokens( $post_id );
-        list($new_average, $ratings_count) = self::calculate_user_rating_stats( $fresh_ratings );
-        $breakdown                         = self::calculate_user_rating_breakdown( $fresh_ratings );
+        self::update_user_rating_reputation_store( $token_hash, $previous_reputation, $post_id, $user_id, $vote_weight );
+
+        $fresh_meta    = array();
+        $fresh_ratings = self::get_post_user_rating_tokens( $post_id, $fresh_meta );
+        list($new_average, $ratings_count, $weighted_sum, $weight_total) = self::calculate_user_rating_stats( $fresh_ratings, $fresh_meta );
+        $breakdown = self::calculate_user_rating_breakdown( $fresh_ratings );
 
         update_post_meta( $post_id, '_jlg_user_rating_avg', $new_average );
         update_post_meta( $post_id, '_jlg_user_rating_count', $ratings_count );
@@ -756,6 +1318,9 @@ class Frontend {
                 'new_average'   => number_format_i18n( $new_average, 2 ),
                 'new_count'     => $ratings_count,
                 'new_breakdown' => $breakdown,
+                'new_weight'    => $vote_weight,
+                'weight_total'  => $weight_total,
+                'weighted_sum'  => $weighted_sum,
             )
         );
     }
@@ -817,11 +1382,22 @@ class Frontend {
         $normalized = array();
         $now        = current_time( 'timestamp' );
 
-        $needs_meta_update    = ! isset( $meta_data['version'] ) || (int) $meta_data['version'] < 2;
-        $meta_data['version'] = 2;
+        $needs_meta_update    = ! isset( $meta_data['version'] ) || (int) $meta_data['version'] < 3;
+        $meta_data['version'] = 3;
 
         if ( ! isset( $meta_data['timestamps'] ) || ! is_array( $meta_data['timestamps'] ) ) {
             $meta_data['timestamps'] = array();
+            $needs_meta_update       = true;
+        }
+
+        if ( ! isset( $meta_data['weights'] ) || ! is_array( $meta_data['weights'] ) ) {
+            $meta_data['weights'] = array();
+            $needs_meta_update    = true;
+        }
+
+        if ( ! isset( $meta_data['aggregates'] ) || ! is_array( $meta_data['aggregates'] ) ) {
+            $meta_data['aggregates'] = array();
+            $needs_meta_update       = true;
         }
 
         $meta_changed = $needs_meta_update;
@@ -850,6 +1426,17 @@ class Frontend {
             }
         }
 
+        foreach ( array_keys( $meta_data['weights'] ) as $hash ) {
+            if ( ! isset( $normalized[ $hash ] ) ) {
+                unset( $meta_data['weights'][ $hash ] );
+                $meta_changed = true;
+            }
+        }
+
+        if ( self::synchronize_user_rating_meta( $normalized, $meta_data ) ) {
+            $meta_changed = true;
+        }
+
         if ( $meta !== null ) {
             $meta = $meta_data;
         }
@@ -872,12 +1459,20 @@ class Frontend {
     }
 
     private static function store_post_user_rating_tokens( $post_id, array $ratings, array $meta = array() ) {
-        if ( ! isset( $meta['version'] ) || (int) $meta['version'] < 2 ) {
-            $meta['version'] = 2;
+        if ( ! isset( $meta['version'] ) || (int) $meta['version'] < 3 ) {
+            $meta['version'] = 3;
         }
 
         if ( ! isset( $meta['timestamps'] ) || ! is_array( $meta['timestamps'] ) ) {
             $meta['timestamps'] = array();
+        }
+
+        if ( ! isset( $meta['weights'] ) || ! is_array( $meta['weights'] ) ) {
+            $meta['weights'] = array();
+        }
+
+        if ( ! isset( $meta['aggregates'] ) || ! is_array( $meta['aggregates'] ) ) {
+            $meta['aggregates'] = array();
         }
 
         self::write_user_rating_store( $post_id, $ratings, $meta, true );
@@ -888,14 +1483,80 @@ class Frontend {
             self::prune_user_rating_store( $post_id, $ratings, $meta );
         }
 
+        self::synchronize_user_rating_meta( $ratings, $meta );
+
         $data           = $ratings;
         $data['__meta'] = $meta;
 
         update_post_meta( $post_id, '_jlg_user_ratings', $data );
     }
 
+    private static function synchronize_user_rating_meta( array $ratings, array &$meta ) {
+        $changed = false;
+
+        if ( ! isset( $meta['timestamps'] ) || ! is_array( $meta['timestamps'] ) ) {
+            $meta['timestamps'] = array();
+            $changed            = true;
+        }
+
+        if ( ! isset( $meta['weights'] ) || ! is_array( $meta['weights'] ) ) {
+            $meta['weights'] = array();
+            $changed         = true;
+        }
+
+        foreach ( $ratings as $hash => $value ) {
+            if ( ! isset( $meta['weights'][ $hash ] ) || ! is_numeric( $meta['weights'][ $hash ] ) ) {
+                $meta['weights'][ $hash ] = 1.0;
+                $changed                  = true;
+            } else {
+                $meta['weights'][ $hash ] = (float) $meta['weights'][ $hash ];
+            }
+        }
+
+        foreach ( array_keys( $meta['weights'] ) as $hash ) {
+            if ( ! isset( $ratings[ $hash ] ) ) {
+                unset( $meta['weights'][ $hash ] );
+                $changed = true;
+            }
+        }
+
+        $weighted_sum = 0.0;
+        $weight_total = 0.0;
+
+        foreach ( $ratings as $hash => $value ) {
+            if ( ! is_numeric( $value ) ) {
+                continue;
+            }
+
+            $weight = isset( $meta['weights'][ $hash ] ) && is_numeric( $meta['weights'][ $hash ] ) ? (float) $meta['weights'][ $hash ] : 1.0;
+            $weight = max( 0.0, $weight );
+
+            $weighted_sum += (float) $value * $weight;
+            $weight_total += $weight;
+        }
+
+        $existing     = isset( $meta['aggregates'] ) && is_array( $meta['aggregates'] ) ? $meta['aggregates'] : array();
+        $current_sum  = isset( $existing['weighted_sum'] ) ? (float) $existing['weighted_sum'] : null;
+        $current_total = isset( $existing['weight_total'] ) ? (float) $existing['weight_total'] : null;
+        $computed_at  = isset( $existing['computed_at'] ) ? (int) $existing['computed_at'] : current_time( 'timestamp' );
+
+        if ( $current_sum === null || abs( $current_sum - $weighted_sum ) > 0.0001 || $current_total === null || abs( $current_total - $weight_total ) > 0.0001 ) {
+            $computed_at = current_time( 'timestamp' );
+            $changed     = true;
+        }
+
+        $meta['aggregates'] = array(
+            'weighted_sum' => $weighted_sum,
+            'weight_total' => $weight_total,
+            'computed_at'  => $computed_at,
+        );
+
+        return $changed;
+    }
+
     private static function prune_user_rating_store( $post_id, array &$ratings, array &$meta ) {
         $timestamps     = isset( $meta['timestamps'] ) && is_array( $meta['timestamps'] ) ? $meta['timestamps'] : array();
+        $weights        = isset( $meta['weights'] ) && is_array( $meta['weights'] ) ? $meta['weights'] : array();
         $now            = current_time( 'timestamp' );
         $retention      = self::get_user_rating_retention_window();
         $removed_tokens = array();
@@ -939,6 +1600,16 @@ class Frontend {
         }
 
         $meta['timestamps'] = $timestamps;
+
+        if ( ! empty( $removed_tokens ) ) {
+            foreach ( $removed_tokens as $hash ) {
+                if ( isset( $weights[ $hash ] ) ) {
+                    unset( $weights[ $hash ] );
+                }
+            }
+        }
+
+        $meta['weights'] = $weights;
 
         if ( ! empty( $removed_tokens ) ) {
             self::prune_user_rating_ip_tokens( $post_id, $removed_tokens, true );
@@ -1079,24 +1750,33 @@ class Frontend {
         }
     }
 
-    private static function calculate_user_rating_stats( array $ratings ) {
-        $values = array();
+    private static function calculate_user_rating_stats( array $ratings, array $meta = array() ) {
+        $weights      = isset( $meta['weights'] ) && is_array( $meta['weights'] ) ? $meta['weights'] : array();
+        $count        = 0;
+        $weighted_sum = 0.0;
+        $weight_total = 0.0;
 
-        foreach ( $ratings as $value ) {
-            if ( is_numeric( $value ) ) {
-                $values[] = (float) $value;
+        foreach ( $ratings as $hash => $value ) {
+            if ( ! is_numeric( $value ) ) {
+                continue;
             }
+
+            $count++;
+
+            $weight = isset( $weights[ $hash ] ) && is_numeric( $weights[ $hash ] ) ? (float) $weights[ $hash ] : 1.0;
+            $weight = max( 0.0, $weight );
+
+            $weighted_sum += (float) $value * $weight;
+            $weight_total += $weight;
         }
 
-        $count = count( $values );
-
-        if ( $count === 0 ) {
-            return array( 0.0, 0 );
+        if ( $count === 0 || $weight_total <= 0.0 ) {
+            return array( 0.0, 0, 0.0, 0.0 );
         }
 
-        $average = round( array_sum( $values ) / $count, 2 );
+        $average = round( $weighted_sum / $weight_total, 2 );
 
-        return array( $average, $count );
+        return array( $average, $count, $weighted_sum, $weight_total );
     }
 
     private static function calculate_user_rating_breakdown( array $ratings ) {

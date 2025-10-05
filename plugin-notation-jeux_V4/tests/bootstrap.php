@@ -136,6 +136,12 @@ if (!function_exists('is_user_logged_in')) {
     }
 }
 
+if (!function_exists('get_current_user_id')) {
+    function get_current_user_id() {
+        return isset($GLOBALS['jlg_test_current_user_id']) ? (int) $GLOBALS['jlg_test_current_user_id'] : 0;
+    }
+}
+
 if (!function_exists('doing_filter')) {
     /**
      * Minimal doing_filter stub so tests can emulate REST rendering context.
@@ -759,6 +765,29 @@ if (!function_exists('delete_transient')) {
     }
 }
 
+if (!function_exists('register_rest_route')) {
+    function register_rest_route($namespace, $route, $args = [], $override = false) {
+        if (!isset($GLOBALS['jlg_test_rest_routes'])) {
+            $GLOBALS['jlg_test_rest_routes'] = [];
+        }
+
+        $GLOBALS['jlg_test_rest_routes'][] = [
+            'namespace' => $namespace,
+            'route'     => $route,
+            'args'      => $args,
+            'override'  => $override,
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('rest_ensure_response')) {
+    function rest_ensure_response($response) {
+        return $response;
+    }
+}
+
 if (!function_exists('wp_parse_args')) {
     function wp_parse_args($args, $defaults = []) {
         if (is_object($args)) {
@@ -778,6 +807,12 @@ if (!function_exists('wp_parse_args')) {
 if (!function_exists('__')) {
     function __($text, $domain = 'default') {
         return (string) $text;
+    }
+}
+
+if (!function_exists('__return_empty_string')) {
+    function __return_empty_string() {
+        return '';
     }
 }
 

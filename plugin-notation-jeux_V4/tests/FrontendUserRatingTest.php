@@ -20,8 +20,11 @@ class FrontendUserRatingTest extends TestCase
         $GLOBALS['jlg_test_posts']       = [];
         $GLOBALS['jlg_test_meta']        = [];
         $GLOBALS['jlg_test_meta_updates'] = [];
+        unset($GLOBALS['jlg_test_transients'], $GLOBALS['jlg_test_rest_routes'], $GLOBALS['jlg_test_current_user_id']);
         $this->resetShortcodeTracking();
         delete_option('notation_jlg_settings');
+        delete_option('jlg_user_rating_reputation');
+        delete_option('jlg_user_rating_banned_tokens');
         \JLG\Notation\Helpers::flush_plugin_options_cache();
         unset($GLOBALS['jlg_test_is_user_logged_in']);
     }
@@ -76,6 +79,11 @@ class FrontendUserRatingTest extends TestCase
         } catch (WP_Send_Json_Exception $exception) {
             $this->assertTrue($exception->success);
             $this->assertNull($exception->status);
+            $this->assertIsArray($exception->data);
+            $this->assertArrayHasKey('new_weight', $exception->data);
+            $this->assertSame(1.0, $exception->data['new_weight']);
+            $this->assertArrayHasKey('weight_total', $exception->data);
+            $this->assertSame(1.0, $exception->data['weight_total']);
         }
 
         $ip_hash = hash('sha256', '198.51.100.42|https://example.com');
@@ -110,6 +118,12 @@ class FrontendUserRatingTest extends TestCase
         }
 
         $this->assertSame($first_updates_count, count($GLOBALS['jlg_test_meta_updates']));
+
+        $ratings_meta = $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_ratings'];
+        $token_hash   = hash('sha256', str_repeat('a', 32));
+        $this->assertArrayHasKey('__meta', $ratings_meta);
+        $this->assertArrayHasKey('weights', $ratings_meta['__meta']);
+        $this->assertSame(1.0, $ratings_meta['__meta']['weights'][$token_hash]);
     }
 
     public function test_handle_user_rating_blocks_second_vote_when_ip_filtered(): void
@@ -408,6 +422,134 @@ class FrontendUserRatingTest extends TestCase
 
         $this->assertArrayHasKey('_jlg_user_rating_breakdown', $GLOBALS['jlg_test_meta'][$post_id]);
         $this->assertSame($breakdown, $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_breakdown']);
+    }
+
+    public function test_handle_user_rating_throttles_fast_retries_for_logged_in_users(): void
+    {
+        $post_id = 4001;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        add_filter('jlg_user_rating_request_ip', '__return_empty_string');
+
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit/Throttle';
+        $GLOBALS['jlg_test_is_user_logged_in'] = true;
+        $GLOBALS['jlg_test_current_user_id']   = 84;
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $_POST = [
+            'token'   => str_repeat('1', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '5',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+        }
+
+        $_POST['token']  = str_repeat('2', 32);
+        $_POST['rating'] = '4';
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Le throttling aurait dû bloquer ce second vote.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(429, $exception->status);
+            $this->assertStringContainsString('patienter', $exception->data['message']);
+        } finally {
+            remove_all_filters('jlg_user_rating_request_ip');
+            unset($GLOBALS['jlg_test_is_user_logged_in'], $GLOBALS['jlg_test_current_user_id']);
+        }
+    }
+
+    public function test_handle_user_rating_blocks_same_account_with_rotating_ip(): void
+    {
+        $post_id = 4002;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit/Throttle-Rotation';
+        $GLOBALS['jlg_test_is_user_logged_in'] = true;
+        $GLOBALS['jlg_test_current_user_id']   = 123;
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.77';
+        $_POST = [
+            'token'   => str_repeat('3', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '3',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+        }
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.55';
+        $_POST['token']         = str_repeat('4', 32);
+        $_POST['rating']        = '4';
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Le throttling utilisateur aurait dû bloquer ce vote.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(429, $exception->status);
+            $this->assertStringContainsString('patienter', $exception->data['message']);
+        } finally {
+            unset($GLOBALS['jlg_test_is_user_logged_in'], $GLOBALS['jlg_test_current_user_id']);
+        }
+    }
+
+    public function test_handle_user_rating_rejects_banned_token(): void
+    {
+        $post_id = 4003;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        $_SERVER['REMOTE_ADDR']     = '192.0.2.88';
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit/Ban';
+        $frontend                   = new \JLG\Notation\Frontend();
+        $token                      = str_repeat('5', 32);
+        $token_hash                 = hash('sha256', $token);
+
+        \JLG\Notation\Frontend::ban_user_rating_token_hash($token_hash, ['note' => 'Test ban']);
+
+        $_POST = [
+            'token'   => $token,
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '2',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Les jetons bannis doivent être rejetés.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(403, $exception->status);
+            $this->assertStringContainsString('bloqué', $exception->data['message']);
+        }
     }
 
     public function test_weighted_average_is_calculated_from_category_scores(): void
