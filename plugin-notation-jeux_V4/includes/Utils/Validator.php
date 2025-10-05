@@ -12,7 +12,7 @@ exit;
 class Validator {
     private static $allowed_pegi_values = array( '3', '7', '12', '16', '18' );
     private static $allowed_video_providers = array(
-        'youtube' => array(
+        'youtube'     => array(
             'label'   => 'YouTube',
             'domains' => array(
                 'youtube.com',
@@ -24,12 +24,30 @@ class Validator {
                 'www.youtube-nocookie.com',
             ),
         ),
-        'vimeo'   => array(
+        'vimeo'       => array(
             'label'   => 'Vimeo',
             'domains' => array(
                 'vimeo.com',
                 'www.vimeo.com',
                 'player.vimeo.com',
+            ),
+        ),
+        'twitch'      => array(
+            'label'   => 'Twitch',
+            'domains' => array(
+                'twitch.tv',
+                'www.twitch.tv',
+                'm.twitch.tv',
+                'player.twitch.tv',
+                'clips.twitch.tv',
+            ),
+        ),
+        'dailymotion' => array(
+            'label'   => 'Dailymotion',
+            'domains' => array(
+                'dailymotion.com',
+                'www.dailymotion.com',
+                'dai.ly',
             ),
         ),
     );
@@ -248,6 +266,14 @@ class Validator {
         }
 
         $host = wp_parse_url( $url, PHP_URL_HOST );
+
+        if ( ! is_string( $host ) || $host === '' ) {
+            $parts = wp_parse_url( $url );
+            if ( is_array( $parts ) && isset( $parts['host'] ) ) {
+                $host = $parts['host'];
+            }
+        }
+
         if ( ! is_string( $host ) || $host === '' ) {
             return '';
         }
