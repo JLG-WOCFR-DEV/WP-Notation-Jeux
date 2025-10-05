@@ -1229,15 +1229,28 @@ class Frontend {
             if ( is_object( $response ) && method_exists( $response, 'set_status' ) ) {
                 $response->set_status( $status );
             } elseif ( is_array( $response ) ) {
-                $response['status'] = $status;
+                if ( array_key_exists( 'status', $response ) && $response['status'] !== null && $response['status'] !== '' ) {
+                    $response['_http_status'] = $status;
+                } else {
+                    $response['status'] = $status;
+                }
             } else {
-                $response = array_merge( (array) $response, array( 'status' => $status ) );
+                $response = array_merge(
+                    (array) $response,
+                    array(
+                        'status' => $status,
+                    )
+                );
             }
 
             return $response;
         }
 
-        $data['status'] = $status;
+        if ( array_key_exists( 'status', $data ) && $data['status'] !== null && $data['status'] !== '' ) {
+            $data['_http_status'] = $status;
+        } else {
+            $data['status'] = $status;
+        }
 
         return $data;
     }
