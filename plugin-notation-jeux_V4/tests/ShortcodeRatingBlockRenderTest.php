@@ -63,6 +63,46 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertStringContainsString('8.8', $output, 'Average score should be displayed with decimal precision.');
     }
 
+    public function test_preview_overrides_apply_theme_and_animations(): void
+    {
+        $post_id = 1210;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 9.0,
+            'graphismes' => 8.5,
+        ]);
+
+        $this->setPluginOptions([
+            'enable_animations'     => 0,
+            'light_bg_color'        => '#ffffff',
+            'light_bg_color_secondary' => '#f9fafb',
+            'dark_bg_color'         => '#18181b',
+            'dark_bg_color_secondary' => '#27272a',
+        ]);
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+
+        $forced_light = $shortcode->render([
+            'post_id'             => (string) $post_id,
+            'preview_theme'       => 'light',
+            'preview_animations'  => 'enabled',
+        ]);
+
+        $this->assertStringContainsString('review-box-jlg--preview-theme-light', $forced_light, 'Light preview theme class should be present.');
+        $this->assertStringContainsString('jlg-animate', $forced_light, 'Animations should be forced on when requested.');
+        $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-bg-color:#ffffff/i', $forced_light, 'Light theme variables should surface in inline style.');
+
+        $forced_dark = $shortcode->render([
+            'post_id'             => (string) $post_id,
+            'preview_theme'       => 'dark',
+            'preview_animations'  => 'disabled',
+        ]);
+
+        $this->assertStringContainsString('review-box-jlg--preview-theme-dark', $forced_dark, 'Dark preview theme class should be present.');
+        $this->assertStringNotContainsString('jlg-animate', $forced_dark, 'Animations should be suppressed when disabled.');
+        $this->assertMatchesRegularExpression('/style=\"[^\"]*--jlg-bg-color:#18181b/i', $forced_dark, 'Dark theme variables should surface in inline style.');
+    }
+
     public function test_render_uses_plugin_defaults_without_overrides(): void
     {
         $post_id = 1202;

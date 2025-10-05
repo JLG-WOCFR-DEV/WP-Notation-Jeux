@@ -55,7 +55,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 = Shortcodes disponibles =
 
 * `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`, `display_mode` (`absolute` ou `percent`). Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
-* `[bloc_notation_jeu]` - Bloc de notation principal. Attributs : `post_id` (ID du test), `score_layout` (`text` ou `circle`), `animations` (`oui`/`non`), `accent_color` et `display_mode` (`absolute` ou `percent`) pour choisir entre une note affichée en valeur absolue ou en pourcentage. Lorsque le badge « Coup de cœur » est activé dans les réglages et que la note atteint le seuil défini, le bloc met en avant la sélection de la rédaction et affiche la moyenne lecteurs ainsi que le delta.
+* `[bloc_notation_jeu]` - Bloc de notation principal. Attributs : `post_id` (ID du test), `score_layout` (`text` ou `circle`), `animations` (`oui`/`non`), `accent_color`, `display_mode` (`absolute` ou `percent`) pour choisir entre une note affichée en valeur absolue ou en pourcentage, ainsi que `preview_theme` (`light` ou `dark`) et `preview_animations` (`inherit`, `enabled`, `disabled`) pour forcer un thème et simuler l’état des animations dans les aperçus (éditeur, shortcodes dans Gutenberg, etc.). Lorsque le badge « Coup de cœur » est activé dans les réglages et que la note atteint le seuil défini, le bloc met en avant la sélection de la rédaction et affiche la moyenne lecteurs ainsi que le delta.
 * `[jlg_fiche_technique]` - Fiche technique du jeu. Attributs : `post_id` (optionnel, ID d'un test publié à afficher ; sinon l'article courant est utilisé), `champs` (liste de champs séparés par des virgules) et `titre`.
 * `[tagline_notation_jlg]` - Phrase d'accroche bilingue
 * `[jlg_points_forts_faibles]` - Points positifs et négatifs
@@ -79,7 +79,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 Le plugin expose neuf blocs dynamiques prêts à l'emploi :
 
 * **Bloc de notation** (`notation-jlg/rating-block`) — choisissez l'article ciblé ou laissez le champ vide pour utiliser le
-  contenu courant, définissez la disposition (`texte` ou `cercle`), activez/désactivez les animations et sélectionnez le format du score (valeur absolue ou pourcentage).
+  contenu courant, définissez la disposition (`texte` ou `cercle`), activez/désactivez les animations, sélectionnez le format du score (valeur absolue ou pourcentage) et expérimentez avec les menus de prévisualisation (thème clair/sombre, animations forcées) directement depuis la barre latérale de l’éditeur.
 * **Points forts / faibles** (`notation-jlg/pros-cons`) et **Tagline bilingue** (`notation-jlg/tagline`) — affichent
   automatiquement les métadonnées saisies dans la fiche test.
 * **Fiche technique** (`notation-jlg/game-info`) — sélection des champs via cases à cocher, titre personnalisable et

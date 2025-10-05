@@ -19,11 +19,13 @@ class RatingBlock {
     public function render( $atts, $content = '', $shortcode_tag = '' ) {
         $atts = shortcode_atts(
             array(
-                'post_id'      => get_the_ID(),
-                'score_layout' => '',
-                'animations'   => '',
-                'accent_color' => '',
-                'display_mode' => '',
+                'post_id'             => get_the_ID(),
+                'score_layout'        => '',
+                'animations'          => '',
+                'accent_color'        => '',
+                'display_mode'        => '',
+                'preview_theme'       => '',
+                'preview_animations'  => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -48,6 +50,10 @@ class RatingBlock {
 
         $options  = Helpers::get_plugin_options();
         $defaults = Helpers::get_default_settings();
+
+        $preview_theme      = $this->normalize_preview_theme( $atts['preview_theme'] );
+        $preview_animations = $this->normalize_preview_animations( $atts['preview_animations'] );
+        $extra_classes      = array();
 
         $score_layout = is_string( $atts['score_layout'] ) ? sanitize_key( $atts['score_layout'] ) : '';
         if ( in_array( $score_layout, array( 'text', 'circle' ), true ) ) {
@@ -77,6 +83,15 @@ class RatingBlock {
             $options['accent_color']     = $accent_color;
         }
 
+        if ( $preview_theme !== '' ) {
+            $extra_classes[] = 'review-box-jlg--preview-theme-' . $preview_theme;
+        }
+
+        $theme_variables = array();
+        if ( $preview_theme !== '' ) {
+            $theme_variables = $this->build_preview_theme_variables( $options, $defaults, $preview_theme );
+        }
+
         $display_mode = is_string( $atts['display_mode'] ) ? sanitize_key( $atts['display_mode'] ) : '';
         if ( ! in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
             $display_mode = 'absolute';
@@ -86,27 +101,6 @@ class RatingBlock {
 
         // Sécurité : ne s'exécute que si des notes existent
         $average_score = Helpers::get_average_score_for_post( $post_id );
-        if ( $average_score === null ) {
-            if ( $this->is_editor_preview_context() ) {
-                $shortcode_handle     = $shortcode_tag ?: 'bloc_notation_jeu';
-                $placeholder_context = $this->build_editor_placeholder_context(
-                    $post,
-                    $post_id,
-                    $options,
-                    $score_max,
-                    $display_mode
-                );
-
-                Frontend::mark_shortcode_rendered( $shortcode_handle );
-
-                return Frontend::get_template_html(
-                    'shortcode-rating-block-empty',
-                    $placeholder_context
-                );
-            }
-
-            return '';
-        }
 
         $raw_user_rating     = get_post_meta( $post_id, '_jlg_user_rating_avg', true );
         $user_rating_average = null;
@@ -140,7 +134,52 @@ class RatingBlock {
             : 'text';
 
         $animations_enabled = ! empty( $options['enable_animations'] );
-        $css_variables       = $this->build_css_variables( $options );
+
+        if ( $preview_animations === 'enabled' ) {
+            $animations_enabled = true;
+        } elseif ( $preview_animations === 'disabled' ) {
+            $animations_enabled = false;
+        }
+
+        if ( $preview_animations === 'enabled' ) {
+            $extra_classes[] = 'review-box-jlg--preview-animations-on';
+        } elseif ( $preview_animations === 'disabled' ) {
+            $extra_classes[] = 'review-box-jlg--preview-animations-off';
+        }
+
+        $css_variables = $this->build_css_variables( $options );
+
+        if ( ! empty( $theme_variables ) ) {
+            $css_variables = $this->merge_css_variables( $css_variables, $theme_variables );
+        }
+
+        $extra_classes = array_values( array_unique( array_filter( $extra_classes ) ) );
+        $extra_classes_string = implode( ' ', $extra_classes );
+
+        if ( $average_score === null ) {
+            if ( $this->is_editor_preview_context() ) {
+                $shortcode_handle     = $shortcode_tag ?: 'bloc_notation_jeu';
+                $placeholder_context = $this->build_editor_placeholder_context(
+                    $post,
+                    $post_id,
+                    $options,
+                    $score_max,
+                    $display_mode,
+                    $extra_classes_string,
+                    $animations_enabled,
+                    $theme_variables
+                );
+
+                Frontend::mark_shortcode_rendered( $shortcode_handle );
+
+                return Frontend::get_template_html(
+                    'shortcode-rating-block-empty',
+                    $placeholder_context
+                );
+            }
+
+            return '';
+        }
 
         $badge_threshold = isset( $options['rating_badge_threshold'] ) && is_numeric( $options['rating_badge_threshold'] )
             ? (float) $options['rating_badge_threshold']
@@ -193,11 +232,12 @@ class RatingBlock {
                 'user_rating_average'      => $user_rating_average,
                 'user_rating_delta'        => $user_rating_delta,
                 'rating_badge_threshold'   => $badge_threshold,
+                'extra_classes'            => $extra_classes_string,
             )
         );
     }
 
-    private function build_editor_placeholder_context( WP_Post $post, $post_id, array $options, $score_max, $display_mode ) {
+    private function build_editor_placeholder_context( WP_Post $post, $post_id, array $options, $score_max, $display_mode, $extra_classes = '', $animations_enabled = false, array $theme_variables = array() ) {
         $resolved_score_max = is_numeric( $score_max ) && $score_max > 0
             ? (float) $score_max
             : (float) Helpers::get_score_max();
@@ -255,8 +295,8 @@ class RatingBlock {
             'category_percentages'     => $category_percentages,
             'score_layout'             => $resolved_layout,
             'display_mode'             => $resolved_display_mode,
-            'animations_enabled'       => false,
-            'css_variables'            => '',
+            'animations_enabled'       => (bool) $animations_enabled,
+            'css_variables'            => $this->merge_css_variables( '', $theme_variables ),
             'score_max'                => $resolved_score_max,
             'should_show_rating_badge' => true,
             'user_rating_average'      => $placeholder_score,
@@ -265,6 +305,7 @@ class RatingBlock {
                 ? (float) $options['rating_badge_threshold']
                 : 0.0,
             'is_placeholder'           => true,
+            'extra_classes'            => is_string( $extra_classes ) ? $extra_classes : '',
         );
     }
 
@@ -310,6 +351,101 @@ class RatingBlock {
         }
 
         return null;
+    }
+
+    private function normalize_preview_theme( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $normalized = sanitize_key( $value );
+
+        if ( in_array( $normalized, array( 'dark', 'light' ), true ) ) {
+            return $normalized;
+        }
+
+        return '';
+    }
+
+    private function normalize_preview_animations( $value ) {
+        if ( ! is_string( $value ) ) {
+            return 'inherit';
+        }
+
+        $normalized = sanitize_key( $value );
+
+        if ( in_array( $normalized, array( 'inherit', 'enabled', 'disabled' ), true ) ) {
+            return $normalized;
+        }
+
+        return 'inherit';
+    }
+
+    private function merge_css_variables( $existing, array $variables ) {
+        $rules = array();
+
+        foreach ( $variables as $name => $value ) {
+            if ( ! is_string( $name ) || $name === '' ) {
+                continue;
+            }
+
+            if ( ! is_string( $value ) || $value === '' ) {
+                continue;
+            }
+
+            $rules[] = $name . ':' . $value;
+        }
+
+        if ( empty( $rules ) ) {
+            return is_string( $existing ) ? $existing : '';
+        }
+
+        $existing_string = is_string( $existing ) ? trim( $existing ) : '';
+        $rules_string    = implode( ';', $rules );
+
+        if ( $existing_string === '' ) {
+            return $rules_string;
+        }
+
+        if ( substr( $existing_string, -1 ) !== ';' ) {
+            $existing_string .= ';';
+        }
+
+        return $existing_string . $rules_string;
+    }
+
+    private function build_preview_theme_variables( array $options, array $defaults, $theme ) {
+        $variables = array();
+
+        if ( $theme === 'light' ) {
+            $variables['--jlg-bg-color']             = $this->sanitize_css_variable_value( $options['light_bg_color'] ?? ( $defaults['light_bg_color'] ?? '#ffffff' ) );
+            $variables['--jlg-bg-color-secondary']   = $this->sanitize_css_variable_value( $options['light_bg_color_secondary'] ?? ( $defaults['light_bg_color_secondary'] ?? '#f9fafb' ) );
+            $variables['--jlg-border-color']         = $this->sanitize_css_variable_value( $options['light_border_color'] ?? ( $defaults['light_border_color'] ?? '#e5e7eb' ) );
+            $variables['--jlg-main-text-color']      = $this->sanitize_css_variable_value( $options['light_text_color'] ?? ( $defaults['light_text_color'] ?? '#111827' ) );
+            $variables['--jlg-secondary-text-color'] = $this->sanitize_css_variable_value( $options['light_text_color_secondary'] ?? ( $defaults['light_text_color_secondary'] ?? '#6b7280' ) );
+        } elseif ( $theme === 'dark' ) {
+            $variables['--jlg-bg-color']             = $this->sanitize_css_variable_value( $options['dark_bg_color'] ?? ( $defaults['dark_bg_color'] ?? '#18181b' ) );
+            $variables['--jlg-bg-color-secondary']   = $this->sanitize_css_variable_value( $options['dark_bg_color_secondary'] ?? ( $defaults['dark_bg_color_secondary'] ?? '#27272a' ) );
+            $variables['--jlg-border-color']         = $this->sanitize_css_variable_value( $options['dark_border_color'] ?? ( $defaults['dark_border_color'] ?? '#3f3f46' ) );
+            $variables['--jlg-main-text-color']      = $this->sanitize_css_variable_value( $options['dark_text_color'] ?? ( $defaults['dark_text_color'] ?? '#fafafa' ) );
+            $variables['--jlg-secondary-text-color'] = $this->sanitize_css_variable_value( $options['dark_text_color_secondary'] ?? ( $defaults['dark_text_color_secondary'] ?? '#a1a1aa' ) );
+        }
+
+        if ( isset( $variables['--jlg-bg-color-secondary'] ) ) {
+            $variables['--jlg-bar-bg-color'] = $variables['--jlg-bg-color-secondary'];
+        }
+
+        return $variables;
+    }
+
+    private function sanitize_css_variable_value( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $sanitized = sanitize_text_field( $value );
+
+        return trim( $sanitized );
     }
 
     private function is_editor_preview_context() {

@@ -129,10 +129,22 @@ if ( $resolved_display_mode === 'percent' && $percentage_label !== '' ) {
 }
 
 $placeholder_notice = esc_html__( 'Prévisualisation des notes avec des valeurs fictives. Renseignez la metabox « Notation JLG » pour publier vos notes.', 'notation-jlg' );
+$css_variables_string = isset( $css_variables ) && is_string( $css_variables ) ? trim( $css_variables ) : '';
+$extra_classes_string = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
+$extra_classes_list   = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
+$wrapper_classes      = array_merge( array( 'review-box-jlg', 'is-placeholder' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
+
+if ( ! empty( $animations_enabled ) ) {
+    $wrapper_classes[] = 'jlg-animate';
+}
+
+$wrapper_classes = array_unique( array_filter( array_map( 'trim', $wrapper_classes ) ) );
+$wrapper_class_attribute = ! empty( $wrapper_classes ) ? implode( ' ', $wrapper_classes ) : 'review-box-jlg is-placeholder';
+$style_attribute         = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
 ?>
 <div class="jlg-rating-block-placeholder jlg-rating-block-empty">
     <p class="jlg-rating-placeholder-notice"><?php echo $placeholder_notice; ?></p>
-    <div class="review-box-jlg is-placeholder" aria-hidden="true">
+    <div class="<?php echo esc_attr( $wrapper_class_attribute ); ?>"<?php echo $style_attribute; ?> aria-hidden="true">
         <div class="global-score-wrapper">
             <?php if ( $resolved_layout === 'circle' ) : ?>
                 <div class="score-circle">

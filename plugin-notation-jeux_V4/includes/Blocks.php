@@ -383,6 +383,20 @@ class Blocks {
             }
         }
 
+        if ( ! empty( $attributes['previewTheme'] ) && is_string( $attributes['previewTheme'] ) ) {
+            $preview_theme = sanitize_key( $attributes['previewTheme'] );
+            if ( in_array( $preview_theme, array( 'dark', 'light', 'auto' ), true ) && $preview_theme !== 'auto' ) {
+                $atts['preview_theme'] = $preview_theme;
+            }
+        }
+
+        if ( ! empty( $attributes['previewAnimations'] ) && is_string( $attributes['previewAnimations'] ) ) {
+            $preview_animations = sanitize_key( $attributes['previewAnimations'] );
+            if ( in_array( $preview_animations, array( 'inherit', 'enabled', 'disabled' ), true ) && 'inherit' !== $preview_animations ) {
+                $atts['preview_animations'] = $preview_animations;
+            }
+        }
+
         if ( class_exists( Frontend::class ) ) {
             Frontend::mark_shortcode_rendered( 'bloc_notation_jeu' );
         }

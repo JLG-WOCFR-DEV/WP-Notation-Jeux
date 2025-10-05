@@ -13,6 +13,26 @@
     width: 100%;
 }
 
+.editor-styles-wrapper .review-box-jlg.review-box-jlg--preview-theme-light {
+    --jlg-bg-color: #ffffff;
+    --jlg-bg-color-secondary: #f9fafb;
+    --jlg-border-color: #e5e7eb;
+    --jlg-main-text-color: #111827;
+    --jlg-secondary-text-color: #6b7280;
+    --jlg-bar-bg-color: #e5e7eb;
+    color-scheme: light;
+}
+
+.editor-styles-wrapper .review-box-jlg.review-box-jlg--preview-theme-dark {
+    --jlg-bg-color: #18181b;
+    --jlg-bg-color-secondary: #27272a;
+    --jlg-border-color: #3f3f46;
+    --jlg-main-text-color: #fafafa;
+    --jlg-secondary-text-color: #a1a1aa;
+    --jlg-bar-bg-color: #27272a;
+    color-scheme: dark;
+}
+
 .editor-styles-wrapper .review-box-jlg.jlg-animate .rating-bar {
     width: var(--rating-percent, 0%);
 }

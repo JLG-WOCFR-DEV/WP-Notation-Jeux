@@ -52,6 +52,15 @@ $user_rating_average_value = isset( $user_rating_average ) && is_numeric( $user_
 $user_rating_delta_value = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
     ? (float) $user_rating_delta
     : null;
+$extra_classes_string = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
+$extra_classes_list   = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
+$wrapper_classes      = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
+
+if ( $animations_on ) {
+    $wrapper_classes[] = 'jlg-animate';
+}
+
+$wrapper_classes = array_unique( array_filter( array_map( 'trim', $wrapper_classes ) ) );
 
 if ( $css_variables_string === '' ) {
     $style_variables = array(
@@ -73,6 +82,7 @@ if ( $css_variables_string === '' ) {
 }
 
 $style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
+$wrapper_class_attribute = ! empty( $wrapper_classes ) ? implode( ' ', $wrapper_classes ) : 'review-box-jlg';
 
 $score_max_label_safe       = esc_html( $score_max_label );
 $average_score_display      = esc_html( number_format_i18n( $average_score, 1 ) );
@@ -124,7 +134,7 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
 }
 ?>
 
-<div class="review-box-jlg<?php echo $animations_on ? ' jlg-animate' : ''; ?>"<?php echo $style_attribute; ?>>
+<div class="<?php echo esc_attr( $wrapper_class_attribute ); ?>"<?php echo $style_attribute; ?>>
     <div class="global-score-wrapper">
         <?php if ( $resolved_score_layout === 'circle' ) : ?>
             <div class="score-circle">
