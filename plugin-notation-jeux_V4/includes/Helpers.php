@@ -75,7 +75,7 @@ class Helpers {
         $sanitized_url = esc_url_raw( $video_url );
 
         if ( $sanitized_url === '' ) {
-            return self::get_empty_video_embed_data( __( 'La vidéo renseignée est indisponible.', 'notation-jlg' ) );
+            return self::get_empty_video_embed_data( __( 'Impossible de préparer le lecteur vidéo pour cette URL.', 'notation-jlg' ) );
         }
 
         $detected_provider = Validator::detect_video_provider_from_url( $sanitized_url );
@@ -84,12 +84,12 @@ class Helpers {
         }
 
         if ( $provider === '' ) {
-            return self::get_empty_video_embed_data( __( 'La vidéo renseignée est indisponible.', 'notation-jlg' ) );
+            return self::get_empty_video_embed_data( __( 'Impossible d’identifier le fournisseur vidéo pour cette URL.', 'notation-jlg' ) );
         }
 
         $provider_label = Validator::get_video_provider_label( $provider );
         $iframe_src     = '';
-        $fallback       = __( 'La vidéo renseignée est indisponible.', 'notation-jlg' );
+        $fallback       = self::get_video_fallback_message( $provider_label );
 
         if ( $provider === 'youtube' ) {
             $video_id = self::extract_youtube_video_id( $sanitized_url );
@@ -119,6 +119,27 @@ class Helpers {
                 ),
                 'https://player.vimeo.com/video/' . rawurlencode( $video_id )
             );
+        } elseif ( $provider === 'twitch' ) {
+            $twitch_params = self::extract_twitch_embed_parameters( $sanitized_url );
+
+            if ( empty( $twitch_params ) ) {
+                return self::get_empty_video_embed_data( $fallback );
+            }
+
+            $iframe_src = self::build_twitch_iframe_src( $twitch_params );
+        } elseif ( $provider === 'dailymotion' ) {
+            $video_id = self::extract_dailymotion_video_id( $sanitized_url );
+
+            if ( $video_id === '' ) {
+                return self::get_empty_video_embed_data( $fallback );
+            }
+
+            $iframe_src = add_query_arg(
+                array(
+                    'autoplay' => '0',
+                ),
+                'https://www.dailymotion.com/embed/video/' . rawurlencode( $video_id )
+            );
         } else {
             return self::get_empty_video_embed_data( $fallback );
         }
@@ -145,6 +166,18 @@ class Helpers {
             'iframe_referrerpolicy'   => 'strict-origin-when-cross-origin',
             'fallback_message'        => '',
             'original_url'            => esc_url( $sanitized_url ),
+        );
+    }
+
+    private static function get_video_fallback_message( $provider_label = '' ) {
+        if ( $provider_label === '' ) {
+            return __( 'Impossible de préparer le lecteur vidéo pour cette URL.', 'notation-jlg' );
+        }
+
+        return sprintf(
+            /* translators: %s: video provider name. */
+            __( 'Impossible de préparer le lecteur vidéo pour %s.', 'notation-jlg' ),
+            $provider_label
         );
     }
 
@@ -221,6 +254,219 @@ class Helpers {
         $candidate = is_string( $candidate ) ? trim( $candidate ) : '';
 
         return preg_match( '/^[0-9]{6,}$/', $candidate ) ? $candidate : '';
+    }
+
+    private static function extract_twitch_embed_parameters( $url ) {
+        $parts = wp_parse_url( $url );
+
+        if ( ! is_array( $parts ) ) {
+            return array();
+        }
+
+        $path     = isset( $parts['path'] ) ? trim( $parts['path'], '/' ) : '';
+        $segments = $path !== '' ? array_values( array_filter( explode( '/', $path ) ) ) : array();
+        $host     = isset( $parts['host'] ) ? strtolower( (string) $parts['host'] ) : '';
+        $query    = array();
+
+        if ( isset( $parts['query'] ) ) {
+            parse_str( (string) $parts['query'], $query );
+        }
+
+        if ( isset( $query['video'] ) && is_string( $query['video'] ) ) {
+            $candidate = preg_replace( '/^v/i', '', trim( $query['video'] ) );
+
+            if ( is_string( $candidate ) && preg_match( '/^[0-9]{6,}$/', $candidate ) ) {
+                $parameters = array(
+                    'type' => 'video',
+                    'id'   => $candidate,
+                );
+
+                if ( isset( $query['collection'] ) && is_string( $query['collection'] ) ) {
+                    $collection = preg_replace( '/[^A-Za-z0-9_-]/', '', $query['collection'] );
+                    if ( $collection !== '' ) {
+                        $parameters['collection'] = $collection;
+                    }
+                }
+
+                return $parameters;
+            }
+        }
+
+        $video_index = array_search( 'videos', $segments, true );
+        if ( false !== $video_index && isset( $segments[ $video_index + 1 ] ) ) {
+            $candidate = preg_replace( '/^v/i', '', trim( (string) $segments[ $video_index + 1 ] ) );
+
+            if ( preg_match( '/^[0-9]{6,}$/', $candidate ) ) {
+                return array(
+                    'type' => 'video',
+                    'id'   => $candidate,
+                );
+            }
+        }
+
+        if ( isset( $query['clip'] ) && is_string( $query['clip'] ) ) {
+            $candidate = trim( $query['clip'] );
+
+            if ( preg_match( '/^[A-Za-z0-9_-]{4,100}$/', $candidate ) ) {
+                return array(
+                    'type' => 'clip',
+                    'id'   => $candidate,
+                );
+            }
+        }
+
+        if ( $host === 'clips.twitch.tv' && isset( $segments[0] ) ) {
+            $candidate = trim( (string) $segments[0] );
+
+            if ( preg_match( '/^[A-Za-z0-9_-]{4,100}$/', $candidate ) ) {
+                return array(
+                    'type' => 'clip',
+                    'id'   => $candidate,
+                );
+            }
+        }
+
+        $clip_index = array_search( 'clip', $segments, true );
+        if ( false !== $clip_index && isset( $segments[ $clip_index + 1 ] ) ) {
+            $candidate = trim( (string) $segments[ $clip_index + 1 ] );
+
+            if ( preg_match( '/^[A-Za-z0-9_-]{4,100}$/', $candidate ) ) {
+                return array(
+                    'type' => 'clip',
+                    'id'   => $candidate,
+                );
+            }
+        }
+
+        if ( isset( $query['channel'] ) && is_string( $query['channel'] ) ) {
+            $candidate = trim( $query['channel'] );
+
+            if ( preg_match( '/^[A-Za-z0-9_]{3,30}$/', $candidate ) ) {
+                return array(
+                    'type' => 'channel',
+                    'id'   => strtolower( $candidate ),
+                );
+            }
+        }
+
+        if ( count( $segments ) === 1 && isset( $segments[0] ) ) {
+            $candidate = trim( (string) $segments[0] );
+
+            if ( preg_match( '/^[A-Za-z0-9_]{3,30}$/', $candidate ) ) {
+                return array(
+                    'type' => 'channel',
+                    'id'   => strtolower( $candidate ),
+                );
+            }
+        }
+
+        return array();
+    }
+
+    private static function build_twitch_iframe_src( array $parameters ) {
+        if ( empty( $parameters['type'] ) ) {
+            return '';
+        }
+
+        $parent = self::get_twitch_parent_domain();
+
+        if ( $parent === '' ) {
+            return '';
+        }
+
+        if ( $parameters['type'] === 'clip' ) {
+            return add_query_arg(
+                array(
+                    'clip'     => $parameters['id'],
+                    'autoplay' => 'false',
+                    'parent'   => $parent,
+                ),
+                'https://clips.twitch.tv/embed'
+            );
+        }
+
+        $query = array(
+            'autoplay' => 'false',
+            'muted'    => 'false',
+            'parent'   => $parent,
+        );
+
+        if ( $parameters['type'] === 'video' ) {
+            $query['video'] = 'v' . ltrim( (string) $parameters['id'], 'vV' );
+
+            if ( ! empty( $parameters['collection'] ) && is_string( $parameters['collection'] ) ) {
+                $query['collection'] = $parameters['collection'];
+            }
+        } elseif ( $parameters['type'] === 'channel' ) {
+            $query['channel'] = $parameters['id'];
+        } else {
+            return '';
+        }
+
+        return add_query_arg( $query, 'https://player.twitch.tv/' );
+    }
+
+    private static function get_twitch_parent_domain() {
+        $home_url = home_url();
+        $host     = wp_parse_url( $home_url, PHP_URL_HOST );
+
+        if ( ! is_string( $host ) || $host === '' ) {
+            $parts = wp_parse_url( $home_url );
+            if ( is_array( $parts ) && isset( $parts['host'] ) ) {
+                $host = $parts['host'];
+            }
+        }
+
+        if ( ! is_string( $host ) ) {
+            return '';
+        }
+
+        $host = trim( $host );
+
+        return $host !== '' ? $host : '';
+    }
+
+    private static function extract_dailymotion_video_id( $url ) {
+        $parts = wp_parse_url( $url );
+
+        if ( ! is_array( $parts ) ) {
+            return '';
+        }
+
+        $path     = isset( $parts['path'] ) ? trim( $parts['path'], '/' ) : '';
+        $segments = $path !== '' ? array_values( array_filter( explode( '/', $path ) ) ) : array();
+
+        if ( empty( $segments ) ) {
+            return '';
+        }
+
+        $candidate = end( $segments );
+
+        if ( is_string( $candidate ) && strpos( $candidate, '_' ) !== false ) {
+            $candidate = substr( $candidate, 0, strpos( $candidate, '_' ) );
+        }
+
+        if ( isset( $segments[0] ) && $segments[0] === 'video' && isset( $segments[1] ) ) {
+            $candidate = $segments[1];
+        }
+
+        $candidate = is_string( $candidate ) ? trim( $candidate ) : '';
+
+        if ( $candidate === '' && isset( $parts['query'] ) ) {
+            parse_str( (string) $parts['query'], $query_vars );
+
+            if ( isset( $query_vars['video'] ) && is_string( $query_vars['video'] ) ) {
+                $candidate = trim( $query_vars['video'] );
+            }
+        }
+
+        if ( $candidate === '' ) {
+            return '';
+        }
+
+        $candidate = preg_replace( '/[^A-Za-z0-9]/', '', $candidate );
+
+        return preg_match( '/^[A-Za-z0-9]{6,}$/', $candidate ) ? $candidate : '';
     }
 
     private static function get_theme_defaults() {
