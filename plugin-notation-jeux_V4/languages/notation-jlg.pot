@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-23T11:27:06+00:00\n"
+"POT-Creation-Date: 2025-10-19T00:00:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: notation-jlg\n"
@@ -743,11 +743,32 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:51
-#: templates/shortcode-all-in-one.php:55
-#: templates/shortcode-rating-block.php:22
-#: templates/shortcode-rating-block.php:27
+#: templates/shortcode-all-in-one.php:51 templates/shortcode-all-in-one.php:55
+#: templates/shortcode-rating-block.php:22 templates/shortcode-rating-block.php:27
+#: templates/shortcode-rating-block-empty.php:140
+#: templates/shortcode-rating-block-empty.php:145
 msgid "Note Globale"
+msgstr ""
+
+#: templates/shortcode-rating-block.php:142
+#: templates/shortcode-rating-block-empty.php:150
+msgid "Sélection de la rédaction"
+msgstr ""
+
+#: templates/shortcode-rating-block.php:148
+#: templates/shortcode-rating-block-empty.php:153
+msgid "Note des lecteurs"
+msgstr ""
+
+#. translators: %s: difference between reader and editorial scores.
+#: templates/shortcode-rating-block.php:170
+#: templates/shortcode-rating-block-empty.php:170
+#, php-format
+msgid "Δ vs rédaction : %s"
+msgstr ""
+
+#: templates/shortcode-rating-block-empty.php:134
+msgid "Prévisualisation des notes avec des valeurs fictives. Renseignez la metabox « Notation JLG » pour publier vos notes."
 msgstr ""
 
 #. translators: Section title for the list of advantages in the pros and cons block.
@@ -762,6 +783,8 @@ msgstr ""
 
 #. translators: 1: Rating value for a specific category. 2: Maximum possible rating.
 #: templates/shortcode-rating-block.php:46
+#: templates/shortcode-rating-block-empty.php:159
+#: templates/shortcode-rating-block-empty.php:205
 #, php-format
 msgid "%1$s / %2$s"
 msgstr ""
@@ -838,6 +861,7 @@ msgstr ""
 
 #: templates/shortcode-all-in-one.php:36
 #: templates/shortcode-rating-block.php:63
+#: templates/shortcode-rating-block-empty.php:124
 msgctxt "global percentage score"
 msgid "%s %%"
 msgstr ""

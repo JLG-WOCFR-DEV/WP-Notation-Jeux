@@ -46,20 +46,62 @@ class RatingBlock {
             return '';
         }
 
+        $options  = Helpers::get_plugin_options();
+        $defaults = Helpers::get_default_settings();
+
+        $score_layout = is_string( $atts['score_layout'] ) ? sanitize_key( $atts['score_layout'] ) : '';
+        if ( in_array( $score_layout, array( 'text', 'circle' ), true ) ) {
+            $options['score_layout'] = $score_layout;
+        } elseif ( ! isset( $options['score_layout'] ) ) {
+            $options['score_layout'] = $defaults['score_layout'] ?? 'text';
+        }
+
+        $animations_override = $this->normalize_bool_attribute( $atts['animations'] );
+        if ( $animations_override !== null ) {
+            $options['enable_animations'] = $animations_override ? 1 : 0;
+        } elseif ( ! isset( $options['enable_animations'] ) ) {
+            $options['enable_animations'] = ! empty( $defaults['enable_animations'] );
+        }
+
+        $accent_color = '';
+        if ( is_string( $atts['accent_color'] ) && $atts['accent_color'] !== '' ) {
+            $accent_color = sanitize_hex_color( $atts['accent_color'] );
+        }
+
+        if ( ! empty( $accent_color ) ) {
+            $options['score_gradient_1'] = $accent_color;
+            $options['score_gradient_2'] = Helpers::adjust_hex_brightness( $accent_color, 20 );
+            $options['color_high']       = $accent_color;
+            $options['color_mid']        = Helpers::adjust_hex_brightness( $accent_color, -10 );
+            $options['color_low']        = Helpers::adjust_hex_brightness( $accent_color, -25 );
+            $options['accent_color']     = $accent_color;
+        }
+
+        $display_mode = is_string( $atts['display_mode'] ) ? sanitize_key( $atts['display_mode'] ) : '';
+        if ( ! in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
+            $display_mode = 'absolute';
+        }
+
+        $score_max = Helpers::get_score_max( $options );
+
         // Sécurité : ne s'exécute que si des notes existent
         $average_score = Helpers::get_average_score_for_post( $post_id );
         if ( $average_score === null ) {
             if ( $this->is_editor_preview_context() ) {
-                $shortcode_handle = $shortcode_tag ?: 'bloc_notation_jeu';
+                $shortcode_handle     = $shortcode_tag ?: 'bloc_notation_jeu';
+                $placeholder_context = $this->build_editor_placeholder_context(
+                    $post,
+                    $post_id,
+                    $options,
+                    $score_max,
+                    $display_mode
+                );
 
                 Frontend::mark_shortcode_rendered( $shortcode_handle );
 
                 return Frontend::get_template_html(
                     'shortcode-rating-block-empty',
-                    array(
-                        'post'    => $post,
-                        'post_id' => $post_id,
-                    )
+                    $placeholder_context
                 );
             }
 
@@ -93,44 +135,12 @@ class RatingBlock {
             }
         }
 
-        $options  = Helpers::get_plugin_options();
-        $defaults = Helpers::get_default_settings();
-
-        $score_layout = is_string( $atts['score_layout'] ) ? sanitize_key( $atts['score_layout'] ) : '';
-        if ( in_array( $score_layout, array( 'text', 'circle' ), true ) ) {
-            $options['score_layout'] = $score_layout;
-        } elseif ( ! isset( $options['score_layout'] ) ) {
-            $options['score_layout'] = $defaults['score_layout'] ?? 'text';
-        }
-
-        $animations_override = $this->normalize_bool_attribute( $atts['animations'] );
-        if ( $animations_override !== null ) {
-            $options['enable_animations'] = $animations_override ? 1 : 0;
-        } elseif ( ! isset( $options['enable_animations'] ) ) {
-            $options['enable_animations'] = ! empty( $defaults['enable_animations'] );
-        }
-
-        $accent_color = '';
-        if ( is_string( $atts['accent_color'] ) && $atts['accent_color'] !== '' ) {
-            $accent_color = sanitize_hex_color( $atts['accent_color'] );
-        }
-
-        if ( ! empty( $accent_color ) ) {
-            $options['score_gradient_1'] = $accent_color;
-            $options['score_gradient_2'] = Helpers::adjust_hex_brightness( $accent_color, 20 );
-            $options['color_high']       = $accent_color;
-            $options['color_mid']        = Helpers::adjust_hex_brightness( $accent_color, -10 );
-            $options['color_low']        = Helpers::adjust_hex_brightness( $accent_color, -25 );
-            $options['accent_color']     = $accent_color;
-        }
-
         $resolved_score_layout = in_array( $options['score_layout'] ?? '', array( 'text', 'circle' ), true )
             ? $options['score_layout']
             : 'text';
 
         $animations_enabled = ! empty( $options['enable_animations'] );
         $css_variables       = $this->build_css_variables( $options );
-        $score_max           = Helpers::get_score_max( $options );
 
         $badge_threshold = isset( $options['rating_badge_threshold'] ) && is_numeric( $options['rating_badge_threshold'] )
             ? (float) $options['rating_badge_threshold']
@@ -143,11 +153,6 @@ class RatingBlock {
         $user_rating_delta = null;
         if ( $user_rating_average !== null && is_numeric( $average_score ) ) {
             $user_rating_delta = $user_rating_average - (float) $average_score;
-        }
-
-        $display_mode = is_string( $atts['display_mode'] ) ? sanitize_key( $atts['display_mode'] ) : '';
-        if ( ! in_array( $display_mode, array( 'absolute', 'percent' ), true ) ) {
-            $display_mode = 'absolute';
         }
 
         $average_percentage = null;
@@ -172,23 +177,94 @@ class RatingBlock {
         return Frontend::get_template_html(
             'shortcode-rating-block',
             array(
-                'options'              => $options,
-                'average_score'        => $average_score,
+                'options'                  => $options,
+                'average_score'            => $average_score,
                 'average_score_percentage' => $average_percentage,
-                'scores'               => $score_map,
-                'category_scores'      => $category_scores,
-                'category_percentages' => $category_percentages,
-                'category_definitions' => Helpers::get_rating_category_definitions(),
-                'score_layout'         => $resolved_score_layout,
-                'display_mode'         => $display_mode,
-                'animations_enabled'   => $animations_enabled,
-                'css_variables'        => $css_variables,
-                'score_max'            => $score_max,
+                'scores'                   => $score_map,
+                'category_scores'          => $category_scores,
+                'category_percentages'     => $category_percentages,
+                'category_definitions'     => Helpers::get_rating_category_definitions(),
+                'score_layout'             => $resolved_score_layout,
+                'display_mode'             => $display_mode,
+                'animations_enabled'       => $animations_enabled,
+                'css_variables'            => $css_variables,
+                'score_max'                => $score_max,
                 'should_show_rating_badge' => $should_show_badge,
-                'user_rating_average'  => $user_rating_average,
-                'user_rating_delta'    => $user_rating_delta,
-                'rating_badge_threshold' => $badge_threshold,
+                'user_rating_average'      => $user_rating_average,
+                'user_rating_delta'        => $user_rating_delta,
+                'rating_badge_threshold'   => $badge_threshold,
             )
+        );
+    }
+
+    private function build_editor_placeholder_context( WP_Post $post, $post_id, array $options, $score_max, $display_mode ) {
+        $resolved_score_max = is_numeric( $score_max ) && $score_max > 0
+            ? (float) $score_max
+            : (float) Helpers::get_score_max();
+
+        if ( $resolved_score_max <= 0 ) {
+            $resolved_score_max = 10.0;
+        }
+
+        $placeholder_score      = round( $resolved_score_max / 2, 1 );
+        $placeholder_percentage = max( 0, min( 100, ( $placeholder_score / $resolved_score_max ) * 100 ) );
+
+        $category_scores      = array();
+        $category_percentages = array();
+        $score_map            = array();
+
+        foreach ( Helpers::get_rating_category_definitions() as $definition ) {
+            $category_id = isset( $definition['id'] ) ? (string) $definition['id'] : '';
+            $label       = isset( $definition['label'] ) ? (string) $definition['label'] : '';
+            $weight      = isset( $definition['weight'] )
+                ? Helpers::normalize_category_weight( $definition['weight'], 1.0 )
+                : 1.0;
+
+            $category_scores[] = array(
+                'id'    => $category_id,
+                'label' => $label,
+                'score' => $placeholder_score,
+                'weight'=> $weight,
+            );
+
+            if ( $category_id !== '' ) {
+                $category_percentages[ $category_id ] = $placeholder_percentage;
+                $score_map[ $category_id ]            = array(
+                    'score'  => $placeholder_score,
+                    'weight' => $weight,
+                );
+            }
+        }
+
+        $resolved_display_mode = in_array( $display_mode, array( 'absolute', 'percent' ), true )
+            ? $display_mode
+            : 'absolute';
+
+        $resolved_layout = in_array( $options['score_layout'] ?? '', array( 'text', 'circle' ), true )
+            ? $options['score_layout']
+            : 'text';
+
+        return array(
+            'post'                     => $post,
+            'post_id'                  => $post_id,
+            'options'                  => $options,
+            'average_score'            => $placeholder_score,
+            'average_score_percentage' => $placeholder_percentage,
+            'scores'                   => $score_map,
+            'category_scores'          => $category_scores,
+            'category_percentages'     => $category_percentages,
+            'score_layout'             => $resolved_layout,
+            'display_mode'             => $resolved_display_mode,
+            'animations_enabled'       => false,
+            'css_variables'            => '',
+            'score_max'                => $resolved_score_max,
+            'should_show_rating_badge' => true,
+            'user_rating_average'      => $placeholder_score,
+            'user_rating_delta'        => 0.0,
+            'rating_badge_threshold'   => isset( $options['rating_badge_threshold'] )
+                ? (float) $options['rating_badge_threshold']
+                : 0.0,
+            'is_placeholder'           => true,
         );
     }
 
