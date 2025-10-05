@@ -185,6 +185,66 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertStringContainsString($expected_delta, $output, 'Delta should include the signed difference when readers rate higher.');
     }
 
+    public function test_preview_meta_overrides_scores_and_badge(): void
+    {
+        $post_id = 1301;
+        $this->seedPost($post_id);
+
+        $this->setPluginOptions([
+            'rating_badge_enabled'   => 1,
+            'rating_badge_threshold' => 9.0,
+        ]);
+
+        $preview_meta = [
+            '_note_gameplay'            => 9.5,
+            '_note_graphismes'          => 9.4,
+            '_jlg_rating_badge_override' => 'force-on',
+        ];
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id'      => (string) $post_id,
+            'preview_meta' => wp_json_encode($preview_meta),
+        ]);
+
+        $this->assertNotSame('', $output, 'Preview meta should render dynamic content.');
+        $this->assertStringContainsString('rating-badge', $output, 'Badge should be forced when override requests it.');
+        $this->assertStringContainsString('9.5', $output, 'Category score should reflect the previewed value.');
+    }
+
+    public function test_preview_meta_auto_badge_reverts_override(): void
+    {
+        $post_id = 1302;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 8.0,
+            'graphismes' => 8.1,
+        ]);
+
+        $this->setPluginOptions([
+            'rating_badge_enabled'   => 1,
+            'rating_badge_threshold' => 9.0,
+        ]);
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_rating_badge_override'] = 'force-on';
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $baseline  = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertStringContainsString('rating-badge', $baseline, 'Stored override should force the badge on.');
+
+        $output = $shortcode->render([
+            'post_id'      => (string) $post_id,
+            'preview_meta' => wp_json_encode([
+                '_jlg_rating_badge_override' => 'auto',
+            ]),
+        ]);
+
+        $this->assertStringNotContainsString('rating-badge', $output, 'Auto override should fall back to threshold logic.');
+    }
+
     private function seedPost(int $post_id): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([

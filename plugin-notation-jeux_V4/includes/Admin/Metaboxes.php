@@ -554,10 +554,35 @@ class Metaboxes {
             } else {
                 delete_post_meta( $post_id, '_jlg_plateformes' );
             }
+
+            if ( isset( $_POST['_jlg_rating_badge_override'] ) ) {
+                $raw_override = sanitize_text_field( wp_unslash( $_POST['_jlg_rating_badge_override'] ) );
+                $normalized   = $this->normalize_badge_override_value( $raw_override );
+
+                if ( $normalized === 'auto' ) {
+                    delete_post_meta( $post_id, '_jlg_rating_badge_override' );
+                } else {
+                    update_post_meta( $post_id, '_jlg_rating_badge_override', $normalized );
+                }
+            }
         }
 
         if ( ! empty( $validation_errors ) ) {
             set_transient( $this->get_error_transient_key(), $validation_errors, MINUTE_IN_SECONDS );
         }
+    }
+
+    private function normalize_badge_override_value( $value ) {
+        if ( is_string( $value ) ) {
+            $value = strtolower( trim( $value ) );
+        }
+
+        $allowed = array( 'auto', 'force-on', 'force-off' );
+
+        if ( in_array( $value, $allowed, true ) ) {
+            return $value;
+        }
+
+        return 'auto';
     }
 }

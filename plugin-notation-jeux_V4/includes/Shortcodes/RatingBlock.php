@@ -24,6 +24,7 @@ class RatingBlock {
                 'animations'   => '',
                 'accent_color' => '',
                 'display_mode' => '',
+                'preview_meta' => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -84,11 +85,18 @@ class RatingBlock {
 
         $score_max = Helpers::get_score_max( $options );
 
-        // Sécurité : ne s'exécute que si des notes existent
-        $average_score = Helpers::get_average_score_for_post( $post_id );
+        $preview_meta     = $this->parse_preview_meta_attribute( $atts['preview_meta'] ?? '' );
+        $category_context = $this->build_category_context( $post_id, $score_max, $preview_meta );
+
+        $average_score        = $category_context['average_score'];
+        $category_scores      = $category_context['category_scores'];
+        $score_map            = $category_context['score_map'];
+        $category_percentages = $category_context['category_percentages'];
+        $badge_override       = $category_context['badge_override'];
+
         if ( $average_score === null ) {
             if ( $this->is_editor_preview_context() ) {
-                $shortcode_handle     = $shortcode_tag ?: 'bloc_notation_jeu';
+                $shortcode_handle    = $shortcode_tag ?: 'bloc_notation_jeu';
                 $placeholder_context = $this->build_editor_placeholder_context(
                     $post,
                     $post_id,
@@ -119,22 +127,6 @@ class RatingBlock {
             $user_rating_average = (float) $raw_user_rating;
         }
 
-        $category_scores = Helpers::get_category_scores_for_display( $post_id );
-        $score_map       = array();
-
-        foreach ( $category_scores as $category_score ) {
-            if ( isset( $category_score['id'], $category_score['score'] ) ) {
-                $category_id = (string) $category_score['id'];
-
-                $score_map[ $category_id ] = array(
-                    'score'  => (float) $category_score['score'],
-                    'weight' => isset( $category_score['weight'] )
-                        ? Helpers::normalize_category_weight( $category_score['weight'], 1.0 )
-                        : 1.0,
-                );
-            }
-        }
-
         $resolved_score_layout = in_array( $options['score_layout'] ?? '', array( 'text', 'circle' ), true )
             ? $options['score_layout']
             : 'text';
@@ -150,6 +142,12 @@ class RatingBlock {
             && is_numeric( $average_score )
             && $average_score >= $badge_threshold;
 
+        if ( $badge_override === 'force-on' ) {
+            $should_show_badge = true;
+        } elseif ( $badge_override === 'force-off' ) {
+            $should_show_badge = false;
+        }
+
         $user_rating_delta = null;
         if ( $user_rating_average !== null && is_numeric( $average_score ) ) {
             $user_rating_delta = $user_rating_average - (float) $average_score;
@@ -158,18 +156,6 @@ class RatingBlock {
         $average_percentage = null;
         if ( $score_max > 0 ) {
             $average_percentage = max( 0, min( 100, ( $average_score / $score_max ) * 100 ) );
-        }
-
-        $category_percentages = array();
-        if ( $score_max > 0 ) {
-            foreach ( $category_scores as $category_score ) {
-                if ( isset( $category_score['id'], $category_score['score'] ) ) {
-                    $category_percentages[ (string) $category_score['id'] ] = max(
-                        0,
-                        min( 100, ( (float) $category_score['score'] / $score_max ) * 100 )
-                    );
-                }
-            }
         }
 
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
@@ -195,6 +181,119 @@ class RatingBlock {
                 'rating_badge_threshold'   => $badge_threshold,
             )
         );
+    }
+
+    private function parse_preview_meta_attribute( $raw_value ) {
+        if ( is_array( $raw_value ) ) {
+            return $raw_value;
+        }
+
+        if ( ! is_string( $raw_value ) || $raw_value === '' ) {
+            return array();
+        }
+
+        $decoded = json_decode( $raw_value, true );
+
+        if ( ! is_array( $decoded ) ) {
+            return array();
+        }
+
+        return $decoded;
+    }
+
+    private function build_category_context( $post_id, $score_max, array $preview_meta ) {
+        $definitions           = Helpers::get_rating_category_definitions();
+        $category_scores       = array();
+        $score_map             = array();
+        $category_percentages  = array();
+        $weighted_sum          = 0.0;
+        $weight_total          = 0.0;
+        $normalized_score_max  = is_numeric( $score_max ) ? (float) $score_max : 0.0;
+        $has_valid_score_max   = $normalized_score_max > 0;
+        $badge_override_source = array_key_exists( '_jlg_rating_badge_override', $preview_meta )
+            ? $preview_meta['_jlg_rating_badge_override']
+            : get_post_meta( $post_id, '_jlg_rating_badge_override', true );
+        $badge_override        = $this->normalize_badge_override( $badge_override_source );
+
+        foreach ( $definitions as $definition ) {
+            $meta_key    = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+            $category_id = isset( $definition['id'] ) ? (string) $definition['id'] : '';
+
+            if ( $meta_key === '' || $category_id === '' ) {
+                continue;
+            }
+
+            $raw_value = array_key_exists( $meta_key, $preview_meta )
+                ? $preview_meta[ $meta_key ]
+                : Helpers::resolve_category_meta_value( $post_id, $definition, true );
+
+            if ( $raw_value === null || $raw_value === '' || ! is_numeric( $raw_value ) ) {
+                continue;
+            }
+
+            $score_value = round( (float) $raw_value, 1 );
+
+            if ( $score_value < 0 ) {
+                $score_value = 0.0;
+            }
+
+            if ( $has_valid_score_max ) {
+                $score_value = min( $score_value, $normalized_score_max );
+            }
+
+            $weight = isset( $definition['weight'] )
+                ? Helpers::normalize_category_weight( $definition['weight'], 1.0 )
+                : 1.0;
+
+            $score_map[ $category_id ] = array(
+                'score'  => $score_value,
+                'weight' => $weight,
+            );
+
+            $category_scores[] = array(
+                'id'       => $category_id,
+                'label'    => isset( $definition['label'] ) ? (string) $definition['label'] : $category_id,
+                'score'    => $score_value,
+                'weight'   => $weight,
+                'meta_key' => $meta_key,
+            );
+
+            if ( $has_valid_score_max ) {
+                $category_percentages[ $category_id ] = max(
+                    0,
+                    min( 100, ( $score_value / $normalized_score_max ) * 100 )
+                );
+            }
+
+            if ( $weight > 0 ) {
+                $weighted_sum += $score_value * $weight;
+                $weight_total += $weight;
+            }
+        }
+
+        $average_score = $weight_total > 0 ? round( $weighted_sum / $weight_total, 1 ) : null;
+
+        return array(
+            'category_scores'      => $category_scores,
+            'score_map'            => $score_map,
+            'category_percentages' => $category_percentages,
+            'average_score'        => $average_score,
+            'badge_override'       => $badge_override,
+        );
+    }
+
+    private function normalize_badge_override( $value ) {
+        if ( is_string( $value ) ) {
+            $value = strtolower( trim( $value ) );
+        }
+
+        $allowed = array( 'auto', 'force-on', 'force-off' );
+
+        if ( in_array( $value, $allowed, true ) ) {
+            return $value;
+        }
+
+        return 'auto';
     }
 
     private function build_editor_placeholder_context( WP_Post $post, $post_id, array $options, $score_max, $display_mode ) {

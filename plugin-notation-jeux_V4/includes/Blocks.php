@@ -43,6 +43,7 @@ class Blocks {
             'shortcode' => 'bloc_notation_jeu',
             'script'    => 'notation-jlg-rating-block-editor',
             'callback'  => 'render_rating_block',
+            'deps'      => array( 'notation-jlg-rating-meta-utils' ),
         ),
         'pros-cons'       => array(
             'name'      => 'notation-jlg/pros-cons',
@@ -99,6 +100,7 @@ class Blocks {
 
         add_action( 'init', array( $this, 'register_block_editor_assets' ) );
         add_action( 'init', array( $this, 'register_blocks' ) );
+        add_action( 'init', array( $this, 'register_rating_meta' ) );
         add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
     }
 
@@ -148,6 +150,19 @@ class Blocks {
             $this->set_script_translations( $this->shared_script_handle );
         }
 
+        $rating_utils_handle = 'notation-jlg-rating-meta-utils';
+        $rating_utils_path   = $scripts_dir . 'rating-meta-utils.js';
+
+        if ( file_exists( $rating_utils_path ) ) {
+            wp_register_script(
+                $rating_utils_handle,
+                $scripts_url . 'rating-meta-utils.js',
+                array(),
+                $this->get_file_version( $rating_utils_path ),
+                true
+            );
+        }
+
         foreach ( $this->blocks as $slug => $config ) {
             $script_handle = isset( $config['script'] ) ? $config['script'] : '';
             $script_file   = $scripts_dir . $slug . '.js';
@@ -157,6 +172,15 @@ class Blocks {
             }
 
             $deps = array( $this->shared_script_handle );
+
+            if ( ! empty( $config['deps'] ) && is_array( $config['deps'] ) ) {
+                foreach ( $config['deps'] as $additional_dep ) {
+                    if ( is_string( $additional_dep ) && $additional_dep !== '' ) {
+                        $deps[] = $additional_dep;
+                    }
+                }
+            }
+
             wp_register_script(
                 $script_handle,
                 $scripts_url . $slug . '.js',
@@ -166,7 +190,192 @@ class Blocks {
             );
 
             $this->set_script_translations( $script_handle );
+
+            if ( $slug === 'rating-block' ) {
+                $this->localize_rating_block_settings( $script_handle );
+            }
         }
+    }
+
+    private function localize_rating_block_settings( $script_handle ) {
+        $definitions = Helpers::get_rating_category_definitions();
+        $categories  = array();
+
+        foreach ( $definitions as $definition ) {
+            $meta_key = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+            if ( $meta_key === '' ) {
+                continue;
+            }
+
+            $categories[] = array(
+                'id'      => isset( $definition['id'] ) ? (string) $definition['id'] : $meta_key,
+                'label'   => isset( $definition['label'] ) ? (string) $definition['label'] : $meta_key,
+                'metaKey' => $meta_key,
+            );
+        }
+
+        $score_max = Helpers::get_score_max();
+        if ( ! is_numeric( $score_max ) || (float) $score_max <= 0 ) {
+            $score_max = 10.0;
+        }
+
+        $badge_options = array(
+            array(
+                'value' => 'auto',
+                'label' => __( 'Automatique (seuil global)', 'notation-jlg' ),
+            ),
+            array(
+                'value' => 'force-on',
+                'label' => __( 'Toujours afficher', 'notation-jlg' ),
+            ),
+            array(
+                'value' => 'force-off',
+                'label' => __( 'Toujours masquer', 'notation-jlg' ),
+            ),
+        );
+
+        $settings = array(
+            'scoreMax'             => (float) $score_max,
+            'categoryDefinitions'  => $categories,
+            'badgeOverrideMetaKey' => '_jlg_rating_badge_override',
+            'badgeOptions'         => $badge_options,
+        );
+
+        wp_localize_script( $script_handle, 'jlgRatingBlockSettings', $settings );
+    }
+
+    public function register_rating_meta() {
+        if ( ! function_exists( 'register_post_meta' ) ) {
+            return;
+        }
+
+        $post_types = Helpers::get_allowed_post_types();
+        if ( empty( $post_types ) || ! is_array( $post_types ) ) {
+            $post_types = array( 'post' );
+        }
+
+        $definitions = Helpers::get_rating_category_definitions();
+
+        foreach ( $post_types as $post_type ) {
+            $post_type = sanitize_key( $post_type );
+
+            if ( $post_type === '' ) {
+                continue;
+            }
+
+            foreach ( $definitions as $definition ) {
+                $meta_key = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+                if ( $meta_key === '' ) {
+                    continue;
+                }
+
+                register_post_meta(
+                    $post_type,
+                    $meta_key,
+                    array(
+                        'single'            => true,
+                        'type'              => 'number',
+                        'show_in_rest'      => array(
+                            'schema' => array(
+                                'type'    => 'number',
+                                'context' => array( 'edit' ),
+                            ),
+                        ),
+                        'sanitize_callback' => array( $this, 'sanitize_category_score_meta' ),
+                        'auth_callback'     => array( $this, 'can_edit_registered_meta' ),
+                    )
+                );
+            }
+
+            register_post_meta(
+                $post_type,
+                '_jlg_rating_badge_override',
+                array(
+                    'single'            => true,
+                    'type'              => 'string',
+                    'show_in_rest'      => array(
+                        'schema' => array(
+                            'type'    => 'string',
+                            'enum'    => array( 'auto', 'force-on', 'force-off' ),
+                            'context' => array( 'edit' ),
+                        ),
+                    ),
+                    'sanitize_callback' => array( $this, 'sanitize_badge_override_meta' ),
+                    'auth_callback'     => array( $this, 'can_edit_registered_meta' ),
+                )
+            );
+        }
+    }
+
+    public function sanitize_category_score_meta( $value, $meta_key = '', $object_type = '' ) {
+        unset( $meta_key, $object_type );
+
+        if ( $value === null || $value === '' ) {
+            return null;
+        }
+
+        if ( is_string( $value ) ) {
+            $value = trim( str_replace( ',', '.', $value ) );
+        }
+
+        if ( $value === '' ) {
+            return null;
+        }
+
+        if ( ! is_numeric( $value ) ) {
+            return null;
+        }
+
+        $score = round( (float) $value, 1 );
+
+        if ( $score < 0 ) {
+            $score = 0.0;
+        }
+
+        $score_max = Helpers::get_score_max();
+        if ( is_numeric( $score_max ) && (float) $score_max > 0 ) {
+            $score = min( $score, (float) $score_max );
+        }
+
+        return $score;
+    }
+
+    public function sanitize_badge_override_meta( $value, $meta_key = '', $object_type = '' ) {
+        unset( $meta_key, $object_type );
+
+        if ( $value === null ) {
+            return 'auto';
+        }
+
+        if ( is_string( $value ) ) {
+            $value = strtolower( trim( $value ) );
+        }
+
+        $allowed = array( 'auto', 'force-on', 'force-off' );
+
+        if ( in_array( $value, $allowed, true ) ) {
+            return $value;
+        }
+
+        return 'auto';
+    }
+
+    public function can_edit_registered_meta( $allowed, $meta_key, $post_id, $user_id, $cap = '', $caps = array() ) {
+        unset( $allowed, $meta_key, $cap, $caps );
+
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return false;
+        }
+
+        if ( function_exists( 'user_can' ) && $user_id ) {
+            return user_can( (int) $user_id, 'edit_post', $post_id );
+        }
+
+        return current_user_can( 'edit_post', $post_id );
     }
 
     public function register_blocks() {
@@ -380,6 +589,69 @@ class Blocks {
             $color = sanitize_hex_color( $attributes['accentColor'] );
             if ( ! empty( $color ) ) {
                 $atts['accent_color'] = $color;
+            }
+        }
+
+        if ( ! empty( $attributes['previewMeta'] ) && is_array( $attributes['previewMeta'] ) ) {
+            $definitions   = Helpers::get_rating_category_definitions();
+            $allowed_keys  = array();
+            $score_max_raw = Helpers::get_score_max();
+            $score_max     = ( is_numeric( $score_max_raw ) && (float) $score_max_raw > 0 ) ? (float) $score_max_raw : 10.0;
+
+            foreach ( $definitions as $definition ) {
+                $meta_key = isset( $definition['meta_key'] ) ? (string) $definition['meta_key'] : '';
+
+                if ( $meta_key === '' ) {
+                    continue;
+                }
+
+                $allowed_keys[ $meta_key ] = true;
+            }
+
+            $allowed_keys['_jlg_rating_badge_override'] = true;
+
+            $preview_meta = array();
+
+            foreach ( $attributes['previewMeta'] as $meta_key => $value ) {
+                if ( ! is_string( $meta_key ) || ! isset( $allowed_keys[ $meta_key ] ) ) {
+                    continue;
+                }
+
+                if ( '_jlg_rating_badge_override' === $meta_key ) {
+                    $normalized_badge = $this->sanitize_badge_override_meta( $value );
+                    if ( is_string( $normalized_badge ) && $normalized_badge !== '' ) {
+                        $preview_meta[ $meta_key ] = $normalized_badge;
+                    }
+                    continue;
+                }
+
+                if ( $value === null || $value === '' ) {
+                    continue;
+                }
+
+                if ( is_string( $value ) ) {
+                    $value = str_replace( ',', '.', $value );
+                }
+
+                if ( ! is_numeric( $value ) ) {
+                    continue;
+                }
+
+                $score_value = round( (float) $value, 1 );
+
+                if ( $score_value < 0 ) {
+                    $score_value = 0.0;
+                }
+
+                if ( $score_max > 0 ) {
+                    $score_value = min( $score_value, $score_max );
+                }
+
+                $preview_meta[ $meta_key ] = $score_value;
+            }
+
+            if ( ! empty( $preview_meta ) ) {
+                $atts['preview_meta'] = wp_json_encode( $preview_meta );
             }
         }
 

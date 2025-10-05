@@ -32,6 +32,10 @@
     "showAnimations": {
       "type": "boolean",
       "default": true
+    },
+    "previewMeta": {
+      "type": "object",
+      "default": {}
     }
   },
   "editorScript": "notation-jlg-rating-block-editor",
