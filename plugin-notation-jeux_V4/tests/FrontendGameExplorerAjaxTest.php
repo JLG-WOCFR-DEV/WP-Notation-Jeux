@@ -4,69 +4,6 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../includes/Shortcodes/GameExplorer.php';
 
-if (!class_exists('WP_Query')) {
-    class WP_Query
-    {
-        public $args;
-        public $posts = [];
-        public $post_count = 0;
-        public $current_post = -1;
-        public $max_num_pages = 0;
-
-        public function __construct($args = [])
-        {
-            $this->args = is_array($args) ? $args : [];
-            $post_ids = isset($this->args['post__in']) && is_array($this->args['post__in'])
-                ? array_values(array_map('intval', $this->args['post__in']))
-                : [];
-
-            $posts = [];
-            foreach ($post_ids as $post_id) {
-                if (isset($GLOBALS['jlg_test_posts'][$post_id])) {
-                    $posts[] = $GLOBALS['jlg_test_posts'][$post_id];
-                }
-            }
-
-            $paged = isset($this->args['paged']) ? max(1, (int) $this->args['paged']) : 1;
-            $per_page = isset($this->args['posts_per_page']) ? (int) $this->args['posts_per_page'] : count($posts);
-            if ($per_page <= 0) {
-                $per_page = max(1, count($posts));
-            }
-
-            $total_items = count($posts);
-            $this->max_num_pages = $per_page > 0 ? (int) ceil($total_items / $per_page) : 0;
-            if ($this->max_num_pages < 1 && $total_items > 0) {
-                $this->max_num_pages = 1;
-            }
-
-            $offset = ($paged - 1) * $per_page;
-            if ($offset < 0) {
-                $offset = 0;
-            }
-
-            $this->posts = array_slice($posts, $offset, $per_page);
-            $this->post_count = count($this->posts);
-        }
-
-        public function have_posts()
-        {
-            return ($this->current_post + 1) < $this->post_count;
-        }
-
-        public function the_post()
-        {
-            if (!$this->have_posts()) {
-                return false;
-            }
-
-            $this->current_post++;
-            $GLOBALS['post'] = $this->posts[$this->current_post];
-
-            return $GLOBALS['post'];
-        }
-    }
-}
-
 if (!function_exists('get_permalink')) {
     function get_permalink($post_id)
     {
@@ -252,22 +189,33 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the first test post.', '2023-01-01 10:00:00');
         $this->registerPost(202, 'Beta Strike', 'Beta content for the second test post.', '2023-01-05 11:30:00');
 
-        $GLOBALS['jlg_test_meta'] = [
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.6,
+            '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+            '_jlg_date_sortie'     => '2023-02-14',
+            '_jlg_developpeur'     => 'Studio Alpha',
+            '_jlg_editeur'         => 'Publisher A',
+            '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+        ]);
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.4,
+            '_jlg_cover_image_url' => '',
+            '_jlg_date_sortie'     => '2022-11-10',
+            '_jlg_developpeur'     => 'Studio Beta',
+            '_jlg_editeur'         => 'Publisher B',
+            '_jlg_plateformes'     => ['PC'],
+        ]);
+
+        $GLOBALS['jlg_test_terms'] = [
             101 => [
-                '_jlg_average_score'   => 8.6,
-                '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
-                '_jlg_date_sortie'     => '2023-02-14',
-                '_jlg_developpeur'     => 'Studio Alpha',
-                '_jlg_editeur'         => 'Publisher A',
-                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+                'category' => [
+                    ['term_id' => 11, 'slug' => 'action'],
+                ],
             ],
             202 => [
-                '_jlg_average_score'   => 7.4,
-                '_jlg_cover_image_url' => '',
-                '_jlg_date_sortie'     => '2022-11-10',
-                '_jlg_developpeur'     => 'Studio Beta',
-                '_jlg_editeur'         => 'Publisher B',
-                '_jlg_plateformes'     => ['PC'],
+                'category' => [
+                    ['term_id' => 11, 'slug' => 'action'],
+                ],
             ],
         ];
 
@@ -436,24 +384,22 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the cover test.', '2023-01-01 10:00:00');
         $this->registerPost(202, 'Beta Strike', 'Beta content for the cover test.', '2023-01-05 11:30:00');
 
-        $GLOBALS['jlg_test_meta'] = [
-            101 => [
-                '_jlg_average_score'   => 8.5,
-                '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
-                '_jlg_date_sortie'     => '2023-02-14',
-                '_jlg_developpeur'     => 'Studio Alpha',
-                '_jlg_editeur'         => 'Publisher A',
-                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
-            ],
-            202 => [
-                '_jlg_average_score'   => 7.2,
-                '_jlg_cover_image_url' => '',
-                '_jlg_date_sortie'     => '2022-11-10',
-                '_jlg_developpeur'     => 'Studio Beta',
-                '_jlg_editeur'         => 'Publisher B',
-                '_jlg_plateformes'     => ['PC'],
-            ],
-        ];
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.5,
+            '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+            '_jlg_date_sortie'     => '2023-02-14',
+            '_jlg_developpeur'     => 'Studio Alpha',
+            '_jlg_editeur'         => 'Publisher A',
+            '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+        ]);
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.2,
+            '_jlg_cover_image_url' => '',
+            '_jlg_date_sortie'     => '2022-11-10',
+            '_jlg_developpeur'     => 'Studio Beta',
+            '_jlg_editeur'         => 'Publisher B',
+            '_jlg_plateformes'     => ['PC'],
+        ]);
 
         $response = $this->dispatchExplorerAjax([
             'nonce'          => 'nonce-jlg_game_explorer',
@@ -479,24 +425,22 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the developer filter.', '2023-01-01 10:00:00');
         $this->registerPost(202, 'Beta Strike', 'Beta content for the developer filter.', '2023-01-05 11:30:00');
 
-        $GLOBALS['jlg_test_meta'] = [
-            101 => [
-                '_jlg_average_score'   => 8.6,
-                '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
-                '_jlg_date_sortie'     => '2023-02-14',
-                '_jlg_developpeur'     => 'Studio Alpha',
-                '_jlg_editeur'         => 'Publisher A',
-                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
-            ],
-            202 => [
-                '_jlg_average_score'   => 7.4,
-                '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
-                '_jlg_date_sortie'     => '2022-11-10',
-                '_jlg_developpeur'     => 'Studio Beta',
-                '_jlg_editeur'         => 'Publisher B',
-                '_jlg_plateformes'     => ['PC'],
-            ],
-        ];
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.6,
+            '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+            '_jlg_date_sortie'     => '2023-02-14',
+            '_jlg_developpeur'     => 'Studio Alpha',
+            '_jlg_editeur'         => 'Publisher A',
+            '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+        ]);
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.4,
+            '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
+            '_jlg_date_sortie'     => '2022-11-10',
+            '_jlg_developpeur'     => 'Studio Beta',
+            '_jlg_editeur'         => 'Publisher B',
+            '_jlg_plateformes'     => ['PC'],
+        ]);
 
         $response = $this->dispatchExplorerAjax([
             'nonce'          => 'nonce-jlg_game_explorer',
@@ -527,24 +471,23 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the year filter.', '2023-01-01 10:00:00');
         $this->registerPost(202, 'Beta Strike', 'Beta content for the year filter.', '2023-01-05 11:30:00');
 
-        $GLOBALS['jlg_test_meta'] = [
-            101 => [
-                '_jlg_average_score'   => 8.2,
-                '_jlg_cover_image_url' => 'https://example.com/alpha-year.jpg',
-                '_jlg_date_sortie'     => '2023-02-14',
-                '_jlg_developpeur'     => 'Studio Alpha',
-                '_jlg_editeur'         => 'Publisher A',
-                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
-            ],
-            202 => [
-                '_jlg_average_score'   => 7.1,
-                '_jlg_cover_image_url' => 'https://example.com/beta-year.jpg',
-                '_jlg_date_sortie'     => '2022-11-10',
-                '_jlg_developpeur'     => 'Studio Beta',
-                '_jlg_editeur'         => 'Publisher B',
-                '_jlg_plateformes'     => ['PC'],
-            ],
-        ];
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.2,
+            '_jlg_cover_image_url' => 'https://example.com/alpha-year.jpg',
+            '_jlg_date_sortie'     => '2023-02-14',
+            '_jlg_developpeur'     => 'Studio Alpha',
+            '_jlg_editeur'         => 'Publisher A',
+            '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+        ]);
+
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.1,
+            '_jlg_cover_image_url' => 'https://example.com/beta-year.jpg',
+            '_jlg_date_sortie'     => '2022-11-10',
+            '_jlg_developpeur'     => 'Studio Beta',
+            '_jlg_editeur'         => 'Publisher B',
+            '_jlg_plateformes'     => ['PC'],
+        ]);
 
         $response = $this->dispatchExplorerAjax([
             'nonce'          => 'nonce-jlg_game_explorer',
@@ -567,6 +510,310 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertStringNotContainsString('Beta Strike', $response['html'] ?? '');
     }
 
+    public function test_handle_game_explorer_sort_supports_accent_insensitive_search(): void
+    {
+        $this->configureOptions();
+
+        $snapshot = [
+            'posts' => [
+                301 => [
+                    'letter'        => 'E',
+                    'category_ids'  => [21],
+                    'category_slugs'=> ['aventure'],
+                    'primary_genre' => 'Aventure',
+                    'platform_labels' => ['PC'],
+                    'platform_slugs'  => ['pc'],
+                    'developer'     => 'Studio Élan',
+                    'developer_key' => 'studio elan',
+                    'publisher'     => 'Éditions Futur',
+                    'publisher_key' => 'editions futur',
+                    'release_iso'   => '2024-03-10',
+                    'release_year'  => 2024,
+                    'availability'  => 'upcoming',
+                    'search_index'  => ' epopee legende studio elan editions futur aventure pc ',
+                    'popularity'    => 0,
+                    'index_meta'    => [
+                        'letter'        => 'E',
+                        'developer'     => 'studio elan',
+                        'publisher'     => 'editions futur',
+                        'availability'  => 'upcoming',
+                        'release_year'  => '2024',
+                        'search_index'  => ' epopee legende studio elan editions futur aventure pc ',
+                        'platform_index'=> '|pc|',
+                    ],
+                ],
+                302 => [
+                    'letter'        => 'C',
+                    'category_ids'  => [21],
+                    'category_slugs'=> ['aventure'],
+                    'primary_genre' => 'Aventure',
+                    'platform_labels' => ['PC'],
+                    'platform_slugs'  => ['pc'],
+                    'developer'     => 'Chrono Team',
+                    'developer_key' => 'chrono team',
+                    'publisher'     => 'Publisher C',
+                    'publisher_key' => 'publisher c',
+                    'release_iso'   => '2023-09-15',
+                    'release_year'  => 2023,
+                    'availability'  => 'available',
+                    'search_index'  => ' chroniques brulees chrono team publisher c aventure pc ',
+                    'popularity'    => 0,
+                    'index_meta'    => [
+                        'letter'        => 'C',
+                        'developer'     => 'chrono team',
+                        'publisher'     => 'publisher c',
+                        'availability'  => 'available',
+                        'release_year'  => '2023',
+                        'search_index'  => ' chroniques brulees chrono team publisher c aventure pc ',
+                        'platform_index'=> '|pc|',
+                    ],
+                ],
+            ],
+            'letters_map'    => ['E' => true, 'C' => true],
+            'categories_map' => [21 => 'Aventure'],
+            'platforms_map'  => ['pc' => 'PC'],
+            'developers_map' => ['studio elan' => 'Studio Élan', 'chrono team' => 'Chrono Team'],
+            'publishers_map' => ['editions futur' => 'Éditions Futur', 'publisher c' => 'Publisher C'],
+            'search_tokens'  => [
+                'epopee'   => 1,
+                'legende'  => 1,
+                'studio'   => 1,
+                'elan'     => 1,
+                'editions' => 1,
+                'futur'    => 1,
+                'chroniques'=> 1,
+                'brulees'  => 1,
+            ],
+            'years'          => [
+                'min'     => 2023,
+                'max'     => 2024,
+                'buckets' => [
+                    2023 => 1,
+                    2024 => 1,
+                ],
+            ],
+        ];
+
+        $this->primeSnapshot($snapshot);
+
+        $this->registerPost(301, 'Épopée Légendaire', 'Une grande aventure héroïque.', '2024-01-01 10:00:00');
+        $this->registerPost(302, 'Chroniques Brûlées', 'Un récit alternatif.', '2023-08-10 09:00:00');
+
+        $GLOBALS['jlg_test_meta'][301]['_jlg_average_score'] = 9.1;
+        $GLOBALS['jlg_test_meta'][301]['_jlg_date_sortie'] = '2024-03-10';
+        $GLOBALS['jlg_test_meta'][301]['_jlg_developpeur'] = 'Studio Élan';
+        $GLOBALS['jlg_test_meta'][301]['_jlg_editeur'] = 'Éditions Futur';
+        $GLOBALS['jlg_test_meta'][301]['_jlg_plateformes'] = ['PC'];
+
+        $GLOBALS['jlg_test_meta'][302]['_jlg_average_score'] = 7.0;
+        $GLOBALS['jlg_test_meta'][302]['_jlg_date_sortie'] = '2023-09-15';
+        $GLOBALS['jlg_test_meta'][302]['_jlg_developpeur'] = 'Chrono Team';
+        $GLOBALS['jlg_test_meta'][302]['_jlg_editeur'] = 'Publisher C';
+        $GLOBALS['jlg_test_meta'][302]['_jlg_plateformes'] = ['PC'];
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'accent-search',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'search'         => 'épopée',
+            'paged'          => '1',
+        ]);
+
+        $this->assertSame('épopée', $response['state']['search'] ?? '');
+        $this->assertSame(1, $response['state']['total_items'] ?? 0);
+        $this->assertStringContainsString('Épopée Légendaire', $response['html'] ?? '');
+        $this->assertStringNotContainsString('Chroniques Brûlées', $response['html'] ?? '');
+        $this->assertContains('epopee', $response['config']['suggestions']['search'] ?? []);
+    }
+
+    public function test_handle_game_explorer_sort_supports_multi_term_search(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the developer filter.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the developer filter.', '2023-01-05 11:30:00');
+
+        $GLOBALS['jlg_test_meta'][101]['_jlg_average_score'] = 8.6;
+        $GLOBALS['jlg_test_meta'][101]['_jlg_date_sortie'] = '2023-02-14';
+        $GLOBALS['jlg_test_meta'][101]['_jlg_developpeur'] = 'Studio Alpha';
+        $GLOBALS['jlg_test_meta'][101]['_jlg_editeur'] = 'Publisher A';
+        $GLOBALS['jlg_test_meta'][101]['_jlg_plateformes'] = ['PC', 'PlayStation 5'];
+
+        $GLOBALS['jlg_test_meta'][202]['_jlg_average_score'] = 7.4;
+        $GLOBALS['jlg_test_meta'][202]['_jlg_date_sortie'] = '2022-11-10';
+        $GLOBALS['jlg_test_meta'][202]['_jlg_developpeur'] = 'Studio Beta';
+        $GLOBALS['jlg_test_meta'][202]['_jlg_editeur'] = 'Publisher B';
+        $GLOBALS['jlg_test_meta'][202]['_jlg_plateformes'] = ['PC'];
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'multi-term-search',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'search'         => 'alpha quest',
+            'paged'          => '1',
+        ]);
+
+        $this->assertSame(1, $response['state']['total_items'] ?? 0);
+        $this->assertStringContainsString('Alpha Quest', $response['html'] ?? '');
+        $this->assertStringNotContainsString('Beta Strike', $response['html'] ?? '');
+    }
+
+    public function test_handle_game_explorer_sort_orders_by_popularity_then_date(): void
+    {
+        $this->configureOptions();
+
+        $snapshot = [
+            'posts' => [
+                501 => [
+                    'letter'        => 'G',
+                    'category_ids'  => [11],
+                    'category_slugs'=> ['action'],
+                    'primary_genre' => 'Action',
+                    'platform_labels' => ['PC'],
+                    'platform_slugs'  => ['pc'],
+                    'developer'     => 'Studio Gamma',
+                    'developer_key' => 'studio gamma',
+                    'publisher'     => 'Publisher G',
+                    'publisher_key' => 'publisher g',
+                    'release_iso'   => '2023-05-20',
+                    'release_year'  => 2023,
+                    'availability'  => 'available',
+                    'search_index'  => ' gamma horizon studio gamma publisher g action pc ',
+                    'popularity'    => 50,
+                    'index_meta'    => [
+                        'letter'        => 'G',
+                        'developer'     => 'studio gamma',
+                        'publisher'     => 'publisher g',
+                        'availability'  => 'available',
+                        'release_year'  => '2023',
+                        'search_index'  => ' gamma horizon studio gamma publisher g action pc ',
+                        'platform_index'=> '|pc|',
+                    ],
+                ],
+                502 => [
+                    'letter'        => 'D',
+                    'category_ids'  => [11],
+                    'category_slugs'=> ['action'],
+                    'primary_genre' => 'Action',
+                    'platform_labels' => ['PC'],
+                    'platform_slugs'  => ['pc'],
+                    'developer'     => 'Studio Delta',
+                    'developer_key' => 'studio delta',
+                    'publisher'     => 'Publisher D',
+                    'publisher_key' => 'publisher d',
+                    'release_iso'   => '2024-01-10',
+                    'release_year'  => 2024,
+                    'availability'  => 'available',
+                    'search_index'  => ' delta shift studio delta publisher d action pc ',
+                    'popularity'    => 75,
+                    'index_meta'    => [
+                        'letter'        => 'D',
+                        'developer'     => 'studio delta',
+                        'publisher'     => 'publisher d',
+                        'availability'  => 'available',
+                        'release_year'  => '2024',
+                        'search_index'  => ' delta shift studio delta publisher d action pc ',
+                        'platform_index'=> '|pc|',
+                    ],
+                ],
+                503 => [
+                    'letter'        => 'O',
+                    'category_ids'  => [11],
+                    'category_slugs'=> ['action'],
+                    'primary_genre' => 'Action',
+                    'platform_labels' => ['PC'],
+                    'platform_slugs'  => ['pc'],
+                    'developer'     => 'Studio Omega',
+                    'developer_key' => 'studio omega',
+                    'publisher'     => 'Publisher O',
+                    'publisher_key' => 'publisher o',
+                    'release_iso'   => '2022-12-01',
+                    'release_year'  => 2022,
+                    'availability'  => 'available',
+                    'search_index'  => ' omega flash studio omega publisher o action pc ',
+                    'popularity'    => 10,
+                    'index_meta'    => [
+                        'letter'        => 'O',
+                        'developer'     => 'studio omega',
+                        'publisher'     => 'publisher o',
+                        'availability'  => 'available',
+                        'release_year'  => '2022',
+                        'search_index'  => ' omega flash studio omega publisher o action pc ',
+                        'platform_index'=> '|pc|',
+                    ],
+                ],
+            ],
+            'letters_map'    => ['G' => true, 'D' => true, 'O' => true],
+            'categories_map' => [11 => 'Action'],
+            'platforms_map'  => ['pc' => 'PC'],
+            'developers_map' => ['studio gamma' => 'Studio Gamma', 'studio delta' => 'Studio Delta', 'studio omega' => 'Studio Omega'],
+            'publishers_map' => ['publisher g' => 'Publisher G', 'publisher d' => 'Publisher D', 'publisher o' => 'Publisher O'],
+            'search_tokens'  => ['gamma' => 1, 'horizon' => 1, 'delta' => 1, 'shift' => 1, 'omega' => 1, 'flash' => 1],
+            'years'          => [
+                'min'     => 2022,
+                'max'     => 2024,
+                'buckets' => [
+                    2022 => 1,
+                    2023 => 1,
+                    2024 => 1,
+                ],
+            ],
+        ];
+
+        $this->primeSnapshot($snapshot);
+
+        $this->registerPost(501, 'Gamma Horizon', 'Gamma content.', '2023-05-20 09:00:00');
+        $this->registerPost(502, 'Delta Shift', 'Delta content.', '2024-01-10 11:00:00');
+        $this->registerPost(503, 'Omega Flash', 'Omega content.', '2022-12-01 12:00:00');
+
+        $GLOBALS['jlg_test_meta'][501]['_jlg_user_rating_count'] = 50;
+        $GLOBALS['jlg_test_meta'][502]['_jlg_user_rating_count'] = 75;
+        $GLOBALS['jlg_test_meta'][503]['_jlg_user_rating_count'] = 10;
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'popularity-order',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'popularity|DESC',
+            'order'          => 'DESC',
+            'paged'          => '1',
+        ]);
+
+        $this->assertSame('popularity', $response['state']['orderby'] ?? '');
+        $this->assertSame('DESC', $response['state']['order'] ?? '');
+        $html = $response['html'] ?? '';
+        $this->assertNotEmpty($html);
+        $gamma_position = strpos($html, 'Gamma Horizon');
+        $delta_position = strpos($html, 'Delta Shift');
+        $omega_position = strpos($html, 'Omega Flash');
+
+        $this->assertNotFalse($gamma_position, 'Gamma Horizon should appear in the markup.');
+        $this->assertNotFalse($delta_position, 'Delta Shift should appear in the markup.');
+        $this->assertNotFalse($omega_position, 'Omega Flash should appear in the markup.');
+
+        $this->assertLessThan(
+            $gamma_position,
+            $delta_position,
+            'Most popular title should appear first in the markup.'
+        );
+        $this->assertLessThan(
+            $omega_position,
+            $gamma_position,
+            'Second most popular title should appear before the least popular entry.'
+        );
+    }
+
     public function test_score_position_modifier_reflects_configuration(): void
     {
         $this->configureOptions();
@@ -575,24 +822,22 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the position test.', '2023-01-01 10:00:00');
         $this->registerPost(202, 'Beta Strike', 'Beta content for the position test.', '2023-01-05 11:30:00');
 
-        $GLOBALS['jlg_test_meta'] = [
-            101 => [
-                '_jlg_average_score'   => 8.5,
-                '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
-                '_jlg_date_sortie'     => '2023-02-14',
-                '_jlg_developpeur'     => 'Studio Alpha',
-                '_jlg_editeur'         => 'Publisher A',
-                '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
-            ],
-            202 => [
-                '_jlg_average_score'   => 7.2,
-                '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
-                '_jlg_date_sortie'     => '2022-11-10',
-                '_jlg_developpeur'     => 'Studio Beta',
-                '_jlg_editeur'         => 'Publisher B',
-                '_jlg_plateformes'     => ['PC'],
-            ],
-        ];
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.5,
+            '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+            '_jlg_date_sortie'     => '2023-02-14',
+            '_jlg_developpeur'     => 'Studio Alpha',
+            '_jlg_editeur'         => 'Publisher A',
+            '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+        ]);
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.2,
+            '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
+            '_jlg_date_sortie'     => '2022-11-10',
+            '_jlg_developpeur'     => 'Studio Beta',
+            '_jlg_editeur'         => 'Publisher B',
+            '_jlg_plateformes'     => ['PC'],
+        ]);
 
         $basePost = [
             'nonce'          => 'nonce-jlg_game_explorer',
@@ -676,21 +921,21 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the first test post.', '2023-01-01 10:00:00');
         $this->registerPost(202, 'Beta Strike', 'Beta content for the second test post.', '2023-01-05 11:30:00');
 
-        $GLOBALS['jlg_test_meta'][101] = [
-            '_jlg_game_title'    => 'Alpha Quest',
-            '_jlg_developpeur'   => 'Studio Alpha',
-            '_jlg_editeur'       => 'Publisher A',
-            '_jlg_date_sortie'   => '2023-02-14',
-            '_jlg_plateformes'   => ['PC', 'PlayStation 5'],
-        ];
+        $this->setMeta(101, [
+            '_jlg_game_title'  => 'Alpha Quest',
+            '_jlg_developpeur' => 'Studio Alpha',
+            '_jlg_editeur'     => 'Publisher A',
+            '_jlg_date_sortie' => '2023-02-14',
+            '_jlg_plateformes' => ['PC', 'PlayStation 5'],
+        ]);
 
-        $GLOBALS['jlg_test_meta'][202] = [
-            '_jlg_game_title'    => 'Beta Strike',
-            '_jlg_developpeur'   => 'Studio Beta',
-            '_jlg_editeur'       => 'Publisher B',
-            '_jlg_date_sortie'   => '2022-11-10',
-            '_jlg_plateformes'   => ['PC'],
-        ];
+        $this->setMeta(202, [
+            '_jlg_game_title'  => 'Beta Strike',
+            '_jlg_developpeur' => 'Studio Beta',
+            '_jlg_editeur'     => 'Publisher B',
+            '_jlg_date_sortie' => '2022-11-10',
+            '_jlg_plateformes' => ['PC'],
+        ]);
 
         $GLOBALS['jlg_test_terms'] = [
             101 => [
@@ -754,6 +999,15 @@ class FrontendGameExplorerAjaxTest extends TestCase
         ]);
     }
 
+    private function setMeta(int $post_id, array $meta): void
+    {
+        if (!isset($GLOBALS['jlg_test_meta'][$post_id])) {
+            $GLOBALS['jlg_test_meta'][$post_id] = [];
+        }
+
+        $GLOBALS['jlg_test_meta'][$post_id] = array_merge($GLOBALS['jlg_test_meta'][$post_id], $meta);
+    }
+
     private function buildSnapshotWithPosts(): array
     {
         return [
@@ -772,7 +1026,17 @@ class FrontendGameExplorerAjaxTest extends TestCase
                     'release_iso'      => '2023-02-14',
                     'release_year'     => 2023,
                     'availability'     => 'available',
-                    'search_haystack'  => 'alpha quest studio alpha publisher a action pc playstation 5',
+                    'search_index'     => ' alpha quest studio alpha publisher a action pc playstation 5 ',
+                    'popularity'       => 0,
+                    'index_meta'       => [
+                        'letter'        => 'A',
+                        'developer'     => 'studio alpha',
+                        'publisher'     => 'publisher a',
+                        'availability'  => 'available',
+                        'release_year'  => '2023',
+                        'search_index'  => ' alpha quest studio alpha publisher a action pc playstation 5 ',
+                        'platform_index'=> '|pc|playstation-5|',
+                    ],
                 ],
                 202 => [
                     'letter'           => 'B',
@@ -788,7 +1052,17 @@ class FrontendGameExplorerAjaxTest extends TestCase
                     'release_iso'      => '2022-11-10',
                     'release_year'     => 2022,
                     'availability'     => 'available',
-                    'search_haystack'  => 'beta strike studio beta publisher b action pc',
+                    'search_index'     => ' beta strike studio beta publisher b action pc ',
+                    'popularity'       => 0,
+                    'index_meta'       => [
+                        'letter'        => 'B',
+                        'developer'     => 'studio beta',
+                        'publisher'     => 'publisher b',
+                        'availability'  => 'available',
+                        'release_year'  => '2022',
+                        'search_index'  => ' beta strike studio beta publisher b action pc ',
+                        'platform_index'=> '|pc|',
+                    ],
                 ],
             ],
             'letters_map'    => ['A' => true, 'B' => true],
@@ -796,6 +1070,20 @@ class FrontendGameExplorerAjaxTest extends TestCase
             'platforms_map'  => ['pc' => 'PC', 'playstation-5' => 'PlayStation 5'],
             'developers_map' => ['studio alpha' => 'Studio Alpha', 'studio beta' => 'Studio Beta'],
             'publishers_map' => ['publisher a' => 'Publisher A', 'publisher b' => 'Publisher B'],
+            'search_tokens'  => [
+                'alpha' => 1,
+                'quest' => 1,
+                'studio' => 2,
+                'publisher' => 2,
+                'a' => 1,
+                'action' => 2,
+                'pc' => 2,
+                'playstation' => 1,
+                '5' => 1,
+                'beta' => 1,
+                'strike' => 1,
+                'b' => 1,
+            ],
             'years'          => [
                 'min'     => 2022,
                 'max'     => 2023,
@@ -866,5 +1154,48 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $property = $reflection->getProperty('filters_snapshot');
         $property->setAccessible(true);
         $property->setValue(null, $snapshot);
+
+        $this->hydrateIndexMetaFromSnapshot($snapshot);
+    }
+
+    private function hydrateIndexMetaFromSnapshot(array $snapshot): void
+    {
+        if (!isset($snapshot['posts']) || !is_array($snapshot['posts'])) {
+            return;
+        }
+
+        $index_keys = [
+            'letter'        => '_jlg_ge_letter',
+            'developer'     => '_jlg_ge_developer_key',
+            'publisher'     => '_jlg_ge_publisher_key',
+            'availability'  => '_jlg_ge_availability',
+            'release_year'  => '_jlg_ge_release_year',
+            'search_index'  => '_jlg_ge_search_index',
+            'platform_index'=> '_jlg_ge_platform_index',
+        ];
+
+        foreach ($snapshot['posts'] as $post_id => $post_meta) {
+            if (!isset($GLOBALS['jlg_test_meta'][$post_id])) {
+                $GLOBALS['jlg_test_meta'][$post_id] = [];
+            }
+
+            if (!isset($post_meta['index_meta']) || !is_array($post_meta['index_meta'])) {
+                continue;
+            }
+
+            foreach ($index_keys as $field => $meta_key) {
+                if (!array_key_exists($field, $post_meta['index_meta'])) {
+                    continue;
+                }
+
+                $value = $post_meta['index_meta'][$field];
+
+                if ($value === '' || $value === null) {
+                    continue;
+                }
+
+                $GLOBALS['jlg_test_meta'][$post_id][$meta_key] = $value;
+            }
+        }
     }
 }

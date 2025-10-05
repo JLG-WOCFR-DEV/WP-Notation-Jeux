@@ -20,57 +20,6 @@ if (!function_exists('_n')) {
     }
 }
 
-if (!class_exists('WP_Query')) {
-    class WP_Query
-    {
-        public $args = [];
-        public $posts = [];
-        public $post_count = 0;
-        public $found_posts = 0;
-        public $max_num_pages = 1;
-
-        private $current_index = 0;
-
-        public function __construct($args = [])
-        {
-            $this->args = is_array($args) ? $args : [];
-            $post_ids = isset($args['post__in']) ? (array) $args['post__in'] : [];
-            $per_page = isset($args['posts_per_page']) ? (int) $args['posts_per_page'] : count($post_ids);
-            $all_posts = $GLOBALS['jlg_test_posts'] ?? [];
-
-            foreach ($post_ids as $post_id) {
-                if (isset($all_posts[$post_id])) {
-                    $this->posts[] = $all_posts[$post_id];
-                }
-            }
-
-            if ($per_page > 0) {
-                $this->posts = array_slice($this->posts, 0, $per_page);
-            }
-
-            $this->post_count = count($this->posts);
-            $this->found_posts = $this->post_count;
-        }
-
-        public function have_posts()
-        {
-            return $this->current_index < $this->post_count;
-        }
-
-        public function the_post()
-        {
-            $post = $this->posts[$this->current_index] ?? null;
-
-            if ($post instanceof WP_Post) {
-                $GLOBALS['post'] = $post;
-                $GLOBALS['jlg_test_current_post_id'] = $post->ID;
-            }
-
-            $this->current_index++;
-        }
-    }
-}
-
 if (!function_exists('paginate_links')) {
     function paginate_links($args = [])
     {

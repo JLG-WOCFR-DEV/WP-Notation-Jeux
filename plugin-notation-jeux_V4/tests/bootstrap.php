@@ -813,6 +813,14 @@ if (!function_exists('esc_attr')) {
     }
 }
 
+if (!function_exists('_n')) {
+    function _n($single, $plural, $number, $domain = 'default') {
+        unset($domain);
+
+        return ($number === 1) ? (string) $single : (string) $plural;
+    }
+}
+
 if (!function_exists('esc_attr_e')) {
     function esc_attr_e($text, $domain = 'default') {
         echo esc_attr(__($text, $domain));
@@ -1423,6 +1431,382 @@ if (!class_exists('WP_Post')) {
             foreach ($data as $key => $value) {
                 $this->$key = $value;
             }
+        }
+    }
+}
+
+if (!class_exists('WP_Query')) {
+    class WP_Query
+    {
+        public $args = [];
+        public $posts = [];
+        public $post_count = 0;
+        public $current_post = -1;
+        public $max_num_pages = 0;
+        public $found_posts = 0;
+
+        public function __construct($args = [])
+        {
+            $this->args = is_array($args) ? $args : [];
+
+            $posts_store = $GLOBALS['jlg_test_posts'] ?? [];
+            $filtered    = [];
+
+            $post_in = [];
+            if (isset($this->args['post__in'])) {
+                $post_in = array_values(array_map('intval', (array) $this->args['post__in']));
+            }
+
+            foreach ($posts_store as $post) {
+                if (!$post instanceof WP_Post) {
+                    continue;
+                }
+
+                if (!empty($post_in) && !in_array((int) ($post->ID ?? 0), $post_in, true)) {
+                    continue;
+                }
+
+                if (!$this->matches_post($post)) {
+                    continue;
+                }
+
+                $filtered[] = $post;
+            }
+
+            if (!empty($post_in) && $this->should_preserve_post_in_order()) {
+                $order_map = array_flip($post_in);
+                usort($filtered, function ($a, $b) use ($order_map) {
+                    $a_index = $order_map[(int) ($a->ID ?? 0)] ?? PHP_INT_MAX;
+                    $b_index = $order_map[(int) ($b->ID ?? 0)] ?? PHP_INT_MAX;
+
+                    return $a_index <=> $b_index;
+                });
+            } else {
+                $this->apply_sorting($filtered);
+            }
+
+            $paged    = isset($this->args['paged']) ? max(1, (int) $this->args['paged']) : 1;
+            $per_page = isset($this->args['posts_per_page']) ? (int) $this->args['posts_per_page'] : count($filtered);
+            if ($per_page <= 0) {
+                $per_page = max(1, count($filtered));
+            }
+
+            $this->found_posts   = count($filtered);
+            $this->max_num_pages = $per_page > 0 ? (int) ceil($this->found_posts / $per_page) : 0;
+
+            $offset = ($paged - 1) * $per_page;
+            if ($offset < 0) {
+                $offset = 0;
+            }
+
+            $this->posts      = array_slice($filtered, $offset, $per_page);
+            $this->post_count = count($this->posts);
+
+            if ($this->max_num_pages < 1 && $this->found_posts > 0) {
+                $this->max_num_pages = 1;
+            }
+        }
+
+        public function have_posts()
+        {
+            return ($this->current_post + 1) < $this->post_count;
+        }
+
+        public function the_post()
+        {
+            if (!$this->have_posts()) {
+                return false;
+            }
+
+            $this->current_post++;
+            $GLOBALS['post'] = $this->posts[$this->current_post];
+
+            return $GLOBALS['post'];
+        }
+
+        private function should_preserve_post_in_order(): bool
+        {
+            if (!isset($this->args['post__in'])) {
+                return false;
+            }
+
+            if (!isset($this->args['orderby'])) {
+                return true;
+            }
+
+            $orderby = $this->args['orderby'];
+
+            if (is_array($orderby)) {
+                return false;
+            }
+
+            return $orderby === 'post__in';
+        }
+
+        private function matches_post(WP_Post $post): bool
+        {
+            if (!$this->matches_post_type($post)) {
+                return false;
+            }
+
+            $post_statuses = isset($this->args['post_status']) ? (array) $this->args['post_status'] : ['publish'];
+            if (!in_array($post->post_status ?? 'publish', $post_statuses, true)) {
+                return false;
+            }
+
+            $meta_query = $this->args['meta_query'] ?? [];
+            if (!$this->matches_meta_query($post->ID ?? 0, $meta_query)) {
+                return false;
+            }
+
+            $tax_query = $this->args['tax_query'] ?? [];
+            if (!$this->matches_tax_query($post->ID ?? 0, $tax_query)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        private function matches_post_type(WP_Post $post): bool
+        {
+            if (!isset($this->args['post_type'])) {
+                return true;
+            }
+
+            $allowed = $this->args['post_type'];
+            if (!is_array($allowed)) {
+                $allowed = [$allowed];
+            }
+
+            $allowed = array_filter(array_map('strval', $allowed));
+            if (empty($allowed)) {
+                return true;
+            }
+
+            $post_type = (string) ($post->post_type ?? '');
+
+            return in_array($post_type, $allowed, true);
+        }
+
+        private function matches_meta_query(int $post_id, $query): bool
+        {
+            if (empty($query)) {
+                return true;
+            }
+
+            $clauses  = $query;
+            $relation = 'AND';
+
+            if (isset($clauses['relation'])) {
+                $relation = strtoupper($clauses['relation']);
+                unset($clauses['relation']);
+            }
+
+            $results = [];
+
+            foreach ($clauses as $clause) {
+                if (isset($clause['relation'])) {
+                    $results[] = $this->matches_meta_query($post_id, $clause);
+                    continue;
+                }
+
+                if (!is_array($clause)) {
+                    continue;
+                }
+
+                $results[] = $this->evaluate_meta_clause($post_id, $clause);
+            }
+
+            if ($relation === 'OR') {
+                return in_array(true, $results, true);
+            }
+
+            foreach ($results as $result) {
+                if (!$result) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private function evaluate_meta_clause(int $post_id, array $clause): bool
+        {
+            $meta_key = $clause['key'] ?? '';
+            $compare  = strtoupper($clause['compare'] ?? '=');
+            $value    = $clause['value'] ?? '';
+            $type     = strtoupper($clause['type'] ?? '');
+
+            $meta_store = $GLOBALS['jlg_test_meta'][$post_id] ?? [];
+            $meta_value = $meta_store[$meta_key] ?? null;
+
+            if ($compare === 'NOT EXISTS') {
+                return $meta_value === null;
+            }
+
+            if ($meta_value === null) {
+                return false;
+            }
+
+            if (is_array($meta_value)) {
+                $meta_value = implode(' ', array_map('strval', $meta_value));
+            }
+
+            if ($type === 'NUMERIC') {
+                $meta_value = (float) $meta_value;
+                $value      = is_array($value) ? array_map('floatval', $value) : (float) $value;
+            }
+
+            switch ($compare) {
+                case '=':
+                    return (string) $meta_value === (string) $value;
+                case 'LIKE':
+                    return stripos((string) $meta_value, (string) $value) !== false;
+                case 'IN':
+                    $value_list = is_array($value) ? $value : [$value];
+
+                    return in_array((string) $meta_value, array_map('strval', $value_list), true);
+                case '>=':
+                    return $meta_value >= $value;
+                case '<=':
+                    return $meta_value <= $value;
+                default:
+                    return (string) $meta_value === (string) $value;
+            }
+        }
+
+        private function matches_tax_query(int $post_id, $tax_query): bool
+        {
+            if (empty($tax_query)) {
+                return true;
+            }
+
+            $clauses  = $tax_query;
+            $relation = 'AND';
+
+            if (isset($clauses['relation'])) {
+                $relation = strtoupper($clauses['relation']);
+                unset($clauses['relation']);
+            }
+
+            $results = [];
+
+            foreach ($clauses as $clause) {
+                $taxonomy = $clause['taxonomy'] ?? '';
+                $field    = $clause['field'] ?? 'term_id';
+                $terms    = isset($clause['terms']) ? (array) $clause['terms'] : [];
+
+                $terms_store = $GLOBALS['jlg_test_terms'][$post_id][$taxonomy] ?? [];
+                $matched     = false;
+
+                foreach ($terms_store as $term) {
+                    if (is_array($term)) {
+                        $term = (object) $term;
+                    }
+
+                    if (!is_object($term)) {
+                        continue;
+                    }
+
+                    if ($field === 'term_id' && in_array((int) ($term->term_id ?? 0), array_map('intval', $terms), true)) {
+                        $matched = true;
+                        break;
+                    }
+
+                    if ($field === 'slug' && in_array((string) ($term->slug ?? ''), array_map('strval', $terms), true)) {
+                        $matched = true;
+                        break;
+                    }
+                }
+
+                $results[] = $matched;
+            }
+
+            if ($relation === 'OR') {
+                return in_array(true, $results, true);
+            }
+
+            foreach ($results as $result) {
+                if (!$result) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private function apply_sorting(array &$posts): void
+        {
+            $orderby = $this->args['orderby'] ?? 'date';
+            $order   = strtoupper($this->args['order'] ?? 'DESC');
+
+            if (is_array($orderby) && isset($orderby['meta_value_num']) && isset($this->args['meta_key'])) {
+                $meta_key       = $this->args['meta_key'];
+                $meta_direction = strtoupper($orderby['meta_value_num']);
+                $date_direction = strtoupper($orderby['date'] ?? 'DESC');
+
+                usort($posts, function ($a, $b) use ($meta_key, $meta_direction, $date_direction) {
+                    $a_value = (float) ($GLOBALS['jlg_test_meta'][$a->ID][$meta_key] ?? 0);
+                    $b_value = (float) ($GLOBALS['jlg_test_meta'][$b->ID][$meta_key] ?? 0);
+
+                    if ($a_value === $b_value) {
+                        $a_date = strtotime($a->post_date ?? 'now');
+                        $b_date = strtotime($b->post_date ?? 'now');
+
+                        return $date_direction === 'DESC' ? $b_date <=> $a_date : $a_date <=> $b_date;
+                    }
+
+                    return $meta_direction === 'DESC' ? $b_value <=> $a_value : $a_value <=> $b_value;
+                });
+
+                return;
+            }
+
+            if ($orderby === 'meta_value_num' && isset($this->args['meta_key'])) {
+                $meta_key = $this->args['meta_key'];
+                usort($posts, function ($a, $b) use ($meta_key, $order) {
+                    $a_value = (float) ($GLOBALS['jlg_test_meta'][$a->ID][$meta_key] ?? 0);
+                    $b_value = (float) ($GLOBALS['jlg_test_meta'][$b->ID][$meta_key] ?? 0);
+
+                    if ($a_value === $b_value) {
+                        return 0;
+                    }
+
+                    return $order === 'ASC' ? $a_value <=> $b_value : $b_value <=> $a_value;
+                });
+
+                return;
+            }
+
+            if ($orderby === 'meta_value' && isset($this->args['meta_key'])) {
+                $meta_key = $this->args['meta_key'];
+                usort($posts, function ($a, $b) use ($meta_key, $order) {
+                    $a_value = (string) ($GLOBALS['jlg_test_meta'][$a->ID][$meta_key] ?? '');
+                    $b_value = (string) ($GLOBALS['jlg_test_meta'][$b->ID][$meta_key] ?? '');
+
+                    return $order === 'ASC' ? strcasecmp($a_value, $b_value) : strcasecmp($b_value, $a_value);
+                });
+
+                return;
+            }
+
+            if ($orderby === 'title') {
+                usort($posts, function ($a, $b) use ($order) {
+                    $a_title = strtolower($a->post_title ?? '');
+                    $b_title = strtolower($b->post_title ?? '');
+
+                    return $order === 'ASC' ? $a_title <=> $b_title : $b_title <=> $a_title;
+                });
+
+                return;
+            }
+
+            usort($posts, function ($a, $b) use ($order) {
+                $a_date = strtotime($a->post_date ?? 'now');
+                $b_date = strtotime($b->post_date ?? 'now');
+
+                return $order === 'ASC' ? $a_date <=> $b_date : $b_date <=> $a_date;
+            });
         }
     }
 }
