@@ -1233,13 +1233,22 @@ class Frontend {
                     $response['status'] = $status;
                 }
             } else {
-                $response = array_merge( (array) $response, array( 'status' => $status ) );
+                $response = array_merge(
+                    (array) $response,
+                    array(
+                        'status' => $status,
+                    )
+                );
             }
 
             return $response;
         }
 
-        $data['status'] = $status;
+        if ( array_key_exists( 'status', $data ) && $data['status'] !== null && $data['status'] !== '' ) {
+            $data['_http_status'] = $status;
+        } else {
+            $data['status'] = $status;
+        }
 
         return $data;
     }
