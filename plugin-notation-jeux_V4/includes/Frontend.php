@@ -1600,11 +1600,20 @@ class Frontend {
         $review_best_rating  = isset( $review_rating_bounds['max'] ) ? floatval( $review_rating_bounds['max'] ) : $score_max;
         $review_worst_rating = isset( $review_rating_bounds['min'] ) ? floatval( $review_rating_bounds['min'] ) : 0;
 
+        $game_title = Helpers::get_game_title( $post_id );
+        if ( $game_title === '' ) {
+            $game_title = get_the_title( $post_id );
+        }
+
+        $schema_locale = $this->resolve_schema_locale( $post_id );
+        $review_body   = $this->resolve_review_body_for_schema( $post_id, $schema_locale );
+
         $schema = array(
-            '@context' => 'https://schema.org',
-            '@type'    => 'Game',
-            'name'     => Helpers::get_game_title( $post_id ),
-            'review'   => array(
+            '@context'    => 'https://schema.org',
+            '@type'       => 'Game',
+            'name'        => $game_title,
+            'inLanguage'  => $schema_locale !== '' ? $schema_locale : null,
+            'review'      => array(
                 '@type'         => 'Review',
                 'reviewRating'  => array(
                     '@type'       => 'Rating',
@@ -1617,14 +1626,66 @@ class Frontend {
                     'name'  => get_the_author_meta( 'display_name', get_post_field( 'post_author', $post_id ) ),
                 ),
                 'datePublished' => get_the_date( 'c', $post_id ),
+                'inLanguage'    => $schema_locale !== '' ? $schema_locale : null,
+                'reviewBody'    => $review_body !== '' ? $review_body : null,
             ),
         );
+
+        $publisher_name = $this->sanitize_schema_text( get_post_meta( $post_id, '_jlg_editeur', true ) );
+        if ( $publisher_name !== '' ) {
+            $schema['publisher'] = array(
+                '@type' => 'Organization',
+                'name'  => $publisher_name,
+            );
+        }
+
+        $platforms = $this->collect_platforms_for_schema( $post_id, $schema_locale );
+        if ( ! empty( $platforms ) ) {
+            $schema['availableOnDevice'] = $platforms;
+        }
+
+        $images = $this->collect_images_for_schema( $post_id );
+        if ( ! empty( $images ) ) {
+            $schema['image'] = count( $images ) === 1 ? $images[0] : $images;
+        }
+
+        $video_object = $this->build_video_object_for_schema( $post_id, $game_title, $schema_locale, $review_body );
+        if ( ! empty( $video_object ) ) {
+            $schema['video'] = $video_object;
+        }
+
+        $aggregate_ratings = array();
+
+        $aggregate_ratings[] = array(
+            '@type'       => 'AggregateRating',
+            'name'        => __( 'Editorial Score', 'notation-jlg' ),
+            'ratingValue' => $average_score,
+            'reviewCount' => 1,
+            'ratingCount' => 1,
+            'bestRating'  => $review_best_rating,
+            'worstRating' => $review_worst_rating,
+        );
+
+        if ( $review_best_rating > 0 ) {
+            $normalized_editorial = round( ( $average_score / $review_best_rating ) * 100, 1 );
+            $aggregate_ratings[]  = array(
+                '@type'       => 'AggregateRating',
+                'name'        => __( 'Editorial Score (100 scale)', 'notation-jlg' ),
+                'ratingValue' => $normalized_editorial,
+                'ratingCount' => 1,
+                'reviewCount' => 1,
+                'bestRating'  => 100,
+                'worstRating' => 0,
+            );
+        }
 
         $user_rating_count = (int) get_post_meta( $post_id, '_jlg_user_rating_count', true );
 
         $user_rating_enabled = isset( $options['user_rating_enabled'] )
             ? $options['user_rating_enabled']
             : ( Helpers::get_default_settings()['user_rating_enabled'] ?? 0 );
+
+        $interaction_statistics = array();
 
         if ( ! empty( $user_rating_enabled ) && $user_rating_count > 0 ) {
             $aggregate_rating_value = (float) get_post_meta( $post_id, '_jlg_user_rating_avg', true );
@@ -1641,16 +1702,565 @@ class Frontend {
             $aggregate_best_rating  = isset( $user_rating_bounds['max'] ) ? floatval( $user_rating_bounds['max'] ) : 5.0;
             $aggregate_worst_rating = isset( $user_rating_bounds['min'] ) ? floatval( $user_rating_bounds['min'] ) : 1.0;
 
-            $schema['aggregateRating'] = array(
+            $aggregate_ratings[] = array(
                 '@type'       => 'AggregateRating',
-                'ratingValue' => $aggregate_rating_value,
+                'name'        => __( 'User Rating', 'notation-jlg' ),
+                'ratingValue' => round( $aggregate_rating_value, 1 ),
                 'ratingCount' => $user_rating_count,
                 'bestRating'  => $aggregate_best_rating,
                 'worstRating' => $aggregate_worst_rating,
             );
+
+            if ( $aggregate_best_rating > 0 ) {
+                $normalized_user_rating = round(
+                    ( $aggregate_rating_value / $aggregate_best_rating ) * $review_best_rating,
+                    1
+                );
+
+                $aggregate_ratings[] = array(
+                    '@type'       => 'AggregateRating',
+                    'name'        => __( 'User Rating (review scale)', 'notation-jlg' ),
+                    'ratingValue' => $normalized_user_rating,
+                    'ratingCount' => $user_rating_count,
+                    'bestRating'  => $review_best_rating,
+                    'worstRating' => $review_worst_rating,
+                );
+            }
+
+            $breakdown = self::get_user_rating_breakdown_for_post( $post_id );
+            $distribution_properties = array();
+
+            if ( is_array( $breakdown ) ) {
+                foreach ( $breakdown as $bucket => $count ) {
+                    if ( ! is_numeric( $count ) ) {
+                        continue;
+                    }
+
+                    $bucket_label = is_numeric( $bucket ) ? (string) $bucket : (string) $bucket;
+                    $distribution_properties[] = array(
+                        '@type' => 'PropertyValue',
+                        'name'  => sprintf( __( 'Rating %s', 'notation-jlg' ), $bucket_label ),
+                        'value' => (int) $count,
+                    );
+                }
+            }
+
+            $distribution_statistic = array(
+                '@type'               => 'InteractionCounter',
+                'interactionType'     => 'https://schema.org/UserInteraction',
+                'name'                => __( 'User rating distribution', 'notation-jlg' ),
+                'userInteractionCount' => $user_rating_count,
+            );
+
+            if ( ! empty( $distribution_properties ) ) {
+                $distribution_statistic['additionalProperty'] = $distribution_properties;
+            }
+
+            $interaction_statistics[] = $distribution_statistic;
+
+            if ( is_numeric( $aggregate_rating_value ) ) {
+                $delta = round( $aggregate_rating_value - $average_score, 2 );
+                $trend = 'stable';
+
+                if ( $delta > 0.05 ) {
+                    $trend = 'positive';
+                } elseif ( $delta < -0.05 ) {
+                    $trend = 'negative';
+                }
+
+                $interaction_statistics[] = array(
+                    '@type'           => 'InteractionCounter',
+                    'interactionType' => 'https://schema.org/UserInteraction',
+                    'name'            => __( 'User rating trend', 'notation-jlg' ),
+                    'additionalProperty' => array(
+                        array(
+                            '@type' => 'PropertyValue',
+                            'name'  => 'delta',
+                            'value' => $delta,
+                        ),
+                        array(
+                            '@type' => 'PropertyValue',
+                            'name'  => 'direction',
+                            'value' => $trend,
+                        ),
+                    ),
+                );
+            }
+        }
+
+        $aggregate_ratings = array_values( array_filter( $aggregate_ratings ) );
+
+        if ( ! empty( $aggregate_ratings ) ) {
+            $schema['aggregateRating'] = count( $aggregate_ratings ) === 1 ? $aggregate_ratings[0] : $aggregate_ratings;
+        }
+
+        if ( ! empty( $interaction_statistics ) ) {
+            $schema['interactionStatistic'] = count( $interaction_statistics ) === 1
+                ? $interaction_statistics[0]
+                : $interaction_statistics;
+        }
+
+        if ( isset( $schema['inLanguage'] ) && $schema['inLanguage'] === null ) {
+            unset( $schema['inLanguage'] );
+        }
+
+        if ( isset( $schema['review']['inLanguage'] ) && $schema['review']['inLanguage'] === null ) {
+            unset( $schema['review']['inLanguage'] );
+        }
+
+        if ( isset( $schema['review']['reviewBody'] ) && $schema['review']['reviewBody'] === null ) {
+            unset( $schema['review']['reviewBody'] );
         }
 
         echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>';
+    }
+
+    /**
+     * Resolve the locale used for schema.org payloads.
+     *
+     * @param int $post_id Current post identifier.
+     *
+     * @return string BCP47 locale string or empty string when unknown.
+     */
+    private function resolve_schema_locale( $post_id ) {
+        $locale = '';
+
+        if ( function_exists( 'determine_locale' ) ) {
+            $locale = (string) determine_locale();
+        }
+
+        if ( $locale === '' && function_exists( 'get_locale' ) ) {
+            $locale = (string) get_locale();
+        }
+
+        if ( $locale === '' && defined( 'WPLANG' ) && WPLANG !== '' ) {
+            $locale = (string) WPLANG;
+        }
+
+        if ( $locale === '' ) {
+            $locale = 'fr_FR';
+        }
+
+        $locale = (string) apply_filters( 'jlg_schema_locale', $locale, $post_id );
+
+        $normalized = $this->normalize_locale_for_schema( $locale );
+
+        if ( $normalized === '' ) {
+            return 'fr-FR';
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Normalize locale strings into a BCP47 compatible representation.
+     *
+     * @param string $locale Raw locale string.
+     *
+     * @return string
+     */
+    private function normalize_locale_for_schema( $locale ) {
+        $locale = is_string( $locale ) ? trim( $locale ) : '';
+
+        if ( $locale === '' ) {
+            return '';
+        }
+
+        $locale = str_replace( '_', '-', $locale );
+        $parts  = array_values( array_filter( explode( '-', $locale ) ) );
+
+        if ( empty( $parts ) ) {
+            return '';
+        }
+
+        $language = strtolower( preg_replace( '/[^a-z]/i', '', $parts[0] ) );
+        $normalized = $language;
+
+        if ( isset( $parts[1] ) ) {
+            $normalized .= '-' . strtoupper( preg_replace( '/[^a-z]/i', '', $parts[1] ) );
+        }
+
+        for ( $index = 2; $index < count( $parts ); $index++ ) {
+            $normalized .= '-' . $parts[ $index ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Resolve the review body using tagline variants and fallbacks.
+     *
+     * @param int    $post_id Current post identifier.
+     * @param string $locale  Target locale (BCP47).
+     *
+     * @return string
+     */
+    private function resolve_review_body_for_schema( $post_id, $locale ) {
+        $taglines = $this->get_tagline_variants( $post_id );
+        $language = $this->extract_language_from_locale( $locale );
+
+        if ( $language !== '' && isset( $taglines[ $language ] ) && $taglines[ $language ] !== '' ) {
+            return $taglines[ $language ];
+        }
+
+        foreach ( $taglines as $source_language => $text ) {
+            if ( $text === '' ) {
+                continue;
+            }
+
+            if ( $language === '' ) {
+                return $text;
+            }
+
+            $translated = $this->maybe_translate_text( $text, $source_language, $language, 'tagline', $post_id );
+
+            if ( $translated !== '' ) {
+                return $translated;
+            }
+        }
+
+        foreach ( $taglines as $text ) {
+            if ( $text !== '' ) {
+                return $text;
+            }
+        }
+
+        return $this->fallback_review_body( $post_id );
+    }
+
+    /**
+     * Extract sanitized tagline variants for a given post.
+     *
+     * @param int $post_id Current post identifier.
+     *
+     * @return array<string, string>
+     */
+    private function get_tagline_variants( $post_id ) {
+        $variants = array(
+            'fr' => $this->sanitize_schema_text( get_post_meta( $post_id, '_jlg_tagline_fr', true ) ),
+            'en' => $this->sanitize_schema_text( get_post_meta( $post_id, '_jlg_tagline_en', true ) ),
+        );
+
+        /**
+         * Allow third-parties to expose additional tagline variants.
+         *
+         * @param array<string, string> $variants Existing variants keyed by ISO language code.
+         * @param int                   $post_id  Current post identifier.
+         */
+        $variants = apply_filters( 'jlg_schema_tagline_variants', $variants, $post_id );
+
+        if ( ! is_array( $variants ) ) {
+            return array();
+        }
+
+        $normalized = array();
+
+        foreach ( $variants as $language => $value ) {
+            $language = is_string( $language ) ? strtolower( trim( $language ) ) : '';
+            $value    = $this->sanitize_schema_text( $value );
+
+            if ( $language === '' || $value === '' ) {
+                continue;
+            }
+
+            $normalized[ $language ] = $value;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Attempt to translate a piece of text using custom filters.
+     *
+     * @param string $text            Original text.
+     * @param string $source_language Source language (ISO code) when known.
+     * @param string $target_language Target language (ISO code).
+     * @param string $context         Context identifier.
+     * @param int    $post_id         Current post identifier.
+     *
+     * @return string
+     */
+    private function maybe_translate_text( $text, $source_language, $target_language, $context, $post_id ) {
+        $text            = $this->sanitize_schema_text( $text );
+        $source_language = is_string( $source_language ) ? strtolower( trim( $source_language ) ) : '';
+        $target_language = is_string( $target_language ) ? strtolower( trim( $target_language ) ) : '';
+
+        if ( $text === '' ) {
+            return '';
+        }
+
+        if ( $target_language === '' ) {
+            return '';
+        }
+
+        if ( $source_language !== '' && $source_language === $target_language ) {
+            return $text;
+        }
+
+        $translated = apply_filters(
+            'jlg_auto_translate_text',
+            null,
+            $text,
+            $source_language,
+            $target_language,
+            $context,
+            $post_id
+        );
+
+        if ( is_string( $translated ) ) {
+            $translated = $this->sanitize_schema_text( $translated );
+        }
+
+        return is_string( $translated ) ? $translated : '';
+    }
+
+    /**
+     * Provide a sanitized fallback body based on the excerpt or content.
+     *
+     * @param int $post_id Current post identifier.
+     *
+     * @return string
+     */
+    private function fallback_review_body( $post_id ) {
+        $excerpt = $this->sanitize_schema_text( get_post_field( 'post_excerpt', $post_id ) );
+
+        if ( $excerpt !== '' ) {
+            return $this->truncate_schema_text( $excerpt );
+        }
+
+        $content = $this->sanitize_schema_text( get_post_field( 'post_content', $post_id ) );
+
+        if ( $content !== '' ) {
+            return $this->truncate_schema_text( $content );
+        }
+
+        return '';
+    }
+
+    /**
+     * Sanitize a string for safe inclusion in schema.org payloads.
+     *
+     * @param mixed $text Input text.
+     *
+     * @return string
+     */
+    private function sanitize_schema_text( $text ) {
+        if ( ! is_scalar( $text ) ) {
+            return '';
+        }
+
+        $text = (string) $text;
+
+        if ( $text === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'wp_strip_all_tags' ) ) {
+            $text = wp_strip_all_tags( $text );
+        } else {
+            $text = strip_tags( $text );
+        }
+
+        $text = html_entity_decode( $text, ENT_QUOTES, 'UTF-8' );
+        $text = preg_replace( '/\s+/u', ' ', $text );
+
+        return trim( $text );
+    }
+
+    /**
+     * Extract the primary language code from a locale string.
+     *
+     * @param string $locale Locale string.
+     *
+     * @return string ISO language code.
+     */
+    private function extract_language_from_locale( $locale ) {
+        $locale = is_string( $locale ) ? trim( $locale ) : '';
+
+        if ( $locale === '' ) {
+            return '';
+        }
+
+        $locale = str_replace( '_', '-', $locale );
+        $parts  = explode( '-', $locale );
+        $language = isset( $parts[0] ) ? strtolower( preg_replace( '/[^a-z]/i', '', $parts[0] ) ) : '';
+
+        return $language;
+    }
+
+    /**
+     * Truncate long strings while preserving multibyte safety.
+     *
+     * @param string $text  Input text.
+     * @param int    $limit Maximum length.
+     *
+     * @return string
+     */
+    private function truncate_schema_text( $text, $limit = 320 ) {
+        if ( $text === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) ) {
+            if ( mb_strlen( $text, 'UTF-8' ) > $limit ) {
+                return rtrim( mb_substr( $text, 0, $limit - 1, 'UTF-8' ) ) . '…';
+            }
+
+            return $text;
+        }
+
+        if ( strlen( $text ) > $limit ) {
+            return rtrim( substr( $text, 0, $limit - 1 ) ) . '…';
+        }
+
+        return $text;
+    }
+
+    /**
+     * Collect sanitized platform labels for the schema payload.
+     *
+     * @param int    $post_id Current post identifier.
+     * @param string $locale  Target locale.
+     *
+     * @return string[]
+     */
+    private function collect_platforms_for_schema( $post_id, $locale ) {
+        unset( $locale );
+
+        $raw = get_post_meta( $post_id, '_jlg_plateformes', true );
+        $raw = is_array( $raw ) ? $raw : ( $raw !== '' ? array( $raw ) : array() );
+
+        $labels = array();
+
+        foreach ( $raw as $entry ) {
+            if ( ! is_string( $entry ) ) {
+                continue;
+            }
+
+            $label = $this->sanitize_schema_text( $entry );
+
+            if ( $label === '' ) {
+                continue;
+            }
+
+            $labels[ $label ] = $label;
+        }
+
+        /**
+         * Filter the list of platform labels included in the schema payload.
+         *
+         * @param string[] $labels List of platform labels.
+         * @param int      $post_id Current post identifier.
+         */
+        $labels = apply_filters( 'jlg_schema_platform_labels', array_values( $labels ), $post_id );
+
+        return is_array( $labels ) ? array_values( array_filter( array_map( 'strval', $labels ) ) ) : array();
+    }
+
+    /**
+     * Retrieve image URLs associated with the review.
+     *
+     * @param int $post_id Current post identifier.
+     *
+     * @return string[]
+     */
+    private function collect_images_for_schema( $post_id ) {
+        $raw = get_post_meta( $post_id, '_jlg_cover_image_url', true );
+        $raw = is_array( $raw ) ? $raw : ( $raw !== '' ? array( $raw ) : array() );
+
+        $images = array();
+
+        foreach ( $raw as $candidate ) {
+            if ( ! is_string( $candidate ) ) {
+                continue;
+            }
+
+            $url = esc_url_raw( trim( $candidate ) );
+
+            if ( $url === '' ) {
+                continue;
+            }
+
+            $images[ $url ] = $url;
+        }
+
+        /**
+         * Filter the list of images included in the schema payload.
+         *
+         * @param string[] $images List of image URLs.
+         * @param int      $post_id Current post identifier.
+         */
+        $images = apply_filters( 'jlg_schema_images', array_values( $images ), $post_id );
+
+        return is_array( $images ) ? array_values( array_filter( array_map( 'strval', $images ) ) ) : array();
+    }
+
+    /**
+     * Build the schema.org VideoObject when a review video is available.
+     *
+     * @param int    $post_id Current post identifier.
+     * @param string $game_title Sanitized game title.
+     * @param string $locale  Target locale.
+     * @param string $review_body Review body text.
+     *
+     * @return array<string, mixed>
+     */
+    private function build_video_object_for_schema( $post_id, $game_title, $locale, $review_body ) {
+        $video_url      = get_post_meta( $post_id, '_jlg_review_video_url', true );
+        $video_provider = get_post_meta( $post_id, '_jlg_review_video_provider', true );
+        $video_data     = Helpers::get_review_video_embed_data( $video_url, $video_provider );
+
+        if ( ! is_array( $video_data ) || empty( $video_data ) ) {
+            return array();
+        }
+
+        $has_embed = ! empty( $video_data['has_embed'] ) && ! empty( $video_data['iframe_src'] );
+        $fallback  = isset( $video_data['fallback_message'] ) ? $this->sanitize_schema_text( $video_data['fallback_message'] ) : '';
+
+        if ( ! $has_embed && $fallback === '' ) {
+            return array();
+        }
+
+        $title = $this->sanitize_schema_text( $game_title );
+
+        $video_object = array(
+            '@type' => 'VideoObject',
+            'name'  => sprintf( __( '%s – Review', 'notation-jlg' ), $title !== '' ? $title : __( 'Game review video', 'notation-jlg' ) ),
+        );
+
+        if ( $locale !== '' ) {
+            $video_object['inLanguage'] = $locale;
+        }
+
+        if ( $review_body !== '' ) {
+            $video_object['description'] = $review_body;
+        }
+
+        if ( $has_embed ) {
+            $video_object['embedUrl'] = $video_data['iframe_src'];
+
+            if ( ! empty( $video_data['original_url'] ) ) {
+                $video_object['contentUrl'] = $video_data['original_url'];
+            }
+        } elseif ( $fallback !== '' ) {
+            $video_object['description'] = $fallback;
+        }
+
+        if ( ! empty( $video_data['provider_label'] ) ) {
+            $video_object['publisher'] = array(
+                '@type' => 'Organization',
+                'name'  => $this->sanitize_schema_text( $video_data['provider_label'] ),
+            );
+        }
+
+        $images = $this->collect_images_for_schema( $post_id );
+        if ( ! empty( $images ) ) {
+            $video_object['thumbnailUrl'] = $images[0];
+        }
+
+        $video_object['uploadDate'] = get_the_date( 'c', $post_id );
+
+        return $video_object;
     }
 
     /**
