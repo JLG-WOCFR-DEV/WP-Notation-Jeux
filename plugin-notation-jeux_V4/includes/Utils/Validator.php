@@ -4,8 +4,6 @@ namespace JLG\Notation\Utils;
 
 use DateTime;
 use JLG\Notation\Helpers;
-use ReflectionException;
-use ReflectionMethod;
 
 if ( ! defined( 'ABSPATH' ) ) {
 exit;
@@ -184,14 +182,14 @@ class Validator {
                 $default_definitions = \JLG\Notation\Helpers::get_default_platform_definitions();
             } else {
                 try {
-                    $reflection = new ReflectionMethod( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' );
+                    $reflection = new \ReflectionMethod( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' );
 
                     if ( ! $reflection->isPublic() ) {
                         $reflection->setAccessible( true );
                     }
 
                     $default_definitions = $reflection->invoke( null );
-                } catch ( ReflectionException $exception ) {
+                } catch ( \ReflectionException $exception ) {
                     $default_definitions = array();
                 }
             }
