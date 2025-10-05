@@ -21,6 +21,45 @@ if ( file_exists( $autoload_path ) ) {
         require $autoload_path;
 }
 
+require_once __DIR__ . '/functions.php';
+
+if ( ! defined( 'JLG_NOTATION_FALLBACK_AUTOLOADER' ) ) {
+    define( 'JLG_NOTATION_FALLBACK_AUTOLOADER', true );
+
+    spl_autoload_register(
+        static function ( $class ) {
+            $prefixes = array(
+                'JLG\\Notation\\Admin\\'      => 'includes/Admin/',
+                'JLG\\Notation\\Utils\\'      => 'includes/Utils/',
+                'JLG\\Notation\\Shortcodes\\' => 'includes/Shortcodes/',
+                'JLG\\Notation\\'              => 'includes/',
+            );
+
+            foreach ( $prefixes as $prefix => $directory ) {
+                if ( strpos( $class, $prefix ) !== 0 ) {
+                    continue;
+                }
+
+                $relative_class = substr( $class, strlen( $prefix ) );
+                if ( $relative_class === false ) {
+                    return;
+                }
+
+                $relative_path = str_replace( '\\', '/', $relative_class );
+                $file          = __DIR__ . '/' . $directory . $relative_path . '.php';
+
+                if ( file_exists( $file ) ) {
+                    require_once $file;
+                }
+
+                return;
+            }
+        },
+        true,
+        true
+    );
+}
+
 // Constantes
 define( 'JLG_NOTATION_VERSION', '5.0' );
 define( 'JLG_NOTATION_PLUGIN_FILE', __FILE__ );

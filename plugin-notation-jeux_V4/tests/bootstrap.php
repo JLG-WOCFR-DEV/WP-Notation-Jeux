@@ -44,6 +44,18 @@ if (!function_exists('plugin_dir_url')) {
     }
 }
 
+if (!function_exists('trailingslashit')) {
+    function trailingslashit($value) {
+        $value = (string) $value;
+
+        if ($value === '') {
+            return '/';
+        }
+
+        return rtrim($value, '/\\') . '/';
+    }
+}
+
 if (!function_exists('wp_login_url')) {
     /**
      * Fournit une URL de connexion déterministe avec prise en charge du redirect.

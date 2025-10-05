@@ -1229,7 +1229,9 @@ class Frontend {
             if ( is_object( $response ) && method_exists( $response, 'set_status' ) ) {
                 $response->set_status( $status );
             } elseif ( is_array( $response ) ) {
-                $response['status'] = $status;
+                if ( ! array_key_exists( 'status', $response ) ) {
+                    $response['status'] = $status;
+                }
             } else {
                 $response = array_merge( (array) $response, array( 'status' => $status ) );
             }
