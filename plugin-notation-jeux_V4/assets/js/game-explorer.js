@@ -371,6 +371,10 @@
         parsed.atts.plateforme = parsed.atts.plateforme || '';
         parsed.atts.lettre = parsed.atts.lettre || '';
         parsed.atts.score_position = parsed.atts.score_position || 'bottom-right';
+        parsed.atts.developpeur = parsed.atts.developpeur || '';
+        parsed.atts.editeur = parsed.atts.editeur || '';
+        parsed.atts.annee = parsed.atts.annee || '';
+        parsed.atts.recherche = parsed.atts.recherche || '';
 
         parsed.meta = parsed.meta || {};
 
@@ -802,6 +806,10 @@
         payload.set('categorie', config.atts.categorie || '');
         payload.set('plateforme', config.atts.plateforme || '');
         payload.set('lettre', config.atts.lettre || '');
+        payload.set('developpeur', config.atts.developpeur || '');
+        payload.set('editeur', config.atts.editeur || '');
+        payload.set('annee', config.atts.annee || '');
+        payload.set('recherche', config.atts.recherche || '');
         payload.set(getRequestKey(config, 'orderby'), config.state.orderby);
         payload.set(getRequestKey(config, 'order'), config.state.order);
         payload.set(getRequestKey(config, 'letter'), config.state.letter);

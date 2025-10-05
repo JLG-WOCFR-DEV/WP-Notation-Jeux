@@ -21,7 +21,16 @@
     },
     "filters": {
       "type": "array",
-      "default": ["letter", "category", "platform", "availability"],
+      "default": [
+        "letter",
+        "category",
+        "platform",
+        "developer",
+        "publisher",
+        "availability",
+        "year",
+        "search"
+      ],
       "items": {
         "type": "string"
       }
@@ -45,6 +54,22 @@
     "sort": {
       "type": "string",
       "default": "date|DESC"
+    },
+    "developer": {
+      "type": "string",
+      "default": ""
+    },
+    "publisher": {
+      "type": "string",
+      "default": ""
+    },
+    "year": {
+      "type": "string",
+      "default": ""
+    },
+    "search": {
+      "type": "string",
+      "default": ""
     }
   },
   "editorScript": "notation-jlg-game-explorer-editor",

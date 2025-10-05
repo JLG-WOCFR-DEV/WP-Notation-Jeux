@@ -11,7 +11,7 @@ use JLG\Notation\Helpers;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+    exit;
 }
 
 class GameExplorer {
@@ -246,6 +246,10 @@ class GameExplorer {
             'categorie'      => '',
             'plateforme'     => '',
             'lettre'         => '',
+            'developpeur'    => '',
+            'editeur'        => '',
+            'annee'          => '',
+            'recherche'      => '',
         );
     }
 
@@ -1016,6 +1020,28 @@ class GameExplorer {
             $letter_filter = $forced_letter;
         }
 
+        $forced_developer = isset( $atts['developpeur'] ) ? trim( sanitize_text_field( $atts['developpeur'] ) ) : '';
+        if ( $forced_developer !== '' ) {
+            $developer_filter     = $forced_developer;
+            $developer_filter_key = self::normalize_text_key( $developer_filter );
+        }
+
+        $forced_publisher = isset( $atts['editeur'] ) ? trim( sanitize_text_field( $atts['editeur'] ) ) : '';
+        if ( $forced_publisher !== '' ) {
+            $publisher_filter     = $forced_publisher;
+            $publisher_filter_key = self::normalize_text_key( $publisher_filter );
+        }
+
+        $forced_year = isset( $atts['annee'] ) ? sanitize_text_field( $atts['annee'] ) : '';
+        if ( $forced_year !== '' ) {
+            $year_filter_raw = $forced_year;
+        }
+
+        $forced_search = isset( $atts['recherche'] ) ? sanitize_text_field( $atts['recherche'] ) : '';
+        if ( $forced_search !== '' ) {
+            $search_filter = $forced_search;
+        }
+
         $developer_filter_key = $developer_filter !== '' ? self::normalize_text_key( $developer_filter ) : '';
         $publisher_filter_key = $publisher_filter !== '' ? self::normalize_text_key( $publisher_filter ) : '';
 
@@ -1252,6 +1278,10 @@ class GameExplorer {
                         'categorie'      => $atts['categorie'],
                         'plateforme'     => $atts['plateforme'],
                         'lettre'         => $atts['lettre'],
+                        'developpeur'    => $atts['developpeur'],
+                        'editeur'        => $atts['editeur'],
+                        'annee'          => $atts['annee'],
+                        'recherche'      => $atts['recherche'],
                     ),
                     'state'   => array(
                         'orderby'      => $orderby,
@@ -1467,6 +1497,10 @@ class GameExplorer {
                 'categorie'      => $atts['categorie'],
                 'plateforme'     => $atts['plateforme'],
                 'lettre'         => $atts['lettre'],
+                'developpeur'    => $atts['developpeur'],
+                'editeur'        => $atts['editeur'],
+                'annee'          => $atts['annee'],
+                'recherche'      => $atts['recherche'],
             ),
             'state'   => array(
                 'orderby'      => $orderby,

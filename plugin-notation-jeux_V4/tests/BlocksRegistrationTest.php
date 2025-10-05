@@ -174,4 +174,30 @@ class BlocksRegistrationTest extends TestCase
         $this->assertSame($expected_shortcode, $GLOBALS['jlg_test_last_shortcode']);
         $this->assertSame('[rendered]' . $expected_shortcode, $result);
     }
+
+    public function test_render_game_explorer_block_supports_extended_prefilters(): void
+    {
+        $blocks = new \JLG\Notation\Blocks();
+
+        $GLOBALS['jlg_test_last_shortcode'] = null;
+
+        $result = $blocks->render_game_explorer_block([
+            'postsPerPage' => 8,
+            'columns' => 2,
+            'scorePosition' => 'top-left',
+            'filters' => ['developer', 'publisher', 'year', 'search'],
+            'category' => 'action',
+            'platform' => 'pc',
+            'letter' => 'A',
+            'developer' => 'Studio Alpha',
+            'publisher' => 'Publisher Beta',
+            'year' => '2023',
+            'search' => 'Metroid',
+        ]);
+
+        $expected_shortcode = '[jlg_game_explorer posts_per_page="8" columns="2" score_position="top-left" filters="developer,publisher,year,search" categorie="action" plateforme="pc" lettre="A" developpeur="Studio Alpha" editeur="Publisher Beta" annee="2023" recherche="Metroid"]';
+
+        $this->assertSame($expected_shortcode, $GLOBALS['jlg_test_last_shortcode']);
+        $this->assertSame('[rendered]' . $expected_shortcode, $result);
+    }
 }
