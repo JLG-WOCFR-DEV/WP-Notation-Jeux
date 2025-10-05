@@ -2,7 +2,7 @@
 
 ## Contexte
 - La grille met désormais à disposition l'attribut `data-loading-text` côté PHP afin que le message "Chargement…" reste disponible même sans initialisation JavaScript.
-- Le script `game-explorer.js` synchronise ce texte avec la localisation front (`strings.loading`) et maintient `aria-busy` à jour pour les lecteurs d'écran.
+- Le script `game-explorer.js` synchronise ce texte avec la localisation front (`strings.loading`) et maintient `aria-busy` à jour pour les lecteurs d'écran. Un fallback commun (`Chargement…`) est partagé entre PHP et JavaScript via `DEFAULT_LOADING_TEXT` pour éviter les désynchronisations.
 
 ## Vérification visuelle
 1. Forcer la classe `is-loading` sur `.jlg-game-explorer` (ou déclencher une requête AJAX via les filtres) et confirmer l'apparition de la bulle centrée avec le message traduit.
