@@ -2311,27 +2311,42 @@ class Frontend {
             ),
         );
 
+        $item_reviewed = array(
+            '@type' => 'VideoGame',
+            'name'  => $game_title,
+        );
+
+        if ( $schema_locale !== '' ) {
+            $item_reviewed['inLanguage'] = $schema_locale;
+        }
+
         $publisher_name = $this->sanitize_schema_text( get_post_meta( $post_id, '_jlg_editeur', true ) );
         if ( $publisher_name !== '' ) {
-            $schema['publisher'] = array(
+            $publisher = array(
                 '@type' => 'Organization',
                 'name'  => $publisher_name,
             );
+
+            $schema['publisher']        = $publisher;
+            $item_reviewed['publisher'] = $publisher;
         }
 
         $platforms = $this->collect_platforms_for_schema( $post_id, $schema_locale );
         if ( ! empty( $platforms ) ) {
             $schema['availableOnDevice'] = $platforms;
+            $item_reviewed['gamePlatform'] = $platforms;
         }
 
         $images = $this->collect_images_for_schema( $post_id );
         if ( ! empty( $images ) ) {
             $schema['image'] = count( $images ) === 1 ? $images[0] : $images;
+            $item_reviewed['image'] = $schema['image'];
         }
 
         $video_object = $this->build_video_object_for_schema( $post_id, $game_title, $schema_locale, $review_body );
         if ( ! empty( $video_object ) ) {
             $schema['video'] = $video_object;
+            $item_reviewed['trailer'] = $video_object;
         }
 
         $aggregate_ratings = array();
@@ -2404,6 +2419,20 @@ class Frontend {
                     'ratingCount' => $user_rating_count,
                     'bestRating'  => $review_best_rating,
                     'worstRating' => $review_worst_rating,
+                );
+
+                $normalized_user_percentage = round(
+                    ( $aggregate_rating_value / $aggregate_best_rating ) * 100,
+                    1
+                );
+
+                $aggregate_ratings[] = array(
+                    '@type'       => 'AggregateRating',
+                    'name'        => __( 'User Rating (100 scale)', 'notation-jlg' ),
+                    'ratingValue' => $normalized_user_percentage,
+                    'ratingCount' => $user_rating_count,
+                    'bestRating'  => 100,
+                    'worstRating' => 0,
                 );
             }
 
@@ -2478,6 +2507,10 @@ class Frontend {
             $schema['interactionStatistic'] = count( $interaction_statistics ) === 1
                 ? $interaction_statistics[0]
                 : $interaction_statistics;
+        }
+
+        if ( ! empty( $item_reviewed ) ) {
+            $schema['review']['itemReviewed'] = $item_reviewed;
         }
 
         if ( isset( $schema['inLanguage'] ) && $schema['inLanguage'] === null ) {
