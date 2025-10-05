@@ -3,6 +3,7 @@
     const ajaxUrl = l10n.ajaxUrl || window.ajaxurl || '';
     const nonce = l10n.nonce || '';
     const strings = l10n.strings || {};
+    const DEFAULT_LOADING_TEXT = 'Chargement…';
 
     const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search', 'paged'];
     const activeRequestControllers = new WeakMap();
@@ -472,12 +473,41 @@
         }
     }
 
-    function setResultsBusyState(resultsNode, isBusy) {
+    function resolveLoadingText(resultsNode, overrideText) {
+        if (typeof overrideText === 'string') {
+            const trimmedOverride = overrideText.trim();
+            if (trimmedOverride !== '') {
+                return trimmedOverride;
+            }
+        }
+
+        if (resultsNode && resultsNode.dataset && typeof resultsNode.dataset.loadingText === 'string') {
+            const trimmedDataValue = resultsNode.dataset.loadingText.trim();
+            if (trimmedDataValue !== '') {
+                return trimmedDataValue;
+            }
+        }
+
+        if (typeof strings.loading === 'string') {
+            const trimmedString = strings.loading.trim();
+            if (trimmedString !== '') {
+                return trimmedString;
+            }
+        }
+
+        return DEFAULT_LOADING_TEXT;
+    }
+
+    function setResultsBusyState(resultsNode, isBusy, overrideText) {
         if (!resultsNode) {
             return;
         }
 
-        resultsNode.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+        const busyValue = isBusy ? 'true' : 'false';
+        resultsNode.setAttribute('aria-busy', busyValue);
+
+        const resolvedLoadingText = resolveLoadingText(resultsNode, overrideText);
+        resultsNode.dataset.loadingText = resolvedLoadingText;
     }
 
     function focusUpdatedResults(refs) {
@@ -755,10 +785,8 @@
             || refreshOptions.replaceState === true
             || refreshOptions.replaceHistory === true;
 
-        const loadingText = strings.loading || 'Loading…';
         if (refs.resultsNode) {
-            refs.resultsNode.dataset.loadingText = loadingText;
-            setResultsBusyState(refs.resultsNode, true);
+            setResultsBusyState(refs.resultsNode, true, strings.loading || '');
         }
 
         container.classList.add('is-loading');
