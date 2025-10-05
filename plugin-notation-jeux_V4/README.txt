@@ -20,7 +20,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 * **Système de notation flexible** : 6 catégories personnalisables avec un barème ajustable (par défaut sur 10)
 * **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
-* **Notation utilisateurs** : Permettez à vos lecteurs de voter, visualisez la répartition des notes dans un histogramme accessible mis à jour en direct et laissez le script AJAX empêcher les doubles soumissions
+* **Notation utilisateurs** : Permettez à vos lecteurs de voter, visualisez la répartition des notes dans un histogramme accessible mis à jour en direct et laissez le script AJAX empêcher les doubles soumissions. L'option *Connexion obligatoire avant le vote* autorise au besoin la restriction aux membres connectés.
 * **Badge coup de cœur** : Activez un badge éditorial lorsque la note dépasse un seuil configurable et affichez en parallèle la moyenne des lecteurs ainsi que l'écart avec la rédaction
 * **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
 * **Nom de jeu personnalisé** : Remplacez le titre WordPress dans les tableaux, widgets et données structurées
@@ -84,7 +84,7 @@ Le plugin expose neuf blocs dynamiques prêts à l'emploi :
   automatiquement les métadonnées saisies dans la fiche test.
 * **Fiche technique** (`notation-jlg/game-info`) — sélection des champs via cases à cocher, titre personnalisable et
   ciblage d'un autre test.
-* **Notation utilisateurs** (`notation-jlg/user-rating`) — intègre le module de vote AJAX pour les lecteurs.
+* **Notation utilisateurs** (`notation-jlg/user-rating`) — intègre le module de vote AJAX pour les lecteurs, avec option pour restreindre le vote aux membres connectés.
 * **Tableau récapitulatif** (`notation-jlg/summary-display`) — réglage du nombre d'entrées, du layout (table ou grille), des
   colonnes visibles et des filtres par défaut.
 * **Bloc tout-en-un** (`notation-jlg/all-in-one`) — activez/désactivez chaque sous-bloc, modifiez le style, la couleur d'accent, les titres et le format du score (valeur absolue ou pourcentage).

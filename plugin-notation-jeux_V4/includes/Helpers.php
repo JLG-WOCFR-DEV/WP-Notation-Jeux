@@ -704,6 +704,7 @@ class Helpers {
             // Options des modules
             'tagline_enabled'              => 1,
             'user_rating_enabled'          => 1,
+            'user_rating_requires_login'   => 0,
             'table_zebra_striping'         => 0,
             'table_border_style'           => 'horizontal',
             'table_border_width'           => 1,

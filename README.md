@@ -28,7 +28,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 - **Effets Glow / Neon** configurables pour les modes texte ou cercle (intensité, pulsation, couleur dynamique ou fixe).
 - **Modules optionnels** : activer/désactiver la notation utilisateurs, le badge « Coup de cœur », les taglines, les animations de barres ou le schema SEO JSON-LD directement depuis l’onglet Réglages.
 - **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes).
-- **Notation des lecteurs** : personnalisez couleurs et textes du module dédié et profitez d'un histogramme accessible mis à jour en direct, avec verrouillage automatique des interactions pendant le traitement AJAX pour éviter les doubles clics.
+- **Notation des lecteurs** : personnalisez couleurs et textes du module dédié et profitez d'un histogramme accessible mis à jour en direct, avec verrouillage automatique des interactions pendant le traitement AJAX pour éviter les doubles clics. Les votes peuvent, au besoin, être réservés aux membres connectés via l'option *Connexion obligatoire avant le vote* dans les réglages.
 
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).

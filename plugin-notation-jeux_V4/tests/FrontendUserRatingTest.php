@@ -21,6 +21,9 @@ class FrontendUserRatingTest extends TestCase
         $GLOBALS['jlg_test_meta']        = [];
         $GLOBALS['jlg_test_meta_updates'] = [];
         $this->resetShortcodeTracking();
+        delete_option('notation_jlg_settings');
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+        unset($GLOBALS['jlg_test_is_user_logged_in']);
     }
 
     public function test_handle_user_rating_rejects_unavailable_post(): void
@@ -289,6 +292,89 @@ class FrontendUserRatingTest extends TestCase
             ],
             $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_breakdown']
         );
+    }
+
+    public function test_handle_user_rating_requires_login_when_option_enabled(): void
+    {
+        $post_id = 4242;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        update_option('notation_jlg_settings', [
+            'user_rating_requires_login' => 1,
+            'user_rating_enabled'        => 1,
+        ]);
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $_SERVER['REMOTE_ADDR'] = '198.18.0.1';
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $_POST = [
+            'token'   => str_repeat('e', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '4',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(401, $exception->status);
+            $this->assertIsArray($exception->data);
+            $this->assertSame('Connectez-vous pour voter.', $exception->data['message']);
+            $this->assertArrayHasKey('requires_login', $exception->data);
+            $this->assertTrue($exception->data['requires_login']);
+        }
+    }
+
+    public function test_handle_user_rating_accepts_vote_when_login_required_and_user_authenticated(): void
+    {
+        $post_id = 5252;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        update_option('notation_jlg_settings', [
+            'user_rating_requires_login' => 1,
+            'user_rating_enabled'        => 1,
+        ]);
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $GLOBALS['jlg_test_is_user_logged_in'] = true;
+        $_SERVER['REMOTE_ADDR'] = '198.18.0.5';
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        $_POST = [
+            'token'   => str_repeat('f', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '5',
+        ];
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+            $this->assertNull($exception->status);
+            $this->assertSame('5.00', $exception->data['new_average']);
+            $this->assertSame(1, $exception->data['new_count']);
+            $this->assertArrayHasKey('new_breakdown', $exception->data);
+            $this->assertSame(1, (int) ($GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_count'] ?? 0));
+        } finally {
+            unset($GLOBALS['jlg_test_is_user_logged_in']);
+        }
     }
 
     public function test_get_user_rating_breakdown_retrofills_missing_meta(): void

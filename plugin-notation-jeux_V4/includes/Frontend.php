@@ -660,9 +660,19 @@ class Frontend {
         if ( empty( $options['user_rating_enabled'] ) ) {
             wp_send_json_error(
                 array(
-					'message' => esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
+                                        'message' => esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
                 ),
                 403
+            );
+        }
+
+        if ( ! empty( $options['user_rating_requires_login'] ) && ! is_user_logged_in() ) {
+            wp_send_json_error(
+                array(
+                    'message'        => esc_html__( 'Connectez-vous pour voter.', 'notation-jlg' ),
+                    'requires_login' => true,
+                ),
+                401
             );
         }
 
@@ -1705,6 +1715,10 @@ class Frontend {
             // Valeurs par défaut pour les variables utilisées par les templates existants.
             $template_defaults = array(
                 'options'              => array(),
+                'requires_login'       => false,
+                'login_required'       => false,
+                'login_url'            => '',
+                'is_logged_in'         => false,
                 'average_score'        => null,
                 'scores'               => array(),
                 'categories'           => array(),
