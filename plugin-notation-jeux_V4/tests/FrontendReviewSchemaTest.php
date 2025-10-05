@@ -55,6 +55,8 @@ class FrontendReviewSchemaTest extends TestCase
         $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_count']      = 7;
         $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_avg']        = 4.2;
         $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_rating_breakdown']  = array(
+            '1' => 0,
+            '2' => 0,
             '5' => 3,
             '4' => 2,
             '3' => 2,
@@ -93,9 +95,76 @@ class FrontendReviewSchemaTest extends TestCase
         $this->assertStringStartsWith('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $data['video']['embedUrl'] ?? '', 'Schema should expose the privacy-friendly embed URL.');
         $this->assertSame('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $data['video']['contentUrl'] ?? null, 'Schema should expose the original video URL.');
         $this->assertIsArray($data['aggregateRating'] ?? null, 'Schema should expose multiple aggregate rating scales.');
-        $this->assertGreaterThanOrEqual(3, count($data['aggregateRating']), 'Schema should include editorial and user aggregates.');
+        $aggregates = $data['aggregateRating'];
+        if (isset($aggregates['@type'])) {
+            $aggregates = [$aggregates];
+        }
+
+        $this->assertGreaterThanOrEqual(4, count($aggregates), 'Schema should include editorial and user aggregates.');
+
+        $aggregate_names = [];
+        foreach ($aggregates as $aggregate) {
+            if (is_array($aggregate) && isset($aggregate['name'])) {
+                $aggregate_names[] = $aggregate['name'];
+            }
+        }
+
+        $this->assertContains('Editorial Score', $aggregate_names, 'Editorial aggregate should be present.');
+        $this->assertContains('Editorial Score (100 scale)', $aggregate_names, 'Normalized editorial aggregate should be present.');
+        $this->assertContains('User Rating', $aggregate_names, 'User aggregate should be present.');
+        $this->assertContains('User Rating (review scale)', $aggregate_names, 'User aggregate translated to review scale should be present.');
+        $this->assertContains('User Rating (100 scale)', $aggregate_names, 'User aggregate normalized on a 100 scale should be present.');
+
         $this->assertIsArray($data['interactionStatistic'] ?? null, 'Schema should expose interaction statistics.');
-        $this->assertNotEmpty($data['interactionStatistic'], 'Interaction statistics should describe user votes.');
+        $interaction_statistics = $data['interactionStatistic'];
+        if (isset($interaction_statistics['@type'])) {
+            $interaction_statistics = [$interaction_statistics];
+        }
+
+        $this->assertNotEmpty($interaction_statistics, 'Interaction statistics should describe user votes.');
+
+        $interactions_by_name = [];
+        foreach ($interaction_statistics as $entry) {
+            if (is_array($entry) && isset($entry['name'])) {
+                $interactions_by_name[$entry['name']] = $entry;
+            }
+        }
+
+        $distribution = $interactions_by_name['User rating distribution'] ?? null;
+        $this->assertIsArray($distribution, 'Distribution statistic should be available.');
+        $this->assertSame(7, $distribution['userInteractionCount'] ?? null, 'Distribution should reflect the user vote count.');
+
+        $distribution_values = [];
+        foreach ((array) ($distribution['additionalProperty'] ?? []) as $property) {
+            if (isset($property['name'], $property['value'])) {
+                $distribution_values[$property['name']] = $property['value'];
+            }
+        }
+
+        $this->assertSame(3, $distribution_values[sprintf(__('Rating %s', 'notation-jlg'), '5')] ?? null, 'Distribution should expose vote buckets.');
+        $this->assertSame(2, $distribution_values[sprintf(__('Rating %s', 'notation-jlg'), '4')] ?? null, 'Distribution should expose vote buckets.');
+        $this->assertSame(2, $distribution_values[sprintf(__('Rating %s', 'notation-jlg'), '3')] ?? null, 'Distribution should expose vote buckets.');
+
+        $trend = $interactions_by_name['User rating trend'] ?? null;
+        $this->assertIsArray($trend, 'Trend statistic should be available.');
+
+        $trend_properties = [];
+        foreach ((array) ($trend['additionalProperty'] ?? []) as $property) {
+            if (isset($property['name'], $property['value'])) {
+                $trend_properties[$property['name']] = $property['value'];
+            }
+        }
+
+        $this->assertSame(-4.2, $trend_properties['delta'] ?? null, 'Trend should expose the delta between user and editorial averages.');
+        $this->assertSame('negative', $trend_properties['direction'] ?? null, 'Trend should expose the direction of the delta.');
+
+        $this->assertSame('VideoGame', $data['review']['itemReviewed']['@type'] ?? null, 'Item reviewed should describe the video game.');
+        $this->assertSame('Custom Review Schema', $data['review']['itemReviewed']['name'] ?? null, 'Item reviewed should reuse the game title.');
+        $this->assertSame('fr-FR', $data['review']['itemReviewed']['inLanguage'] ?? null, 'Item reviewed should inherit the schema locale.');
+        $this->assertSame('Studio JLG', $data['review']['itemReviewed']['publisher']['name'] ?? null, 'Item reviewed should include the game publisher.');
+        $this->assertContains('PlayStation 5', (array) ($data['review']['itemReviewed']['gamePlatform'] ?? []), 'Item reviewed should expose platform availability.');
+        $this->assertContains('https://example.com/covers/schema.jpg', (array) ($data['review']['itemReviewed']['image'] ?? []), 'Item reviewed should reuse review imagery.');
+        $this->assertSame('VideoObject', $data['review']['itemReviewed']['trailer']['@type'] ?? null, 'Item reviewed should reference the review video as a trailer.');
     }
 
     public function test_schema_falls_back_to_weighted_average_when_cache_missing(): void
