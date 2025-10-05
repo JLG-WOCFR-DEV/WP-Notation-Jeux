@@ -156,6 +156,42 @@ class Settings {
             Helpers::schedule_score_scale_migration( $old_score_max, $new_score_max );
         }
 
+        if ( isset( $sanitized['rating_badge_threshold'] ) ) {
+            $raw_threshold = isset( $input['rating_badge_threshold'] )
+                ? $input['rating_badge_threshold']
+                : $sanitized['rating_badge_threshold'];
+
+            if ( is_string( $raw_threshold ) ) {
+                $raw_threshold = trim( $raw_threshold );
+            }
+
+            $threshold = is_numeric( $raw_threshold )
+                ? (float) $raw_threshold
+                : ( is_numeric( $sanitized['rating_badge_threshold'] ) ? (float) $sanitized['rating_badge_threshold'] : 0.0 );
+
+            $threshold = max( 0.0, $threshold );
+
+            $score_max_reference = $new_score_max;
+
+            if ( ! is_numeric( $score_max_reference ) && isset( $sanitized['score_max'] ) ) {
+                $score_max_reference = Helpers::get_score_max( array( 'score_max' => $sanitized['score_max'] ) );
+            }
+
+            if ( is_numeric( $score_max_reference ) ) {
+                $threshold = min( $threshold, (float) $score_max_reference );
+            }
+
+            $step = isset( $this->field_constraints['rating_badge_threshold']['step'] )
+                ? (float) $this->field_constraints['rating_badge_threshold']['step']
+                : 0.1;
+
+            if ( $step > 0 ) {
+                $threshold = $this->round_to_step_precision( $threshold, $step );
+            }
+
+            $sanitized['rating_badge_threshold'] = $threshold;
+        }
+
         Helpers::flush_plugin_options_cache();
 
         return $sanitized;
