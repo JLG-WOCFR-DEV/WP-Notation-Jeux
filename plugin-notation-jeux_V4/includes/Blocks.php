@@ -202,7 +202,7 @@ class Blocks {
         }
 
         $frontend_handle = Frontend::FRONTEND_STYLE_HANDLE;
-        if ( ! wp_style_is( $frontend_handle, 'registered' ) ) { 
+        if ( ! wp_style_is( $frontend_handle, 'registered' ) ) {
             wp_register_style(
                 $frontend_handle,
                 trailingslashit( JLG_NOTATION_PLUGIN_URL ) . 'assets/css/jlg-frontend.css',
@@ -241,7 +241,7 @@ class Blocks {
         }
 
         $game_explorer_handle = Frontend::GAME_EXPLORER_STYLE_HANDLE;
-        if ( ! wp_style_is( $game_explorer_handle, 'registered' ) ) { 
+        if ( ! wp_style_is( $game_explorer_handle, 'registered' ) ) {
             wp_register_style(
                 $game_explorer_handle,
                 trailingslashit( JLG_NOTATION_PLUGIN_URL ) . 'assets/css/game-explorer.css',
@@ -372,7 +372,7 @@ class Blocks {
         }
 
         if ( array_key_exists( 'showAnimations', $attributes ) ) {
-            $is_enabled          = (bool) $attributes['showAnimations'];
+            $is_enabled         = (bool) $attributes['showAnimations'];
             $atts['animations'] = $is_enabled ? 'oui' : 'non';
         }
 
@@ -597,6 +597,28 @@ class Blocks {
 
         if ( ! empty( $attributes['letter'] ) && is_string( $attributes['letter'] ) ) {
             $atts['lettre'] = sanitize_text_field( $attributes['letter'] );
+        }
+
+        if ( ! empty( $attributes['developer'] ) && is_string( $attributes['developer'] ) ) {
+            $atts['developpeur'] = sanitize_text_field( $attributes['developer'] );
+        }
+
+        if ( ! empty( $attributes['publisher'] ) && is_string( $attributes['publisher'] ) ) {
+            $atts['editeur'] = sanitize_text_field( $attributes['publisher'] );
+        }
+
+        if ( isset( $attributes['year'] ) && is_string( $attributes['year'] ) ) {
+            $year = sanitize_text_field( $attributes['year'] );
+            if ( $year !== '' ) {
+                $atts['annee'] = $year;
+            }
+        }
+
+        if ( isset( $attributes['search'] ) && is_string( $attributes['search'] ) ) {
+            $search = sanitize_text_field( $attributes['search'] );
+            if ( $search !== '' ) {
+                $atts['recherche'] = $search;
+            }
         }
 
         $sort_override = null;

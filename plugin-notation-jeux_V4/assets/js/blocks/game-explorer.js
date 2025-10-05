@@ -37,7 +37,11 @@
         { value: 'letter', label: __('Filtre lettre', 'notation-jlg') },
         { value: 'category', label: __('Filtre catégorie', 'notation-jlg') },
         { value: 'platform', label: __('Filtre plateforme', 'notation-jlg') },
+        { value: 'developer', label: __('Filtre développeur', 'notation-jlg') },
+        { value: 'publisher', label: __('Filtre éditeur', 'notation-jlg') },
         { value: 'availability', label: __('Disponibilité', 'notation-jlg') },
+        { value: 'year', label: __('Filtre année de sortie', 'notation-jlg') },
+        { value: 'search', label: __('Recherche', 'notation-jlg') },
     ];
 
     var sortOptions = [
@@ -176,6 +180,35 @@
                             onChange: function (value) {
                                 setAttributes({ letter: value || '' });
                             },
+                        }),
+                        createElement(TextControl, {
+                            label: __('Développeur (nom exact)', 'notation-jlg'),
+                            value: attributes.developer || '',
+                            onChange: function (value) {
+                                setAttributes({ developer: value || '' });
+                            },
+                        }),
+                        createElement(TextControl, {
+                            label: __('Éditeur (nom exact)', 'notation-jlg'),
+                            value: attributes.publisher || '',
+                            onChange: function (value) {
+                                setAttributes({ publisher: value || '' });
+                            },
+                        }),
+                        createElement(TextControl, {
+                            label: __('Année de sortie', 'notation-jlg'),
+                            type: 'number',
+                            value: attributes.year || '',
+                            onChange: function (value) {
+                                setAttributes({ year: value || '' });
+                            },
+                        }),
+                        createElement(TextControl, {
+                            label: __('Recherche (mot-clé)', 'notation-jlg'),
+                            value: attributes.search || '',
+                            onChange: function (value) {
+                                setAttributes({ search: value || '' });
+                            },
                         })
                     )
                 ),
@@ -191,6 +224,10 @@
                             category: attributes.category || '',
                             platform: attributes.platform || '',
                             letter: attributes.letter || '',
+                            developer: attributes.developer || '',
+                            publisher: attributes.publisher || '',
+                            year: attributes.year || '',
+                            search: attributes.search || '',
                             scorePosition: attributes.scorePosition || 'bottom-right',
                             sort: attributes.sort || 'date|DESC',
                         },

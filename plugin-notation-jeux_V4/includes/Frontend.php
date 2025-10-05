@@ -17,7 +17,7 @@ use JLG\Notation\Shortcodes\Tagline;
 use JLG\Notation\Shortcodes\UserRating;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+    exit;
 }
 
 class Frontend {
@@ -1380,6 +1380,10 @@ class Frontend {
             'categorie'      => isset( $_POST['categorie'] ) ? sanitize_text_field( wp_unslash( $_POST['categorie'] ) ) : ( $default_atts['categorie'] ?? '' ),
             'plateforme'     => isset( $_POST['plateforme'] ) ? sanitize_text_field( wp_unslash( $_POST['plateforme'] ) ) : ( $default_atts['plateforme'] ?? '' ),
             'lettre'         => isset( $_POST['lettre'] ) ? sanitize_text_field( wp_unslash( $_POST['lettre'] ) ) : ( $default_atts['lettre'] ?? '' ),
+            'developpeur'    => isset( $_POST['developpeur'] ) ? sanitize_text_field( wp_unslash( $_POST['developpeur'] ) ) : ( $default_atts['developpeur'] ?? '' ),
+            'editeur'        => isset( $_POST['editeur'] ) ? sanitize_text_field( wp_unslash( $_POST['editeur'] ) ) : ( $default_atts['editeur'] ?? '' ),
+            'annee'          => isset( $_POST['annee'] ) ? sanitize_text_field( wp_unslash( $_POST['annee'] ) ) : ( $default_atts['annee'] ?? '' ),
+            'recherche'      => isset( $_POST['recherche'] ) ? sanitize_text_field( wp_unslash( $_POST['recherche'] ) ) : ( $default_atts['recherche'] ?? '' ),
         );
 
         if ( $atts['posts_per_page'] < 1 ) {
