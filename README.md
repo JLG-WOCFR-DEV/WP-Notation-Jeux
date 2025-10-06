@@ -3,7 +3,7 @@
 Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un système complet de notation destiné aux sites de tests de jeux vidéo. Il fournit un rendu professionnel pour vos reviews avec des shortcodes prêts à l'emploi, un widget et des helpers PHP pour intégrer la note partout dans votre thème.
 
 ## Présentation rapide
-- **Fonctionnalités clés :** 6 catégories de notes personnalisables, bloc complet avec points forts/faibles, fiche technique, widget des derniers tests, tableau récapitulatif, prise en charge de la notation des lecteurs, badge « Coup de cœur » éditorial à seuil configurable, intégration de l'API RAWG et schema.org pour les rich snippets.
+- **Fonctionnalités clés :** 6 catégories de notes personnalisables avec badge « Coup de cœur » éditorial, notation lecteurs avec histogramme dynamique, remplissage RAWG, validation PEGI/date/nom du jeu, Game Explorer filtrable, Score Insights (moyenne, médiane, histogramme, top plateformes), tableau récapitulatif triable et widget des derniers tests.
 - **Prérequis techniques :** WordPress 5.0 minimum et PHP 7.4 ou supérieur, vérifiés automatiquement à l’activation du plugin.
 - **Architecture :** le cœur du plugin charge dynamiquement les composants admin et front-office, inclut un widget et expose des fonctions helper globales (`jlg_notation()`, `jlg_get_post_rating()`, `jlg_display_post_rating()`).
 
@@ -14,22 +14,27 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 4. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
 5. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu.
 
-## Utilisation au quotidien
 - **Shortcodes principaux** :
   - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) pour afficher en une seule fois notation, points forts/faibles et tagline avec de nombreux attributs (`post_id`, `style`, `couleur_accent`, etc.).
-  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction et affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction.
+  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]`, `[jlg_game_explorer]`, `[jlg_score_insights]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction et affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction.
+- **Blocs Gutenberg** :
+  - `notation-jlg/rating-block` pour gérer format du score (texte/cercle), animations, thème clair/sombre et ciblage d’article.
+  - `notation-jlg/all-in-one` pour activer/désactiver chaque sous-composant et personnaliser style, titres et couleur d’accent.
+  - `notation-jlg/game-info`, `notation-jlg/pros-cons`, `notation-jlg/tagline`, `notation-jlg/user-rating` pour afficher automatiquement les métadonnées saisies.
+  - `notation-jlg/summary-display`, `notation-jlg/game-explorer`, `notation-jlg/score-insights` pour proposer tableau, explorateur filtrable et tableau de bord analytique directement depuis Gutenberg.
 - **Widget « Derniers tests »** : activé automatiquement, il peut être ajouté depuis *Apparence > Widgets* grâce au registre `JLG_Latest_Reviews_Widget`.
-- **Intégration vidéo enrichie** : les helpers détectent désormais automatiquement YouTube, Vimeo, Twitch et Dailymotion pour générer un lecteur embarqué respectant les paramètres recommandés.
+- **Game Explorer & Score Insights** : `[jlg_game_explorer]` propose une navigation filtrable accessible (GET), panneaux responsives et focus géré ; `[jlg_score_insights]` calcule moyenne/médiane, histogramme et podium plateformes sur une période configurée.
+- **Intégration vidéo enrichie** : les helpers détectent automatiquement YouTube, Vimeo, Twitch et Dailymotion pour générer un lecteur embarqué respectant les paramètres recommandés.
 - **Fonctions helper** :
-  - `jlg_get_post_rating()` retourne la moyenne /10 pour un article donné ; `jlg_display_post_rating()` affiche la note formatée ; `jlg_display_thumbnail_score()` injecte la note dans vos templates de vignettes.
+  - `jlg_get_post_rating()` retourne la moyenne /10 pour un article donné ; `jlg_display_post_rating()` affiche la note formatée ; `jlg_display_thumbnail_score()` injecte la note dans vos templates de vignettes ; `JLG_Frontend::mark_shortcode_rendered()` gère le chargement conditionnel des assets.
 - **Templates front** : surchargez les fichiers du dossier [`templates/`](plugin-notation-jeux_V4/templates) ou utilisez les gabarits d’admin disponibles dans [`admin/templates/`](plugin-notation-jeux_V4/admin/templates) pour personnaliser le rendu des blocs et onglets.
 
-## Personnalisation avancée
-- **Thèmes clair/sombre et palettes complètes** pour adapter l’apparence du bloc de notation, y compris les couleurs sémantiques des notes.
+- **Thèmes clair/sombre et palettes complètes** pour adapter l’apparence du bloc de notation, y compris les couleurs sémantiques des notes et les gradients sécurisés (filtrage anti-injection).
 - **Effets Glow / Neon** configurables pour les modes texte ou cercle (intensité, pulsation, couleur dynamique ou fixe).
-- **Modules optionnels** : activer/désactiver la notation utilisateurs, le badge « Coup de cœur », les taglines, les animations de barres ou le schema SEO JSON-LD directement depuis l’onglet Réglages.
-- **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes).
+- **Modules optionnels** : activer/désactiver la notation utilisateurs, le badge « Coup de cœur », les taglines, les animations de barres, le schema SEO JSON-LD, les sons d’interface ou le remplissage RAWG directement depuis l’onglet Réglages.
+- **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes) ainsi qu’un sélecteur couleur acceptant la valeur `transparent` lorsque pertinent.
 - **Notation des lecteurs** : personnalisez couleurs et textes du module dédié et profitez d'un histogramme accessible mis à jour en direct, avec verrouillage automatique des interactions pendant le traitement AJAX pour éviter les doubles clics. Les votes peuvent, au besoin, être réservés aux membres connectés via l'option *Connexion obligatoire avant le vote* dans les réglages.
+- **Gestion dynamique des plateformes** : ajoutez, triez, supprimez ou réinitialisez les plateformes proposées dans les metaboxes pour conserver des fiches homogènes.
 
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).
@@ -39,6 +44,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
   - [`assets/`](plugin-notation-jeux_V4/assets) regroupe styles, scripts et images front/back.
   - [`includes/`](plugin-notation-jeux_V4/includes) contient le cœur PHP (helpers, frontend, admin, utils).
   - [`admin/templates/`](plugin-notation-jeux_V4/admin/templates) centralise les vues des onglets d’administration.
+- **Tests et documentation** : suite PHPUnit couvrant les helpers principaux, scénarios de benchmark dans [`docs/`](plugin-notation-jeux_V4/docs) (Game Explorer, histogramme, responsive, Score Insights) et checklist manuelle responsive maintenue.
 
 ## Intégration continue
 Un workflow GitHub Actions (`CI`) s’exécute sur chaque `push` et `pull_request`. Il installe les dépendances Composer du dossier [`plugin-notation-jeux_V4`](plugin-notation-jeux_V4), puis enchaîne deux commandes clés pour garantir la qualité :
