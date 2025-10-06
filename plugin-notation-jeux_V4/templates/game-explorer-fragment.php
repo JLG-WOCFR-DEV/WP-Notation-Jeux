@@ -3,19 +3,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$games       = is_array( $games ) ? $games : array();
-$message     = isset( $message ) ? $message : '';
-$pagination  = is_array( $pagination ) ? $pagination : array(
-        'current' => 1,
-        'total'   => 0,
+$games           = is_array( $games ) ? $games : array();
+$message         = isset( $message ) ? $message : '';
+$pagination      = is_array( $pagination ) ? $pagination : array(
+	'current' => 1,
+	'total'   => 0,
 );
-$total_items = isset( $total_items ) ? (int) $total_items : 0;
-$score_position = isset( $score_position )
+$total_items     = isset( $total_items ) ? (int) $total_items : 0;
+$score_position  = isset( $score_position )
     ? \JLG\Notation\Helpers::normalize_game_explorer_score_position( $score_position )
     : \JLG\Notation\Helpers::normalize_game_explorer_score_position( '' );
-$score_max_value  = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
-$score_max_label  = number_format_i18n( $score_max_value );
-$score_classes = array(
+$score_max_value = isset( $score_max ) ? max( 1, (float) $score_max ) : \JLG\Notation\Helpers::get_score_max();
+$score_max_label = number_format_i18n( $score_max_value );
+$score_classes   = array(
     'jlg-ge-card__score',
     'jlg-ge-card__score--' . sanitize_html_class( $score_position ),
 );
@@ -86,7 +86,7 @@ if ( isset( $pagination['current'] ) && (int) $pagination['current'] > 1 ) {
     $base_query_params[ $namespaced_keys['paged'] ] = (string) (int) $pagination['current'];
 }
 
-$prepare_hidden_params = static function( array $exclude = array(), array $overrides = array() ) use ( $base_query_params ) {
+$prepare_hidden_params = static function ( array $exclude = array(), array $overrides = array() ) use ( $base_query_params ) {
     $params = $base_query_params;
 
     foreach ( $exclude as $exclude_key ) {
@@ -105,7 +105,7 @@ $prepare_hidden_params = static function( array $exclude = array(), array $overr
     return $params;
 };
 
-$render_hidden_inputs = static function( array $params ) {
+$render_hidden_inputs = static function ( array $params ) {
     foreach ( $params as $name => $value ) {
         $value_string = (string) $value;
 
@@ -160,13 +160,14 @@ if ( empty( $games ) ) {
                     <span class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $score_classes ) ) ); ?>" style="--jlg-ge-score-color: <?php echo esc_attr( $score_color ); ?>;">
                         <?php echo esc_html( $score_display ); ?>
                         <?php if ( $has_score ) : ?>
-                            <span class="jlg-ge-card__score-outof"><?php
-                                printf(
-                                    /* translators: %s: Maximum possible rating value. */
-                                    esc_html__( '/%s', 'notation-jlg' ),
-                                    esc_html( $score_max_label )
-                                );
-                            ?></span>
+                            <?php
+                            $score_suffix = sprintf(
+                                /* translators: %s: Maximum possible rating value. */
+                                esc_html__( '/%s', 'notation-jlg' ),
+                                esc_html( $score_max_label )
+                            );
+                            ?>
+                            <span class="jlg-ge-card__score-outof"><?php echo $score_suffix; ?></span>
                         <?php endif; ?>
                     </span>
                 <?php endif; ?>
@@ -233,10 +234,10 @@ $current_page = isset( $pagination['current'] ) ? (int) $pagination['current'] :
 $total_pages  = isset( $pagination['total'] ) ? (int) $pagination['total'] : 0;
 
 if ( $total_pages > 1 ) :
-    $prev_page      = max( 1, $current_page - 1 );
-    $next_page      = min( $total_pages, $current_page + 1 );
-    $prev_disabled  = ( $current_page <= 1 );
-    $next_disabled  = ( $current_page >= $total_pages );
+    $prev_page     = max( 1, $current_page - 1 );
+    $next_page     = min( $total_pages, $current_page + 1 );
+    $prev_disabled = ( $current_page <= 1 );
+    $next_disabled = ( $current_page >= $total_pages );
     ?>
     <nav class="jlg-ge-pagination" data-role="pagination" aria-label="<?php esc_attr_e( 'Navigation des pages du Game Explorer', 'notation-jlg' ); ?>">
         <form method="get" class="jlg-ge-pagination__form">

@@ -99,7 +99,7 @@ if ( isset( $pagination['current'] ) && (int) $pagination['current'] > 1 && isse
     $active_query_params[ $namespaced_keys['paged'] ] = (string) (int) $pagination['current'];
 }
 
-$prepare_hidden_params = static function( array $exclude = array(), array $overrides = array() ) use ( $active_query_params ) {
+$prepare_hidden_params = static function ( array $exclude = array(), array $overrides = array() ) use ( $active_query_params ) {
     $params = $active_query_params;
 
     foreach ( $exclude as $exclude_key ) {
@@ -118,7 +118,7 @@ $prepare_hidden_params = static function( array $exclude = array(), array $overr
     return $params;
 };
 
-$render_hidden_inputs = static function( array $params ) {
+$render_hidden_inputs = static function ( array $params ) {
     foreach ( $params as $name => $value ) {
         $value_string = (string) $value;
 
@@ -537,16 +537,16 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
         echo \JLG\Notation\Frontend::get_template_html(
             'game-explorer-fragment',
             array(
-                                'games'           => $games,
-                                'message'         => isset( $message ) ? $message : '',
-                                'pagination'      => $pagination,
-                                'total_items'     => $total_items,
-                                'current_filters' => $current_filters,
-                                'request_keys'    => $request_keys,
-                                'sort_key'        => $sort_key,
-                                'sort_order'      => $sort_order,
-                                'query_params'    => $active_query_params,
-                        )
+				'games'           => $games,
+				'message'         => isset( $message ) ? $message : '',
+				'pagination'      => $pagination,
+				'total_items'     => $total_items,
+				'current_filters' => $current_filters,
+				'request_keys'    => $request_keys,
+				'sort_key'        => $sort_key,
+				'sort_order'      => $sort_order,
+				'query_params'    => $active_query_params,
+			)
         );
         ?>
     </div>

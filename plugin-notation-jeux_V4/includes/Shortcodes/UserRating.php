@@ -6,7 +6,7 @@ use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class UserRating {
@@ -63,18 +63,18 @@ class UserRating {
         return Frontend::get_template_html(
             'shortcode-user-rating',
             array(
-                                'options'    => $options,
-                                'post_id'    => $post_id,
-                                'avg_rating' => get_post_meta( $post_id, '_jlg_user_rating_avg', true ),
-                                'count'      => get_post_meta( $post_id, '_jlg_user_rating_count', true ),
-                                'rating_breakdown' => Frontend::get_user_rating_breakdown_for_post( $post_id ),
-                                'has_voted'  => $has_voted,
-                                'user_vote'  => $user_vote,
-                                'requires_login' => $requires_login,
-                                'login_required' => $login_required,
-                                'login_url'      => $login_url,
-                                'is_logged_in'   => $is_logged_in,
-                        )
+				'options'          => $options,
+				'post_id'          => $post_id,
+				'avg_rating'       => get_post_meta( $post_id, '_jlg_user_rating_avg', true ),
+				'count'            => get_post_meta( $post_id, '_jlg_user_rating_count', true ),
+				'rating_breakdown' => Frontend::get_user_rating_breakdown_for_post( $post_id ),
+				'has_voted'        => $has_voted,
+				'user_vote'        => $user_vote,
+				'requires_login'   => $requires_login,
+				'login_required'   => $login_required,
+				'login_url'        => $login_url,
+				'is_logged_in'     => $is_logged_in,
+			)
         );
     }
 }

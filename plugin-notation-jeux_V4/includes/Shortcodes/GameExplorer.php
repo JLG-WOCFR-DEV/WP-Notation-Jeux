@@ -40,17 +40,17 @@ class GameExplorer {
     );
 
     private const INDEX_META_KEYS = array(
-        'letter'        => '_jlg_ge_letter',
-        'developer'     => '_jlg_ge_developer_key',
-        'publisher'     => '_jlg_ge_publisher_key',
-        'availability'  => '_jlg_ge_availability',
-        'release_year'  => '_jlg_ge_release_year',
-        'search_index'  => '_jlg_ge_search_index',
+        'letter'         => '_jlg_ge_letter',
+        'developer'      => '_jlg_ge_developer_key',
+        'publisher'      => '_jlg_ge_publisher_key',
+        'availability'   => '_jlg_ge_availability',
+        'release_year'   => '_jlg_ge_release_year',
+        'search_index'   => '_jlg_ge_search_index',
         'platform_index' => '_jlg_ge_platform_index',
     );
 
-    private const QUERY_CACHE_KEY_PREFIX      = 'jlg_ge_query_';
-    private const QUERY_CACHE_VERSION_OPTION  = 'jlg_ge_query_cache_version';
+    private const QUERY_CACHE_KEY_PREFIX     = 'jlg_ge_query_';
+    private const QUERY_CACHE_VERSION_OPTION = 'jlg_ge_query_cache_version';
 
     /** @var array<string, mixed>|null */
     private static $filters_snapshot = null;
@@ -248,7 +248,7 @@ class GameExplorer {
             Helpers::get_default_game_explorer_filters()
         );
 
-        $filters = implode( ',', $filters_list );
+        $filters        = implode( ',', $filters_list );
         $score_position = Helpers::normalize_game_explorer_score_position(
             $options['game_explorer_score_position'] ?? ''
         );
@@ -336,7 +336,7 @@ class GameExplorer {
     }
 
     protected static function normalize_filters( $filters_string ) {
-        $allowed        = Helpers::get_game_explorer_allowed_filters();
+        $allowed         = Helpers::get_game_explorer_allowed_filters();
         $default_filters = Helpers::get_default_game_explorer_filters();
         $list            = Helpers::normalize_game_explorer_filters( $filters_string, $default_filters );
 
@@ -808,8 +808,8 @@ class GameExplorer {
     }
 
     private static function bump_query_cache_version() {
-        $next_version                = self::get_query_cache_version() + 1;
-        self::$query_cache_version   = $next_version;
+        $next_version              = self::get_query_cache_version() + 1;
+        self::$query_cache_version = $next_version;
         update_option( self::QUERY_CACHE_VERSION_OPTION, $next_version, false );
     }
 
@@ -907,14 +907,14 @@ class GameExplorer {
 
     protected static function build_filters_snapshot() {
         $snapshot = array(
-            'posts'           => array(),
-            'letters_map'     => array(),
-            'categories_map'  => array(),
-            'platforms_map'   => array(),
-            'developers_map'  => array(),
-            'publishers_map'  => array(),
-            'search_tokens'   => array(),
-            'years'           => array(
+            'posts'          => array(),
+            'letters_map'    => array(),
+            'categories_map' => array(),
+            'platforms_map'  => array(),
+            'developers_map' => array(),
+            'publishers_map' => array(),
+            'search_tokens'  => array(),
+            'years'          => array(
                 'min'     => null,
                 'max'     => null,
                 'buckets' => array(),
@@ -991,7 +991,7 @@ class GameExplorer {
                         $snapshot['years']['buckets'][ $year_value ] = 0;
                     }
 
-                    $snapshot['years']['buckets'][ $year_value ]++;
+                    ++$snapshot['years']['buckets'][ $year_value ];
 
                     if ( ! is_int( $snapshot['years']['min'] ) || $year_value < $snapshot['years']['min'] ) {
                         $snapshot['years']['min'] = $year_value;
@@ -1090,20 +1090,20 @@ class GameExplorer {
                         $snapshot['search_tokens'][ $token_value ] = 0;
                     }
 
-                    $snapshot['search_tokens'][ $token_value ]++;
+                    ++$snapshot['search_tokens'][ $token_value ];
                 }
             }
 
             self::sync_post_index_meta(
                 $post_id,
                 array(
-                    'letter'        => $letter,
-                    'developer'     => $developer_key,
-                    'publisher'     => $publisher_key,
-                    'availability'  => $availability['status'],
-                    'release_year'  => $release_year !== null ? (string) $release_year : '',
-                    'search_index'  => $search_index,
-                    'platform_index'=> $platform_index,
+                    'letter'         => $letter,
+                    'developer'      => $developer_key,
+                    'publisher'      => $publisher_key,
+                    'availability'   => $availability['status'],
+                    'release_year'   => $release_year !== null ? (string) $release_year : '',
+                    'search_index'   => $search_index,
+                    'platform_index' => $platform_index,
                 )
             );
 
@@ -1129,13 +1129,13 @@ class GameExplorer {
                 'search_index'    => $search_index,
                 'popularity'      => (int) $popularity_score,
                 'index_meta'      => array(
-                    'letter'        => $letter,
-                    'developer'     => $developer_key,
-                    'publisher'     => $publisher_key,
-                    'availability'  => $availability['status'],
-                    'release_year'  => $release_year !== null ? (string) $release_year : '',
-                    'search_index'  => $search_index,
-                    'platform_index'=> $platform_index,
+                    'letter'         => $letter,
+                    'developer'      => $developer_key,
+                    'publisher'      => $publisher_key,
+                    'availability'   => $availability['status'],
+                    'release_year'   => $release_year !== null ? (string) $release_year : '',
+                    'search_index'   => $search_index,
+                    'platform_index' => $platform_index,
                 ),
             );
         }
@@ -1275,10 +1275,10 @@ class GameExplorer {
             $query_args['orderby']   = 'meta_value_num';
             $query_args['meta_type'] = 'DECIMAL';
         } elseif ( $orderby === 'popularity' ) {
-            $popularity_meta_key      = '_jlg_user_rating_count';
-            $query_args['meta_key']   = $popularity_meta_key;
-            $query_args['meta_type']  = 'NUMERIC';
-            $query_args['orderby']    = array(
+            $popularity_meta_key     = '_jlg_user_rating_count';
+            $query_args['meta_key']  = $popularity_meta_key;
+            $query_args['meta_type'] = 'NUMERIC';
+            $query_args['orderby']   = array(
                 'meta_value_num' => $order,
                 'date'           => 'DESC',
             );
@@ -1460,7 +1460,7 @@ class GameExplorer {
             }
         }
 
-        $developers_map  = isset( $snapshot['developers_map'] ) && is_array( $snapshot['developers_map'] ) ? $snapshot['developers_map'] : array();
+        $developers_map = isset( $snapshot['developers_map'] ) && is_array( $snapshot['developers_map'] ) ? $snapshot['developers_map'] : array();
         if ( $developer_filter_key !== '' && $developer_filter !== '' && ! isset( $developers_map[ $developer_filter_key ] ) ) {
             $developers_map[ $developer_filter_key ] = $developer_filter;
         }
@@ -1476,7 +1476,7 @@ class GameExplorer {
             }
         }
 
-        $publishers_map  = isset( $snapshot['publishers_map'] ) && is_array( $snapshot['publishers_map'] ) ? $snapshot['publishers_map'] : array();
+        $publishers_map = isset( $snapshot['publishers_map'] ) && is_array( $snapshot['publishers_map'] ) ? $snapshot['publishers_map'] : array();
         if ( $publisher_filter_key !== '' && $publisher_filter !== '' && ! isset( $publishers_map[ $publisher_filter_key ] ) ) {
             $publishers_map[ $publisher_filter_key ] = $publisher_filter;
         }
@@ -1524,9 +1524,9 @@ class GameExplorer {
             'unknown'   => esc_html__( 'À confirmer', 'notation-jlg' ),
         );
 
-        $years_meta_raw    = isset( $snapshot['years'] ) && is_array( $snapshot['years'] ) ? $snapshot['years'] : array();
-        $year_buckets_raw  = isset( $years_meta_raw['buckets'] ) && is_array( $years_meta_raw['buckets'] ) ? $years_meta_raw['buckets'] : array();
-        $year_buckets      = array();
+        $years_meta_raw   = isset( $snapshot['years'] ) && is_array( $snapshot['years'] ) ? $snapshot['years'] : array();
+        $year_buckets_raw = isset( $years_meta_raw['buckets'] ) && is_array( $years_meta_raw['buckets'] ) ? $years_meta_raw['buckets'] : array();
+        $year_buckets     = array();
         foreach ( $year_buckets_raw as $bucket_year => $bucket_count ) {
             if ( is_int( $bucket_year ) ) {
                 $year_key = $bucket_year;
@@ -1687,7 +1687,7 @@ class GameExplorer {
                 'ignore_sticky_posts' => true,
             );
 
-            $query = new \WP_Query( $query_args );
+            $query                = new \WP_Query( $query_args );
             $query->found_posts   = $total_items;
             $query->max_num_pages = $total_pages;
         } else {
@@ -1723,8 +1723,8 @@ class GameExplorer {
 
             if ( $adjusted_paged !== $query_args['paged'] ) {
                 $query_args['paged'] = $adjusted_paged;
-                $query                = new \WP_Query( $query_args );
-                $total_items          = isset( $query->found_posts ) ? (int) $query->found_posts : (int) $query->post_count;
+                $query               = new \WP_Query( $query_args );
+                $total_items         = isset( $query->found_posts ) ? (int) $query->found_posts : (int) $query->post_count;
                 if ( $total_items < 0 ) {
                     $total_items = 0;
                 }
@@ -1846,10 +1846,10 @@ class GameExplorer {
                 $posts_per_page,
                 $requested_paged,
                 array(
-                    'post_ids'      => $post_ids_for_cache,
-                    'total_items'   => $total_items,
-                    'total_pages'   => $total_pages,
-                    'adjusted_paged'=> $paged,
+                    'post_ids'       => $post_ids_for_cache,
+                    'total_items'    => $total_items,
+                    'total_pages'    => $total_pages,
+                    'adjusted_paged' => $paged,
                 )
             );
         }
@@ -1863,7 +1863,7 @@ class GameExplorer {
         $message = $total_items === 0 ? $no_results_message : '';
 
         $config_payload = array(
-            'atts'    => array(
+            'atts'        => array(
                 'id'             => $atts['id'],
                 'posts_per_page' => $posts_per_page,
                 'columns'        => $columns,
@@ -1877,7 +1877,7 @@ class GameExplorer {
                 'annee'          => $atts['annee'],
                 'recherche'      => $atts['recherche'],
             ),
-            'state'   => array(
+            'state'       => array(
                 'orderby'      => $orderby,
                 'order'        => $order,
                 'letter'       => $letter_filter,
@@ -1892,21 +1892,21 @@ class GameExplorer {
                 'total_items'  => $total_items,
                 'total_pages'  => $total_pages,
             ),
-            'request' => array(
+            'request'     => array(
                 'prefix' => $request_prefix,
                 'keys'   => $request_keys,
             ),
-            'cache'   => array(
+            'cache'       => array(
                 'query' => $query_cache_status,
             ),
-            'meta'    => array(
+            'meta'        => array(
                 'years' => array(
                     'min'     => $year_min,
                     'max'     => $year_max,
                     'buckets' => $year_buckets,
                 ),
             ),
-            'sorts'  => array(
+            'sorts'       => array(
                 'options' => self::get_sort_options(),
                 'active'  => array(
                     'orderby' => $orderby,

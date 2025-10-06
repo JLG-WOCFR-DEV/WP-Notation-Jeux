@@ -8,7 +8,7 @@ use WP_Query;
 use WP_Widget;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class LatestReviewsWidget extends WP_Widget {

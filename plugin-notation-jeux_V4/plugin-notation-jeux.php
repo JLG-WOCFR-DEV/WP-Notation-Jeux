@@ -13,7 +13,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 $autoload_path = __DIR__ . '/vendor/autoload.php';
@@ -32,7 +32,7 @@ if ( ! defined( 'JLG_NOTATION_FALLBACK_AUTOLOADER' ) ) {
                 'JLG\\Notation\\Admin\\'      => 'includes/Admin/',
                 'JLG\\Notation\\Utils\\'      => 'includes/Utils/',
                 'JLG\\Notation\\Shortcodes\\' => 'includes/Shortcodes/',
-                'JLG\\Notation\\'              => 'includes/',
+                'JLG\\Notation\\'             => 'includes/',
             );
 
             foreach ( $prefixes as $prefix => $directory ) {
@@ -99,13 +99,13 @@ if ( version_compare( get_bloginfo( 'version' ), '5.0', '<' ) ) {
  * Classe principale refactorisée
  */
 final class JLG_Plugin_De_Notation_Main {
-    private static $instance                = null;
-    private $admin                          = null;
-    private $assets                         = null;
-    private $frontend                       = null;
-    private $blocks                         = null;
-    private const MIGRATION_BATCH_SIZE      = 50;
-    private const MIGRATION_SCAN_BATCH_SIZE = 200;
+    private static $instance                       = null;
+    private $admin                                 = null;
+    private $assets                                = null;
+    private $frontend                              = null;
+    private $blocks                                = null;
+    private const MIGRATION_BATCH_SIZE             = 50;
+    private const MIGRATION_SCAN_BATCH_SIZE        = 200;
     private const SCORE_SCALE_MIGRATION_BATCH_SIZE = 40;
 
     public static function get_instance() {
@@ -173,7 +173,7 @@ final class JLG_Plugin_De_Notation_Main {
                 'widgets_init',
                 function () {
                                         register_widget( \JLG\Notation\LatestReviewsWidget::class );
-                                }
+				}
             );
         }
 

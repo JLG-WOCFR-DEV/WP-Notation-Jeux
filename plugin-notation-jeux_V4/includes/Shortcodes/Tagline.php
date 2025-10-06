@@ -6,7 +6,7 @@ use JLG\Notation\Frontend;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Tagline {

@@ -9,7 +9,7 @@ namespace JLG\Notation;
 use JLG\Notation\Utils\Validator;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Helpers {
@@ -24,11 +24,11 @@ class Helpers {
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
     private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
 
-    private static $option_name                = 'notation_jlg_settings';
-    private static $options_cache              = null;
-    private static $default_settings_cache     = null;
-    private static $category_definition_cache  = null;
-    private static $rating_meta_keys_cache     = null;
+    private static $option_name                   = 'notation_jlg_settings';
+    private static $options_cache                 = null;
+    private static $default_settings_cache        = null;
+    private static $category_definition_cache     = null;
+    private static $rating_meta_keys_cache        = null;
     private static $game_explorer_score_positions = array(
         'top-left',
         'top-right',
@@ -155,17 +155,17 @@ class Helpers {
         );
 
         return array(
-            'has_embed'               => true,
-            'provider'                => $provider,
-            'provider_label'          => $provider_label,
-            'iframe_src'              => esc_url( $iframe_src ),
-            'iframe_title'            => $title,
-            'iframe_allow'            => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-            'iframe_allowfullscreen'  => true,
-            'iframe_loading'          => 'lazy',
-            'iframe_referrerpolicy'   => 'strict-origin-when-cross-origin',
-            'fallback_message'        => '',
-            'original_url'            => esc_url( $sanitized_url ),
+            'has_embed'              => true,
+            'provider'               => $provider,
+            'provider_label'         => $provider_label,
+            'iframe_src'             => esc_url( $iframe_src ),
+            'iframe_title'           => $title,
+            'iframe_allow'           => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+            'iframe_allowfullscreen' => true,
+            'iframe_loading'         => 'lazy',
+            'iframe_referrerpolicy'  => 'strict-origin-when-cross-origin',
+            'fallback_message'       => '',
+            'original_url'           => esc_url( $sanitized_url ),
         );
     }
 
@@ -214,7 +214,7 @@ class Helpers {
         }
 
         if ( $candidate === '' && isset( $parts['path'] ) ) {
-            $path = trim( $parts['path'], '/' );
+            $path     = trim( $parts['path'], '/' );
             $segments = explode( '/', $path );
 
             if ( isset( $segments[0] ) ) {
@@ -495,9 +495,9 @@ class Helpers {
     private static function get_default_platform_definitions() {
         return array(
             'pc'              => array(
-                                'name'  => 'PC',
-                                'order' => 1,
-                        ),
+				'name'  => 'PC',
+				'order' => 1,
+			),
             'playstation-5'   => array(
 				'name'  => 'PlayStation 5',
 				'order' => 2,
@@ -519,9 +519,9 @@ class Helpers {
 				'order' => 6,
 			),
             'steam-deck'      => array(
-                                'name'  => 'Steam Deck',
-                                'order' => 7,
-                        ),
+				'name'  => 'Steam Deck',
+				'order' => 7,
+			),
         );
     }
 
@@ -890,98 +890,98 @@ class Helpers {
 
         self::$default_settings_cache = array(
             // Options générales
-            'visual_theme'                 => 'dark',
-            'score_layout'                 => 'text',
-            'score_max'                    => 10,
-            'enable_animations'            => 1,
-            'allowed_post_types'           => array( 'post' ),
-            'tagline_font_size'            => 16,
-            'rating_badge_enabled'         => 0,
-            'rating_badge_threshold'       => 8,
+            'visual_theme'                       => 'dark',
+            'score_layout'                       => 'text',
+            'score_max'                          => 10,
+            'enable_animations'                  => 1,
+            'allowed_post_types'                 => array( 'post' ),
+            'tagline_font_size'                  => 16,
+            'rating_badge_enabled'               => 0,
+            'rating_badge_threshold'             => 8,
 
             // Couleurs de Thème Sombre personnalisables
-            'dark_bg_color'                => $dark_defaults['bg_color'],
-            'dark_bg_color_secondary'      => $dark_defaults['bg_color_secondary'],
-            'dark_border_color'            => $dark_defaults['border_color'],
-            'dark_text_color'              => $dark_defaults['text_color'],
-            'dark_text_color_secondary'    => $dark_defaults['text_color_secondary'],
-            'tagline_bg_color'             => $dark_defaults['tagline_bg_color'],
-            'tagline_text_color'           => $dark_defaults['tagline_text_color'],
+            'dark_bg_color'                      => $dark_defaults['bg_color'],
+            'dark_bg_color_secondary'            => $dark_defaults['bg_color_secondary'],
+            'dark_border_color'                  => $dark_defaults['border_color'],
+            'dark_text_color'                    => $dark_defaults['text_color'],
+            'dark_text_color_secondary'          => $dark_defaults['text_color_secondary'],
+            'tagline_bg_color'                   => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'                 => $dark_defaults['tagline_text_color'],
 
             // Couleurs de Thème Clair personnalisables
-            'light_bg_color'               => $light_defaults['bg_color'],
-            'light_bg_color_secondary'     => $light_defaults['bg_color_secondary'],
-            'light_border_color'           => $light_defaults['border_color'],
-            'light_text_color'             => $light_defaults['text_color'],
-            'light_text_color_secondary'   => $light_defaults['text_color_secondary'],
+            'light_bg_color'                     => $light_defaults['bg_color'],
+            'light_bg_color_secondary'           => $light_defaults['bg_color_secondary'],
+            'light_border_color'                 => $light_defaults['border_color'],
+            'light_text_color'                   => $light_defaults['text_color'],
+            'light_text_color_secondary'         => $light_defaults['text_color_secondary'],
 
             // Couleurs sémantiques et de marque
-            'score_gradient_1'             => '#60a5fa',
-            'score_gradient_2'             => '#c084fc',
-            'color_low'                    => '#ef4444',
-            'color_mid'                    => '#f97316',
-            'color_high'                   => '#22c55e',
-            'user_rating_star_color'       => '#f59e0b',
-            'user_rating_text_color'       => '#a1a1aa',
-            'user_rating_title_color'      => '#fafafa',
+            'score_gradient_1'                   => '#60a5fa',
+            'score_gradient_2'                   => '#c084fc',
+            'color_low'                          => '#ef4444',
+            'color_mid'                          => '#f97316',
+            'color_high'                         => '#22c55e',
+            'user_rating_star_color'             => '#f59e0b',
+            'user_rating_text_color'             => '#a1a1aa',
+            'user_rating_title_color'            => '#fafafa',
 
             // Options cercle
-            'circle_dynamic_bg_enabled'    => 0,
-            'circle_border_enabled'        => 1,
-            'circle_border_width'          => 5,
-            'circle_border_color'          => '#60a5fa',
+            'circle_dynamic_bg_enabled'          => 0,
+            'circle_border_enabled'              => 1,
+            'circle_border_width'                => 5,
+            'circle_border_color'                => '#60a5fa',
 
             // Options glow pour mode texte
-            'text_glow_enabled'            => 0,
-            'text_glow_color_mode'         => 'dynamic',
-            'text_glow_custom_color'       => '#ffffff',
-            'text_glow_intensity'          => 15,
-            'text_glow_pulse'              => 0,
-            'text_glow_speed'              => 2.5,
+            'text_glow_enabled'                  => 0,
+            'text_glow_color_mode'               => 'dynamic',
+            'text_glow_custom_color'             => '#ffffff',
+            'text_glow_intensity'                => 15,
+            'text_glow_pulse'                    => 0,
+            'text_glow_speed'                    => 2.5,
 
             // Options glow pour mode cercle
-            'circle_glow_enabled'          => 0,
-            'circle_glow_color_mode'       => 'dynamic',
-            'circle_glow_custom_color'     => '#ffffff',
-            'circle_glow_intensity'        => 15,
-            'circle_glow_pulse'            => 0,
-            'circle_glow_speed'            => 2.5,
+            'circle_glow_enabled'                => 0,
+            'circle_glow_color_mode'             => 'dynamic',
+            'circle_glow_custom_color'           => '#ffffff',
+            'circle_glow_intensity'              => 15,
+            'circle_glow_pulse'                  => 0,
+            'circle_glow_speed'                  => 2.5,
 
             // Options des modules
-            'tagline_enabled'              => 1,
-            'user_rating_enabled'          => 1,
-            'user_rating_requires_login'   => 0,
-            'user_rating_weighting_enabled' => 0,
-            'user_rating_guest_weight_start' => 0.5,
+            'tagline_enabled'                    => 1,
+            'user_rating_enabled'                => 1,
+            'user_rating_requires_login'         => 0,
+            'user_rating_weighting_enabled'      => 0,
+            'user_rating_guest_weight_start'     => 0.5,
             'user_rating_guest_weight_increment' => 0.1,
-            'user_rating_guest_weight_max' => 1.0,
-            'table_zebra_striping'         => 0,
-            'table_border_style'           => 'horizontal',
-            'table_border_width'           => 1,
-            'table_header_bg_color'        => '#3f3f46',
-            'table_header_text_color'      => '#ffffff',
-            'table_row_bg_color'           => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
-            'table_row_text_color'         => '#a1a1aa',
-            'table_zebra_bg_color'         => '#27272a',
-            'thumb_text_color'             => '#ffffff',
-            'thumb_font_size'              => 14,
-            'thumb_padding'                => 8,
-            'thumb_border_radius'          => 4,
+            'user_rating_guest_weight_max'       => 1.0,
+            'table_zebra_striping'               => 0,
+            'table_border_style'                 => 'horizontal',
+            'table_border_width'                 => 1,
+            'table_header_bg_color'              => '#3f3f46',
+            'table_header_text_color'            => '#ffffff',
+            'table_row_bg_color'                 => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
+            'table_row_text_color'               => '#a1a1aa',
+            'table_zebra_bg_color'               => '#27272a',
+            'thumb_text_color'                   => '#ffffff',
+            'thumb_font_size'                    => 14,
+            'thumb_padding'                      => 8,
+            'thumb_border_radius'                => 4,
 
             // Options Game Explorer
-            'game_explorer_columns'        => 3,
-            'game_explorer_posts_per_page' => 12,
-            'game_explorer_filters'        => self::GAME_EXPLORER_DEFAULT_FILTERS,
-            'game_explorer_score_position' => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
+            'game_explorer_columns'              => 3,
+            'game_explorer_posts_per_page'       => 12,
+            'game_explorer_filters'              => self::GAME_EXPLORER_DEFAULT_FILTERS,
+            'game_explorer_score_position'       => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés & catégories de notation
-            'rating_categories'            => self::get_default_category_definitions(),
+            'rating_categories'                  => self::get_default_category_definitions(),
 
             // Options techniques et diverses
-            'custom_css'                   => '',
-            'seo_schema_enabled'           => 1,
-            'debug_mode_enabled'           => 0,
-            'rawg_api_key'                 => '',
+            'custom_css'                         => '',
+            'seo_schema_enabled'                 => 1,
+            'debug_mode_enabled'                 => 0,
+            'rawg_api_key'                       => '',
         );
 
         return self::$default_settings_cache;
@@ -1011,7 +1011,7 @@ class Helpers {
 
         self::$options_cache['game_explorer_score_position'] = self::normalize_game_explorer_score_position( $score_position );
 
-        $score_max = isset( self::$options_cache['score_max'] ) ? self::$options_cache['score_max'] : null;
+        $score_max                        = isset( self::$options_cache['score_max'] ) ? self::$options_cache['score_max'] : null;
         self::$options_cache['score_max'] = self::normalize_score_max( $score_max, self::$default_settings_cache['score_max'] ?? 10 );
 
         return self::$options_cache;
@@ -1221,7 +1221,7 @@ class Helpers {
         }
 
         $options['rating_categories'] = self::prepare_category_definitions( $category_definitions );
-        $category_definitions        = $options['rating_categories'];
+        $category_definitions         = $options['rating_categories'];
 
         foreach ( self::LEGACY_CATEGORY_SUFFIXES as $legacy_suffix ) {
             unset( $options[ 'label_' . $legacy_suffix ] );
@@ -1248,15 +1248,14 @@ class Helpers {
                     continue;
                 }
 
-                // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- Table names are sourced from $wpdb.
                 $rows = $wpdb->get_results(
                     $wpdb->prepare(
+                        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name sourced from $wpdb.
                         "SELECT post_id, meta_value FROM {$postmeta_table} WHERE meta_key = %s",
                         $legacy_meta_key
                     ),
                     ARRAY_A
                 );
-                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 
                 if ( empty( $rows ) ) {
                     continue;
@@ -1817,7 +1816,7 @@ class Helpers {
     public static function adjust_hex_brightness( $hex, $steps ) {
         $hex = str_replace( '#', '', $hex );
 
-        if ( strlen( $hex ) == 3 ) {
+        if ( strlen( $hex ) === 3 ) {
             $hex = str_repeat( substr( $hex, 0, 1 ), 2 ) .
                     str_repeat( substr( $hex, 1, 1 ), 2 ) .
                     str_repeat( substr( $hex, 2, 1 ), 2 );
@@ -2205,7 +2204,7 @@ class Helpers {
                 $slug = sanitize_title( $label );
 
                 if ( $slug === '' ) {
-                    $slug = $unknown_slug;
+                    $slug  = $unknown_slug;
                     $label = $unknown_label;
                 }
 
@@ -2247,14 +2246,14 @@ class Helpers {
 
         sort( $scores );
 
-        $mean_value = array_sum( $scores ) / $total_scores;
+        $mean_value   = array_sum( $scores ) / $total_scores;
         $median_value = self::calculate_median_from_sorted_scores( $scores );
 
         $distribution = self::build_score_distribution( $scores, $score_max );
 
         $platform_rankings = array();
         foreach ( $platforms as $data ) {
-            $average = $data['count'] > 0 ? $data['sum'] / $data['count'] : null;
+            $average             = $data['count'] > 0 ? $data['sum'] / $data['count'] : null;
             $platform_rankings[] = array(
                 'slug'              => $data['slug'],
                 'label'             => $data['label'],
@@ -2367,7 +2366,7 @@ class Helpers {
 
         foreach ( $buckets as $i => $bucket ) {
             if ( $bucket['count'] > 0 ) {
-                $percentage = ( $bucket['count'] / $total_scores ) * 100;
+                $percentage                  = ( $bucket['count'] / $total_scores ) * 100;
                 $buckets[ $i ]['percentage'] = round( $percentage, 1 );
             }
         }

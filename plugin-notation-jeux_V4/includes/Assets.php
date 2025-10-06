@@ -3,7 +3,7 @@
 namespace JLG\Notation;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Assets {
@@ -149,13 +149,13 @@ class Assets {
             'jlgUserRatingL10n',
             function () {
                 return array(
-                                        'successMessage'      => __( 'Merci pour votre vote !', 'notation-jlg' ),
-                                        'genericErrorMessage' => __( 'Erreur. Veuillez réessayer.', 'notation-jlg' ),
-                                        'alreadyVotedMessage' => __( 'Vous avez déjà voté !', 'notation-jlg' ),
-                                        'loginRequiredMessage' => __( 'Connectez-vous pour voter.', 'notation-jlg' ),
-                                        'loginLinkLabel'       => __( 'Se connecter', 'notation-jlg' ),
-                                );
-                        }
+					'successMessage'       => __( 'Merci pour votre vote !', 'notation-jlg' ),
+					'genericErrorMessage'  => __( 'Erreur. Veuillez réessayer.', 'notation-jlg' ),
+					'alreadyVotedMessage'  => __( 'Vous avez déjà voté !', 'notation-jlg' ),
+					'loginRequiredMessage' => __( 'Connectez-vous pour voter.', 'notation-jlg' ),
+					'loginLinkLabel'       => __( 'Se connecter', 'notation-jlg' ),
+				);
+			}
         );
 
         $this->register_localization(

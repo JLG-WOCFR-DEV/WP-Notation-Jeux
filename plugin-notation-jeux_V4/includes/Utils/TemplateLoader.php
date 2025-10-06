@@ -3,7 +3,7 @@
 namespace JLG\Notation\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class TemplateLoader {

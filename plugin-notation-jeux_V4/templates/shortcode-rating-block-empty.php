@@ -76,9 +76,9 @@ if ( isset( $category_scores ) && is_array( $category_scores ) ) {
             : $average_percentage_value;
 
         $categories_for_display[] = array(
-            'label'    => $label,
-            'score'    => $score_value,
-            'percent'  => $percentage_value,
+            'label'   => $label,
+            'score'   => $score_value,
+            'percent' => $percentage_value,
         );
     }
 }
@@ -99,10 +99,10 @@ if ( empty( $categories_for_display ) ) {
     }
 }
 
-$score_max_label      = esc_html( number_format_i18n( $resolved_score_max ) );
-$average_score_label  = esc_html( number_format_i18n( $placeholder_average, 1 ) );
-$percentage_label     = esc_html( number_format_i18n( $average_percentage_value, 1 ) );
-$user_rating_value    = isset( $user_rating_average ) && is_numeric( $user_rating_average )
+$score_max_label       = esc_html( number_format_i18n( $resolved_score_max ) );
+$average_score_label   = esc_html( number_format_i18n( $placeholder_average, 1 ) );
+$percentage_label      = esc_html( number_format_i18n( $average_percentage_value, 1 ) );
+$user_rating_value     = isset( $user_rating_average ) && is_numeric( $user_rating_average )
     ? (float) $user_rating_average
     : $placeholder_average;
 $user_rating_delta     = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
@@ -128,7 +128,7 @@ if ( $resolved_display_mode === 'percent' && $percentage_label !== '' ) {
     $global_visible_value = $average_score_label;
 }
 
-$placeholder_notice = esc_html__( 'Prévisualisation des notes avec des valeurs fictives. Renseignez la metabox « Notation JLG » pour publier vos notes.', 'notation-jlg' );
+$placeholder_notice   = esc_html__( 'Prévisualisation des notes avec des valeurs fictives. Renseignez la metabox « Notation JLG » pour publier vos notes.', 'notation-jlg' );
 $css_variables_string = isset( $css_variables ) && is_string( $css_variables ) ? trim( $css_variables ) : '';
 $extra_classes_string = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
 $extra_classes_list   = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
@@ -138,7 +138,7 @@ if ( ! empty( $animations_enabled ) ) {
     $wrapper_classes[] = 'jlg-animate';
 }
 
-$wrapper_classes = array_unique( array_filter( array_map( 'trim', $wrapper_classes ) ) );
+$wrapper_classes         = array_unique( array_filter( array_map( 'trim', $wrapper_classes ) ) );
 $wrapper_class_attribute = ! empty( $wrapper_classes ) ? implode( ' ', $wrapper_classes ) : 'review-box-jlg is-placeholder';
 $style_attribute         = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
 ?>
@@ -199,13 +199,13 @@ $style_attribute         = $css_variables_string !== '' ? ' style="' . esc_attr(
                     continue;
                 }
 
-                $category_score_value = isset( $category['score'] ) && is_numeric( $category['score'] )
+                $category_score_value   = isset( $category['score'] ) && is_numeric( $category['score'] )
                     ? (float) $category['score']
                     : $placeholder_average;
                 $category_percent_value = isset( $category['percent'] ) && is_numeric( $category['percent'] )
                     ? max( 0, min( 100, (float) $category['percent'] ) )
                     : $average_percentage_value;
-                $percent_attr = number_format( $category_percent_value, 2, '.', '' );
+                $percent_attr           = number_format( $category_percent_value, 2, '.', '' );
                 ?>
                 <div class="rating-item">
                     <div class="rating-label">

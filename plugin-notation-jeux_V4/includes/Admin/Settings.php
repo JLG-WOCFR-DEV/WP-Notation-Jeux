@@ -12,7 +12,7 @@ use JLG\Notation\Helpers;
 use JLG\Notation\Utils\FormRenderer;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Settings {
@@ -535,12 +535,12 @@ class Settings {
         // Section 3: Présentation de la Note Globale
         add_settings_section( 'jlg_layout', '3. 🎨 Présentation de la Note Globale', null, 'notation_jlg_page' );
         $score_max_field_args = array(
-            'id'    => 'score_max',
-            'type'  => 'number',
-            'min'   => 5,
-            'max'   => 100,
-            'step'  => 1,
-            'desc'  => __( 'Définissez la note maximale utilisée pour vos tests (par exemple 10, 20 ou 100).', 'notation-jlg' ),
+            'id'   => 'score_max',
+            'type' => 'number',
+            'min'  => 5,
+            'max'  => 100,
+            'step' => 1,
+            'desc' => __( 'Définissez la note maximale utilisée pour vos tests (par exemple 10, 20 ou 100).', 'notation-jlg' ),
         );
         add_settings_field(
             'score_max',
@@ -879,11 +879,11 @@ class Settings {
         // Section 7: Modules
         add_settings_section( 'jlg_modules', '7. 🧩 Modules', null, 'notation_jlg_page' );
         $module_fields = array(
-            'user_rating_enabled'   => 'Notation utilisateurs',
-            'rating_badge_enabled'  => 'Badge « Coup de cœur »',
-            'tagline_enabled'       => 'Taglines bilingues',
-            'seo_schema_enabled'    => 'Schéma SEO (étoiles Google)',
-            'enable_animations'     => 'Animations des barres',
+            'user_rating_enabled'  => 'Notation utilisateurs',
+            'rating_badge_enabled' => 'Badge « Coup de cœur »',
+            'tagline_enabled'      => 'Taglines bilingues',
+            'seo_schema_enabled'   => 'Schéma SEO (étoiles Google)',
+            'enable_animations'    => 'Animations des barres',
         );
         foreach ( $module_fields as $id => $title ) {
             add_settings_field(
@@ -893,20 +893,20 @@ class Settings {
                 'notation_jlg_page',
                 'jlg_modules',
                 array(
-                                        'id'   => $id,
-                                        'type' => 'checkbox',
-                                )
+					'id'   => $id,
+					'type' => 'checkbox',
+				)
             );
         }
 
         $rating_badge_threshold_args = array(
-                        'id'   => 'rating_badge_threshold',
-                        'type' => 'number',
-                        'min'  => 0,
-                        'max'  => Helpers::get_score_max(),
-                        'step' => 0.1,
-                        'desc' => __( 'Le badge apparaît lorsque la note globale atteint ce seuil. Utilisez le même barème que vos tests (ex. 8 pour un barème sur 10).', 'notation-jlg' ),
-                );
+			'id'   => 'rating_badge_threshold',
+			'type' => 'number',
+			'min'  => 0,
+			'max'  => Helpers::get_score_max(),
+			'step' => 0.1,
+			'desc' => __( 'Le badge apparaît lorsque la note globale atteint ce seuil. Utilisez le même barème que vos tests (ex. 8 pour un barème sur 10).', 'notation-jlg' ),
+		);
         add_settings_field(
             'rating_badge_threshold',
             __( 'Seuil du badge', 'notation-jlg' ),
@@ -988,9 +988,9 @@ class Settings {
             'notation_jlg_page',
             'jlg_user_rating_section',
             array(
-                                'id'   => 'user_rating_star_color',
-                                'type' => 'color',
-                        )
+				'id'   => 'user_rating_star_color',
+				'type' => 'color',
+			)
         );
         add_settings_field(
             'user_rating_requires_login',
@@ -999,10 +999,10 @@ class Settings {
             'notation_jlg_page',
             'jlg_user_rating_section',
             array(
-                                'id'   => 'user_rating_requires_login',
-                                'type' => 'checkbox',
-                                'desc' => __( 'Empêche les visiteurs non connectés de voter et leur affiche un lien de connexion.', 'notation-jlg' ),
-                        )
+				'id'   => 'user_rating_requires_login',
+				'type' => 'checkbox',
+				'desc' => __( 'Empêche les visiteurs non connectés de voter et leur affiche un lien de connexion.', 'notation-jlg' ),
+			)
         );
 
         // Section 10: Tableau Récapitulatif
@@ -1289,12 +1289,12 @@ class Settings {
         );
 
         $score_position_options = array(
-            'top-left'      => __( 'En haut à gauche', 'notation-jlg' ),
-            'top-right'     => __( 'En haut à droite', 'notation-jlg' ),
-            'middle-left'   => __( 'Au centre à gauche', 'notation-jlg' ),
-            'middle-right'  => __( 'Au centre à droite', 'notation-jlg' ),
-            'bottom-left'   => __( 'En bas à gauche', 'notation-jlg' ),
-            'bottom-right'  => __( 'En bas à droite', 'notation-jlg' ),
+            'top-left'     => __( 'En haut à gauche', 'notation-jlg' ),
+            'top-right'    => __( 'En haut à droite', 'notation-jlg' ),
+            'middle-left'  => __( 'Au centre à gauche', 'notation-jlg' ),
+            'middle-right' => __( 'Au centre à droite', 'notation-jlg' ),
+            'bottom-left'  => __( 'En bas à gauche', 'notation-jlg' ),
+            'bottom-right' => __( 'En bas à droite', 'notation-jlg' ),
         );
 
         add_settings_field(
@@ -1495,11 +1495,11 @@ class Settings {
                 $data_attributes   = array();
 
                 if ( $allow_transparent ) {
-                    $classes[] = 'jlg-color-picker--allow-transparent';
+                    $classes[]                                 = 'jlg-color-picker--allow-transparent';
                     $data_attributes['data-allow-transparent'] = 'true';
                 }
 
-                $default_attr_value                  = is_string( $default_value ) ? $default_value : '';
+                $default_attr_value                    = is_string( $default_value ) ? $default_value : '';
                 $data_attributes['data-default-color'] = $default_attr_value;
 
                 $attributes = '';
@@ -1537,14 +1537,14 @@ class Settings {
     private function render_rating_categories_field( $args, $options ) {
         unset( $options );
 
-        $field_id      = $args['id'] ?? 'rating_categories';
-        $option_name   = $this->option_name;
-        $definitions   = Helpers::get_rating_category_definitions();
-        $wrapper_id    = $field_id . '_manager';
-        $next_index    = count( $definitions );
-        $move_up_text  = esc_html__( 'Monter', 'notation-jlg' );
+        $field_id       = $args['id'] ?? 'rating_categories';
+        $option_name    = $this->option_name;
+        $definitions    = Helpers::get_rating_category_definitions();
+        $wrapper_id     = $field_id . '_manager';
+        $next_index     = count( $definitions );
+        $move_up_text   = esc_html__( 'Monter', 'notation-jlg' );
         $move_down_text = esc_html__( 'Descendre', 'notation-jlg' );
-        $move_up_aria  = esc_attr__( 'Monter la catégorie', 'notation-jlg' );
+        $move_up_aria   = esc_attr__( 'Monter la catégorie', 'notation-jlg' );
         $move_down_aria = esc_attr__( 'Descendre la catégorie', 'notation-jlg' );
 
         static $styles_printed = false;
@@ -1566,15 +1566,15 @@ class Settings {
         echo '<div class="jlg-rating-categories__list">';
 
         foreach ( $definitions as $index => $definition ) {
-            $label       = isset( $definition['label'] ) ? $definition['label'] : '';
-            $id          = isset( $definition['id'] ) ? $definition['id'] : '';
-            $position    = isset( $definition['position'] ) ? (int) $definition['position'] : ( $index + 1 );
-            $legacy_ids  = isset( $definition['legacy_ids'] ) && is_array( $definition['legacy_ids'] ) ? $definition['legacy_ids'] : array();
-            $weight      = isset( $definition['weight'] )
+            $label          = isset( $definition['label'] ) ? $definition['label'] : '';
+            $id             = isset( $definition['id'] ) ? $definition['id'] : '';
+            $position       = isset( $definition['position'] ) ? (int) $definition['position'] : ( $index + 1 );
+            $legacy_ids     = isset( $definition['legacy_ids'] ) && is_array( $definition['legacy_ids'] ) ? $definition['legacy_ids'] : array();
+            $weight         = isset( $definition['weight'] )
                 ? Helpers::normalize_category_weight( $definition['weight'], 1.0 )
                 : 1.0;
-            $label_field = sprintf( '%s[%s][%d][label]', $option_name, $field_id, $index );
-            $id_field    = sprintf( '%s[%s][%d][id]', $option_name, $field_id, $index );
+            $label_field    = sprintf( '%s[%s][%d][label]', $option_name, $field_id, $index );
+            $id_field       = sprintf( '%s[%s][%d][id]', $option_name, $field_id, $index );
             $position_field = sprintf( '%s[%s][%d][position]', $option_name, $field_id, $index );
             $weight_field   = sprintf( '%s[%s][%d][weight]', $option_name, $field_id, $index );
             $weight_value   = number_format( $weight, 1, '.', '' );
@@ -1623,8 +1623,8 @@ class Settings {
 
         echo '</div>';
 
-        $template_label = esc_attr__( 'Libellé', 'notation-jlg' );
-        $template_id    = esc_attr__( 'Identifiant', 'notation-jlg' );
+        $template_label  = esc_attr__( 'Libellé', 'notation-jlg' );
+        $template_id     = esc_attr__( 'Identifiant', 'notation-jlg' );
         $template_remove = esc_attr__( 'Supprimer', 'notation-jlg' );
         $template_desc   = esc_html__( 'Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement.', 'notation-jlg' );
 
@@ -1694,5 +1694,4 @@ class Settings {
             echo '</details>';
         }
     }
-
 }

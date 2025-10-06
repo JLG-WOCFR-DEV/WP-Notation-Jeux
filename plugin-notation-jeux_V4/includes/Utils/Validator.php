@@ -6,11 +6,11 @@ use DateTime;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Validator {
-    private static $allowed_pegi_values = array( '3', '7', '12', '16', '18' );
+    private static $allowed_pegi_values     = array( '3', '7', '12', '16', '18' );
     private static $allowed_video_providers = array(
         'youtube'     => array(
             'label'   => 'YouTube',
@@ -295,7 +295,7 @@ class Validator {
     }
 
     public static function sanitize_review_video_data( $url, $provider = '' ) {
-        $raw_url      = is_string( $url ) ? trim( $url ) : '';
+        $raw_url            = is_string( $url ) ? trim( $url ) : '';
         $sanitized_provider = self::sanitize_video_provider( $provider );
 
         if ( $raw_url === '' ) {
