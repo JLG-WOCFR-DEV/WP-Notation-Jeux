@@ -18,21 +18,21 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 = Fonctionnalités principales =
 
-* **Système de notation flexible** : 6 catégories personnalisables avec un barème ajustable (par défaut sur 10)
-* **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues
-* **Notation utilisateurs** : Permettez à vos lecteurs de voter, visualisez la répartition des notes dans un histogramme accessible mis à jour en direct et laissez le script AJAX empêcher les doubles soumissions. L'option *Connexion obligatoire avant le vote* autorise au besoin la restriction aux membres connectés.
-* **Badge coup de cœur** : Activez un badge éditorial lorsque la note dépasse un seuil configurable et affichez en parallèle la moyenne des lecteurs ainsi que l'écart avec la rédaction
-* **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
-* **Nom de jeu personnalisé** : Remplacez le titre WordPress dans les tableaux, widgets et données structurées
-* **Widget** : Affichez vos derniers tests notés
-* **Intégration vidéo enrichie** : Les helpers détectent désormais automatiquement YouTube, Vimeo, Twitch et Dailymotion pour générer un lecteur embarqué respectant les paramètres recommandés
-* **API RAWG** : Remplissage automatique des informations de jeu
-* **SEO optimisé** : Support schema.org pour les rich snippets Google
-* **Thèmes visuels** : Mode clair et sombre avec personnalisation complète
-* **Sélecteur de couleurs enrichi** : Profitez du color picker WordPress avec saisie libre (y compris `transparent` lorsque pris en charge)
-* **Accessibilité renforcée** : Les animations respectent la préférence système "réduire les mouvements" et la navigation du Game Explorer annonce désormais la page active (aria-current) tout en proposant des repères de focus visibles, y compris sur mobile. Sur smartphone, un bouton « Filtres » accessible (aria-expanded/aria-controls) ouvre un panneau coulissant qui se referme automatiquement après application et replace le focus sur la liste de résultats.
-* **Gestion dynamique des plateformes** : Ajoutez, triez et réinitialisez vos plateformes depuis l'onglet Plateformes
-* **Responsive** : Parfaitement adapté mobile et tablette
+* **Système de notation flexible** : 6 catégories personnalisables avec barème ajustable (par défaut sur 10) et badge « Coup de cœur » éditorial déclenché par seuil.
+* **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues, Game Explorer, Score Insights et tableau récapitulatif.
+* **Blocs Gutenberg** : neuf blocs dynamiques (notation, tout-en-un, fiche technique, points forts/faibles, tagline, notation lecteurs, tableau récapitulatif, Game Explorer, Score Insights) garantissant la parité éditeur/front.
+* **Notation utilisateurs** : votes AJAX, histogramme accessible rafraîchi en direct, verrouillage anti double clic et option *Connexion obligatoire avant le vote*.
+* **Tableau récapitulatif & Game Explorer** : vues triables/filtrables avec navigation accessible sans JavaScript et panneaux responsives.
+* **Score Insights** : tableau de bord statistique (moyenne, médiane, histogramme, plateformes dominantes) filtrable par période et plateforme.
+* **Nom de jeu personnalisé** : remplace le titre WordPress dans tableaux, widgets et données structurées.
+* **Widget « Derniers tests »** : met en avant vos dernières reviews notées.
+* **Intégration vidéo enrichie** : détection automatique YouTube, Vimeo, Twitch, Dailymotion pour un embed conforme.
+* **API RAWG** : remplissage automatique des informations de jeu avec validation (dates, PEGI, nom normalisé).
+* **SEO optimisé** : schema.org (JSON-LD) activable et métadonnées cohérentes.
+* **Thèmes visuels & effets** : mode clair/sombre, palettes complètes, effets Glow/Neon et sélecteur couleur acceptant `transparent`.
+* **Accessibilité renforcée** : respect de `prefers-reduced-motion`, focus visibles, aria-current sur la navigation et boutons de filtres annotés.
+* **Gestion dynamique des plateformes** : ajoutez, triez, supprimez ou réinitialisez depuis l'onglet Plateformes.
+* **Responsive** : design adapté mobile/tablette et chargement conditionnel des assets via `JLG_Frontend::mark_shortcode_rendered()`.
 
 = Histogramme des votes lecteurs =
 
