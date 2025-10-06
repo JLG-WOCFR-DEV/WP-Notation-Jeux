@@ -49,12 +49,18 @@ class GameExplorer {
         'platform_index' => '_jlg_ge_platform_index',
     );
 
+    private const QUERY_CACHE_KEY_PREFIX      = 'jlg_ge_query_';
+    private const QUERY_CACHE_VERSION_OPTION  = 'jlg_ge_query_cache_version';
+
     /** @var array<string, mixed>|null */
     private static $filters_snapshot = null;
+    /** @var int|null */
+    private static $query_cache_version = null;
 
     public static function clear_filters_snapshot() {
         delete_transient( self::SNAPSHOT_TRANSIENT_KEY );
         self::$filters_snapshot = null;
+        self::bump_query_cache_version();
     }
 
     public static function maybe_clear_filters_snapshot_for_meta( $meta_id, $post_id, $meta_key, $meta_value = null ) {
@@ -782,6 +788,121 @@ class GameExplorer {
         self::$filters_snapshot = $snapshot;
 
         return $snapshot;
+    }
+
+    private static function get_query_cache_version() {
+        if ( self::$query_cache_version !== null ) {
+            return self::$query_cache_version;
+        }
+
+        $stored_version = get_option( self::QUERY_CACHE_VERSION_OPTION, 1 );
+        $stored_version = is_numeric( $stored_version ) ? (int) $stored_version : 1;
+
+        if ( $stored_version < 1 ) {
+            $stored_version = 1;
+        }
+
+        self::$query_cache_version = $stored_version;
+
+        return self::$query_cache_version;
+    }
+
+    private static function bump_query_cache_version() {
+        $next_version                = self::get_query_cache_version() + 1;
+        self::$query_cache_version   = $next_version;
+        update_option( self::QUERY_CACHE_VERSION_OPTION, $next_version, false );
+    }
+
+    private static function is_query_cache_enabled() {
+        $enabled = true;
+
+        if ( function_exists( 'apply_filters' ) ) {
+            $enabled = apply_filters( 'jlg_game_explorer_enable_query_cache', $enabled );
+        }
+
+        return (bool) $enabled;
+    }
+
+    private static function normalize_query_filters_for_cache( array $filters ) {
+        ksort( $filters );
+
+        foreach ( $filters as $key => $value ) {
+            if ( is_array( $value ) ) {
+                $filters[ $key ] = self::normalize_query_filters_for_cache( $value );
+                continue;
+            }
+
+            if ( is_bool( $value ) ) {
+                $filters[ $key ] = $value;
+                continue;
+            }
+
+            if ( $value === null ) {
+                $filters[ $key ] = null;
+                continue;
+            }
+
+            $filters[ $key ] = (string) $value;
+        }
+
+        return $filters;
+    }
+
+    private static function build_query_cache_key( array $filters, $orderby, $order, $posts_per_page, $paged ) {
+        $payload = array(
+            'filters'        => self::normalize_query_filters_for_cache( $filters ),
+            'orderby'        => (string) $orderby,
+            'order'          => (string) $order,
+            'posts_per_page' => (int) $posts_per_page,
+            'paged'          => (int) $paged,
+        );
+
+        $hash = md5( wp_json_encode( $payload ) );
+
+        return self::QUERY_CACHE_KEY_PREFIX . self::get_query_cache_version() . '_' . $hash;
+    }
+
+    private static function maybe_get_cached_query_result( array $filters, $orderby, $order, $posts_per_page, $paged ) {
+        if ( ! self::is_query_cache_enabled() ) {
+            return null;
+        }
+
+        $cache_key = self::build_query_cache_key( $filters, $orderby, $order, $posts_per_page, $paged );
+        $cached    = get_transient( $cache_key );
+
+        if ( ! is_array( $cached ) ) {
+            return null;
+        }
+
+        if ( ! array_key_exists( 'post_ids', $cached ) ) {
+            return null;
+        }
+
+        $cached['post_ids'] = array_values( array_map( 'intval', (array) $cached['post_ids'] ) );
+
+        return $cached;
+    }
+
+    private static function store_query_result_cache( array $filters, $orderby, $order, $posts_per_page, $paged, array $result ) {
+        if ( ! self::is_query_cache_enabled() ) {
+            return;
+        }
+
+        $cache_key = self::build_query_cache_key( $filters, $orderby, $order, $posts_per_page, $paged );
+
+        $ttl = defined( 'MINUTE_IN_SECONDS' ) ? 5 * MINUTE_IN_SECONDS : 300;
+        if ( function_exists( 'apply_filters' ) ) {
+            $ttl = apply_filters( 'jlg_game_explorer_query_cache_ttl', $ttl, $filters, $orderby, $order, $posts_per_page, $paged );
+        }
+
+        $ttl = is_numeric( $ttl ) ? (int) $ttl : 0;
+
+        if ( $ttl <= 0 ) {
+            set_transient( $cache_key, $result );
+            return;
+        }
+
+        set_transient( $cache_key, $result, $ttl );
     }
 
     protected static function build_filters_snapshot() {
@@ -1522,50 +1643,99 @@ class GameExplorer {
             'search_terms'  => $search_terms,
         );
 
-        $query_args = self::build_query_args_from_filters(
+        $requested_paged    = $paged;
+        $query_cache_status = 'miss';
+        $total_items        = 0;
+        $total_pages        = 0;
+        $query_args         = array();
+
+        $cached_query = self::maybe_get_cached_query_result(
             $query_filters,
             $orderby,
             $order,
             $posts_per_page,
-            $paged
+            $requested_paged
         );
 
-        $query = new \WP_Query( $query_args );
+        if ( is_array( $cached_query ) ) {
+            $query_cache_status = 'hit';
+            $cached_post_ids    = isset( $cached_query['post_ids'] ) ? (array) $cached_query['post_ids'] : array();
+            $cached_post_ids    = array_values( array_filter( array_map( 'intval', $cached_post_ids ) ) );
 
-        $total_items = isset( $query->found_posts ) ? (int) $query->found_posts : (int) $query->post_count;
-        if ( $total_items < 0 ) {
-            $total_items = 0;
-        }
-
-        $total_pages = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0;
-        if ( $total_pages < 1 && $total_items > 0 && $posts_per_page > 0 ) {
-            $total_pages = (int) ceil( $total_items / $posts_per_page );
-        }
-        if ( $total_pages < 0 ) {
-            $total_pages = 0;
-        }
-        $adjusted_paged = $paged;
-        if ( $total_pages > 0 && $adjusted_paged > $total_pages ) {
-            $adjusted_paged = $total_pages;
-        }
-        if ( $adjusted_paged < 1 ) {
-            $adjusted_paged = 1;
-        }
-
-        if ( $adjusted_paged !== $query_args['paged'] ) {
-            $query_args['paged'] = $adjusted_paged;
-            $query                = new \WP_Query( $query_args );
-            $total_items          = isset( $query->found_posts ) ? (int) $query->found_posts : (int) $query->post_count;
+            $total_items = isset( $cached_query['total_items'] ) ? (int) $cached_query['total_items'] : 0;
             if ( $total_items < 0 ) {
                 $total_items = 0;
             }
-            $total_pages = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : $total_pages;
+
+            $total_pages = isset( $cached_query['total_pages'] ) ? (int) $cached_query['total_pages'] : 0;
+            if ( $total_pages < 0 ) {
+                $total_pages = 0;
+            }
+
+            $cached_paged = isset( $cached_query['adjusted_paged'] ) ? (int) $cached_query['adjusted_paged'] : $requested_paged;
+            if ( $cached_paged < 1 ) {
+                $cached_paged = 1;
+            }
+            $paged = $cached_paged;
+
+            $query_args = array(
+                'post_type'           => Helpers::get_allowed_post_types(),
+                'post__in'            => $cached_post_ids,
+                'orderby'             => 'post__in',
+                'posts_per_page'      => count( $cached_post_ids ),
+                'paged'               => 1,
+                'ignore_sticky_posts' => true,
+            );
+
+            $query = new \WP_Query( $query_args );
+            $query->found_posts   = $total_items;
+            $query->max_num_pages = $total_pages;
+        } else {
+            $query_args = self::build_query_args_from_filters(
+                $query_filters,
+                $orderby,
+                $order,
+                $posts_per_page,
+                $paged
+            );
+
+            $query = new \WP_Query( $query_args );
+
+            $total_items = isset( $query->found_posts ) ? (int) $query->found_posts : (int) $query->post_count;
+            if ( $total_items < 0 ) {
+                $total_items = 0;
+            }
+
+            $total_pages = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0;
             if ( $total_pages < 1 && $total_items > 0 && $posts_per_page > 0 ) {
                 $total_pages = (int) ceil( $total_items / $posts_per_page );
             }
-        }
+            if ( $total_pages < 0 ) {
+                $total_pages = 0;
+            }
+            $adjusted_paged = $paged;
+            if ( $total_pages > 0 && $adjusted_paged > $total_pages ) {
+                $adjusted_paged = $total_pages;
+            }
+            if ( $adjusted_paged < 1 ) {
+                $adjusted_paged = 1;
+            }
 
-        $paged = $adjusted_paged;
+            if ( $adjusted_paged !== $query_args['paged'] ) {
+                $query_args['paged'] = $adjusted_paged;
+                $query                = new \WP_Query( $query_args );
+                $total_items          = isset( $query->found_posts ) ? (int) $query->found_posts : (int) $query->post_count;
+                if ( $total_items < 0 ) {
+                    $total_items = 0;
+                }
+                $total_pages = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : $total_pages;
+                if ( $total_pages < 1 && $total_items > 0 && $posts_per_page > 0 ) {
+                    $total_pages = (int) ceil( $total_items / $posts_per_page );
+                }
+            }
+
+            $paged = $adjusted_paged;
+        }
 
         $no_results_message = '<p>' . esc_html__( 'Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg' ) . '</p>';
 
@@ -1658,6 +1828,32 @@ class GameExplorer {
             wp_reset_postdata();
         }
 
+        if ( $query_cache_status === 'miss' ) {
+            $post_ids_for_cache = array();
+
+            if ( isset( $query->posts ) && is_array( $query->posts ) ) {
+                foreach ( $query->posts as $post_object ) {
+                    if ( isset( $post_object->ID ) ) {
+                        $post_ids_for_cache[] = (int) $post_object->ID;
+                    }
+                }
+            }
+
+            self::store_query_result_cache(
+                $query_filters,
+                $orderby,
+                $order,
+                $posts_per_page,
+                $requested_paged,
+                array(
+                    'post_ids'      => $post_ids_for_cache,
+                    'total_items'   => $total_items,
+                    'total_pages'   => $total_pages,
+                    'adjusted_paged'=> $paged,
+                )
+            );
+        }
+
         if ( empty( $games ) ) {
             $total_items = 0;
             $total_pages = 0;
@@ -1699,6 +1895,9 @@ class GameExplorer {
             'request' => array(
                 'prefix' => $request_prefix,
                 'keys'   => $request_keys,
+            ),
+            'cache'   => array(
+                'query' => $query_cache_status,
             ),
             'meta'    => array(
                 'years' => array(
@@ -1769,6 +1968,9 @@ class GameExplorer {
                 'buckets' => $year_buckets,
             ),
             'search_suggestions'   => $search_suggestions,
+            'cache_status'         => array(
+                'query' => $query_cache_status,
+            ),
         );
     }
 
