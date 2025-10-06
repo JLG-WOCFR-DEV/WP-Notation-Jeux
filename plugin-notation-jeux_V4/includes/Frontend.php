@@ -232,6 +232,8 @@ class Frontend {
      * Détecte l'exécution des shortcodes du plugin lors de leur rendu.
      */
     public function track_shortcode_usage( $output, $tag, $attr, $m ) {
+        unset( $attr, $m );
+
         if ( in_array( $tag, $this->get_plugin_shortcodes(), true ) ) {
             self::mark_shortcode_rendered( $tag );
         }
@@ -687,7 +689,7 @@ class Frontend {
             return array( 'allowed' => true );
         }
 
-        $now           = current_time( 'timestamp' );
+        $now           = self::get_current_timestamp();
         $blocked_scope = null;
         $scopes        = array(
             'token' => $token_hash,
@@ -806,7 +808,7 @@ class Frontend {
             'user_id'    => isset( $entry['user_id'] ) ? (int) $entry['user_id'] : 0,
             'ip_hash'    => isset( $entry['ip_hash'] ) && is_string( $entry['ip_hash'] ) ? substr( $entry['ip_hash'], 0, 64 ) : '',
             'user_agent' => isset( $entry['user_agent'] ) && is_string( $entry['user_agent'] ) ? substr( sanitize_text_field( $entry['user_agent'] ), 0, 255 ) : '',
-            'timestamp'  => isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : current_time( 'timestamp' ),
+            'timestamp'  => isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : self::get_current_timestamp(),
             'scope'      => isset( $entry['scope'] ) && is_string( $entry['scope'] ) ? substr( $entry['scope'], 0, 32 ) : '',
             'throttled'  => ! empty( $entry['throttled'] ),
         );
@@ -924,7 +926,7 @@ class Frontend {
 
         $store      = self::get_user_rating_reputation_store();
         $count      = isset( $previous_entry['count'] ) ? max( 0, (int) $previous_entry['count'] ) : 0;
-        $timestamp  = current_time( 'timestamp' );
+        $timestamp  = self::get_current_timestamp();
         $new_record = array(
             'count'        => $count + 1,
             'last_post'    => (int) $post_id,
@@ -991,7 +993,7 @@ class Frontend {
         $record     = $store[ $token_hash ];
         $expires_at = isset( $record['expires_at'] ) ? (int) $record['expires_at'] : 0;
 
-        if ( $expires_at > 0 && $expires_at < current_time( 'timestamp' ) ) {
+        if ( $expires_at > 0 && $expires_at < self::get_current_timestamp() ) {
             unset( $store[ $token_hash ] );
             update_option( self::USER_RATING_BANNED_TOKENS_OPTION, $store );
 
@@ -1009,7 +1011,7 @@ class Frontend {
         $store = self::get_banned_user_rating_tokens();
 
         $record = array(
-            'banned_at'  => current_time( 'timestamp' ),
+            'banned_at'  => self::get_current_timestamp(),
             'banned_by'  => isset( $context['user_id'] ) ? (int) $context['user_id'] : 0,
             'note'       => isset( $context['note'] ) ? sanitize_text_field( $context['note'] ) : '',
             'expires_at' => isset( $context['expires_at'] ) ? (int) $context['expires_at'] : 0,
@@ -1114,7 +1116,7 @@ class Frontend {
             $expires_at = 0;
 
             if ( is_numeric( $expires ) ) {
-                $expires_at = current_time( 'timestamp' ) + max( 0, (int) $expires );
+                $expires_at = self::get_current_timestamp() + max( 0, (int) $expires );
             }
 
             $user_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
@@ -1393,7 +1395,7 @@ class Frontend {
         $previous_reputation = isset( $weighting_context['reputation'] ) && is_array( $weighting_context['reputation'] ) ? $weighting_context['reputation'] : array();
 
         $ratings[ $token_hash ]                    = $rating;
-        $ratings_meta['timestamps'][ $token_hash ] = current_time( 'timestamp' );
+        $ratings_meta['timestamps'][ $token_hash ] = self::get_current_timestamp();
         $ratings_meta['weights'][ $token_hash ]    = $vote_weight;
 
         self::store_post_user_rating_tokens( $post_id, $ratings, $ratings_meta );
@@ -1480,7 +1482,7 @@ class Frontend {
         }
 
         $normalized = array();
-        $now        = current_time( 'timestamp' );
+        $now        = self::get_current_timestamp();
 
         $needs_meta_update    = ! isset( $meta_data['version'] ) || (int) $meta_data['version'] < 3;
         $meta_data['version'] = 3;
@@ -1644,7 +1646,7 @@ class Frontend {
         $current_total   = isset( $existing['weight_total'] ) ? (float) $existing['weight_total'] : null;
         $current_count   = isset( $existing['count'] ) ? (int) $existing['count'] : null;
         $current_average = isset( $existing['average'] ) ? (float) $existing['average'] : null;
-        $computed_at     = isset( $existing['computed_at'] ) ? (int) $existing['computed_at'] : current_time( 'timestamp' );
+        $computed_at     = isset( $existing['computed_at'] ) ? (int) $existing['computed_at'] : self::get_current_timestamp();
 
         $average = 0.0;
 
@@ -1653,10 +1655,10 @@ class Frontend {
         }
 
         if ( $current_sum === null || abs( $current_sum - $weighted_sum ) > 0.0001 || $current_total === null || abs( $current_total - $weight_total ) > 0.0001 ) {
-            $computed_at = current_time( 'timestamp' );
+            $computed_at = self::get_current_timestamp();
             $changed     = true;
         } elseif ( $current_count === null || $current_count !== $count || $current_average === null || abs( $current_average - $average ) > 0.0001 ) {
-            $computed_at = current_time( 'timestamp' );
+            $computed_at = self::get_current_timestamp();
             $changed     = true;
         }
 
@@ -1674,7 +1676,7 @@ class Frontend {
     private static function prune_user_rating_store( $post_id, array &$ratings, array &$meta ) {
         $timestamps     = isset( $meta['timestamps'] ) && is_array( $meta['timestamps'] ) ? $meta['timestamps'] : array();
         $weights        = isset( $meta['weights'] ) && is_array( $meta['weights'] ) ? $meta['weights'] : array();
-        $now            = current_time( 'timestamp' );
+        $now            = self::get_current_timestamp();
         $retention      = self::get_user_rating_retention_window();
         $removed_tokens = array();
 
@@ -1760,7 +1762,7 @@ class Frontend {
         }
 
         $updated   = false;
-        $timestamp = current_time( 'timestamp' );
+        $timestamp = self::get_current_timestamp();
 
         foreach ( $ratings as $hash => $value ) {
             if ( ! isset( $ip_log[ $hash ] ) || ! is_array( $ip_log[ $hash ] ) ) {
@@ -1804,7 +1806,7 @@ class Frontend {
             $ip_log = array();
         }
 
-        $timestamp = current_time( 'timestamp' );
+        $timestamp = self::get_current_timestamp();
         $entry     = isset( $ip_log[ $ip_hash ] ) && is_array( $ip_log[ $ip_hash ] ) ? $ip_log[ $ip_hash ] : array();
 
         $entry['rating']    = (float) $rating;
@@ -1828,7 +1830,7 @@ class Frontend {
             return;
         }
 
-        $now       = current_time( 'timestamp' );
+        $now       = self::get_current_timestamp();
         $retention = $check_retention ? self::get_user_rating_retention_window() : 0;
         $threshold = ( $retention > 0 ) ? $now - $retention : null;
         $tokens    = array();
@@ -2890,7 +2892,7 @@ class Frontend {
         if ( function_exists( 'wp_strip_all_tags' ) ) {
             $text = wp_strip_all_tags( $text );
         } else {
-            $text = strip_tags( $text );
+            $text = preg_replace( '/<[^>]+>/', '', $text );
         }
 
         $text = html_entity_decode( $text, ENT_QUOTES, 'UTF-8' );
@@ -3251,5 +3253,16 @@ class Frontend {
 
         // Retourner le contenu capturé
         return ob_get_clean();
+    }
+    private static function get_current_timestamp() {
+        if ( function_exists( 'current_datetime' ) ) {
+            $datetime = current_datetime();
+
+            if ( $datetime instanceof \DateTimeInterface ) {
+                return $datetime->getTimestamp();
+            }
+        }
+
+        return time();
     }
 }

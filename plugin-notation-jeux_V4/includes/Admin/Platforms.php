@@ -308,7 +308,7 @@ class Platforms {
 
         // Debug : Vérifier les données POST
         if ( ! empty( $_POST ) ) {
-            $this->log_debug( '📨 Données POST reçues : ' . json_encode( array_keys( $_POST ) ) );
+            $this->log_debug( '📨 Données POST reçues : ' . wp_json_encode( array_keys( $_POST ) ) );
         }
 
         if ( ! isset( $_POST['jlg_platform_action'] ) ) {
@@ -476,7 +476,7 @@ class Platforms {
         $platforms['order'][ $key ]            = $max_order + 1;
 
         $this->log_debug( '💾 Tentative de sauvegarde dans la DB' );
-        $this->log_debug( '📊 Données à sauvegarder : ' . json_encode( $platforms['custom_platforms'][ $key ] ) );
+        $this->log_debug( '📊 Données à sauvegarder : ' . wp_json_encode( $platforms['custom_platforms'][ $key ] ) );
 
         $result = update_option( $this->option_name, $platforms );
 
@@ -801,11 +801,15 @@ class Platforms {
                     </ul>
                 </details>
                 
-                <?php if ( ! empty( $_POST ) ) : ?>
+                <?php
+                if ( ! empty( $_POST ) ) :
+                    $post_payload = wp_unslash( $_POST );
+                    $post_json    = wp_json_encode( $post_payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+                    ?>
                 <details style="margin-top: 15px;">
                     <summary style="cursor: pointer; font-weight: bold;">📨 Données POST reçues</summary>
                     <pre style="background: #f5f5f5; padding: 10px; overflow: auto; margin-top: 10px; font-size: 11px;">
-                        <?php echo esc_html( print_r( $_POST, true ) ); ?>
+                        <?php echo esc_html( $post_json ? $post_json : '' ); ?>
                     </pre>
                 </details>
                 <?php endif; ?>

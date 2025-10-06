@@ -562,13 +562,13 @@ class GameExplorer {
         }
     }
 
-    private static function substr_unicode( $string, $start, $length = null, $encoding = 'UTF-8' ) {
-        $string = (string) $string;
+    private static function substr_unicode( $text, $start, $length = null, $encoding = 'UTF-8' ) {
+        $text = (string) $text;
 
         if ( function_exists( 'mb_substr' ) ) {
             $result = $length === null
-                ? mb_substr( $string, $start, null, $encoding )
-                : mb_substr( $string, $start, $length, $encoding );
+                ? mb_substr( $text, $start, null, $encoding )
+                : mb_substr( $text, $start, $length, $encoding );
 
             return $result === false ? '' : $result;
         }
@@ -577,16 +577,16 @@ class GameExplorer {
             if ( $length === null ) {
                 $iconv_length = null;
                 if ( function_exists( 'iconv_strlen' ) ) {
-                    $computed_length = iconv_strlen( $string, $encoding );
+                    $computed_length = iconv_strlen( $text, $encoding );
                     if ( $computed_length !== false ) {
                         $iconv_length = $computed_length;
                     }
                 }
                 $result = $iconv_length === null
-                    ? iconv_substr( $string, $start, strlen( $string ), $encoding )
-                    : iconv_substr( $string, $start, $iconv_length, $encoding );
+                    ? iconv_substr( $text, $start, strlen( $text ), $encoding )
+                    : iconv_substr( $text, $start, $iconv_length, $encoding );
             } else {
-                $result = iconv_substr( $string, $start, $length, $encoding );
+                $result = iconv_substr( $text, $start, $length, $encoding );
             }
 
             if ( $result !== false && $result !== null ) {
@@ -594,12 +594,12 @@ class GameExplorer {
             }
         }
 
-        if ( $string === '' ) {
+        if ( $text === '' ) {
             return '';
         }
 
         if ( function_exists( 'wp_strlen' ) ) {
-            $chars = preg_split( '//u', $string, -1, PREG_SPLIT_NO_EMPTY );
+            $chars = preg_split( '//u', $text, -1, PREG_SPLIT_NO_EMPTY );
             if ( is_array( $chars ) ) {
                 $slice = $length === null ? array_slice( $chars, $start ) : array_slice( $chars, $start, $length );
                 return implode( '', $slice );
@@ -607,31 +607,36 @@ class GameExplorer {
         }
 
         if ( $length === null ) {
-            return substr( $string, $start );
+            return substr( $text, $start );
         }
 
-        return substr( $string, $start, $length );
+        return substr( $text, $start, $length );
     }
 
-    private static function strtoupper_unicode( $string, $encoding = 'UTF-8' ) {
-        $string = (string) $string;
+    private static function strtoupper_unicode( $text, $encoding = 'UTF-8' ) {
+        $text = (string) $text;
 
         if ( function_exists( 'mb_strtoupper' ) ) {
-            return mb_strtoupper( $string, $encoding );
+            return mb_strtoupper( $text, $encoding );
         }
 
         if ( function_exists( 'wp_strtoupper' ) ) {
-            return wp_strtoupper( $string );
+            return wp_strtoupper( $text );
         }
 
-        if ( function_exists( 'iconv' ) ) {
-            $converted = @iconv( $encoding, 'UTF-8//TRANSLIT', $string );
-            if ( $converted !== false ) {
-                $string = $converted;
+        return strtoupper( $text );
+    }
+
+    private static function get_current_timestamp() {
+        if ( function_exists( 'current_datetime' ) ) {
+            $datetime = current_datetime();
+
+            if ( $datetime instanceof \DateTimeInterface ) {
+                return $datetime->getTimestamp();
             }
         }
 
-        return strtoupper( $string );
+        return time();
     }
 
     protected static function resolve_category_id( $value ) {
@@ -734,7 +739,7 @@ class GameExplorer {
             );
         }
 
-        if ( $release_date->getTimestamp() > (int) current_time( 'timestamp' ) ) {
+        if ( $release_date->getTimestamp() > (int) self::get_current_timestamp() ) {
             return array(
                 'status' => 'upcoming',
                 'label'  => esc_html__( 'À venir', 'notation-jlg' ),
