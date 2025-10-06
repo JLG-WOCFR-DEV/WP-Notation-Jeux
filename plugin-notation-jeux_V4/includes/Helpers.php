@@ -572,9 +572,9 @@ class Helpers {
         );
     }
 
-    public static function normalize_category_weight( $weight, $default = 1.0 ) {
+    public static function normalize_category_weight( $weight, $fallback_weight = 1.0 ) {
         if ( is_array( $weight ) ) {
-            return (float) $default;
+            return (float) $fallback_weight;
         }
 
         if ( is_string( $weight ) ) {
@@ -583,11 +583,11 @@ class Helpers {
         }
 
         if ( $weight === '' || $weight === null ) {
-            $weight = $default;
+            $weight = $fallback_weight;
         }
 
         if ( ! is_numeric( $weight ) ) {
-            return (float) $default;
+            return (float) $fallback_weight;
         }
 
         $normalized = (float) $weight;

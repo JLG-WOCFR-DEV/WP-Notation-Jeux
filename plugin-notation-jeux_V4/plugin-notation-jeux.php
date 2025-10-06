@@ -27,7 +27,7 @@ if ( ! defined( 'JLG_NOTATION_FALLBACK_AUTOLOADER' ) ) {
     define( 'JLG_NOTATION_FALLBACK_AUTOLOADER', true );
 
     spl_autoload_register(
-        static function ( $class ) {
+        static function ( $class_name ) {
             $prefixes = array(
                 'JLG\\Notation\\Admin\\'      => 'includes/Admin/',
                 'JLG\\Notation\\Utils\\'      => 'includes/Utils/',
@@ -36,11 +36,11 @@ if ( ! defined( 'JLG_NOTATION_FALLBACK_AUTOLOADER' ) ) {
             );
 
             foreach ( $prefixes as $prefix => $directory ) {
-                if ( strpos( $class, $prefix ) !== 0 ) {
+                if ( strpos( $class_name, $prefix ) !== 0 ) {
                     continue;
                 }
 
-                $relative_class = substr( $class, strlen( $prefix ) );
+                $relative_class = substr( $class_name, strlen( $prefix ) );
                 if ( $relative_class === false ) {
                     return;
                 }

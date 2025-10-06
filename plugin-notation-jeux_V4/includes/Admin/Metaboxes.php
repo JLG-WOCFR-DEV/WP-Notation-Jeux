@@ -67,6 +67,8 @@ class Metaboxes {
     }
 
     public function register_metaboxes( $post_type, $post = null ) {
+        unset( $post );
+
         // Vérifier qu'on est bien sur un post
         $allowed_post_types = $this->get_allowed_post_types();
 
@@ -245,7 +247,7 @@ class Metaboxes {
             }
 
             $display_label = $platform_label;
-            $checked       = in_array( $platform_value, $selected ) ? 'checked' : '';
+            $checked       = in_array( $platform_value, $selected, true ) ? 'checked' : '';
             echo '<label style="margin-right:15px;">';
             echo '<input type="checkbox" name="jlg_plateformes[]" value="' . esc_attr( $platform_value ) . '" ' . $checked . '> ';
             echo esc_html( $display_label );
