@@ -54,6 +54,14 @@
 4. **Itération accessibilité** : audit supplémentaire (Lighthouse + axe DevTools) après implémentation des nouveaux contrôles.
 5. **Documentation** : mettre à jour README et guides utilisateurs lors de chaque livraison pour refléter les nouvelles options.
 
+### 6. Design system & direction artistique
+
+- **Système de tokens couleur et typographie** : capitaliser sur les réglages existants (`style`, `accent_color`, thèmes clair/sombre) pour bâtir un set de variables globales (primary, success, warning, background, typographie H1→H6). Les presets `moderne`, `classique`, `compact` deviendraient des combinaisons de tokens, simplifiant la déclinaison de palettes brandées et garantissant une cohérence cross-modules.【F:plugin-notation-jeux_V4/README.md†L61-L99】
+- **Kit de composants illustrés** : fournir une bibliothèque de sections (verdict, pros/cons, fiche technique, CTA, médias) avec variations illustrées rappelant les cards IGN/GameSpot. Chaque composant devrait proposer un layout équilibré (grille 12 colonnes, ratio image 16:9 par défaut) et un jeu d’icônes cohérent pour renforcer la hiérarchie visuelle.【F:plugin-notation-jeux_V4/README.md†L61-L99】
+- **Micro-interactions maîtrisées** : encadrer les effets neon/pulsation via des courbes d’animation standard (ex : `ease-out` 250 ms) et basculer automatiquement vers des états statiques lorsque `prefers-reduced-motion` est détecté. Ajouter une bibliothèque d’états (hover, focus, active) documentée pour toutes les CTA et badges afin de garantir lisibilité et accessibilité.【F:plugin-notation-jeux_V4/README.md†L34-L38】【F:plugin-notation-jeux_V4/README.md†L61-L99】
+- **Guidelines éditoriales** : livrer un mini styleguide (PDF ou page admin) reprenant taille/usage des visuels, longueur recommandée des taglines bilingues, ton des résumés verdict et placement des citations, pour reproduire la constance éditoriale observée chez IGN/GameSpot.【F:plugin-notation-jeux_V4/README.md†L61-L99】
+- **Prévisualisations scénarisées** : dans l’éditeur Gutenberg, proposer des modes « Magazine », « Fiche eShop », « Hub franchise » appliquant automatiquement les tokens et composants ci-dessus, afin d’accélérer la création de maquettes aux standards pro.【F:plugin-notation-jeux_V4/README.md†L81-L101】
+
 ---
 
 ## Complément comparatif – focus monétisation & data (IGN, OpenCritic, Metacritic)
