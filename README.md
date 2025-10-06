@@ -60,6 +60,13 @@ La documentation WordPress (`plugin-notation-jeux_V4/README.txt`) doit rester al
 
 Bonne contribution ! Pensez à suivre les scripts Composer avant toute PR et à conserver la parité de contenu entre les deux README.
 
+## Pistes d’amélioration proposées
+
+- **Assistant de configuration guidée** : proposer, dès l’activation, un onboarding en quatre étapes (types de contenus autorisés, choix des modules, import d’exemples, connexion RAWG) afin d’accélérer la mise en route et de réduire les erreurs de paramétrage constatées lors des tests utilisateurs.
+- **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test (pondération des catégories, annotations individuelles, historique des modifications) puis calculer automatiquement la note éditoriale publiée, à la manière des rédactions qui mettent en avant un verdict collectif.
+- **Timeline de mises à jour du jeu** : enrichir la fiche technique d’un module facultatif listant les patchs majeurs et leurs impacts sur le verdict (changement de note, mise à jour des points forts/faibles), synchronisable depuis RAWG ou saisi manuellement pour suivre la vie du jeu après publication.
+- **Exports & intégrations partenaires** : ajouter une commande WP-CLI et un flux JSON dédié aux partenariats médias/affiliation (résumé, verdict, liens CTA configurables) pour faciliter la syndication de la note sur d’autres plateformes et newsletters sans ressaisie.
+
 ### Vérification du style
 - Exécutez `composer install` pour récupérer les dépendances de développement (WordPress Coding Standards).
 - Lancez `composer cs` avant chaque commit afin de vérifier que vos modifications respectent le standard défini dans `phpcs.xml.dist`.
