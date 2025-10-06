@@ -25,14 +25,14 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
         $GLOBALS['jlg_test_meta'] = [];
         $GLOBALS['jlg_test_filters'] = [];
 
-        $this->filtersSnapshotProperty->setValue(null);
+        $this->filtersSnapshotProperty->setValue(null, null);
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
     protected function tearDown(): void
     {
         \JLG\Notation\Shortcodes\GameExplorer::clear_filters_snapshot();
-        $this->filtersSnapshotProperty->setValue(null);
+        $this->filtersSnapshotProperty->setValue(null, null);
 
         parent::tearDown();
     }
@@ -123,7 +123,7 @@ final class GameExplorerSnapshotInvalidationTest extends TestCase
         $snapshot = ['primed' => uniqid('snapshot_', true)];
 
         set_transient(self::SNAPSHOT_KEY, $snapshot);
-        $this->filtersSnapshotProperty->setValue($snapshot);
+        $this->filtersSnapshotProperty->setValue(null, $snapshot);
 
         return $snapshot;
     }
