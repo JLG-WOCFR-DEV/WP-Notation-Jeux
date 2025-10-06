@@ -1554,10 +1554,10 @@ class Settings {
             echo '.jlg-rating-categories__list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}';
             echo '.jlg-rating-category{border:1px solid #dcdcde;background:#fff;padding:12px;border-radius:4px;}';
             echo '.jlg-rating-category__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}';
-            echo '.jlg-rating-category__actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;}';
+            echo '.jlg-rating-category__actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;grid-column:1/-1;}';
             echo '.jlg-rating-category__actions .button{margin:0;}';
             echo '.jlg-rating-category__remove{color:#a00;}';
-            echo '@media (max-width:782px){.jlg-rating-category__grid{grid-template-columns:1fr;}}';
+            echo '@media (max-width:782px){.jlg-rating-category__grid{grid-template-columns:1fr;}.jlg-rating-category__actions{justify-content:flex-start;}}';
             echo '</style>';
             $styles_printed = true;
         }
