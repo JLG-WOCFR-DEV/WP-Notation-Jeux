@@ -191,16 +191,49 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
                                     if ( $is_active ) {
                                         $letter_button_classes[] = 'is-active';
                                     }
+                                    if ( ! $enabled ) {
+                                        $letter_button_classes[] = 'is-disabled';
+                                    }
+
+                                    $button_attributes = array(
+                                        'type'         => 'submit',
+                                        'data-letter'  => $value,
+                                        'class'        => implode( ' ', array_map( 'sanitize_html_class', $letter_button_classes ) ),
+                                        'name'         => $namespaced_keys['letter'],
+                                        'value'        => $value,
+                                        'aria-pressed' => $is_active ? 'true' : 'false',
+                                    );
+
+                                    if ( ! $enabled ) {
+                                        $button_attributes['disabled']      = true;
+                                        $button_attributes['aria-disabled'] = 'true';
+                                        $button_attributes['tabindex']      = '-1';
+
+                                        $button_attributes['title'] = $value !== ''
+                                            ? sprintf(
+                                                /* translators: %s: Letter without available games. */
+                                                __( 'Aucun jeu disponible pour %s.', 'notation-jlg' ),
+                                                $value
+                                            )
+                                            : __( 'Aucun jeu disponible pour cette lettre.', 'notation-jlg' );
+                                    }
+
+                                    $button_attribute_strings = array();
+
+                                    foreach ( $button_attributes as $attribute_name => $attribute_value ) {
+                                        if ( $attribute_value === true ) {
+                                            $button_attribute_strings[] = esc_attr( $attribute_name );
+                                            continue;
+                                        }
+
+                                        $button_attribute_strings[] = sprintf(
+                                            '%1$s="%2$s"',
+                                            esc_attr( $attribute_name ),
+                                            esc_attr( $attribute_value )
+                                        );
+                                    }
                                     ?>
-                                    <button
-                                        type="submit"
-                                        data-letter="<?php echo esc_attr( $value ); ?>"
-                                        class="<?php echo esc_attr( implode( ' ', array_map( 'sanitize_html_class', $letter_button_classes ) ) ); ?>"
-                                        name="<?php echo esc_attr( $namespaced_keys['letter'] ); ?>"
-                                        value="<?php echo esc_attr( $value ); ?>"
-                                        <?php disabled( ! $enabled ); ?>
-                                        aria-pressed="<?php echo esc_attr( $is_active ? 'true' : 'false' ); ?>"
-                                    >
+                                    <button <?php echo implode( ' ', $button_attribute_strings ); ?>>
                                         <?php echo esc_html( $letter_item['label'] ?? $value ); ?>
                                     </button>
                                 </li>
