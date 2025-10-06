@@ -45,6 +45,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
   - [`includes/`](plugin-notation-jeux_V4/includes) contient le cœur PHP (helpers, frontend, admin, utils).
   - [`admin/templates/`](plugin-notation-jeux_V4/admin/templates) centralise les vues des onglets d’administration.
 - **Tests et documentation** : suite PHPUnit couvrant les helpers principaux, scénarios de benchmark dans [`docs/`](plugin-notation-jeux_V4/docs) (Game Explorer, histogramme, responsive, Score Insights) et checklist manuelle responsive maintenue.
+- **Feuille de route produit** : le sous-dossier [`docs/product-roadmap/`](plugin-notation-jeux_V4/docs/product-roadmap) décline les lots priorisés (quick wins, comparateur plateformes, deals) et fournit estimations, KPIs et dépendances pour les prochaines releases.
 
 ## Intégration continue
 Un workflow GitHub Actions (`CI`) s’exécute sur chaque `push` et `pull_request`. Il installe les dépendances Composer du dossier [`plugin-notation-jeux_V4`](plugin-notation-jeux_V4), puis enchaîne deux commandes clés pour garantir la qualité :

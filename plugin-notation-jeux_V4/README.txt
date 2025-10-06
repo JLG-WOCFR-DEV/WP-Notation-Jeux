@@ -109,6 +109,11 @@ version interne. Deux filtres permettent des personnalisations supplémentaires 
 
 Ces points d'extension facilitent la conservation de vos surcharges lors des mises à jour du plugin.
 
+== Documentation & feuille de route ==
+
+* Consultez le dossier `docs/` pour retrouver les benchmarks concurrents, la checklist responsive et les guides fonctionnels (Game Explorer, histogramme, Score Insights).
+* Le sous-dossier `docs/product-roadmap/` regroupe la feuille de route détaillée (quick wins, comparateur plateformes, deals) avec estimations, KPIs et dépendances pour organiser les prochaines releases.
+
 == Installation ==
 
 1. Téléchargez le plugin et décompressez l'archive
