@@ -80,7 +80,7 @@ class LatestReviewsWidget extends WP_Widget {
 
     public function update( $new_instance, $old_instance ) {
         $instance           = array();
-        $instance['title']  = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+        $instance['title']  = ( ! empty( $new_instance['title'] ) ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
         $instance['number'] = ( ! empty( $new_instance['number'] ) ) ? absint( $new_instance['number'] ) : 5;
         return $instance;
     }
