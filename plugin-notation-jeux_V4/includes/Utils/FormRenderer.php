@@ -11,7 +11,7 @@ namespace JLG\Notation\Utils;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class FormRenderer {
@@ -41,11 +41,11 @@ class FormRenderer {
 
         $classes = array( 'wp-color-picker', 'jlg-color-picker' );
         if ( $allow_transparent ) {
-            $classes[] = 'jlg-color-picker--allow-transparent';
+            $classes[]                                 = 'jlg-color-picker--allow-transparent';
             $data_attributes['data-allow-transparent'] = 'true';
         }
 
-        $default_attr_value                  = is_string( $default_value ) ? $default_value : '';
+        $default_attr_value                    = is_string( $default_value ) ? $default_value : '';
         $data_attributes['data-default-color'] = $default_attr_value;
 
         $attributes = '';

@@ -7,7 +7,7 @@ use JLG\Notation\Helpers;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class RatingBlock {
@@ -19,13 +19,13 @@ class RatingBlock {
     public function render( $atts, $content = '', $shortcode_tag = '' ) {
         $atts = shortcode_atts(
             array(
-                'post_id'             => get_the_ID(),
-                'score_layout'        => '',
-                'animations'          => '',
-                'accent_color'        => '',
-                'display_mode'        => '',
-                'preview_theme'       => '',
-                'preview_animations'  => '',
+                'post_id'            => get_the_ID(),
+                'score_layout'       => '',
+                'animations'         => '',
+                'accent_color'       => '',
+                'display_mode'       => '',
+                'preview_theme'      => '',
+                'preview_animations' => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -153,12 +153,12 @@ class RatingBlock {
             $css_variables = $this->merge_css_variables( $css_variables, $theme_variables );
         }
 
-        $extra_classes = array_values( array_unique( array_filter( $extra_classes ) ) );
+        $extra_classes        = array_values( array_unique( array_filter( $extra_classes ) ) );
         $extra_classes_string = implode( ' ', $extra_classes );
 
         if ( $average_score === null ) {
             if ( $this->is_editor_preview_context() ) {
-                $shortcode_handle     = $shortcode_tag ?: 'bloc_notation_jeu';
+                $shortcode_handle    = $shortcode_tag ?: 'bloc_notation_jeu';
                 $placeholder_context = $this->build_editor_placeholder_context(
                     $post,
                     $post_id,
@@ -261,10 +261,10 @@ class RatingBlock {
                 : 1.0;
 
             $category_scores[] = array(
-                'id'    => $category_id,
-                'label' => $label,
-                'score' => $placeholder_score,
-                'weight'=> $weight,
+                'id'     => $category_id,
+                'label'  => $label,
+                'score'  => $placeholder_score,
+                'weight' => $weight,
             );
 
             if ( $category_id !== '' ) {

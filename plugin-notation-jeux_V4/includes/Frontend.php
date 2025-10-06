@@ -25,14 +25,14 @@ class Frontend {
     public const FRONTEND_STYLE_HANDLE      = 'jlg-frontend';
     public const GAME_EXPLORER_STYLE_HANDLE = 'jlg-game-explorer';
 
-    private const USER_RATING_MAX_STORED_VOTES       = 250;
-    private const USER_RATING_RETENTION_DAYS         = 180;
-    private const USER_RATING_THROTTLE_WINDOW        = 120;
-    private const USER_RATING_THROTTLE_TTL           = 900;
-    private const USER_RATING_ACTIVITY_OPTION        = 'jlg_user_rating_activity_log';
-    private const USER_RATING_ACTIVITY_MAX_ENTRIES   = 200;
-    private const USER_RATING_REPUTATION_OPTION      = 'jlg_user_rating_reputation';
-    private const USER_RATING_BANNED_TOKENS_OPTION   = 'jlg_user_rating_banned_tokens';
+    private const USER_RATING_MAX_STORED_VOTES     = 250;
+    private const USER_RATING_RETENTION_DAYS       = 180;
+    private const USER_RATING_THROTTLE_WINDOW      = 120;
+    private const USER_RATING_THROTTLE_TTL         = 900;
+    private const USER_RATING_ACTIVITY_OPTION      = 'jlg_user_rating_activity_log';
+    private const USER_RATING_ACTIVITY_MAX_ENTRIES = 200;
+    private const USER_RATING_REPUTATION_OPTION    = 'jlg_user_rating_reputation';
+    private const USER_RATING_BANNED_TOKENS_OPTION = 'jlg_user_rating_banned_tokens';
 
     /**
      * Contiendra les erreurs de chargement des shortcodes pour affichage.
@@ -926,11 +926,11 @@ class Frontend {
         $count      = isset( $previous_entry['count'] ) ? max( 0, (int) $previous_entry['count'] ) : 0;
         $timestamp  = current_time( 'timestamp' );
         $new_record = array(
-            'count'       => $count + 1,
-            'last_post'   => (int) $post_id,
-            'last_user_id'=> (int) $user_id,
-            'last_weight' => (float) $weight,
-            'updated_at'  => $timestamp,
+            'count'        => $count + 1,
+            'last_post'    => (int) $post_id,
+            'last_user_id' => (int) $user_id,
+            'last_weight'  => (float) $weight,
+            'updated_at'   => $timestamp,
         );
 
         $store[ $token_hash ] = $new_record;
@@ -961,7 +961,9 @@ class Frontend {
             }
         );
 
-        while ( count( $store ) > $max_entries ) {
+        $store_count = count( $store );
+
+        while ( $store_count > $max_entries ) {
             $first_key = key( $store );
 
             if ( $first_key === null ) {
@@ -971,6 +973,7 @@ class Frontend {
             unset( $store[ $first_key ] );
 
             reset( $store );
+            $store_count = count( $store );
         }
     }
 
@@ -1281,7 +1284,7 @@ class Frontend {
         if ( empty( $options['user_rating_enabled'] ) ) {
             wp_send_json_error(
                 array(
-                                        'message' => esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
+					'message' => esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
                 ),
                 403
             );
@@ -1627,7 +1630,7 @@ class Frontend {
                 continue;
             }
 
-            $count++;
+            ++$count;
 
             $weight = isset( $meta['weights'][ $hash ] ) && is_numeric( $meta['weights'][ $hash ] ) ? (float) $meta['weights'][ $hash ] : 1.0;
             $weight = max( 0.0, $weight );
@@ -1636,12 +1639,12 @@ class Frontend {
             $weight_total += $weight;
         }
 
-        $existing     = isset( $meta['aggregates'] ) && is_array( $meta['aggregates'] ) ? $meta['aggregates'] : array();
-        $current_sum  = isset( $existing['weighted_sum'] ) ? (float) $existing['weighted_sum'] : null;
-        $current_total = isset( $existing['weight_total'] ) ? (float) $existing['weight_total'] : null;
-        $current_count = isset( $existing['count'] ) ? (int) $existing['count'] : null;
+        $existing        = isset( $meta['aggregates'] ) && is_array( $meta['aggregates'] ) ? $meta['aggregates'] : array();
+        $current_sum     = isset( $existing['weighted_sum'] ) ? (float) $existing['weighted_sum'] : null;
+        $current_total   = isset( $existing['weight_total'] ) ? (float) $existing['weight_total'] : null;
+        $current_count   = isset( $existing['count'] ) ? (int) $existing['count'] : null;
         $current_average = isset( $existing['average'] ) ? (float) $existing['average'] : null;
-        $computed_at  = isset( $existing['computed_at'] ) ? (int) $existing['computed_at'] : current_time( 'timestamp' );
+        $computed_at     = isset( $existing['computed_at'] ) ? (int) $existing['computed_at'] : current_time( 'timestamp' );
 
         $average = 0.0;
 
@@ -1875,7 +1878,7 @@ class Frontend {
                 continue;
             }
 
-            $count++;
+            ++$count;
 
             $weight = isset( $weights[ $hash ] ) && is_numeric( $weights[ $hash ] ) ? (float) $weights[ $hash ] : 1.0;
             $weight = max( 0.0, $weight );
@@ -2224,8 +2227,8 @@ class Frontend {
         if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
             wp_send_json_success(
                 array(
-                    'html'  => $context['message'],
-                    'state' => $state,
+                    'html'   => $context['message'],
+                    'state'  => $state,
                     'config' => $context['config_payload'] ?? array(),
                 )
             );
@@ -2403,11 +2406,11 @@ class Frontend {
         $review_body   = $this->resolve_review_body_for_schema( $post_id, $schema_locale );
 
         $schema = array(
-            '@context'    => 'https://schema.org',
-            '@type'       => 'Game',
-            'name'        => $game_title,
-            'inLanguage'  => $schema_locale !== '' ? $schema_locale : null,
-            'review'      => array(
+            '@context'   => 'https://schema.org',
+            '@type'      => 'Game',
+            'name'       => $game_title,
+            'inLanguage' => $schema_locale !== '' ? $schema_locale : null,
+            'review'     => array(
                 '@type'         => 'Review',
                 'reviewRating'  => array(
                     '@type'       => 'Rating',
@@ -2447,19 +2450,19 @@ class Frontend {
 
         $platforms = $this->collect_platforms_for_schema( $post_id, $schema_locale );
         if ( ! empty( $platforms ) ) {
-            $schema['availableOnDevice'] = $platforms;
+            $schema['availableOnDevice']   = $platforms;
             $item_reviewed['gamePlatform'] = $platforms;
         }
 
         $images = $this->collect_images_for_schema( $post_id );
         if ( ! empty( $images ) ) {
-            $schema['image'] = count( $images ) === 1 ? $images[0] : $images;
+            $schema['image']        = count( $images ) === 1 ? $images[0] : $images;
             $item_reviewed['image'] = $schema['image'];
         }
 
         $video_object = $this->build_video_object_for_schema( $post_id, $game_title, $schema_locale, $review_body );
         if ( ! empty( $video_object ) ) {
-            $schema['video'] = $video_object;
+            $schema['video']          = $video_object;
             $item_reviewed['trailer'] = $video_object;
         }
 
@@ -2550,7 +2553,7 @@ class Frontend {
                 );
             }
 
-            $breakdown = self::get_user_rating_breakdown_for_post( $post_id );
+            $breakdown               = self::get_user_rating_breakdown_for_post( $post_id );
             $distribution_properties = array();
 
             if ( is_array( $breakdown ) ) {
@@ -2559,7 +2562,7 @@ class Frontend {
                         continue;
                     }
 
-                    $bucket_label = is_numeric( $bucket ) ? (string) $bucket : (string) $bucket;
+                    $bucket_label              = is_numeric( $bucket ) ? (string) $bucket : (string) $bucket;
                     $distribution_properties[] = array(
                         '@type' => 'PropertyValue',
                         'name'  => sprintf( __( 'Rating %s', 'notation-jlg' ), $bucket_label ),
@@ -2569,9 +2572,9 @@ class Frontend {
             }
 
             $distribution_statistic = array(
-                '@type'               => 'InteractionCounter',
-                'interactionType'     => 'https://schema.org/UserInteraction',
-                'name'                => __( 'User rating distribution', 'notation-jlg' ),
+                '@type'                => 'InteractionCounter',
+                'interactionType'      => 'https://schema.org/UserInteraction',
+                'name'                 => __( 'User rating distribution', 'notation-jlg' ),
                 'userInteractionCount' => $user_rating_count,
             );
 
@@ -2592,9 +2595,9 @@ class Frontend {
                 }
 
                 $interaction_statistics[] = array(
-                    '@type'           => 'InteractionCounter',
-                    'interactionType' => 'https://schema.org/UserInteraction',
-                    'name'            => __( 'User rating trend', 'notation-jlg' ),
+                    '@type'              => 'InteractionCounter',
+                    'interactionType'    => 'https://schema.org/UserInteraction',
+                    'name'               => __( 'User rating trend', 'notation-jlg' ),
                     'additionalProperty' => array(
                         array(
                             '@type' => 'PropertyValue',
@@ -2700,14 +2703,16 @@ class Frontend {
             return '';
         }
 
-        $language = strtolower( preg_replace( '/[^a-z]/i', '', $parts[0] ) );
+        $language   = strtolower( preg_replace( '/[^a-z]/i', '', $parts[0] ) );
         $normalized = $language;
 
         if ( isset( $parts[1] ) ) {
             $normalized .= '-' . strtoupper( preg_replace( '/[^a-z]/i', '', $parts[1] ) );
         }
 
-        for ( $index = 2; $index < count( $parts ); $index++ ) {
+        $parts_count = count( $parts );
+
+        for ( $index = 2; $index < $parts_count; $index++ ) {
             $normalized .= '-' . $parts[ $index ];
         }
 
@@ -2908,8 +2913,8 @@ class Frontend {
             return '';
         }
 
-        $locale = str_replace( '_', '-', $locale );
-        $parts  = explode( '-', $locale );
+        $locale   = str_replace( '_', '-', $locale );
+        $parts    = explode( '-', $locale );
         $language = isset( $parts[0] ) ? strtolower( preg_replace( '/[^a-z]/i', '', $parts[0] ) ) : '';
 
         return $language;
@@ -3155,74 +3160,74 @@ class Frontend {
         if ( file_exists( $template_path ) ) {
             // Valeurs par défaut pour les variables utilisées par les templates existants.
             $template_defaults = array(
-                'options'              => array(),
-                'requires_login'       => false,
-                'login_required'       => false,
-                'login_url'            => '',
-                'is_logged_in'         => false,
-                'average_score'        => null,
-                'scores'               => array(),
-                'categories'           => array(),
-                'category_scores'      => array(),
-                'category_definitions' => array(),
-                'pros_list'            => array(),
-                'cons_list'            => array(),
-                'titre'                => '',
-                'champs_a_afficher'    => array(),
-                'tagline_fr'           => '',
-                'tagline_en'           => '',
-                'review_video'         => array(),
-                'query'                => null,
-                'atts'                 => array(),
-                'block_classes'        => '',
-                'css_variables'        => '',
-                'extra_classes'        => '',
-                'score_layout'         => 'text',
-                'animations_enabled'   => false,
+                'options'                  => array(),
+                'requires_login'           => false,
+                'login_required'           => false,
+                'login_url'                => '',
+                'is_logged_in'             => false,
+                'average_score'            => null,
+                'scores'                   => array(),
+                'categories'               => array(),
+                'category_scores'          => array(),
+                'category_definitions'     => array(),
+                'pros_list'                => array(),
+                'cons_list'                => array(),
+                'titre'                    => '',
+                'champs_a_afficher'        => array(),
+                'tagline_fr'               => '',
+                'tagline_en'               => '',
+                'review_video'             => array(),
+                'query'                    => null,
+                'atts'                     => array(),
+                'block_classes'            => '',
+                'css_variables'            => '',
+                'extra_classes'            => '',
+                'score_layout'             => 'text',
+                'animations_enabled'       => false,
                 'should_show_rating_badge' => false,
-                'user_rating_average'  => null,
-                'user_rating_delta'    => null,
+                'user_rating_average'      => null,
+                'user_rating_delta'        => null,
                 'average_score_percentage' => null,
-                'paged'                => 1,
-                'orderby'              => '',
-                'order'                => '',
-                'score_max'            => Helpers::get_score_max(),
-                'colonnes'             => array(),
-                'colonnes_disponibles' => array(),
-                'error_message'        => '',
-                'cat_filter'           => 0,
-                'table_id'             => '',
-                'widget_args'          => array(),
-                'title'                => '',
-                'latest_reviews'       => null,
-                'post_id'              => null,
-                'avg_rating'           => null,
-                'count'                => 0,
-                'rating_breakdown'     => array(),
-                'has_voted'            => false,
-                'user_vote'            => 0,
-                'games'                => array(),
-                'letters'              => array(),
-                'filters'              => array(),
-                'current_filters'      => array(),
-                'pagination'           => array(
+                'paged'                    => 1,
+                'orderby'                  => '',
+                'order'                    => '',
+                'score_max'                => Helpers::get_score_max(),
+                'colonnes'                 => array(),
+                'colonnes_disponibles'     => array(),
+                'error_message'            => '',
+                'cat_filter'               => 0,
+                'table_id'                 => '',
+                'widget_args'              => array(),
+                'title'                    => '',
+                'latest_reviews'           => null,
+                'post_id'                  => null,
+                'avg_rating'               => null,
+                'count'                    => 0,
+                'rating_breakdown'         => array(),
+                'has_voted'                => false,
+                'user_vote'                => 0,
+                'games'                    => array(),
+                'letters'                  => array(),
+                'filters'                  => array(),
+                'current_filters'          => array(),
+                'pagination'               => array(
 					'current' => 1,
 					'total'   => 0,
 				),
-                'sort_options'         => array(),
-                'sort_key'             => 'date',
-                'sort_order'           => 'DESC',
-                'filters_enabled'      => array(),
-                'categories_list'      => array(),
-                'platforms_list'       => array(),
-                'availability_options' => array(),
-                'base_url'             => '',
-                'request_prefix'       => '',
-                'request_keys'         => array(),
-                'total_items'          => 0,
-                'config_payload'       => array(),
-                'message'              => '',
-                'score_position'       => Helpers::normalize_game_explorer_score_position( '' ),
+                'sort_options'             => array(),
+                'sort_key'                 => 'date',
+                'sort_order'               => 'DESC',
+                'filters_enabled'          => array(),
+                'categories_list'          => array(),
+                'platforms_list'           => array(),
+                'availability_options'     => array(),
+                'base_url'                 => '',
+                'request_prefix'           => '',
+                'request_keys'             => array(),
+                'total_items'              => 0,
+                'config_payload'           => array(),
+                'message'                  => '',
+                'score_position'           => Helpers::normalize_game_explorer_score_position( '' ),
             );
 
             // Fusionner les arguments fournis avec les valeurs par défaut.

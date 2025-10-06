@@ -6,7 +6,7 @@ use JLG\Notation\Helpers;
 use JLG\Notation\Utils\Validator;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Ajax {
@@ -230,7 +230,7 @@ class Ajax {
             $pegi = $raw_game['esrb_rating']['name'];
         }
 
-        $cover_image = '';
+        $cover_image      = '';
         $cover_candidates = array();
 
         if ( ! empty( $raw_game['background_image'] ) ) {
@@ -312,9 +312,9 @@ class Ajax {
 
         if ( $game['cover_image'] !== '' ) {
             if ( is_scalar( $game['cover_image'] ) ) {
-                $cover_value      = trim( (string) $game['cover_image'] );
-                $sanitized_cover  = esc_url_raw( $cover_value );
-                $is_valid_sanitize = is_string( $sanitized_cover ) && $sanitized_cover !== '' && filter_var( $sanitized_cover, FILTER_VALIDATE_URL );
+                $cover_value         = trim( (string) $game['cover_image'] );
+                $sanitized_cover     = esc_url_raw( $cover_value );
+                $is_valid_sanitize   = is_string( $sanitized_cover ) && $sanitized_cover !== '' && filter_var( $sanitized_cover, FILTER_VALIDATE_URL );
                 $game['cover_image'] = $is_valid_sanitize ? $sanitized_cover : '';
             } else {
                 $game['cover_image'] = '';

@@ -20,16 +20,16 @@ $login_link_label   = __( 'Se connecter', 'notation-jlg' );
 $login_message_html = '';
 
 if ( $login_required ) {
-        if ( $login_url !== '' ) {
-                $login_message_html = sprintf(
-                        '<span class="jlg-user-rating-login-text">%s</span> <a class="jlg-user-rating-login-link" href="%s">%s</a>',
-                        esc_html( $login_message_text ),
-                        esc_url( $login_url ),
-                        esc_html( $login_link_label )
-                );
-        } else {
-                $login_message_html = esc_html( $login_message_text );
-        }
+	if ( $login_url !== '' ) {
+			$login_message_html = sprintf(
+                '<span class="jlg-user-rating-login-text">%s</span> <a class="jlg-user-rating-login-link" href="%s">%s</a>',
+                esc_html( $login_message_text ),
+                esc_url( $login_url ),
+                esc_html( $login_link_label )
+			);
+	} else {
+			$login_message_html = esc_html( $login_message_text );
+	}
 }
 
 $is_interaction_disabled = $has_voted || $login_required;
@@ -83,10 +83,11 @@ if ( $login_required && $login_url !== '' ) {
         aria-label="<?php echo esc_attr__( 'Choisissez une note', 'notation-jlg' ); ?>"
         <?php echo $is_interaction_disabled ? 'aria-disabled="true"' : ''; ?>
     >
-        <?php for ( $i = 1; $i <= 5; $i++ ) :
+        <?php
+        for ( $i = 1; $i <= 5; $i++ ) :
                 $is_selected      = $has_voted && $i <= $user_vote;
                 $is_checked_radio = $has_voted && intval( $user_vote ) === $i;
-                ?>
+			?>
             <button
                 type="button"
                 class="jlg-user-star<?php echo $is_selected ? ' selected' : ''; ?>"
@@ -94,10 +95,12 @@ if ( $login_required && $login_url !== '' ) {
                 role="radio"
                 aria-checked="<?php echo $is_checked_radio ? 'true' : 'false'; ?>"
                 <?php echo $is_interaction_disabled ? 'aria-disabled="true" disabled="disabled"' : ''; ?>
-                aria-label="<?php
+                aria-label="
+                <?php
                     /* translators: 1: Selected rating value. 2: Maximum possible rating. */
                     echo esc_attr( sprintf( __( 'Attribuer %1$s sur %2$s', 'notation-jlg' ), number_format_i18n( $i ), number_format_i18n( 5 ) ) );
-                ?>"
+                ?>
+                "
             >★</button>
         <?php endfor; ?>
     </div>
@@ -112,7 +115,8 @@ if ( $login_required && $login_url !== '' ) {
         data-total-votes="<?php echo esc_attr( $total_breakdown_votes ); ?>"
     >
         <ul class="jlg-user-rating-breakdown-list" role="list">
-            <?php for ( $star = 5; $star >= 1; $star-- ) :
+            <?php
+            for ( $star = 5; $star >= 1; $star-- ) :
                 $count_for_star = isset( $normalized_breakdown[ $star ] ) ? $normalized_breakdown[ $star ] : 0;
                 $percent_value  = $total_breakdown_votes > 0 ? ( $count_for_star / $total_breakdown_votes ) * 100 : 0;
                 $percent_label  = $total_breakdown_votes > 0 ? number_format_i18n( $percent_value, 1 ) : number_format_i18n( 0 );

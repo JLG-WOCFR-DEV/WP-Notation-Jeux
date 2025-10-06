@@ -11,7 +11,7 @@ namespace JLG\Notation\Admin;
 use JLG\Notation\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Platforms {
@@ -885,11 +885,17 @@ class Platforms {
                                     <?php endif; ?>
                                     <?php if ( ! empty( $linked_tag_terms ) ) : ?>
                                         <ul class="jlg-platform-tags" style="margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px;">
-                                            <?php foreach ( $linked_tag_terms as $term ) : if ( $term instanceof WP_Term ) : ?>
+                                            <?php
+                                            foreach ( $linked_tag_terms as $term ) :
+												if ( $term instanceof WP_Term ) :
+													?>
                                                 <li style="background: #f0f6fc; border: 1px solid #d0e3f3; color: #1d4f73; padding: 2px 8px; border-radius: 999px; font-size: 11px;">
                                                     <?php echo esc_html( $term->name ); ?>
                                                 </li>
-                                            <?php endif; endforeach; ?>
+													<?php
+                                            endif;
+endforeach;
+											?>
                                         </ul>
                                     <?php endif; ?>
                                 </td>
@@ -907,7 +913,7 @@ class Platforms {
                                     <input type="hidden" name="platform_order[]" value="<?php echo esc_attr( $key ); ?>">
                                 </td>
                             </tr>
-                            <?php
+								<?php
                                 ++$position;
                             endforeach;
                             ?>

@@ -7,7 +7,7 @@ use JLG\Notation\Helpers;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class GameInfo {

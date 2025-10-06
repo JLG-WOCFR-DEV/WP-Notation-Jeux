@@ -19,7 +19,7 @@ $average_percentage_value = isset( $average_score_percentage ) && is_numeric( $a
 $category_percentages = isset( $category_percentages ) && is_array( $category_percentages )
     ? $category_percentages
     : array();
-$style_attribute = '';
+$style_attribute      = '';
 if ( ! empty( $css_variables ) ) {
     $style_attribute = ' style="' . esc_attr( $css_variables ) . '"';
 }
@@ -183,7 +183,7 @@ if ( $average_score_display !== '' ) {
                 <div class="jlg-aio-score-label"><?php echo esc_html__( 'Note Globale', 'notation-jlg' ); ?></div>
             </div>
             <?php else : ?>
-            <?php echo $global_score_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo $global_score_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <div class="jlg-aio-score-label"><?php echo esc_html__( 'Note Globale', 'notation-jlg' ); ?></div>
             <?php endif; ?>
         </div>
@@ -197,20 +197,20 @@ if ( $average_score_display !== '' ) {
                     continue;
                 }
 
-                $label     = isset( $category['label'] ) ? $category['label'] : '';
-                $weight    = isset( $category['weight'] )
+                $label              = isset( $category['label'] ) ? $category['label'] : '';
+                $weight             = isset( $category['weight'] )
                     ? \JLG\Notation\Helpers::normalize_category_weight( $category['weight'], 1.0 )
                     : 1.0;
-                $show_weight = abs( $weight - 1.0 ) > 0.001;
-                $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
-                $category_id = isset( $category['id'] ) ? (string) $category['id'] : '';
-                $percentage_value = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
+                $show_weight        = abs( $weight - 1.0 ) > 0.001;
+                $bar_color          = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
+                $category_id        = isset( $category['id'] ) ? (string) $category['id'] : '';
+                $percentage_value   = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
                     ? max( 0, min( 100, (float) $category_percentages[ $category_id ] ) )
                     : null;
                 $percentage_display = is_numeric( $percentage_value )
                     ? esc_html( number_format_i18n( $percentage_value, 1 ) )
                     : '';
-                $label_text = wp_strip_all_tags( (string) $label );
+                $label_text         = wp_strip_all_tags( (string) $label );
                 ?>
             <div class="jlg-aio-score-item">
                 <div class="jlg-aio-score-header">
@@ -230,7 +230,7 @@ if ( $average_score_display !== '' ) {
                     </span>
                     <?php
                     $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
-                    $score_max_for_output = esc_html( $score_max_label );
+                    $score_max_for_output  = esc_html( $score_max_label );
 
                     if ( $display_mode === 'percent' && $percentage_display !== '' ) {
                         $visible_percentage = sprintf(

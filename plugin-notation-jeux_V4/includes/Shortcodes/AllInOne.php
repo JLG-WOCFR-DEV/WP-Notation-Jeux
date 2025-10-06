@@ -15,7 +15,7 @@ use JLG\Notation\Utils\Validator;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class AllInOne {
@@ -92,20 +92,20 @@ class AllInOne {
         // Attributs du shortcode
         $atts = shortcode_atts(
             array(
-                                'post_id'              => get_the_ID(),
-                                'afficher_notation'    => 'oui',
-                                'afficher_points'      => 'oui',
-                                'afficher_tagline'     => 'oui',
-                                'afficher_video'       => 'oui',
-                                'titre_points_forts'   => 'Points Forts',
-                                'titre_points_faibles' => 'Points Faibles',
-                                'style'                => 'moderne', // moderne, classique, compact
-                                'couleur_accent'       => '', // Permet de surcharger la couleur d'accent
-                                'cta_label'            => '',
-                                'cta_url'              => '',
-                                'cta_role'             => 'button',
-                                'cta_rel'              => 'nofollow sponsored',
-                                'display_mode'         => '',
+				'post_id'              => get_the_ID(),
+				'afficher_notation'    => 'oui',
+				'afficher_points'      => 'oui',
+				'afficher_tagline'     => 'oui',
+				'afficher_video'       => 'oui',
+				'titre_points_forts'   => 'Points Forts',
+				'titre_points_faibles' => 'Points Faibles',
+				'style'                => 'moderne', // moderne, classique, compact
+				'couleur_accent'       => '', // Permet de surcharger la couleur d'accent
+				'cta_label'            => '',
+				'cta_url'              => '',
+				'cta_role'             => 'button',
+				'cta_rel'              => 'nofollow sponsored',
+				'display_mode'         => '',
             ),
             $atts,
             'jlg_bloc_complet'
@@ -160,14 +160,14 @@ class AllInOne {
         }
 
         // Vérifier qu'il y a des données à afficher
-        $average_score = Helpers::get_average_score_for_post( $post_id );
-        $tagline_fr    = get_post_meta( $post_id, '_jlg_tagline_fr', true );
-        $tagline_en    = get_post_meta( $post_id, '_jlg_tagline_en', true );
-        $pros          = get_post_meta( $post_id, '_jlg_points_forts', true );
-        $cons          = get_post_meta( $post_id, '_jlg_points_faibles', true );
-        $cta_label     = get_post_meta( $post_id, '_jlg_cta_label', true );
-        $cta_url       = get_post_meta( $post_id, '_jlg_cta_url', true );
-        $video_url     = get_post_meta( $post_id, '_jlg_review_video_url', true );
+        $average_score  = Helpers::get_average_score_for_post( $post_id );
+        $tagline_fr     = get_post_meta( $post_id, '_jlg_tagline_fr', true );
+        $tagline_en     = get_post_meta( $post_id, '_jlg_tagline_en', true );
+        $pros           = get_post_meta( $post_id, '_jlg_points_forts', true );
+        $cons           = get_post_meta( $post_id, '_jlg_points_faibles', true );
+        $cta_label      = get_post_meta( $post_id, '_jlg_cta_label', true );
+        $cta_url        = get_post_meta( $post_id, '_jlg_cta_url', true );
+        $video_url      = get_post_meta( $post_id, '_jlg_review_video_url', true );
         $video_provider = get_post_meta( $post_id, '_jlg_review_video_provider', true );
 
         $cta_label = is_string( $cta_label ) ? sanitize_text_field( $cta_label ) : '';
@@ -197,10 +197,10 @@ class AllInOne {
         }
 
         // Récupération des options et configuration
-        $options               = Helpers::get_plugin_options();
-        $palette               = Helpers::get_color_palette();
-        $category_definitions  = Helpers::get_rating_category_definitions();
-        $defaults              = Helpers::get_default_settings();
+        $options              = Helpers::get_plugin_options();
+        $palette              = Helpers::get_color_palette();
+        $category_definitions = Helpers::get_rating_category_definitions();
+        $defaults             = Helpers::get_default_settings();
 
         // Couleur d'accent (utilise la couleur définie ou celle des options)
         $accent_color = $atts['couleur_accent'] ?: ( $options['score_gradient_1'] ?? '' );
@@ -237,7 +237,7 @@ class AllInOne {
 
             foreach ( $category_scores as $category_score ) {
                 if ( isset( $category_score['id'], $category_score['score'] ) ) {
-                    $category_id = (string) $category_score['id'];
+                    $category_id            = (string) $category_score['id'];
                     $scores[ $category_id ] = array(
                         'score'  => (float) $category_score['score'],
                         'weight' => isset( $category_score['weight'] )
@@ -425,30 +425,30 @@ class AllInOne {
         return Frontend::get_template_html(
             'shortcode-all-in-one',
             array(
-                                'options'            => $options,
-                                'average_score'      => $average_score,
-                                'average_score_percentage' => $average_percentage,
-                                'scores'             => $scores,
-                                'category_scores'    => $category_scores,
-                                'category_percentages' => $category_percentages,
-                                'category_definitions' => $category_definitions,
-                                'pros_list'          => $pros_list,
-                                'cons_list'          => $cons_list,
-                                'tagline_fr'         => $tagline_fr,
-                                'tagline_en'         => $tagline_en,
-                                'cta_label'          => $cta_label,
-                                'cta_url'            => $cta_url,
-                                'cta_role'           => $atts['cta_role'],
-                                'cta_rel'            => $atts['cta_rel'],
-                                'review_video'       => $review_video_data,
-                                'atts'               => $atts,
-                                'block_classes'      => $block_classes,
-                                'css_variables'      => $css_variables_string,
-                                'score_layout'       => $score_layout,
-                                'animations_enabled' => ! empty( $options['enable_animations'] ),
-                                'score_max'          => $score_max_value,
-                                'display_mode'       => $display_mode,
-                        )
+				'options'                  => $options,
+				'average_score'            => $average_score,
+				'average_score_percentage' => $average_percentage,
+				'scores'                   => $scores,
+				'category_scores'          => $category_scores,
+				'category_percentages'     => $category_percentages,
+				'category_definitions'     => $category_definitions,
+				'pros_list'                => $pros_list,
+				'cons_list'                => $cons_list,
+				'tagline_fr'               => $tagline_fr,
+				'tagline_en'               => $tagline_en,
+				'cta_label'                => $cta_label,
+				'cta_url'                  => $cta_url,
+				'cta_role'                 => $atts['cta_role'],
+				'cta_rel'                  => $atts['cta_rel'],
+				'review_video'             => $review_video_data,
+				'atts'                     => $atts,
+				'block_classes'            => $block_classes,
+				'css_variables'            => $css_variables_string,
+				'score_layout'             => $score_layout,
+				'animations_enabled'       => ! empty( $options['enable_animations'] ),
+				'score_max'                => $score_max_value,
+				'display_mode'             => $display_mode,
+			)
         );
     }
 

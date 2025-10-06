@@ -7,7 +7,7 @@ use JLG\Notation\Helpers;
 use JLG\Notation\Utils\Validator;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Metaboxes {
@@ -286,8 +286,8 @@ class Metaboxes {
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'YouTube et Vimeo sont pris en charge. Le mode sans cookie sera appliqué automatiquement quand possible.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 
-        $provider_value = isset( $meta['review_video_provider'] ) ? (string) $meta['review_video_provider'] : '';
-        $provider_value = Validator::sanitize_video_provider( $provider_value );
+        $provider_value   = isset( $meta['review_video_provider'] ) ? (string) $meta['review_video_provider'] : '';
+        $provider_value   = Validator::sanitize_video_provider( $provider_value );
         $provider_options = Validator::get_allowed_video_providers();
 
         echo '<div>';

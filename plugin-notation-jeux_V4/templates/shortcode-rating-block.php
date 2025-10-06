@@ -44,17 +44,17 @@ $category_percentages = isset( $category_percentages ) && is_array( $category_pe
     ? $category_percentages
     : array();
 
-$css_variables_string = is_string( $css_variables ) ? $css_variables : '';
-$should_display_badge = ! empty( $should_show_rating_badge );
+$css_variables_string      = is_string( $css_variables ) ? $css_variables : '';
+$should_display_badge      = ! empty( $should_show_rating_badge );
 $user_rating_average_value = isset( $user_rating_average ) && is_numeric( $user_rating_average )
     ? (float) $user_rating_average
     : null;
-$user_rating_delta_value = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
+$user_rating_delta_value   = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
     ? (float) $user_rating_delta
     : null;
-$extra_classes_string = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
-$extra_classes_list   = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
-$wrapper_classes      = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
+$extra_classes_string      = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
+$extra_classes_list        = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
+$wrapper_classes           = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
 
 if ( $animations_on ) {
     $wrapper_classes[] = 'jlg-animate';
@@ -81,7 +81,7 @@ if ( $css_variables_string === '' ) {
     $css_variables_string = ! empty( $style_rules ) ? implode( ';', $style_rules ) : '';
 }
 
-$style_attribute = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
+$style_attribute         = $css_variables_string !== '' ? ' style="' . esc_attr( $css_variables_string ) . '"' : '';
 $wrapper_class_attribute = ! empty( $wrapper_classes ) ? implode( ' ', $wrapper_classes ) : 'review-box-jlg';
 
 $score_max_label_safe       = esc_html( $score_max_label );
@@ -198,20 +198,20 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                 continue;
             }
 
-            $label     = isset( $category['label'] ) ? $category['label'] : '';
-            $weight    = isset( $category['weight'] )
+            $label              = isset( $category['label'] ) ? $category['label'] : '';
+            $weight             = isset( $category['weight'] )
                 ? \JLG\Notation\Helpers::normalize_category_weight( $category['weight'], 1.0 )
                 : 1.0;
-            $show_weight = abs( $weight - 1.0 ) > 0.001;
-            $bar_color = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
-            $category_id = isset( $category['id'] ) ? (string) $category['id'] : '';
-            $percentage_value = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
+            $show_weight        = abs( $weight - 1.0 ) > 0.001;
+            $bar_color          = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
+            $category_id        = isset( $category['id'] ) ? (string) $category['id'] : '';
+            $percentage_value   = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
                 ? max( 0, min( 100, (float) $category_percentages[ $category_id ] ) )
                 : null;
             $percentage_display = is_numeric( $percentage_value )
                 ? esc_html( number_format_i18n( $percentage_value, 1 ) )
                 : '';
-            $label_text = wp_strip_all_tags( (string) $label );
+            $label_text         = wp_strip_all_tags( (string) $label );
             ?>
             <div class="rating-item">
                 <div class="rating-label">
@@ -232,7 +232,7 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                     <span>
                         <?php
                         $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
-                        $score_max_for_output = esc_html( $score_max_label );
+                        $score_max_for_output  = esc_html( $score_max_label );
 
                         if ( $display_mode === 'percent' && $percentage_display !== '' ) {
                             $visible_percentage = sprintf(

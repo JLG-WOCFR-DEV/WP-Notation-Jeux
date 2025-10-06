@@ -204,8 +204,8 @@ if ( ! function_exists( 'jlg_print_sortable_header' ) ) {
             $class .= ' sorted ' . strtolower( $current_order );
         }
 
-        $column_label_text   = wp_strip_all_tags( $display_label );
-        $next_direction_text = $new_order === 'ASC'
+        $column_label_text      = wp_strip_all_tags( $display_label );
+        $next_direction_text    = $new_order === 'ASC'
             ? esc_html__( 'ordre croissant', 'notation-jlg' )
             : esc_html__( 'ordre décroissant', 'notation-jlg' );
         $current_direction_text = $is_active
@@ -355,8 +355,8 @@ else :
                                 if ( ! isset( $available_columns[ $col ] ) ) {
                                     continue;
                                 }
-                                $column_info        = $available_columns[ $col ];
-                                $column_label_attr  = jlg_get_summary_column_label( $column_info );
+                                $column_info       = $available_columns[ $col ];
+                                $column_label_attr = jlg_get_summary_column_label( $column_info );
                                 echo '<td data-label="' . esc_attr( $column_label_attr ) . '">';
 
                                 switch ( $col ) {
@@ -394,9 +394,9 @@ else :
                                         break;
                                     default:
                                         if ( isset( $category_column_map[ $col ] ) ) {
-                                            $definition   = $category_column_map[ $col ];
-                                            $category_id  = isset( $definition['id'] ) ? $definition['id'] : '';
-                                            $score_value  = null;
+                                            $definition  = $category_column_map[ $col ];
+                                            $category_id = isset( $definition['id'] ) ? $definition['id'] : '';
+                                            $score_value = null;
 
                                             if ( $category_id !== '' && isset( $category_score_map[ $category_id ] ) ) {
                                                 $stored_entry = $category_score_map[ $category_id ];
@@ -407,7 +407,7 @@ else :
                                             } elseif ( $category_id !== '' ) {
                                                 $resolved = \JLG\Notation\Helpers::resolve_category_meta_value( $post_id, $definition, true );
                                                 if ( $resolved !== null ) {
-                                                    $score_value = (float) $resolved;
+                                                    $score_value                        = (float) $resolved;
                                                     $category_score_map[ $category_id ] = array(
                                                         'score'  => $score_value,
                                                         'weight' => \JLG\Notation\Helpers::normalize_category_weight(

@@ -9,7 +9,7 @@ use JLG\Notation\Admin\Platforms;
 use JLG\Notation\Admin\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 class Core {
