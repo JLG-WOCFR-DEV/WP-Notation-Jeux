@@ -53,3 +53,38 @@
 3. **Prototype éditeur** (Storybook ou Storybook-like dans Gutenberg) pour valider les previews multi-device.
 4. **Itération accessibilité** : audit supplémentaire (Lighthouse + axe DevTools) après implémentation des nouveaux contrôles.
 5. **Documentation** : mettre à jour README et guides utilisateurs lors de chaque livraison pour refléter les nouvelles options.
+
+---
+
+## Complément comparatif – focus monétisation & data (IGN, OpenCritic, Metacritic)
+
+### Constats terrain
+- **IGN & GameSpot (2024)** segmentent leurs reviews avec un *verdict module* riche (note, résumé, CTA affiliés, liens vers guides) et déclinent ces blocs dans des *franchises hubs*. Les CTA sont contextualisés par plateforme et prix.
+- **OpenCritic** expose un agrégateur de scores avec filtres dynamiques (critics tiers, split par plateformes, distribution temporelle) et options d’export pour la presse.
+- **Metacritic** combine la note métascore, la note utilisateurs et un historique d’updates (patches, DLC) tout en affichant des badges (Essential, Must Play) et des citations courtes de la rédaction.
+
+### Gaps vs plugin
+- Le plugin propose déjà le badge « Coup de cœur », la moyenne lecteurs et l’écart rédaction/lecteurs dans le bloc principal, mais n’automatise pas la création d’un module verdict autonome pour les pages listes ou hubs.【F:plugin-notation-jeux_V4/README.md†L24-L76】
+- Les helpers vidéo (YouTube, Vimeo, Twitch, Dailymotion) et l’API RAWG apportent du rich media, toutefois aucune intégration commerce (prix, boutiques) n’est prévue dans les shortcodes/blocs.【F:plugin-notation-jeux_V4/README.md†L31-L44】
+- `[jlg_score_insights]` offre déjà moyenne/médiane/histogramme, sans comparer différentes plateformes ni fournir d’export brut pour rédactions partenaires.【F:plugin-notation-jeux_V4/README.md†L67-L100】
+
+### Pistes d’amélioration
+1. **Module Verdict réutilisable**
+   - Créer un nouveau shortcode/bloc (`notation-jlg/verdict-module`) reprenant note, résumé, badge, CTA et liens vers articles connexes.
+   - Autoriser la duplication automatique de ce module dans les archives et Game Explorer pour approcher les *review hubs* IGN/GameSpot.
+
+2. **Intégration commerce & monétisation**
+   - Ajouter une table de métadonnées pour stocker prix par plateforme, liens affiliés et disponibilités.
+   - Étendre le bloc tout-en-un et le Game Explorer pour afficher ces CTA dynamiques avec suivi analytique (ex : dataLayer, UTM).
+
+3. **Insights multi-sources**
+   - Enrichir `[jlg_score_insights]` avec des comparatifs par plateforme (barres empilées), timeline des mises à jour et possibilité d’export CSV/PNG pour la communication presse.
+   - Offrir une option « intégrer des scores externes » (Metacritic/OpenCritic) afin d’afficher un agrégat et situer la note rédaction dans l’écosystème.
+
+4. **Badges et citations éditoriales**
+   - Étendre la configuration des badges (ex : « Must Play », « À surveiller », « Patch en attente ») et permettre d’ajouter une courte citation synthétique comme sur Metacritic.
+   - Synchroniser ces badges avec le widget derniers tests et le Game Explorer pour conserver une cohérence visuelle.
+
+5. **Automatisation RAWG → Hubs franchise**
+   - Tirer parti de l’API RAWG pour créer automatiquement des hubs (saga, développeur) avec agrégation des notes, badges et timeline, à la manière des pages franchise d’IGN.
+   - Prévoir une mise en cache et une tâche CRON pour actualiser les données (covers, sorties DLC) sans solliciter manuellement l’équipe édito.
