@@ -23,11 +23,13 @@ $platform_label   = isset( $platform_label ) ? (string) $platform_label : '';
 $platform_slug    = isset( $platform_slug ) ? (string) $platform_slug : '';
 $platform_limit   = isset( $platform_limit ) ? intval( $platform_limit ) : 5;
 
-$total_reviews = isset( $insights['total'] ) ? intval( $insights['total'] ) : 0;
-$mean_value    = $insights['mean']['formatted'] ?? null;
-$median_value  = $insights['median']['formatted'] ?? null;
-$distribution  = isset( $insights['distribution'] ) && is_array( $insights['distribution'] ) ? $insights['distribution'] : array();
-$rankings      = isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ? $insights['platform_rankings'] : array();
+$total_reviews   = isset( $insights['total'] ) ? intval( $insights['total'] ) : 0;
+$mean_value      = $insights['mean']['formatted'] ?? null;
+$median_value    = $insights['median']['formatted'] ?? null;
+$distribution    = isset( $insights['distribution'] ) && is_array( $insights['distribution'] ) ? $insights['distribution'] : array();
+$rankings        = isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ? $insights['platform_rankings'] : array();
+$badges          = isset( $insights['divergence_badges'] ) && is_array( $insights['divergence_badges'] ) ? $insights['divergence_badges'] : array();
+$badge_threshold = isset( $insights['badge_threshold'] ) ? (float) $insights['badge_threshold'] : 1.5;
 
 $title = '';
 if ( ! empty( $atts['title'] ) ) {
@@ -39,6 +41,7 @@ $heading_id   = $section_id . '-title';
 $summary_id   = $section_id . '-summary';
 $histogram_id = $section_id . '-histogram';
 $platforms_id = $section_id . '-platforms';
+$badges_id    = $section_id . '-divergences';
 
 $time_summary_parts = array();
 if ( $time_range_label !== '' ) {
@@ -106,6 +109,97 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
                     </div>
                 </dl>
             </div>
+
+            <?php if ( ! empty( $badges ) ) : ?>
+                <div class="jlg-score-insights__divergences" id="<?php echo esc_attr( $badges_id ); ?>">
+                    <h3 class="jlg-score-insights__subtitle">
+                        <?php esc_html_e( 'Focus rédaction vs lecteurs', 'notation-jlg' ); ?>
+                    </h3>
+                    <p class="jlg-score-insights__divergence-intro">
+                        <?php
+                        echo esc_html(
+                            sprintf(
+                                /* translators: %s: minimal absolute delta to display a badge. */
+                                __( 'Écarts supérieurs à %s point(s).', 'notation-jlg' ),
+                                number_format_i18n( $badge_threshold, 1 )
+                            )
+                        );
+                        ?>
+                    </p>
+                    <ul class="jlg-score-insights__badges" role="list">
+                        <?php foreach ( $badges as $badge ) { ?>
+                            <?php
+                            $post_id             = isset( $badge['post_id'] ) ? (int) $badge['post_id'] : 0;
+                            $post_title          = $post_id > 0 ? get_the_title( $post_id ) : '';
+                            $permalink           = $post_id > 0 ? get_permalink( $post_id ) : '';
+                            $delta_value         = isset( $badge['delta'] ) ? (float) $badge['delta'] : 0.0;
+                            $delta_formatted     = isset( $badge['delta_formatted'] ) ? (string) $badge['delta_formatted'] : '';
+                            $direction           = isset( $badge['direction'] ) ? sanitize_html_class( $badge['direction'] ) : '';
+                            $editorial_formatted = isset( $badge['editorial_score_formatted'] ) ? (string) $badge['editorial_score_formatted'] : '';
+                            $user_formatted      = isset( $badge['user_score_formatted'] ) ? (string) $badge['user_score_formatted'] : '';
+                            $user_count          = isset( $badge['user_rating_count'] ) ? (int) $badge['user_rating_count'] : 0;
+                            $delta_abs_label     = number_format_i18n( abs( $delta_value ), 1 );
+
+                            if ( $delta_value > 0 ) {
+                                $delta_description = sprintf(
+                                    /* translators: %s: formatted score delta */
+                                    __( 'Lecteurs +%s vs rédaction', 'notation-jlg' ),
+                                    $delta_abs_label
+                                );
+                            } elseif ( $delta_value < 0 ) {
+                                $delta_description = sprintf(
+                                    /* translators: %s: formatted score delta */
+                                    __( 'Lecteurs -%s vs rédaction', 'notation-jlg' ),
+                                    $delta_abs_label
+                                );
+                            } else {
+                                $delta_description = __( 'Lecteurs au même niveau que la rédaction', 'notation-jlg' );
+                            }
+
+                            $votes_label = sprintf(
+                                /* translators: %s: number of reader votes */
+                                _n( '%s vote lecteur', '%s votes lecteurs', $user_count, 'notation-jlg' ),
+                                number_format_i18n( $user_count )
+                            );
+
+                            $score_summary = sprintf(
+                                /* translators: 1: editorial score, 2: user score, 3: reader votes label */
+                                __( 'Rédaction %1$s · Lecteurs %2$s (%3$s)', 'notation-jlg' ),
+                                $editorial_formatted !== '' ? $editorial_formatted : __( 'N/A', 'notation-jlg' ),
+                                $user_formatted !== '' ? $user_formatted : __( 'N/A', 'notation-jlg' ),
+                                $votes_label
+                            );
+
+                            $badge_classes = array( 'jlg-score-insights__badge' );
+                            if ( $direction !== '' ) {
+                                $badge_classes[] = 'jlg-score-insights__badge--' . $direction;
+                            }
+
+                            $badge_class_attr = implode( ' ', array_map( 'sanitize_html_class', $badge_classes ) );
+                            ?>
+                            <li class="<?php echo esc_attr( $badge_class_attr ); ?>">
+                                <div class="jlg-score-insights__badge-delta" aria-label="<?php echo esc_attr( $delta_description ); ?>">
+                                    <?php echo esc_html( $delta_formatted ); ?>
+                                </div>
+                                <div class="jlg-score-insights__badge-title">
+                                    <?php if ( $permalink !== '' ) : ?>
+                                        <a href="<?php echo esc_url( $permalink ); ?>" class="jlg-score-insights__badge-link">
+                                            <?php echo esc_html( $post_title !== '' ? $post_title : sprintf( __( 'Test #%d', 'notation-jlg' ), $post_id ) ); ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <span class="jlg-score-insights__badge-label">
+                                            <?php echo esc_html( $post_title !== '' ? $post_title : sprintf( __( 'Test #%d', 'notation-jlg' ), $post_id ) ); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="jlg-score-insights__badge-summary">
+                                    <?php echo esc_html( $score_summary ); ?>
+                                </div>
+                            </li>
+                        <?php } ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
             <div class="jlg-score-insights__histogram" id="<?php echo esc_attr( $histogram_id ); ?>">
                 <h3 class="jlg-score-insights__subtitle">
