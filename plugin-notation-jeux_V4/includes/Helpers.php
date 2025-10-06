@@ -2147,9 +2147,21 @@ class Helpers {
             )
         );
 
-        $score_max = max( 1, (float) self::get_score_max() );
-        $scores    = array();
-        $platforms = array();
+        $score_max       = max( 1, (float) self::get_score_max() );
+        $scores          = array();
+        $platforms       = array();
+        $badge_threshold = (float) apply_filters( 'jlg_score_insights_badge_threshold', 1.5 );
+        $badge_limit     = (int) apply_filters( 'jlg_score_insights_badge_limit', 4 );
+
+        if ( $badge_threshold < 0 ) {
+            $badge_threshold = 0.0;
+        }
+
+        if ( $badge_limit < 1 ) {
+            $badge_limit = 1;
+        }
+
+        $divergence_candidates = array();
 
         $registered_platforms = self::get_registered_platform_labels();
         $unknown_slug         = 'sans-plateforme';
@@ -2166,6 +2178,35 @@ class Helpers {
             }
 
             $scores[] = $score;
+
+            $user_rating_average_raw = get_post_meta( $post_id, '_jlg_user_rating_avg', true );
+            $user_rating_average     = is_numeric( $user_rating_average_raw ) ? (float) $user_rating_average_raw : null;
+            $user_rating_count       = (int) get_post_meta( $post_id, '_jlg_user_rating_count', true );
+
+            if ( $user_rating_average !== null && $user_rating_count > 0 ) {
+                $delta          = $user_rating_average - $score;
+                $absolute_delta = abs( $delta );
+
+                if ( $absolute_delta >= $badge_threshold ) {
+                    $editorial_score = round( $score, 1 );
+                    $user_score      = round( $user_rating_average, 1 );
+                    $delta_value     = round( $delta, 1 );
+
+                    $divergence_candidates[] = array(
+                        'post_id'                   => $post_id,
+                        'editorial_score'           => $editorial_score,
+                        'editorial_score_formatted' => number_format_i18n( $editorial_score, 1 ),
+                        'user_score'                => $user_score,
+                        'user_score_formatted'      => number_format_i18n( $user_score, 1 ),
+                        'delta'                     => $delta_value,
+                        'delta_formatted'           => self::format_signed_score_delta( $delta_value ),
+                        'absolute_delta'            => round( $absolute_delta, 1 ),
+                        'direction'                 => $delta_value >= 0 ? 'positive' : 'negative',
+                        'user_rating_count'         => $user_rating_count,
+                        'absolute_delta_raw'        => $absolute_delta,
+                    );
+                }
+            }
 
             $platform_meta = get_post_meta( $post_id, '_jlg_plateformes', true );
             $labels        = array();
@@ -2241,6 +2282,8 @@ class Helpers {
                 ),
                 'distribution'      => self::build_score_distribution( array(), $score_max ),
                 'platform_rankings' => array(),
+                'divergence_badges' => array(),
+                'badge_threshold'   => $badge_threshold,
             );
         }
 
@@ -2289,6 +2332,33 @@ class Helpers {
             }
         );
 
+        usort(
+            $divergence_candidates,
+            static function ( $a, $b ) {
+                $abs_a = $a['absolute_delta_raw'] ?? 0;
+                $abs_b = $b['absolute_delta_raw'] ?? 0;
+
+                if ( $abs_a === $abs_b ) {
+                    $count_a = $a['user_rating_count'] ?? 0;
+                    $count_b = $b['user_rating_count'] ?? 0;
+
+                    if ( $count_a === $count_b ) {
+                        return ( $a['post_id'] ?? 0 ) <=> ( $b['post_id'] ?? 0 );
+                    }
+
+                    return $count_b <=> $count_a;
+                }
+
+                return $abs_b <=> $abs_a;
+            }
+        );
+
+        $divergence_candidates = array_slice( $divergence_candidates, 0, $badge_limit );
+
+        foreach ( $divergence_candidates as $index => $candidate ) {
+            unset( $divergence_candidates[ $index ]['absolute_delta_raw'] );
+        }
+
         return array(
             'total'             => $total_scores,
             'mean'              => array(
@@ -2301,6 +2371,8 @@ class Helpers {
             ),
             'distribution'      => $distribution,
             'platform_rankings' => $platform_rankings,
+            'divergence_badges' => $divergence_candidates,
+            'badge_threshold'   => $badge_threshold,
         );
     }
 
@@ -2372,6 +2444,26 @@ class Helpers {
         }
 
         return array_values( $buckets );
+    }
+
+    private static function format_signed_score_delta( $value ) {
+        if ( ! is_numeric( $value ) ) {
+            return null;
+        }
+
+        $normalized  = round( (float) $value, 1 );
+        $absolute    = abs( $normalized );
+        $formatted   = number_format_i18n( $absolute, 1 );
+        $has_sign    = $normalized > 0 || $normalized < 0;
+        $sign_prefix = '';
+
+        if ( $normalized > 0 ) {
+            $sign_prefix = '+';
+        } elseif ( $normalized < 0 ) {
+            $sign_prefix = '-';
+        }
+
+        return $has_sign ? $sign_prefix . $formatted : $formatted;
     }
 
     /**

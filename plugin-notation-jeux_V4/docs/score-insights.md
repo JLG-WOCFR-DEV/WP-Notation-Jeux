@@ -1,6 +1,6 @@
 # Shortcode & bloc « Score Insights »
 
-Ce module affiche une synthèse statistique des notes publiées : moyenne, médiane, histogramme par tranches et classement des plateformes les plus performantes. Il repose sur le helper `Helpers::get_posts_score_insights()`.
+Ce module affiche une synthèse statistique des notes publiées : moyenne, médiane, histogramme par tranches, classement des plateformes les plus performantes et badges de divergence entre la rédaction et les lecteurs. Il repose sur le helper `Helpers::get_posts_score_insights()`.
 
 ## Shortcode `[jlg_score_insights]`
 
@@ -11,7 +11,7 @@ Attributs disponibles :
 - `platform_limit` : nombre maximum de plateformes affichées dans le classement (1 à 10, défaut : 5).
 - `title` : titre personnalisé affiché dans l'en-tête du composant.
 
-Le template `templates/shortcode-score-insights.php` expose une structure accessible : région ARIA avec résumé, `<progress>` pour les barres de l'histogramme et `<ol>` pour le classement. En l'absence de données, un message `role="status"` invite à ajuster les filtres.
+Le template `templates/shortcode-score-insights.php` expose une structure accessible : région ARIA avec résumé, `<progress>` pour les barres de l'histogramme, `<ol>` pour le classement et une liste de badges lorsqu'un écart de ±1,5 point (paramétrable) est détecté entre rédaction et lecteurs. En l'absence de données, un message `role="status"` invite à ajuster les filtres.
 
 ## Bloc `notation-jlg/score-insights`
 
@@ -26,4 +26,5 @@ Le bloc réutilise le shortcode côté serveur, garantissant la parité front/é
 
 - Préparez vos slugs de plateforme dans l'administration avant de configurer le bloc afin de disposer de libellés cohérents.
 - Pour analyser une période personnalisée, utilisez le filtre `jlg_score_insights_time_ranges` dans votre thème ou plugin compagnon et ajoutez une option dans le bloc via un script personnalisé si nécessaire.
+- Personnalisez les badges de divergence avec `jlg_score_insights_badge_threshold` (seuil en points) et `jlg_score_insights_badge_limit` (nombre maximum affiché) pour cadrer avec votre ligne éditoriale.
 - Pensez à compléter `docs/responsive-testing.md` si vous introduisez de nouvelles variations visuelles autour de ce module.
