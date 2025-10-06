@@ -158,6 +158,13 @@ Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, b
 
 Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les réglages du plugin.
 
+== Pistes d’amélioration proposées ==
+
+* **Assistant de configuration guidée** : mettre en place, dès l’activation, un onboarding en quatre étapes (types de contenus autorisés, modules à activer, import d’exemples, connexion RAWG) pour accélérer la prise en main et réduire les erreurs constatées lors des tests utilisateurs.
+* **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test avec des pondérations par catégorie, des annotations individuelles et un historique, puis générer automatiquement le verdict éditorial publié.
+* **Timeline de mises à jour du jeu** : ajouter un module optionnel à la fiche technique recensant les patchs majeurs et leurs impacts sur la note (delta, points forts/faibles révisés), synchronisable avec RAWG ou saisi manuellement pour suivre la vie du jeu.
+* **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
+
 == Screenshots ==
 
 1. Bloc de notation principal avec barres de progression
