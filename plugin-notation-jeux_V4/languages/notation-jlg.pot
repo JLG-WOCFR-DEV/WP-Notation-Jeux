@@ -903,3 +903,69 @@ msgstr ""
 #: templates/shortcode-rating-block.php:152
 msgid "%1$s : %2$s sur %3$s"
 msgstr ""
+#. translators: Review status label.
+#: includes/Helpers.php:879
+msgctxt "Review status label"
+msgid "Brouillon éditorial"
+msgstr ""
+
+#. translators: Review status description.
+#: includes/Helpers.php:880
+msgctxt "Review status description"
+msgid "Le test est en cours de rédaction et peut encore évoluer."
+msgstr ""
+
+#. translators: Review status label.
+#: includes/Helpers.php:883
+msgctxt "Review status label"
+msgid "Mise à jour en cours"
+msgstr ""
+
+#. translators: Review status description.
+#: includes/Helpers.php:884
+msgctxt "Review status description"
+msgid "La rédaction vérifie les derniers patchs ou ajoute des compléments."
+msgstr ""
+
+#. translators: Review status label.
+#: includes/Helpers.php:887
+msgctxt "Review status label"
+msgid "Version finale"
+msgstr ""
+
+#. translators: Review status description.
+#: includes/Helpers.php:888
+msgctxt "Review status description"
+msgid "La review est validée et reflète l’avis définitif de la rédaction."
+msgstr ""
+
+#: includes/Admin/Settings.php:884
+msgid "Statut de review"
+msgstr ""
+
+#: includes/Admin/Settings.php:885 templates/shortcode-rating-block.php:324 templates/shortcode-rating-block-empty.php:249
+msgid "Guides associés"
+msgstr ""
+
+#: includes/Admin/Settings.php:922
+msgid "Nombre maximum de guides associés affichés sous la note."
+msgstr ""
+
+#: includes/Admin/Settings.php:931
+msgid "Nombre de guides associés"
+msgstr ""
+
+#: includes/Admin/Settings.php:941
+msgid "Taxonomies ciblées"
+msgstr ""
+
+#: includes/Admin/Settings.php:947
+msgid "Renseignez les slugs de taxonomie séparés par des virgules pour identifier les guides pertinents (ex. guide,astuce)."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:194 templates/shortcode-rating-block.php:198 templates/shortcode-rating-block-empty.php:197
+msgid "Statut du test"
+msgstr ""
+#: includes/Admin/Metaboxes.php:202
+msgid "Ce statut est affiché sous la note globale pour informer les lecteurs de la fraîcheur de la review."
+msgstr ""

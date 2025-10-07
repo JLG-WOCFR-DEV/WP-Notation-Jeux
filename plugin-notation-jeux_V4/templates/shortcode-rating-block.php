@@ -52,6 +52,13 @@ $user_rating_average_value = isset( $user_rating_average ) && is_numeric( $user_
 $user_rating_delta_value   = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
     ? (float) $user_rating_delta
     : null;
+$review_status_enabled     = ! empty( $review_status_enabled );
+$review_status_data        = isset( $review_status ) && is_array( $review_status ) ? $review_status : array();
+$review_status_label       = isset( $review_status_data['label'] ) ? (string) $review_status_data['label'] : '';
+$review_status_slug        = isset( $review_status_data['slug'] ) ? (string) $review_status_data['slug'] : '';
+$review_status_message     = isset( $review_status_data['description'] ) ? (string) $review_status_data['description'] : '';
+$related_guides_enabled    = ! empty( $related_guides_enabled );
+$related_guides_list       = isset( $related_guides ) && is_array( $related_guides ) ? $related_guides : array();
 $extra_classes_string      = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
 $extra_classes_list        = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
 $wrapper_classes           = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
@@ -185,119 +192,156 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                 <?php endif; ?>
             </div>
         <?php endif; ?>
+
+        <?php if ( $review_status_enabled && $review_status_label !== '' ) : ?>
+            <div class="jlg-review-status" role="status">
+                <span class="jlg-review-status__label"><?php esc_html_e( 'Statut du test', 'notation-jlg' ); ?> :</span>
+                <span class="jlg-review-status__value"><?php echo esc_html( $review_status_label ); ?></span>
+                <?php if ( $review_status_message !== '' ) : ?>
+                    <span class="jlg-review-status__description"><?php echo esc_html( $review_status_message ); ?></span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
 
     <hr>
-    
-    <div class="rating-breakdown">
-        <?php foreach ( $category_scores as $category ) : ?>
-            <?php
-            $score_value = isset( $category['score'] ) ? (float) $category['score'] : null;
 
-            if ( $score_value === null ) {
-                continue;
-            }
+    <div class="review-box-jlg__body">
+        <div class="rating-breakdown">
+            <?php foreach ( $category_scores as $category ) : ?>
+                <?php
+                $score_value = isset( $category['score'] ) ? (float) $category['score'] : null;
 
-            $label              = isset( $category['label'] ) ? $category['label'] : '';
-            $weight             = isset( $category['weight'] )
-                ? \JLG\Notation\Helpers::normalize_category_weight( $category['weight'], 1.0 )
-                : 1.0;
-            $show_weight        = abs( $weight - 1.0 ) > 0.001;
-            $bar_color          = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
-            $category_id        = isset( $category['id'] ) ? (string) $category['id'] : '';
-            $percentage_value   = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
-                ? max( 0, min( 100, (float) $category_percentages[ $category_id ] ) )
-                : null;
-            $percentage_display = is_numeric( $percentage_value )
-                ? esc_html( number_format_i18n( $percentage_value, 1 ) )
-                : '';
-            $label_text         = wp_strip_all_tags( (string) $label );
-            ?>
-            <div class="rating-item">
-                <div class="rating-label">
-                    <span>
-                        <?php echo esc_html( $label ); ?>
-                        <?php if ( $show_weight ) : ?>
-                            <span class="rating-weight">
-                                <?php
-                                printf(
-                                    /* translators: %s: weight multiplier for a rating category. */
-                                    esc_html_x( '×%s', 'category weight multiplier', 'notation-jlg' ),
-                                    esc_html( number_format_i18n( $weight, 1 ) )
-                                );
-                                ?>
-                            </span>
-                        <?php endif; ?>
-                    </span>
-                    <span>
-                        <?php
-                        $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
-                        $score_max_for_output  = esc_html( $score_max_label );
+                if ( $score_value === null ) {
+                    continue;
+                }
 
-                        if ( $display_mode === 'percent' && $percentage_display !== '' ) {
-                            $visible_percentage = sprintf(
-                                /* translators: %s: Rating percentage for a category. */
-                                esc_html_x( '%s %%', 'category percentage score', 'notation-jlg' ),
-                                $percentage_display
-                            );
-                            $aria_label = sprintf(
-                                /* translators: 1: Rating category label. 2: Rating percentage. 3: Rating value. 4: Maximum possible rating. */
-                                __( '%1$s : %2$s %%, soit %3$s sur %4$s', 'notation-jlg' ),
-                                $label_text,
-                                $percentage_display,
-                                $formatted_score_value,
-                                $score_max_for_output
-                            );
-                            $sr_equivalent = sprintf(
-                                /* translators: 1: Rating value. 2: Maximum possible rating. */
-                                __( 'Équivalent à %1$s sur %2$s', 'notation-jlg' ),
-                                $formatted_score_value,
-                                $score_max_for_output
-                            );
+                $label              = isset( $category['label'] ) ? $category['label'] : '';
+                $weight             = isset( $category['weight'] )
+                    ? \JLG\Notation\Helpers::normalize_category_weight( $category['weight'], 1.0 )
+                    : 1.0;
+                $show_weight        = abs( $weight - 1.0 ) > 0.001;
+                $bar_color          = \JLG\Notation\Helpers::calculate_color_from_note( $score_value, $options );
+                $category_id        = isset( $category['id'] ) ? (string) $category['id'] : '';
+                $percentage_value   = ( $category_id !== '' && isset( $category_percentages[ $category_id ] ) )
+                    ? max( 0, min( 100, (float) $category_percentages[ $category_id ] ) )
+                    : null;
+                $percentage_display = is_numeric( $percentage_value )
+                    ? esc_html( number_format_i18n( $percentage_value, 1 ) )
+                    : '';
+                $label_text         = wp_strip_all_tags( (string) $label );
+                ?>
+                <div class="rating-item">
+                    <div class="rating-label">
+                        <span>
+                            <?php echo esc_html( $label ); ?>
+                            <?php if ( $show_weight ) : ?>
+                                <span class="rating-weight">
+                                    <?php
+                                    printf(
+                                        /* translators: %s: weight multiplier for a rating category. */
+                                        esc_html_x( '×%s', 'category weight multiplier', 'notation-jlg' ),
+                                        esc_html( number_format_i18n( $weight, 1 ) )
+                                    );
+                                    ?>
+                                </span>
+                            <?php endif; ?>
+                        </span>
+                        <span>
+                            <?php
+                            $formatted_score_value = esc_html( number_format_i18n( $score_value, 1 ) );
+                            $score_max_for_output  = esc_html( $score_max_label );
 
-                            echo '<span aria-label="' . esc_attr( $aria_label ) . '">' . esc_html( $visible_percentage )
-                                . '<span class="screen-reader-text"> ' . esc_html( $sr_equivalent ) . '</span></span>';
-                        } else {
-                            $visible_absolute = sprintf(
-                                /* translators: 1: Rating value. 2: Maximum possible rating. */
-                                __( '%1$s / %2$s', 'notation-jlg' ),
-                                $formatted_score_value,
-                                $score_max_for_output
-                            );
-                            $aria_label = sprintf(
-                                /* translators: 1: Rating category label. 2: Rating value. 3: Maximum possible rating. */
-                                __( '%1$s : %2$s sur %3$s', 'notation-jlg' ),
-                                $label_text,
-                                $formatted_score_value,
-                                $score_max_for_output
-                            );
-
-                            echo '<span aria-label="' . esc_attr( $aria_label ) . '">' . esc_html( $visible_absolute );
-
-                            if ( $percentage_display !== '' ) {
-                                $sr_percentage = sprintf(
+                            if ( $display_mode === 'percent' && $percentage_display !== '' ) {
+                                $visible_percentage = sprintf(
                                     /* translators: %s: Rating percentage for a category. */
-                                    __( 'Correspond à %s %%', 'notation-jlg' ),
+                                    esc_html_x( '%s %%', 'category percentage score', 'notation-jlg' ),
                                     $percentage_display
                                 );
+                                $aria_label = sprintf(
+                                    /* translators: 1: Rating category label. 2: Rating percentage. 3: Rating value. 4: Maximum possible rating. */
+                                    __( '%1$s : %2$s %%, soit %3$s sur %4$s', 'notation-jlg' ),
+                                    $label_text,
+                                    $percentage_display,
+                                    $formatted_score_value,
+                                    $score_max_for_output
+                                );
+                                $sr_equivalent = sprintf(
+                                    /* translators: 1: Rating value. 2: Maximum possible rating. */
+                                    __( 'Équivalent à %1$s sur %2$s', 'notation-jlg' ),
+                                    $formatted_score_value,
+                                    $score_max_for_output
+                                );
 
-                                echo '<span class="screen-reader-text"> ' . esc_html( $sr_percentage ) . '</span>';
+                                echo '<span aria-label="' . esc_attr( $aria_label ) . '">' . esc_html( $visible_percentage )
+                                    . '<span class="screen-reader-text"> ' . esc_html( $sr_equivalent ) . '</span></span>';
+                            } else {
+                                $visible_absolute = sprintf(
+                                    /* translators: 1: Rating value. 2: Maximum possible rating. */
+                                    __( '%1$s / %2$s', 'notation-jlg' ),
+                                    $formatted_score_value,
+                                    $score_max_for_output
+                                );
+                                $aria_label = sprintf(
+                                    /* translators: 1: Rating category label. 2: Rating value. 3: Maximum possible rating. */
+                                    __( '%1$s : %2$s sur %3$s', 'notation-jlg' ),
+                                    $label_text,
+                                    $formatted_score_value,
+                                    $score_max_for_output
+                                );
+
+                                echo '<span aria-label="' . esc_attr( $aria_label ) . '">' . esc_html( $visible_absolute );
+
+                                if ( $percentage_display !== '' ) {
+                                    $sr_percentage = sprintf(
+                                        /* translators: %s: Rating percentage for a category. */
+                                        __( 'Correspond à %s %%', 'notation-jlg' ),
+                                        $percentage_display
+                                    );
+
+                                    echo '<span class="screen-reader-text"> ' . esc_html( $sr_percentage ) . '</span>';
+                                }
+
+                                echo '</span>';
                             }
-
-                            echo '</span>';
-                        }
+                            ?>
+                        </span>
+                    </div>
+                    <div class="rating-bar-container">
+                        <?php
+                        $percentage = $resolved_score_max > 0
+                            ? max( 0, min( 100, ( $score_value / $resolved_score_max ) * 100 ) )
+                            : 0;
                         ?>
-                    </span>
+                        <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( round( $percentage, 2 ) ); ?>%; --bar-color:<?php echo esc_attr( $bar_color ); ?>;"></div>
+                    </div>
                 </div>
-                <div class="rating-bar-container">
-                    <?php
-                    $percentage = $resolved_score_max > 0
-                        ? max( 0, min( 100, ( $score_value / $resolved_score_max ) * 100 ) )
-                        : 0;
-                    ?>
-                    <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( round( $percentage, 2 ) ); ?>%; --bar-color:<?php echo esc_attr( $bar_color ); ?>;"></div>
-                </div>
-            </div>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if ( $related_guides_enabled && ! empty( $related_guides_list ) ) : ?>
+            <aside class="review-box-jlg__guides">
+                <h3 class="review-box-jlg__subtitle"><?php esc_html_e( 'Guides associés', 'notation-jlg' ); ?></h3>
+                <ul class="review-box-jlg__guide-list" role="list">
+                    <?php foreach ( $related_guides_list as $guide ) { ?>
+                        <?php
+                        $guide_id    = isset( $guide['id'] ) ? (int) $guide['id'] : 0;
+                        $guide_title = isset( $guide['title'] ) ? (string) $guide['title'] : '';
+                        $guide_title = $guide_title !== '' ? $guide_title : sprintf( __( 'Guide #%d', 'notation-jlg' ), $guide_id );
+                        $guide_url   = isset( $guide['url'] ) ? (string) $guide['url'] : '';
+                        ?>
+                        <li class="review-box-jlg__guide-item">
+                            <?php if ( $guide_url !== '' ) : ?>
+                                <a class="review-box-jlg__guide-link" href="<?php echo esc_url( $guide_url ); ?>">
+                                    <?php echo esc_html( $guide_title ); ?>
+                                </a>
+                            <?php else : ?>
+                                <span class="review-box-jlg__guide-label"><?php echo esc_html( $guide_title ); ?></span>
+                            <?php endif; ?>
+                        </li>
+                    <?php } ?>
+                </ul>
+            </aside>
+        <?php endif; ?>
     </div>
 </div>

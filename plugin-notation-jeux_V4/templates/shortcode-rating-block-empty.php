@@ -99,16 +99,22 @@ if ( empty( $categories_for_display ) ) {
     }
 }
 
-$score_max_label       = esc_html( number_format_i18n( $resolved_score_max ) );
-$average_score_label   = esc_html( number_format_i18n( $placeholder_average, 1 ) );
-$percentage_label      = esc_html( number_format_i18n( $average_percentage_value, 1 ) );
-$user_rating_value     = isset( $user_rating_average ) && is_numeric( $user_rating_average )
+$score_max_label        = esc_html( number_format_i18n( $resolved_score_max ) );
+$average_score_label    = esc_html( number_format_i18n( $placeholder_average, 1 ) );
+$percentage_label       = esc_html( number_format_i18n( $average_percentage_value, 1 ) );
+$user_rating_value      = isset( $user_rating_average ) && is_numeric( $user_rating_average )
     ? (float) $user_rating_average
     : $placeholder_average;
-$user_rating_delta     = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
+$user_rating_delta      = isset( $user_rating_delta ) && is_numeric( $user_rating_delta )
     ? (float) $user_rating_delta
     : 0.0;
-$user_rating_has_delta = abs( $user_rating_delta ) > 0.01;
+$user_rating_has_delta  = abs( $user_rating_delta ) > 0.01;
+$review_status_enabled  = ! empty( $review_status_enabled );
+$review_status_data     = isset( $review_status ) && is_array( $review_status ) ? $review_status : array();
+$review_status_label    = isset( $review_status_data['label'] ) ? (string) $review_status_data['label'] : __( 'Mise à jour en cours', 'notation-jlg' );
+$review_status_message  = isset( $review_status_data['description'] ) ? (string) $review_status_data['description'] : '';
+$related_guides_enabled = ! empty( $related_guides_enabled );
+$related_guides_list    = isset( $related_guides ) && is_array( $related_guides ) ? $related_guides : array();
 
 if ( $user_rating_delta > 0 ) {
     $user_rating_delta_formatted = '+' . number_format_i18n( $user_rating_delta, 1 );
@@ -186,46 +192,71 @@ $style_attribute         = $css_variables_string !== '' ? ' style="' . esc_attr(
                     </span>
                 <?php endif; ?>
             </div>
+            <?php if ( $review_status_enabled && $review_status_label !== '' ) : ?>
+                <div class="jlg-review-status jlg-review-status--placeholder" role="status">
+                    <span class="jlg-review-status__label"><?php esc_html_e( 'Statut du test', 'notation-jlg' ); ?> :</span>
+                    <span class="jlg-review-status__value"><?php echo esc_html( $review_status_label ); ?></span>
+                    <?php if ( $review_status_message !== '' ) : ?>
+                        <span class="jlg-review-status__description"><?php echo esc_html( $review_status_message ); ?></span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <hr>
 
-        <div class="rating-breakdown">
-            <?php foreach ( $categories_for_display as $category ) : ?>
-                <?php
-                $category_label = isset( $category['label'] ) ? (string) $category['label'] : '';
+        <div class="review-box-jlg__body">
+            <div class="rating-breakdown">
+                <?php foreach ( $categories_for_display as $category ) : ?>
+                    <?php
+                    $category_label = isset( $category['label'] ) ? (string) $category['label'] : '';
 
-                if ( $category_label === '' ) {
-                    continue;
-                }
+                    if ( $category_label === '' ) {
+                        continue;
+                    }
 
-                $category_score_value   = isset( $category['score'] ) && is_numeric( $category['score'] )
-                    ? (float) $category['score']
-                    : $placeholder_average;
-                $category_percent_value = isset( $category['percent'] ) && is_numeric( $category['percent'] )
-                    ? max( 0, min( 100, (float) $category['percent'] ) )
-                    : $average_percentage_value;
-                $percent_attr           = number_format( $category_percent_value, 2, '.', '' );
-                ?>
-                <div class="rating-item">
-                    <div class="rating-label">
-                        <span><?php echo esc_html( $category_label ); ?></span>
-                        <span>
-                            <?php
-                            printf(
-                                /* translators: 1: category score. 2: maximum score. */
-                                esc_html__( '%1$s / %2$s', 'notation-jlg' ),
-                                esc_html( number_format_i18n( $category_score_value, 1 ) ),
-                                $score_max_label
-                            );
-                            ?>
-                        </span>
+                    $category_score_value   = isset( $category['score'] ) && is_numeric( $category['score'] )
+                        ? (float) $category['score']
+                        : $placeholder_average;
+                    $category_percent_value = isset( $category['percent'] ) && is_numeric( $category['percent'] )
+                        ? max( 0, min( 100, (float) $category['percent'] ) )
+                        : $average_percentage_value;
+                    $percent_attr           = number_format( $category_percent_value, 2, '.', '' );
+                    ?>
+                    <div class="rating-item">
+                        <div class="rating-label">
+                            <span><?php echo esc_html( $category_label ); ?></span>
+                            <span>
+                                <?php
+                                printf(
+                                    /* translators: 1: category score. 2: maximum score. */
+                                    esc_html__( '%1$s / %2$s', 'notation-jlg' ),
+                                    esc_html( number_format_i18n( $category_score_value, 1 ) ),
+                                    $score_max_label
+                                );
+                                ?>
+                            </span>
+                        </div>
+                        <div class="rating-bar-container">
+                            <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( $percent_attr ); ?>%;"></div>
+                        </div>
                     </div>
-                    <div class="rating-bar-container">
-                        <div class="rating-bar" style="--rating-percent:<?php echo esc_attr( $percent_attr ); ?>%;"></div>
-                    </div>
-                </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if ( $related_guides_enabled && ! empty( $related_guides_list ) ) : ?>
+                <aside class="review-box-jlg__guides review-box-jlg__guides--placeholder">
+                    <h3 class="review-box-jlg__subtitle"><?php esc_html_e( 'Guides associés', 'notation-jlg' ); ?></h3>
+                    <ul class="review-box-jlg__guide-list" role="list">
+                        <?php foreach ( $related_guides_list as $guide ) { ?>
+                            <?php $guide_title = isset( $guide['title'] ) ? (string) $guide['title'] : __( 'Guide stratégique', 'notation-jlg' ); ?>
+                            <li class="review-box-jlg__guide-item">
+                                <span class="review-box-jlg__guide-label"><?php echo esc_html( $guide_title ); ?></span>
+                            </li>
+                        <?php } ?>
+                    </ul>
+                </aside>
+            <?php endif; ?>
         </div>
     </div>
 </div>

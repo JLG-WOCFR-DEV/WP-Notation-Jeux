@@ -3,7 +3,7 @@
 Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un système complet de notation destiné aux sites de tests de jeux vidéo. Il fournit un rendu professionnel pour vos reviews avec des shortcodes prêts à l'emploi, un widget et des helpers PHP pour intégrer la note partout dans votre thème.
 
 ## Présentation rapide
-- **Fonctionnalités clés :** 6 catégories de notes personnalisables avec badge « Coup de cœur » éditorial, notation lecteurs avec histogramme dynamique, remplissage RAWG, validation PEGI/date/nom du jeu, Game Explorer filtrable, Score Insights (moyenne, médiane, histogramme, top plateformes), tableau récapitulatif triable et widget des derniers tests.
+- **Fonctionnalités clés :** 6 catégories de notes personnalisables avec badge « Coup de cœur » éditorial, notation lecteurs avec histogramme dynamique, remplissage RAWG, validation PEGI/date/nom du jeu, Game Explorer filtrable, Score Insights (moyenne, médiane, histogramme, top plateformes), tableau récapitulatif triable, widget des derniers tests, indicateur de statut éditorial (brouillon/mise à jour/final) et guides associés configurables pour orienter les lecteurs vers des contenus complémentaires.
 - **Prérequis techniques :** WordPress 5.0 minimum et PHP 7.4 ou supérieur, vérifiés automatiquement à l’activation du plugin.
 - **Architecture :** le cœur du plugin charge dynamiquement les composants admin et front-office, inclut un widget et expose des fonctions helper globales (`jlg_notation()`, `jlg_get_post_rating()`, `jlg_display_post_rating()`).
 
@@ -16,7 +16,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 
 - **Shortcodes principaux** :
   - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) pour afficher en une seule fois notation, points forts/faibles et tagline avec de nombreux attributs (`post_id`, `style`, `couleur_accent`, etc.).
-  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]`, `[jlg_game_explorer]`, `[jlg_score_insights]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction et affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction.
+  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]`, `[jlg_game_explorer]`, `[jlg_score_insights]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction, affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction, expose l’état éditorial du test (brouillon, mise à jour en cours, version finale) et propose une liste de guides liés lorsque l’option est activée.
 - **Blocs Gutenberg** :
   - `notation-jlg/rating-block` pour gérer format du score (texte/cercle), animations, thème clair/sombre et ciblage d’article.
   - `notation-jlg/all-in-one` pour activer/désactiver chaque sous-composant et personnaliser style, titres et couleur d’accent.

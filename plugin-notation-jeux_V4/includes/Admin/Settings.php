@@ -879,11 +879,13 @@ class Settings {
         // Section 7: Modules
         add_settings_section( 'jlg_modules', '7. 🧩 Modules', null, 'notation_jlg_page' );
         $module_fields = array(
-            'user_rating_enabled'  => 'Notation utilisateurs',
-            'rating_badge_enabled' => 'Badge « Coup de cœur »',
-            'tagline_enabled'      => 'Taglines bilingues',
-            'seo_schema_enabled'   => 'Schéma SEO (étoiles Google)',
-            'enable_animations'    => 'Animations des barres',
+            'user_rating_enabled'    => 'Notation utilisateurs',
+            'rating_badge_enabled'   => 'Badge « Coup de cœur »',
+            'review_status_enabled'  => 'Statut de review',
+            'related_guides_enabled' => 'Guides associés',
+            'tagline_enabled'        => 'Taglines bilingues',
+            'seo_schema_enabled'     => 'Schéma SEO (étoiles Google)',
+            'enable_animations'      => 'Animations des barres',
         );
         foreach ( $module_fields as $id => $title ) {
             add_settings_field(
@@ -900,13 +902,13 @@ class Settings {
         }
 
         $rating_badge_threshold_args = array(
-			'id'   => 'rating_badge_threshold',
-			'type' => 'number',
-			'min'  => 0,
-			'max'  => Helpers::get_score_max(),
-			'step' => 0.1,
-			'desc' => __( 'Le badge apparaît lorsque la note globale atteint ce seuil. Utilisez le même barème que vos tests (ex. 8 pour un barème sur 10).', 'notation-jlg' ),
-		);
+            'id'   => 'rating_badge_threshold',
+            'type' => 'number',
+            'min'  => 0,
+            'max'  => Helpers::get_score_max(),
+            'step' => 0.1,
+            'desc' => __( 'Le badge apparaît lorsque la note globale atteint ce seuil. Utilisez le même barème que vos tests (ex. 8 pour un barème sur 10).', 'notation-jlg' ),
+        );
         add_settings_field(
             'rating_badge_threshold',
             __( 'Seuil du badge', 'notation-jlg' ),
@@ -916,6 +918,38 @@ class Settings {
             $rating_badge_threshold_args
         );
         $this->store_field_constraints( $rating_badge_threshold_args );
+
+        $related_guides_limit_args = array(
+            'id'   => 'related_guides_limit',
+            'type' => 'number',
+            'min'  => 1,
+            'max'  => 6,
+            'step' => 1,
+            'desc' => __( 'Nombre maximum de guides associés affichés sous la note.', 'notation-jlg' ),
+        );
+        add_settings_field(
+            'related_guides_limit',
+            __( 'Nombre de guides associés', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            $related_guides_limit_args
+        );
+        $this->store_field_constraints( $related_guides_limit_args );
+
+        add_settings_field(
+            'related_guides_taxonomies',
+            __( 'Taxonomies ciblées', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            array(
+                'id'          => 'related_guides_taxonomies',
+                'type'        => 'text',
+                'placeholder' => 'guide,astuce,category,post_tag',
+                'desc'        => __( 'Renseignez les slugs de taxonomie séparés par des virgules pour identifier les guides pertinents (ex. guide,astuce).', 'notation-jlg' ),
+            )
+        );
 
         // Section 8: Modules - Tagline
         add_settings_section( 'jlg_tagline_section', '8. 💬 Module Tagline', null, 'notation_jlg_page' );

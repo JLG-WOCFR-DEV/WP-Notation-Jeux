@@ -18,8 +18,9 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 = Fonctionnalités principales =
 
-* **Système de notation flexible** : 6 catégories personnalisables avec barème ajustable (par défaut sur 10) et badge « Coup de cœur » éditorial déclenché par seuil.
-* **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues, Game Explorer, Score Insights et tableau récapitulatif.
+* **Système de notation flexible** : 6 catégories personnalisables avec barème ajustable (par défaut sur 10), badge « Coup de cœur » éditorial déclenché par seuil et indicateur de statut (brouillon, mise à jour, version finale).
+* **Statut éditorial & guides associés** : affichez en un coup d’œil l’état du test et proposez automatiquement une liste de guides liés configurables depuis les réglages.
+* **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues, Game Explorer, Score Insights et tableau récapitulatif ; le bloc principal met en avant badge, moyenne lecteurs, écart rédaction, statut éditorial et guides liés lorsque les modules sont activés.
 * **Blocs Gutenberg** : neuf blocs dynamiques (notation, tout-en-un, fiche technique, points forts/faibles, tagline, notation lecteurs, tableau récapitulatif, Game Explorer, Score Insights) garantissant la parité éditeur/front.
 * **Notation utilisateurs** : votes AJAX, histogramme accessible rafraîchi en direct, verrouillage anti double clic et option *Connexion obligatoire avant le vote*.
 * **Tableau récapitulatif & Game Explorer** : vues triables/filtrables avec navigation accessible sans JavaScript et panneaux responsives.
