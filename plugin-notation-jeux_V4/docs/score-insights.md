@@ -15,6 +15,8 @@ Le template `templates/shortcode-score-insights.php` expose une structure access
 
 Un indicateur de tendance compare désormais la moyenne éditoriale de la période sélectionnée avec la période précédente de même durée. Le composant affiche le delta signé (avec code couleur), un libellé d'orientation (« Tendance en hausse/baisse/stable ») et rappelle combien de tests composaient la période antérieure pour contextualiser la donnée.
 
+Une section « Niveau de consensus » complète cette lecture en calculant l'écart-type des notes éditoriales et la fourchette min/max. Selon les seuils configurables (`jlg_score_insights_consensus_thresholds`), le module affiche un label (« Consensus fort », « Consensus partagé », « Avis divisés »), un message éditorial et des détails (écart-type formaté + amplitude des scores) pour aider la rédaction à prioriser ses revues.
+
 ## Bloc `notation-jlg/score-insights`
 
 Dans Gutenberg, le bloc reprend ces attributs :
@@ -29,4 +31,5 @@ Le bloc réutilise le shortcode côté serveur, garantissant la parité front/é
 - Préparez vos slugs de plateforme dans l'administration avant de configurer le bloc afin de disposer de libellés cohérents.
 - Pour analyser une période personnalisée, utilisez le filtre `jlg_score_insights_time_ranges` dans votre thème ou plugin compagnon et ajoutez une option dans le bloc via un script personnalisé si nécessaire.
 - Personnalisez les badges de divergence avec `jlg_score_insights_badge_threshold` (seuil en points) et `jlg_score_insights_badge_limit` (nombre maximum affiché) pour cadrer avec votre ligne éditoriale.
+- Ajustez les seuils du label de consensus via `jlg_score_insights_consensus_thresholds` si votre rédaction souhaite un niveau d'exigence différent (ex. consensus « fort » uniquement en dessous de 0,3 point d'écart-type).
 - Pensez à compléter `docs/responsive-testing.md` si vous introduisez de nouvelles variations visuelles autour de ce module.

@@ -90,6 +90,15 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame(1.5, $insights['badge_threshold']);
         $this->assertCount(2, $insights['divergence_badges']);
 
+        $consensus = $insights['consensus'];
+        $this->assertTrue($consensus['available']);
+        $this->assertSame('medium', $consensus['level']);
+        $this->assertSame('Consensus partagé', $consensus['level_label']);
+        $this->assertSame('Quelques écarts existent entre les critiques : surveillez les mises à jour.', $consensus['message']);
+        $this->assertSame('0.7', $consensus['deviation_formatted']);
+        $this->assertSame('Écart-type : 0.7', $consensus['deviation_label']);
+        $this->assertSame('Notes entre 7.5 et 9.2 (écart de 1.7 point(s)).', $consensus['range']['label']);
+
         $largest_gap = $insights['divergence_badges'][0];
         $this->assertSame(202, $largest_gap['post_id']);
         $this->assertSame('negative', $largest_gap['direction']);
@@ -121,6 +130,8 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame([], $insights['platform_rankings']);
         $this->assertSame([], $insights['divergence_badges']);
         $this->assertSame(1.5, $insights['badge_threshold']);
+        $this->assertFalse($insights['consensus']['available']);
+        $this->assertSame('Aucun test', $insights['consensus']['level_label']);
 
         $distribution_total = array_sum(array_map(static function ($bucket) {
             return $bucket['count'];
@@ -146,6 +157,9 @@ class HelpersScoreInsightsAggregationTest extends TestCase
 
         $this->assertSame(3.0, $insights['badge_threshold']);
         $this->assertSame([], $insights['divergence_badges'], 'Badge threshold filter should hide smaller deltas.');
+        $this->assertFalse($insights['consensus']['available']);
+        $this->assertSame('Échantillon limité', $insights['consensus']['level_label']);
+        $this->assertSame('Notes entre 7.0 et 7.0 (écart de 0.0 point(s)).', $insights['consensus']['range']['label']);
 
         remove_filter('jlg_score_insights_badge_threshold', $callback);
     }
