@@ -165,6 +165,8 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 * **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test avec des pondérations par catégorie, des annotations individuelles et un historique, puis générer automatiquement le verdict éditorial publié.
 * **Timeline de mises à jour du jeu** : ajouter un module optionnel à la fiche technique recensant les patchs majeurs et leurs impacts sur la note (delta, points forts/faibles révisés), synchronisable avec RAWG ou saisi manuellement pour suivre la vie du jeu.
 * **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
+* **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
+* **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
 
 == Screenshots ==
 
