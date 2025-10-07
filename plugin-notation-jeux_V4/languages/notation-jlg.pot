@@ -1822,6 +1822,10 @@ msgstr ""
 msgid "Tendance centrale"
 msgstr ""
 
+#: templates/shortcode-score-insights.php:169
+msgid "Niveau de consensus"
+msgstr ""
+
 #: templates/shortcode-score-insights.php:108
 msgid "Moyenne"
 msgstr ""
@@ -1856,6 +1860,58 @@ msgstr ""
 
 #: templates/shortcode-score-insights.php:197
 msgid "Lecteurs au même niveau que la rédaction"
+msgstr ""
+
+#: includes/Helpers.php:3596
+msgid "Aucun test"
+msgstr ""
+
+#: includes/Helpers.php:3597
+msgid "Ajoutez des tests pour analyser le consensus."
+msgstr ""
+
+#: includes/Helpers.php:3622
+msgid "Échantillon limité"
+msgstr ""
+
+#: includes/Helpers.php:3623
+msgid "Ajoutez au moins deux tests pour qualifier le consensus."
+msgstr ""
+
+#. translators: 1: minimal score, 2: maximal score, 3: score span.
+#: includes/Helpers.php:3632 includes/Helpers.php:3680
+#, php-format
+msgid "Notes entre %1$s et %2$s (écart de %3$s point(s))."
+msgstr ""
+
+#: includes/Helpers.php:3666
+msgid "Consensus fort"
+msgstr ""
+
+#: includes/Helpers.php:3667
+msgid "Les notes publiées sont très proches : verdict homogène."
+msgstr ""
+
+#: includes/Helpers.php:3670
+msgid "Consensus partagé"
+msgstr ""
+
+#: includes/Helpers.php:3671
+msgid "Quelques écarts existent entre les critiques : surveillez les mises à jour."
+msgstr ""
+
+#: includes/Helpers.php:3674
+msgid "Avis divisés"
+msgstr ""
+
+#: includes/Helpers.php:3675
+msgid "Les notes varient fortement : consultez les badges de divergence pour comprendre les écarts."
+msgstr ""
+
+#. translators: %s: formatted standard deviation value.
+#: includes/Helpers.php:3695
+#, php-format
+msgid "Écart-type : %s"
 msgstr ""
 
 #. translators: %s: number of reader votes

@@ -34,6 +34,16 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
                     'count' => 3,
                 ),
             ),
+            'consensus' => array(
+                'available' => true,
+                'level' => 'high',
+                'level_label' => 'Consensus fort',
+                'message' => 'Les notes publiées sont très proches : verdict homogène.',
+                'deviation_label' => 'Écart-type : 0,3',
+                'range' => array(
+                    'label' => 'Notes entre 8,0 et 8,5 (écart de 0,5 point(s)).',
+                ),
+            ),
         );
 
         $trend = array(
@@ -65,5 +75,8 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
         $this->assertStringContainsString('Période précédente (30 derniers jours)', $output, 'Trend label should be rendered.');
         $this->assertStringContainsString('Tendance en hausse', $output, 'Trend direction label should be present.');
         $this->assertMatchesRegularExpression('/jlg-score-insights__trend-value--up/', $output, 'Trend block should reflect positive direction class.');
+        $this->assertStringContainsString('Niveau de consensus', $output, 'Consensus block title should be rendered.');
+        $this->assertMatchesRegularExpression('/jlg-score-insights__consensus-chip--high/', $output, 'Consensus chip should reflect level class.');
+        $this->assertStringContainsString('Écart-type : 0,3', $output, 'Consensus deviation label should be printed.');
     }
 }

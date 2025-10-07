@@ -39,6 +39,20 @@ $trend_direction       = isset( $trend_mean['direction'] ) ? (string) $trend_mea
 $trend_direction_label = isset( $trend_mean['direction_label'] ) ? (string) $trend_mean['direction_label'] : '';
 $trend_previous_mean   = isset( $trend_mean['previous_formatted'] ) ? (string) $trend_mean['previous_formatted'] : '';
 $trend_previous_total  = isset( $trend['previous_total_formatted'] ) ? (string) $trend['previous_total_formatted'] : '';
+$consensus             = isset( $insights['consensus'] ) && is_array( $insights['consensus'] ) ? $insights['consensus'] : array();
+$consensus_level       = isset( $consensus['level'] ) ? (string) $consensus['level'] : 'insufficient';
+$consensus_label       = isset( $consensus['level_label'] ) ? (string) $consensus['level_label'] : '';
+$consensus_message     = isset( $consensus['message'] ) ? (string) $consensus['message'] : '';
+$consensus_deviation   = isset( $consensus['deviation_label'] ) ? (string) $consensus['deviation_label'] : '';
+$consensus_range_label = '';
+if ( isset( $consensus['range'] ) && is_array( $consensus['range'] ) ) {
+    $consensus_range_label = isset( $consensus['range']['label'] ) ? (string) $consensus['range']['label'] : '';
+}
+$consensus_chip_classes = array( 'jlg-score-insights__consensus-chip' );
+if ( $consensus_level !== '' ) {
+    $consensus_chip_classes[] = 'jlg-score-insights__consensus-chip--' . sanitize_html_class( $consensus_level );
+}
+$consensus_chip_class = implode( ' ', array_map( 'sanitize_html_class', $consensus_chip_classes ) );
 
 $title = '';
 if ( ! empty( $atts['title'] ) ) {
@@ -149,6 +163,41 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
                         </p>
                     </div>
                 <?php endif; ?>
+
+                <div class="jlg-score-insights__consensus" role="status">
+                    <h3 class="jlg-score-insights__subtitle">
+                        <?php esc_html_e( 'Niveau de consensus', 'notation-jlg' ); ?>
+                    </h3>
+                    <?php if ( $consensus_label !== '' ) : ?>
+                        <p class="jlg-score-insights__consensus-chip-wrapper">
+                            <span class="<?php echo esc_attr( $consensus_chip_class ); ?>" aria-hidden="true">
+                                <?php echo esc_html( $consensus_label ); ?>
+                            </span>
+                            <span class="screen-reader-text">
+                                <?php echo esc_html( $consensus_label ); ?>
+                            </span>
+                        </p>
+                    <?php endif; ?>
+                    <?php if ( $consensus_message !== '' ) : ?>
+                        <p class="jlg-score-insights__consensus-message">
+                            <?php echo esc_html( $consensus_message ); ?>
+                        </p>
+                    <?php endif; ?>
+                    <?php if ( $consensus_deviation !== '' || $consensus_range_label !== '' ) : ?>
+                        <p class="jlg-score-insights__consensus-details">
+                            <?php
+                            $consensus_details = array();
+                            if ( $consensus_deviation !== '' ) {
+                                $consensus_details[] = $consensus_deviation;
+                            }
+                            if ( $consensus_range_label !== '' ) {
+                                $consensus_details[] = $consensus_range_label;
+                            }
+                            echo esc_html( implode( ' · ', $consensus_details ) );
+                            ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <?php if ( ! empty( $badges ) ) : ?>

@@ -3381,6 +3381,7 @@ class Helpers {
                 'platform_rankings' => array(),
                 'divergence_badges' => array(),
                 'badge_threshold'   => $badge_threshold,
+                'consensus'         => self::build_consensus_summary( array() ),
             );
         }
 
@@ -3470,6 +3471,7 @@ class Helpers {
             'platform_rankings' => $platform_rankings,
             'divergence_badges' => $divergence_candidates,
             'badge_threshold'   => $badge_threshold,
+            'consensus'         => self::build_consensus_summary( $scores ),
         );
     }
 
@@ -3561,6 +3563,140 @@ class Helpers {
         }
 
         return $has_sign ? $sign_prefix . $formatted : $formatted;
+    }
+
+    private static function calculate_standard_deviation( array $scores ) {
+        $count = count( $scores );
+
+        if ( $count === 0 ) {
+            return 0.0;
+        }
+
+        $mean       = array_sum( $scores ) / $count;
+        $variance   = 0.0;
+        $scores_raw = array_map( 'floatval', $scores );
+
+        foreach ( $scores_raw as $score ) {
+            $delta     = $score - $mean;
+            $variance += $delta * $delta;
+        }
+
+        $variance = $variance / $count;
+
+        return $variance > 0 ? sqrt( $variance ) : 0.0;
+    }
+
+    private static function build_consensus_summary( array $scores ) {
+        $count = count( $scores );
+
+        if ( $count === 0 ) {
+            return array(
+                'available'           => false,
+                'level'               => 'insufficient',
+                'level_label'         => __( 'Aucun test', 'notation-jlg' ),
+                'message'             => __( 'Ajoutez des tests pour analyser le consensus.', 'notation-jlg' ),
+                'deviation'           => 0.0,
+                'deviation_formatted' => number_format_i18n( 0, 1 ),
+                'deviation_label'     => '',
+                'range'               => array(),
+            );
+        }
+
+        $min_score = min( $scores );
+        $max_score = max( $scores );
+        $span      = $max_score - $min_score;
+
+        $range = array(
+            'min'            => round( $min_score, 1 ),
+            'max'            => round( $max_score, 1 ),
+            'min_formatted'  => number_format_i18n( $min_score, 1 ),
+            'max_formatted'  => number_format_i18n( $max_score, 1 ),
+            'span'           => round( abs( $span ), 1 ),
+            'span_formatted' => number_format_i18n( abs( $span ), 1 ),
+        );
+
+        if ( $count === 1 ) {
+            return array(
+                'available'           => false,
+                'level'               => 'insufficient',
+                'level_label'         => __( 'Échantillon limité', 'notation-jlg' ),
+                'message'             => __( 'Ajoutez au moins deux tests pour qualifier le consensus.', 'notation-jlg' ),
+                'deviation'           => 0.0,
+                'deviation_formatted' => number_format_i18n( 0, 1 ),
+                'deviation_label'     => '',
+                'range'               => array_merge(
+                    $range,
+                    array(
+                        'label' => sprintf(
+                            /* translators: 1: minimal score, 2: maximal score, 3: score span. */
+                            __( 'Notes entre %1$s et %2$s (écart de %3$s point(s)).', 'notation-jlg' ),
+                            $range['min_formatted'],
+                            $range['max_formatted'],
+                            $range['span_formatted']
+                        ),
+                    )
+                ),
+            );
+        }
+
+        $thresholds = apply_filters(
+            'jlg_score_insights_consensus_thresholds',
+            array(
+                'high'   => 0.5,
+                'medium' => 1.0,
+            )
+        );
+
+        $high_threshold   = isset( $thresholds['high'] ) ? max( 0.0, (float) $thresholds['high'] ) : 0.5;
+        $medium_threshold = isset( $thresholds['medium'] ) ? max( $high_threshold, (float) $thresholds['medium'] ) : 1.0;
+
+        $standard_deviation = self::calculate_standard_deviation( $scores );
+        $rounded_deviation  = round( $standard_deviation, 2 );
+
+        if ( $rounded_deviation < 0 ) {
+            $rounded_deviation = 0.0;
+        }
+
+        if ( $standard_deviation < 0 ) {
+            $standard_deviation = 0.0;
+        }
+
+        if ( $standard_deviation <= $high_threshold ) {
+            $level   = 'high';
+            $label   = __( 'Consensus fort', 'notation-jlg' );
+            $message = __( 'Les notes publiées sont très proches : verdict homogène.', 'notation-jlg' );
+        } elseif ( $standard_deviation <= $medium_threshold ) {
+            $level   = 'medium';
+            $label   = __( 'Consensus partagé', 'notation-jlg' );
+            $message = __( 'Quelques écarts existent entre les critiques : surveillez les mises à jour.', 'notation-jlg' );
+        } else {
+            $level   = 'low';
+            $label   = __( 'Avis divisés', 'notation-jlg' );
+            $message = __( 'Les notes varient fortement : consultez les badges de divergence pour comprendre les écarts.', 'notation-jlg' );
+        }
+
+        $range['label'] = sprintf(
+            /* translators: 1: minimal score, 2: maximal score, 3: score span. */
+            __( 'Notes entre %1$s et %2$s (écart de %3$s point(s)).', 'notation-jlg' ),
+            $range['min_formatted'],
+            $range['max_formatted'],
+            $range['span_formatted']
+        );
+
+        return array(
+            'available'           => true,
+            'level'               => $level,
+            'level_label'         => $label,
+            'message'             => $message,
+            'deviation'           => $rounded_deviation,
+            'deviation_formatted' => number_format_i18n( $standard_deviation, 1 ),
+            'deviation_label'     => sprintf(
+                /* translators: %s: formatted standard deviation value. */
+                __( 'Écart-type : %s', 'notation-jlg' ),
+                number_format_i18n( $standard_deviation, 1 )
+            ),
+            'range'               => $range,
+        );
     }
 
     /**
