@@ -855,6 +855,360 @@ class Helpers {
         return $display;
     }
 
+    public static function get_default_review_status_slug() {
+        /**
+         * Filtre permettant de redéfinir le statut par défaut utilisé lorsque
+         * aucune valeur n'est encore enregistrée pour une review.
+         *
+         * @param string $default_slug Slug du statut par défaut.
+         */
+        $default_slug = apply_filters( 'jlg_review_status_default', 'final' );
+
+        $default_slug = is_string( $default_slug ) ? sanitize_key( $default_slug ) : 'final';
+
+        if ( $default_slug === '' ) {
+            $default_slug = 'final';
+        }
+
+        return $default_slug;
+    }
+
+    public static function get_review_status_definitions() {
+        $definitions = array(
+            'draft'       => array(
+                'label'       => _x( 'Brouillon éditorial', 'Review status label', 'notation-jlg' ),
+                'description' => _x( 'Le test est en cours de rédaction et peut encore évoluer.', 'Review status description', 'notation-jlg' ),
+            ),
+            'in_progress' => array(
+                'label'       => _x( 'Mise à jour en cours', 'Review status label', 'notation-jlg' ),
+                'description' => _x( 'La rédaction vérifie les derniers patchs ou ajoute des compléments.', 'Review status description', 'notation-jlg' ),
+            ),
+            'final'       => array(
+                'label'       => _x( 'Version finale', 'Review status label', 'notation-jlg' ),
+                'description' => _x( 'La review est validée et reflète l’avis définitif de la rédaction.', 'Review status description', 'notation-jlg' ),
+            ),
+        );
+
+        /**
+         * Permet de personnaliser la liste des statuts disponibles.
+         *
+         * @param array $definitions Tableau associatif slug => [label, description].
+         */
+        $definitions = apply_filters( 'jlg_review_status_definitions', $definitions );
+
+        if ( ! is_array( $definitions ) ) {
+            return array();
+        }
+
+        foreach ( $definitions as $slug => $definition ) {
+            $normalized_slug = sanitize_key( (string) $slug );
+            if ( $normalized_slug === '' ) {
+                unset( $definitions[ $slug ] );
+                continue;
+            }
+
+            if ( $normalized_slug !== $slug ) {
+                unset( $definitions[ $slug ] );
+                $slug = $normalized_slug;
+            }
+
+            if ( ! isset( $definition['label'] ) || ! is_string( $definition['label'] ) || $definition['label'] === '' ) {
+                $definitions[ $slug ]['label'] = ucwords( str_replace( '_', ' ', $slug ) );
+            }
+
+            if ( ! isset( $definition['description'] ) || ! is_string( $definition['description'] ) ) {
+                $definitions[ $slug ]['description'] = '';
+            }
+        }
+
+        return $definitions;
+    }
+
+    public static function normalize_review_status( $value ) {
+        if ( is_string( $value ) ) {
+            $value = sanitize_key( $value );
+        } elseif ( is_scalar( $value ) ) {
+            $value = sanitize_key( (string) $value );
+        } else {
+            $value = '';
+        }
+
+        $definitions  = self::get_review_status_definitions();
+        $default_slug = self::get_default_review_status_slug();
+
+        if ( $value === '' ) {
+            return isset( $definitions[ $default_slug ] ) ? $default_slug : 'final';
+        }
+
+        if ( isset( $definitions[ $value ] ) ) {
+            return $value;
+        }
+
+        return isset( $definitions[ $default_slug ] ) ? $default_slug : 'final';
+    }
+
+    public static function get_review_status_for_post( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            $slug = self::get_default_review_status_slug();
+        } else {
+            $stored = get_post_meta( $post_id, '_jlg_review_status', true );
+            $slug   = self::normalize_review_status( $stored );
+        }
+
+        $definitions = self::get_review_status_definitions();
+
+        if ( ! isset( $definitions[ $slug ] ) ) {
+            $slug = self::get_default_review_status_slug();
+        }
+
+        $definition = $definitions[ $slug ] ?? array();
+
+        $label       = isset( $definition['label'] ) ? (string) $definition['label'] : ucwords( str_replace( '_', ' ', $slug ) );
+        $description = isset( $definition['description'] ) ? (string) $definition['description'] : '';
+
+        $payload = array(
+            'slug'        => $slug,
+            'label'       => $label,
+            'description' => $description,
+        );
+
+        /**
+         * Filtre le statut de review retourné pour un article donné.
+         *
+         * @param array $payload {slug, label, description} prêt pour l'affichage.
+         * @param int   $post_id Identifiant du post concerné.
+         */
+        return apply_filters( 'jlg_review_status_display', $payload, $post_id );
+    }
+
+    public static function get_related_guides_for_post( $post_id, ?array $options = null ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return array();
+        }
+
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        if ( empty( $options['related_guides_enabled'] ) ) {
+            return array();
+        }
+
+        $limit = isset( $options['related_guides_limit'] ) ? (int) $options['related_guides_limit'] : 4;
+        $limit = max( 1, min( 8, $limit ) );
+
+        /**
+         * Permet d'ajuster dynamiquement le nombre de guides renvoyés.
+         *
+         * @param int   $limit   Nombre maximum de guides.
+         * @param int   $post_id Identifiant du post courant.
+         * @param array $options Options du plugin.
+         */
+        $limit = (int) apply_filters( 'jlg_related_guides_limit', $limit, $post_id, $options );
+        $limit = max( 1, min( 8, $limit ) );
+
+        $taxonomies = self::get_related_guides_taxonomy_slugs( $options );
+
+        if ( empty( $taxonomies ) ) {
+            return array();
+        }
+
+        $tax_query = array( 'relation' => 'OR' );
+
+        foreach ( $taxonomies as $taxonomy ) {
+            $term_ids = self::get_term_ids_for_related_guides( $post_id, $taxonomy );
+
+            if ( empty( $term_ids ) ) {
+                continue;
+            }
+
+            $tax_query[] = array(
+                'taxonomy' => $taxonomy,
+                'field'    => 'term_id',
+                'terms'    => array_values( array_unique( array_map( 'intval', $term_ids ) ) ),
+            );
+        }
+
+        if ( count( $tax_query ) <= 1 ) {
+            return array();
+        }
+
+        $post_type = get_post_type( $post_id );
+        if ( ! is_string( $post_type ) || $post_type === '' ) {
+            $post_type = 'post';
+        }
+
+        $query_args = array(
+            'post_type'           => $post_type,
+            'post_status'         => 'publish',
+            'posts_per_page'      => $limit,
+            'post__not_in'        => array( $post_id ),
+            'ignore_sticky_posts' => true,
+            'no_found_rows'       => true,
+            'tax_query'           => $tax_query,
+        );
+
+        /**
+         * Filtre les arguments utilisés pour récupérer les guides associés.
+         *
+         * @param array $query_args Arguments WP_Query.
+         * @param int   $post_id    Identifiant du post courant.
+         * @param array $taxonomies Liste des taxonomies utilisées.
+         */
+        $query_args = apply_filters( 'jlg_related_guides_query_args', $query_args, $post_id, $taxonomies );
+
+        $query = new \WP_Query( $query_args );
+
+        if ( ! $query instanceof \WP_Query || empty( $query->posts ) ) {
+            return array();
+        }
+
+        $guides = array();
+
+        foreach ( $query->posts as $guide_post ) {
+            $guide_id = isset( $guide_post->ID ) ? (int) $guide_post->ID : 0;
+
+            if ( $guide_id <= 0 ) {
+                continue;
+            }
+
+            $title = get_the_title( $guide_id );
+            if ( ! is_string( $title ) || $title === '' ) {
+                $title = sprintf( __( 'Guide #%d', 'notation-jlg' ), $guide_id );
+            }
+
+            $permalink = function_exists( 'get_permalink' ) ? get_permalink( $guide_id ) : '';
+            $permalink = is_string( $permalink ) ? $permalink : '';
+
+            $guides[] = array(
+                'id'    => $guide_id,
+                'title' => $title,
+                'url'   => $permalink,
+            );
+        }
+
+        if ( function_exists( 'wp_reset_postdata' ) ) {
+            wp_reset_postdata();
+        }
+
+        return $guides;
+    }
+
+    private static function get_related_guides_taxonomy_slugs( ?array $options = null ) {
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        $raw_taxonomies = $options['related_guides_taxonomies'] ?? '';
+
+        if ( is_array( $raw_taxonomies ) ) {
+            $taxonomies = $raw_taxonomies;
+        } else {
+            $taxonomies = self::parse_related_guides_taxonomy_string( $raw_taxonomies );
+        }
+
+        $taxonomies = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'sanitize_key', $taxonomies )
+                )
+            )
+        );
+
+        if ( empty( $taxonomies ) ) {
+            $taxonomies = array( 'guide', 'astuce', 'category', 'post_tag' );
+        }
+
+        /**
+         * Filtre la liste des taxonomies utilisées pour les guides associés.
+         *
+         * @param array $taxonomies Liste des slugs de taxonomie.
+         * @param array $options    Options du plugin.
+         */
+        $taxonomies = apply_filters( 'jlg_related_guides_taxonomies', $taxonomies, $options );
+
+        if ( ! is_array( $taxonomies ) ) {
+            return array();
+        }
+
+        return array_values(
+            array_unique(
+                array_filter(
+                    array_map(
+                        static function ( $taxonomy ) {
+                            return sanitize_key( (string) $taxonomy );
+                        },
+                        $taxonomies
+                    )
+                )
+            )
+        );
+    }
+
+    private static function parse_related_guides_taxonomy_string( $raw_value ) {
+        if ( ! is_string( $raw_value ) || $raw_value === '' ) {
+            return array();
+        }
+
+        $pieces = preg_split( '/[,\s]+/', $raw_value );
+
+        if ( ! is_array( $pieces ) ) {
+            return array();
+        }
+
+        return array_values( array_filter( array_map( 'trim', $pieces ) ) );
+    }
+
+    private static function get_term_ids_for_related_guides( $post_id, $taxonomy ) {
+        $taxonomy = is_string( $taxonomy ) ? sanitize_key( $taxonomy ) : '';
+
+        if ( $taxonomy === '' ) {
+            return array();
+        }
+
+        $term_ids = array();
+
+        if ( function_exists( 'wp_get_post_terms' ) ) {
+            $terms = wp_get_post_terms( $post_id, $taxonomy, array( 'fields' => 'ids' ) );
+
+            if ( ! is_wp_error( $terms ) && is_array( $terms ) ) {
+                $term_ids = array_map( 'intval', $terms );
+            }
+        }
+
+        if ( empty( $term_ids ) && function_exists( 'get_the_terms' ) ) {
+            $terms = get_the_terms( $post_id, $taxonomy );
+
+            if ( ! is_wp_error( $terms ) && is_array( $terms ) ) {
+                foreach ( $terms as $term ) {
+                    if ( is_object( $term ) && isset( $term->term_id ) ) {
+                        $term_ids[] = (int) $term->term_id;
+                    }
+                }
+            }
+        }
+
+        if ( empty( $term_ids ) && isset( $GLOBALS['jlg_test_terms'][ $post_id ][ $taxonomy ] ) ) {
+            $stored_terms = $GLOBALS['jlg_test_terms'][ $post_id ][ $taxonomy ];
+
+            if ( is_array( $stored_terms ) ) {
+                foreach ( $stored_terms as $term ) {
+                    if ( is_array( $term ) && isset( $term['term_id'] ) ) {
+                        $term_ids[] = (int) $term['term_id'];
+                    } elseif ( is_object( $term ) && isset( $term->term_id ) ) {
+                        $term_ids[] = (int) $term->term_id;
+                    }
+                }
+            }
+        }
+
+        return array_values( array_unique( array_filter( array_map( 'intval', $term_ids ) ) ) );
+    }
+
     private static function normalize_score_candidate( $value ) {
         if ( is_array( $value ) ) {
             return null;
@@ -898,6 +1252,10 @@ class Helpers {
             'tagline_font_size'                  => 16,
             'rating_badge_enabled'               => 0,
             'rating_badge_threshold'             => 8,
+            'review_status_enabled'              => 1,
+            'related_guides_enabled'             => 0,
+            'related_guides_limit'               => 4,
+            'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
 
             // Couleurs de Thème Sombre personnalisables
             'dark_bg_color'                      => $dark_defaults['bg_color'],

@@ -184,7 +184,23 @@ class Metaboxes {
             $meta[ $key ] = get_post_meta( $post->ID, '_jlg_' . $key, true );
         }
 
+        $status_data        = Helpers::get_review_status_for_post( $post->ID );
+        $status_definitions = Helpers::get_review_status_definitions();
+        $status_slug        = isset( $status_data['slug'] ) ? $status_data['slug'] : Helpers::get_default_review_status_slug();
+
         echo '<div class="jlg-metabox-details">';
+
+        echo '<div style="margin-bottom:20px;">';
+        echo '<label for="jlg_review_status"><strong>' . esc_html__( 'Statut du test', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<select id="jlg_review_status" name="jlg_review_status" style="width:100%; max-width:260px;">';
+        foreach ( $status_definitions as $slug => $definition ) {
+            $label    = isset( $definition['label'] ) ? $definition['label'] : $slug;
+            $selected = selected( $status_slug, $slug, false );
+            echo '<option value="' . esc_attr( $slug ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
+        }
+        echo '</select>';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Ce statut est affiché sous la note globale pour informer les lecteurs de la fraîcheur de la review.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
 
         echo '<div style="margin-bottom:20px;">';
         echo '<label for="jlg_game_title"><strong>' . esc_html__( 'Nom du jeu', 'notation-jlg' ) . ' :</strong></label><br>';
@@ -402,6 +418,15 @@ class Metaboxes {
 
         // Sauvegarder les détails
         if ( isset( $_POST['jlg_details_nonce'] ) && wp_verify_nonce( $_POST['jlg_details_nonce'], 'jlg_save_details_data' ) ) {
+            $raw_status        = isset( $_POST['jlg_review_status'] ) ? wp_unslash( $_POST['jlg_review_status'] ) : '';
+            $normalized_status = Helpers::normalize_review_status( $raw_status );
+
+            if ( $normalized_status === '' ) {
+                delete_post_meta( $post_id, '_jlg_review_status' );
+            } else {
+                update_post_meta( $post_id, '_jlg_review_status', $normalized_status );
+            }
+
             // Champs texte simples
             $text_fields = array(
                 'game_title'   => __( 'Nom du jeu', 'notation-jlg' ),

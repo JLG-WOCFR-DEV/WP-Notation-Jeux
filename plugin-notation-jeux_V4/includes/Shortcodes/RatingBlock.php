@@ -211,6 +211,13 @@ class RatingBlock {
             }
         }
 
+        $review_status_enabled  = ! empty( $options['review_status_enabled'] );
+        $review_status          = Helpers::get_review_status_for_post( $post_id );
+        $related_guides_enabled = ! empty( $options['related_guides_enabled'] );
+        $related_guides         = $related_guides_enabled
+            ? Helpers::get_related_guides_for_post( $post_id, $options )
+            : array();
+
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
         return Frontend::get_template_html(
@@ -233,6 +240,10 @@ class RatingBlock {
                 'user_rating_delta'        => $user_rating_delta,
                 'rating_badge_threshold'   => $badge_threshold,
                 'extra_classes'            => $extra_classes_string,
+                'review_status_enabled'    => $review_status_enabled,
+                'review_status'            => $review_status,
+                'related_guides_enabled'   => $related_guides_enabled,
+                'related_guides'           => $related_guides,
             )
         );
     }
@@ -284,6 +295,31 @@ class RatingBlock {
             ? $options['score_layout']
             : 'text';
 
+        $review_status_enabled  = ! empty( $options['review_status_enabled'] );
+        $related_guides_enabled = ! empty( $options['related_guides_enabled'] );
+        $review_status          = Helpers::get_review_status_for_post( $post_id );
+        $placeholder_guides     = array();
+
+        if ( $related_guides_enabled ) {
+            $placeholder_guides = array(
+                array(
+                    'id'    => 0,
+                    'title' => __( 'Guide stratégique', 'notation-jlg' ),
+                    'url'   => '',
+                ),
+                array(
+                    'id'    => 0,
+                    'title' => __( 'Astuces progression', 'notation-jlg' ),
+                    'url'   => '',
+                ),
+                array(
+                    'id'    => 0,
+                    'title' => __( 'Build recommandé', 'notation-jlg' ),
+                    'url'   => '',
+                ),
+            );
+        }
+
         return array(
             'post'                     => $post,
             'post_id'                  => $post_id,
@@ -306,6 +342,10 @@ class RatingBlock {
                 : 0.0,
             'is_placeholder'           => true,
             'extra_classes'            => is_string( $extra_classes ) ? $extra_classes : '',
+            'review_status_enabled'    => $review_status_enabled,
+            'review_status'            => $review_status,
+            'related_guides_enabled'   => $related_guides_enabled,
+            'related_guides'           => $placeholder_guides,
         );
     }
 

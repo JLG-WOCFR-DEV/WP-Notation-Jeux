@@ -1878,6 +1878,29 @@ if (!function_exists('get_post')) {
     }
 }
 
+if (!function_exists('get_permalink')) {
+    function get_permalink($post = 0)
+    {
+        if ($post instanceof WP_Post) {
+            $post_id = (int) ($post->ID ?? 0);
+        } else {
+            $post_id = is_numeric($post) ? (int) $post : 0;
+        }
+
+        if ($post_id <= 0) {
+            return 'https://example.com/';
+        }
+
+        $permalinks = $GLOBALS['jlg_test_permalinks'] ?? [];
+
+        if (isset($permalinks[$post_id]) && is_string($permalinks[$post_id])) {
+            return $permalinks[$post_id];
+        }
+
+        return 'https://example.com/?p=' . $post_id;
+    }
+}
+
 if (!function_exists('get_queried_object')) {
     function get_queried_object()
     {

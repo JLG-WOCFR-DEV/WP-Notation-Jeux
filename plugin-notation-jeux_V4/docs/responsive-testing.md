@@ -10,6 +10,16 @@ Pour valider l'affichage responsive du tableau récapitulatif :
 
 En cas d'ajustements ultérieurs, répétez ce scénario pour garantir que l'expérience mobile reste optimale.
 
+## Bloc de notation – Statut éditorial et guides associés
+
+Pour contrôler le nouveau bandeau de statut et la colonne des guides dans le bloc `[jlg_rating_block]` :
+
+1. Créez un article avec le bloc de notation configuré pour afficher un statut éditorial (« Brouillon », « Mise à jour », etc.) et au moins deux guides liés (dont un sans URL).
+2. Ouvrez la prévisualisation front dans un navigateur puis activez le mode d'émulation mobile (largeur entre 360 px et 768 px).
+3. Vérifiez que le bandeau de statut s'affiche au-dessus des catégories, que le libellé et le message complémentaire restent lisibles et qu'aucune troncature ne survient.
+4. Faites défiler jusqu'à la section des guides : la liste doit passer sous le bloc de notes, conserver des espacements suffisants et afficher les guides sans lien comme du texte simple.
+5. Placez le focus clavier successivement sur les liens de guides : assurez-vous que le focus est visible et que la navigation ne provoque pas de défilement inattendu.
+
 ## Game Explorer – Panneau de filtres mobile
 
 Pour vérifier l'interaction mobile du Game Explorer (`[jlg_game_explorer]`) :
