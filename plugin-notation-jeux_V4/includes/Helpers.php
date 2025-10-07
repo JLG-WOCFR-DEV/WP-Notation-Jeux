@@ -2189,6 +2189,41 @@ class Helpers {
                 str_pad( dechex( $b ), 2, '0', STR_PAD_LEFT );
     }
 
+    public static function get_high_contrast_color( $hex_color, $light_fallback = '#ffffff', $dark_fallback = '#000000' ) {
+        $light = sanitize_hex_color( $light_fallback );
+        $dark  = sanitize_hex_color( $dark_fallback );
+
+        if ( $light === '' ) {
+            $light = '#ffffff';
+        }
+
+        if ( $dark === '' ) {
+            $dark = '#000000';
+        }
+
+        $sanitized = sanitize_hex_color( $hex_color );
+
+        if ( $sanitized === '' ) {
+            return $light;
+        }
+
+        $color = ltrim( $sanitized, '#' );
+
+        if ( strlen( $color ) === 3 ) {
+            $color = $color[0] . $color[0]
+                . $color[1] . $color[1]
+                . $color[2] . $color[2];
+        }
+
+        $red   = hexdec( substr( $color, 0, 2 ) );
+        $green = hexdec( substr( $color, 2, 2 ) );
+        $blue  = hexdec( substr( $color, 4, 2 ) );
+
+        $yiq = ( ( $red * 299 ) + ( $green * 587 ) + ( $blue * 114 ) ) / 1000;
+
+        return $yiq >= 128 ? $dark : $light;
+    }
+
     public static function calculate_color_from_note( $note, $options = null ) {
         if ( $options === null ) {
             $options = self::get_plugin_options();
