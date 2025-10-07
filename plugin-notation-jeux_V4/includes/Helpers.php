@@ -986,6 +986,262 @@ class Helpers {
         return apply_filters( 'jlg_review_status_display', $payload, $post_id );
     }
 
+    public static function maybe_schedule_review_status_automation( $force = false ) {
+        $options = self::get_plugin_options();
+
+        $automation_enabled = ! empty( $options['review_status_enabled'] )
+            && ! empty( $options['review_status_auto_finalize_enabled'] );
+
+        if ( ! $automation_enabled ) {
+            return false;
+        }
+
+        if ( ! function_exists( 'wp_schedule_event' ) ) {
+            return false;
+        }
+
+        $hook = self::REVIEW_STATUS_CRON_HOOK;
+
+        if ( $force && function_exists( 'wp_clear_scheduled_hook' ) ) {
+            wp_clear_scheduled_hook( $hook );
+        }
+
+        if ( ! $force && function_exists( 'wp_next_scheduled' ) && wp_next_scheduled( $hook ) ) {
+            return false;
+        }
+
+        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400;
+        $timestamp      = time() + $day_in_seconds;
+
+        if ( $timestamp <= time() ) {
+            $timestamp = time() + 300;
+        }
+
+        return (bool) wp_schedule_event( $timestamp, 'daily', $hook );
+    }
+
+    public static function run_review_status_automation() {
+        $options = self::get_plugin_options();
+
+        $automation_enabled = ! empty( $options['review_status_enabled'] )
+            && ! empty( $options['review_status_auto_finalize_enabled'] );
+
+        if ( ! $automation_enabled ) {
+            return 0;
+        }
+
+        $days = isset( $options['review_status_auto_finalize_days'] )
+            ? (int) $options['review_status_auto_finalize_days']
+            : 7;
+
+        if ( $days < 1 ) {
+            $days = 1;
+        } elseif ( $days > 60 ) {
+            $days = 60;
+        }
+
+        try {
+            $timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new \DateTimeZone( date_default_timezone_get() );
+
+            if ( ! $timezone instanceof \DateTimeZone ) {
+                $timezone = new \DateTimeZone( 'UTC' );
+            }
+
+            $now = ( new \DateTimeImmutable( 'now', $timezone ) )->getTimestamp();
+        } catch ( \Exception $exception ) {
+            $now = time();
+        }
+
+        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400;
+        $threshold      = $now - ( $days * $day_in_seconds );
+
+        if ( $threshold < 0 ) {
+            $threshold = 0;
+        }
+
+        $threshold_timestamp = (int) apply_filters(
+            'jlg_review_status_auto_finalize_threshold_timestamp',
+            $threshold,
+            $days,
+            $options
+        );
+
+        if ( $threshold_timestamp < 0 ) {
+            $threshold_timestamp = 0;
+        }
+
+        $threshold_date = apply_filters(
+            'jlg_review_status_auto_finalize_threshold',
+            gmdate( 'Y-m-d', $threshold_timestamp ),
+            $threshold_timestamp,
+            $days,
+            $options
+        );
+
+        if ( ! is_string( $threshold_date ) || $threshold_date === '' ) {
+            $threshold_date = gmdate( 'Y-m-d', $threshold_timestamp );
+        }
+
+        $threshold_date = trim( $threshold_date );
+
+        $statuses = apply_filters( 'jlg_review_status_auto_finalize_statuses', array( 'in_progress' ), $options );
+        if ( ! is_array( $statuses ) ) {
+            $statuses = array( $statuses );
+        }
+
+        $definitions         = self::get_review_status_definitions();
+        $normalized_statuses = array();
+        foreach ( $statuses as $status ) {
+            $slug = sanitize_key( (string) $status );
+            if ( $slug === '' ) {
+                continue;
+            }
+
+            if ( isset( $definitions[ $slug ] ) ) {
+                $normalized_statuses[] = $slug;
+            }
+        }
+
+        if ( empty( $normalized_statuses ) ) {
+            $normalized_statuses = array();
+            if ( isset( $definitions['in_progress'] ) ) {
+                $normalized_statuses[] = 'in_progress';
+            } elseif ( isset( $definitions['draft'] ) ) {
+                $normalized_statuses[] = 'draft';
+            } else {
+                $normalized_statuses[] = self::get_default_review_status_slug();
+            }
+        }
+
+        $normalized_statuses = array_values( array_unique( $normalized_statuses ) );
+
+        $target_status = apply_filters( 'jlg_review_status_auto_finalize_target', 'final', $options, $normalized_statuses );
+        $target_status = sanitize_key( (string) $target_status );
+
+        if ( $target_status === '' || ! isset( $definitions[ $target_status ] ) ) {
+            $target_status = self::get_default_review_status_slug();
+        }
+
+        $allowed_post_types = array();
+        if ( isset( $options['allowed_post_types'] ) ) {
+            $allowed_post_types = is_array( $options['allowed_post_types'] )
+                ? $options['allowed_post_types']
+                : array( $options['allowed_post_types'] );
+        }
+
+        if ( empty( $allowed_post_types ) ) {
+            $defaults           = self::get_default_settings();
+            $allowed_post_types = $defaults['allowed_post_types'] ?? array( 'post' );
+        }
+
+        $post_types = array();
+        foreach ( $allowed_post_types as $post_type ) {
+            $slug = sanitize_key( (string) $post_type );
+            if ( $slug === '' ) {
+                continue;
+            }
+
+            if ( function_exists( 'post_type_exists' ) && ! post_type_exists( $slug ) ) {
+                continue;
+            }
+
+            $post_types[] = $slug;
+        }
+
+        if ( empty( $post_types ) ) {
+            $post_types[] = 'post';
+        }
+
+        $post_types = array_values( array_unique( $post_types ) );
+
+        $batch_size = (int) apply_filters( 'jlg_review_status_auto_finalize_batch_size', 20, $options, $post_types );
+        if ( $batch_size <= 0 ) {
+            $batch_size = 20;
+        }
+
+        $query_args = array(
+            'post_type'      => $post_types,
+            'post_status'    => array( 'publish' ),
+            'orderby'        => 'date',
+            'order'          => 'ASC',
+            'posts_per_page' => $batch_size,
+            'meta_query'     => array(
+                'relation' => 'AND',
+                array(
+                    'key'     => self::REVIEW_STATUS_META_KEY,
+                    'value'   => $normalized_statuses,
+                    'compare' => 'IN',
+                ),
+                array(
+                    'key'     => self::REVIEW_STATUS_LAST_PATCH_META_KEY,
+                    'value'   => $threshold_date,
+                    'compare' => '<=',
+                    'type'    => 'DATE',
+                ),
+            ),
+        );
+
+        $query_args = apply_filters(
+            'jlg_review_status_auto_finalize_query_args',
+            $query_args,
+            $options,
+            $threshold_date,
+            $normalized_statuses,
+            $target_status
+        );
+
+        $query = new \WP_Query( $query_args );
+
+        if ( empty( $query->posts ) ) {
+            return 0;
+        }
+
+        $updated = 0;
+
+        foreach ( $query->posts as $post ) {
+            if ( ! $post instanceof \WP_Post ) {
+                continue;
+            }
+
+            $post_id = (int) $post->ID;
+
+            if ( $post_id <= 0 ) {
+                continue;
+            }
+
+            $status_payload = self::get_review_status_for_post( $post_id );
+            $current_slug   = isset( $status_payload['slug'] )
+                ? (string) $status_payload['slug']
+                : self::get_default_review_status_slug();
+
+            if ( ! in_array( $current_slug, $normalized_statuses, true ) ) {
+                continue;
+            }
+
+            $last_patch_date = get_post_meta( $post_id, self::REVIEW_STATUS_LAST_PATCH_META_KEY, true );
+            $last_patch_date = is_string( $last_patch_date ) ? trim( $last_patch_date ) : '';
+
+            if ( $last_patch_date === '' ) {
+                continue;
+            }
+
+            if ( strcmp( $last_patch_date, $threshold_date ) > 0 ) {
+                continue;
+            }
+
+            if ( $current_slug === $target_status ) {
+                continue;
+            }
+
+            update_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, $target_status );
+            ++$updated;
+
+            do_action( 'jlg_review_status_transition', $post_id, $current_slug, $target_status, 'auto_finalize' );
+        }
+
+        return $updated;
+    }
+
     public static function get_verdict_data_for_post( $post_id, ?array $options = null, array $overrides = array() ) {
         $post_id = (int) $post_id;
         $post    = $post_id > 0 ? get_post( $post_id ) : null;
@@ -1150,6 +1406,137 @@ class Helpers {
         }
 
         return $payload;
+    }
+
+    public static function get_review_verdict_for_post( $post_id, array $overrides = array(), ?array $options = null ) {
+        $post_id = (int) $post_id;
+
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        $verdict = self::get_verdict_data_for_post( $post_id, $options, $overrides );
+
+        $payload = array(
+            'enabled'       => (bool) ( $verdict['enabled'] ?? false ),
+            'summary'       => '',
+            'summary_limit' => isset( $verdict['summary_limit'] ) ? (int) $verdict['summary_limit'] : 0,
+            'cta_label'     => '',
+            'cta_url'       => '',
+            'cta_rel'       => '',
+            'status'        => array(
+                'slug'        => '',
+                'label'       => '',
+                'description' => '',
+            ),
+            'last_updated'  => array(
+                'timestamp' => null,
+                'display'   => '',
+                'iso'       => '',
+                'title'     => '',
+            ),
+            'permalink'     => isset( $verdict['permalink'] ) ? (string) $verdict['permalink'] : '',
+        );
+
+        $raw_summary = '';
+        if ( isset( $overrides['summary'] ) && is_string( $overrides['summary'] ) ) {
+            $raw_summary = trim( $overrides['summary'] );
+        } elseif ( $post_id > 0 ) {
+            $stored_summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
+            if ( is_string( $stored_summary ) ) {
+                $raw_summary = trim( $stored_summary );
+            }
+        }
+
+        if ( $raw_summary === '' && isset( $verdict['summary'] ) ) {
+            $raw_summary = (string) $verdict['summary'];
+        }
+
+        $payload['summary'] = $raw_summary;
+
+        if ( isset( $verdict['cta'] ) && is_array( $verdict['cta'] ) ) {
+            $payload['cta_label'] = isset( $verdict['cta']['label'] ) ? (string) $verdict['cta']['label'] : '';
+            $payload['cta_url']   = isset( $verdict['cta']['url'] ) ? (string) $verdict['cta']['url'] : '';
+            $payload['cta_rel']   = isset( $verdict['cta']['rel'] ) ? (string) $verdict['cta']['rel'] : '';
+        }
+
+        if ( isset( $verdict['status'] ) && is_array( $verdict['status'] ) ) {
+            $payload['status'] = array(
+                'slug'        => isset( $verdict['status']['slug'] ) ? (string) $verdict['status']['slug'] : '',
+                'label'       => isset( $verdict['status']['label'] ) ? (string) $verdict['status']['label'] : '',
+                'description' => isset( $verdict['status']['description'] ) ? (string) $verdict['status']['description'] : '',
+            );
+        }
+
+        if ( isset( $verdict['updated'] ) && is_array( $verdict['updated'] ) ) {
+            $timestamp = isset( $verdict['updated']['timestamp'] )
+                ? $verdict['updated']['timestamp']
+                : null;
+
+            $payload['last_updated'] = array(
+                'timestamp' => is_numeric( $timestamp ) ? (int) $timestamp : null,
+                'display'   => isset( $verdict['updated']['display'] ) ? (string) $verdict['updated']['display'] : '',
+                'iso'       => isset( $verdict['updated']['datetime'] ) ? (string) $verdict['updated']['datetime'] : '',
+                'title'     => isset( $verdict['updated']['title'] ) ? (string) $verdict['updated']['title'] : '',
+            );
+        }
+
+        if ( $post_id > 0 && ( $payload['last_updated']['display'] === '' || $payload['last_updated']['iso'] === '' ) ) {
+            $post_object = get_post( $post_id );
+
+            if ( $post_object instanceof \WP_Post ) {
+                $raw_gmt   = isset( $post_object->post_modified_gmt ) ? trim( (string) $post_object->post_modified_gmt ) : '';
+                $raw_local = isset( $post_object->post_modified ) ? trim( (string) $post_object->post_modified ) : '';
+
+                $timestamp = $raw_gmt !== '' ? strtotime( $raw_gmt . ' UTC' ) : null;
+
+                if ( ! is_int( $timestamp ) && $raw_local !== '' ) {
+                    $timestamp = strtotime( $raw_local );
+                }
+
+                if ( is_int( $timestamp ) && $timestamp > 0 ) {
+                    $payload['last_updated']['timestamp'] = $payload['last_updated']['timestamp'] ?? $timestamp;
+                    if ( $payload['last_updated']['display'] === '' ) {
+                        $date_format = get_option( 'date_format', 'F j, Y' );
+                        if ( ! is_string( $date_format ) || $date_format === '' ) {
+                            $date_format = 'F j, Y';
+                        }
+
+                        $payload['last_updated']['display'] = date_i18n( $date_format, $timestamp );
+                    }
+
+                    if ( $payload['last_updated']['iso'] === '' ) {
+                        $payload['last_updated']['iso'] = gmdate( 'c', $timestamp );
+                    }
+
+                    if ( $payload['last_updated']['title'] === '' ) {
+                        $date_format = get_option( 'date_format', 'F j, Y' );
+                        $time_format = get_option( 'time_format', 'H:i' );
+
+                        if ( ! is_string( $date_format ) || $date_format === '' ) {
+                            $date_format = 'F j, Y';
+                        }
+
+                        if ( ! is_string( $time_format ) || $time_format === '' ) {
+                            $time_format = 'H:i';
+                        }
+
+                        $payload['last_updated']['title'] = date_i18n( $date_format . ' ' . $time_format, $timestamp );
+                    }
+                }
+            }
+        }
+
+        /**
+         * Permet d'ajuster le payload simplifié utilisé pour afficher la carte verdict.
+         *
+         * @param array $payload  Données normalisées pour le front.
+         * @param int   $post_id  Identifiant du post.
+         * @param array $verdict  Données complètes retournées par get_verdict_data_for_post().
+         * @param array $options  Options du plugin.
+         * @param array $overrides Valeurs forcées.
+         */
+        return apply_filters( 'jlg_review_verdict_payload', $payload, $post_id, $verdict, $options, $overrides );
     }
 
     private static function prepare_verdict_summary( $value, $limit ) {
@@ -1531,88 +1918,88 @@ class Helpers {
             'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
 
             // Couleurs de Thème Sombre personnalisables
-            'dark_bg_color'                       => $dark_defaults['bg_color'],
-            'dark_bg_color_secondary'             => $dark_defaults['bg_color_secondary'],
-            'dark_border_color'                   => $dark_defaults['border_color'],
-            'dark_text_color'                     => $dark_defaults['text_color'],
-            'dark_text_color_secondary'           => $dark_defaults['text_color_secondary'],
-            'tagline_bg_color'                    => $dark_defaults['tagline_bg_color'],
-            'tagline_text_color'                  => $dark_defaults['tagline_text_color'],
+            'dark_bg_color'                      => $dark_defaults['bg_color'],
+            'dark_bg_color_secondary'            => $dark_defaults['bg_color_secondary'],
+            'dark_border_color'                  => $dark_defaults['border_color'],
+            'dark_text_color'                    => $dark_defaults['text_color'],
+            'dark_text_color_secondary'          => $dark_defaults['text_color_secondary'],
+            'tagline_bg_color'                   => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'                 => $dark_defaults['tagline_text_color'],
 
             // Couleurs de Thème Clair personnalisables
-            'light_bg_color'                      => $light_defaults['bg_color'],
-            'light_bg_color_secondary'            => $light_defaults['bg_color_secondary'],
-            'light_border_color'                  => $light_defaults['border_color'],
-            'light_text_color'                    => $light_defaults['text_color'],
-            'light_text_color_secondary'          => $light_defaults['text_color_secondary'],
+            'light_bg_color'                     => $light_defaults['bg_color'],
+            'light_bg_color_secondary'           => $light_defaults['bg_color_secondary'],
+            'light_border_color'                 => $light_defaults['border_color'],
+            'light_text_color'                   => $light_defaults['text_color'],
+            'light_text_color_secondary'         => $light_defaults['text_color_secondary'],
 
             // Couleurs sémantiques et de marque
-            'score_gradient_1'                    => '#60a5fa',
-            'score_gradient_2'                    => '#c084fc',
-            'color_low'                           => '#ef4444',
-            'color_mid'                           => '#f97316',
-            'color_high'                          => '#22c55e',
-            'user_rating_star_color'              => '#f59e0b',
-            'user_rating_text_color'              => '#a1a1aa',
-            'user_rating_title_color'             => '#fafafa',
+            'score_gradient_1'                   => '#60a5fa',
+            'score_gradient_2'                   => '#c084fc',
+            'color_low'                          => '#ef4444',
+            'color_mid'                          => '#f97316',
+            'color_high'                         => '#22c55e',
+            'user_rating_star_color'             => '#f59e0b',
+            'user_rating_text_color'             => '#a1a1aa',
+            'user_rating_title_color'            => '#fafafa',
 
             // Options cercle
-            'circle_dynamic_bg_enabled'           => 0,
-            'circle_border_enabled'               => 1,
-            'circle_border_width'                 => 5,
-            'circle_border_color'                 => '#60a5fa',
+            'circle_dynamic_bg_enabled'          => 0,
+            'circle_border_enabled'              => 1,
+            'circle_border_width'                => 5,
+            'circle_border_color'                => '#60a5fa',
 
             // Options glow pour mode texte
-            'text_glow_enabled'                   => 0,
-            'text_glow_color_mode'                => 'dynamic',
-            'text_glow_custom_color'              => '#ffffff',
-            'text_glow_intensity'                 => 15,
-            'text_glow_pulse'                     => 0,
-            'text_glow_speed'                     => 2.5,
+            'text_glow_enabled'                  => 0,
+            'text_glow_color_mode'               => 'dynamic',
+            'text_glow_custom_color'             => '#ffffff',
+            'text_glow_intensity'                => 15,
+            'text_glow_pulse'                    => 0,
+            'text_glow_speed'                    => 2.5,
 
             // Options glow pour mode cercle
-            'circle_glow_enabled'                 => 0,
-            'circle_glow_color_mode'              => 'dynamic',
-            'circle_glow_custom_color'            => '#ffffff',
-            'circle_glow_intensity'               => 15,
-            'circle_glow_pulse'                   => 0,
-            'circle_glow_speed'                   => 2.5,
+            'circle_glow_enabled'                => 0,
+            'circle_glow_color_mode'             => 'dynamic',
+            'circle_glow_custom_color'           => '#ffffff',
+            'circle_glow_intensity'              => 15,
+            'circle_glow_pulse'                  => 0,
+            'circle_glow_speed'                  => 2.5,
 
             // Options des modules
-            'tagline_enabled'                     => 1,
-            'user_rating_enabled'                 => 1,
-            'user_rating_requires_login'          => 0,
-            'user_rating_weighting_enabled'       => 0,
-            'user_rating_guest_weight_start'      => 0.5,
-            'user_rating_guest_weight_increment'  => 0.1,
-            'user_rating_guest_weight_max'        => 1.0,
-            'table_zebra_striping'                => 0,
-            'table_border_style'                  => 'horizontal',
-            'table_border_width'                  => 1,
-            'table_header_bg_color'               => '#3f3f46',
-            'table_header_text_color'             => '#ffffff',
-            'table_row_bg_color'                  => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
-            'table_row_text_color'                => '#a1a1aa',
-            'table_zebra_bg_color'                => '#27272a',
-            'thumb_text_color'                    => '#ffffff',
-            'thumb_font_size'                     => 14,
-            'thumb_padding'                       => 8,
-            'thumb_border_radius'                 => 4,
+            'tagline_enabled'                    => 1,
+            'user_rating_enabled'                => 1,
+            'user_rating_requires_login'         => 0,
+            'user_rating_weighting_enabled'      => 0,
+            'user_rating_guest_weight_start'     => 0.5,
+            'user_rating_guest_weight_increment' => 0.1,
+            'user_rating_guest_weight_max'       => 1.0,
+            'table_zebra_striping'               => 0,
+            'table_border_style'                 => 'horizontal',
+            'table_border_width'                 => 1,
+            'table_header_bg_color'              => '#3f3f46',
+            'table_header_text_color'            => '#ffffff',
+            'table_row_bg_color'                 => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
+            'table_row_text_color'               => '#a1a1aa',
+            'table_zebra_bg_color'               => '#27272a',
+            'thumb_text_color'                   => '#ffffff',
+            'thumb_font_size'                    => 14,
+            'thumb_padding'                      => 8,
+            'thumb_border_radius'                => 4,
 
             // Options Game Explorer
-            'game_explorer_columns'               => 3,
-            'game_explorer_posts_per_page'        => 12,
-            'game_explorer_filters'               => self::GAME_EXPLORER_DEFAULT_FILTERS,
-            'game_explorer_score_position'        => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
+            'game_explorer_columns'              => 3,
+            'game_explorer_posts_per_page'       => 12,
+            'game_explorer_filters'              => self::GAME_EXPLORER_DEFAULT_FILTERS,
+            'game_explorer_score_position'       => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés & catégories de notation
-            'rating_categories'                   => self::get_default_category_definitions(),
+            'rating_categories'                  => self::get_default_category_definitions(),
 
             // Options techniques et diverses
-            'custom_css'                          => '',
-            'seo_schema_enabled'                  => 1,
-            'debug_mode_enabled'                  => 0,
-            'rawg_api_key'                        => '',
+            'custom_css'                         => '',
+            'seo_schema_enabled'                 => 1,
+            'debug_mode_enabled'                 => 0,
+            'rawg_api_key'                       => '',
         );
 
         return self::$default_settings_cache;
