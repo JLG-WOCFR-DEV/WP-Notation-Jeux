@@ -102,36 +102,41 @@ body.is-dark-theme .jlg-admin-card a:focus {
 }
 
 .jlg-platform-ranking {
-    list-style: decimal inside;
+    list-style: decimal;
+    list-style-position: outside;
     margin: 0;
-    padding-left: 1rem;
+    padding-left: 1.5rem;
     display: grid;
     gap: 6px;
 }
 
 .jlg-platform-ranking__item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+    column-gap: 0;
+    align-items: center;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 480px) {
     .jlg-platform-ranking__item {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) minmax(4rem, max-content) max-content;
+        column-gap: 16px;
     }
 }
 
 .jlg-platform-ranking__name {
     font-weight: 600;
+    min-width: 0;
 }
 
 .jlg-platform-ranking__score {
     font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 .jlg-platform-ranking__count {
     color: var(--wp-admin-page-content-meta, #50575e);
+    text-align: right;
+    white-space: nowrap;
 }
