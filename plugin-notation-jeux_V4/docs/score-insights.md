@@ -13,6 +13,8 @@ Attributs disponibles :
 
 Le template `templates/shortcode-score-insights.php` expose une structure accessible : région ARIA avec résumé, `<progress>` pour les barres de l'histogramme, `<ol>` pour le classement et une liste de badges lorsqu'un écart de ±1,5 point (paramétrable) est détecté entre rédaction et lecteurs. En l'absence de données, un message `role="status"` invite à ajuster les filtres.
 
+Un indicateur de tendance compare désormais la moyenne éditoriale de la période sélectionnée avec la période précédente de même durée. Le composant affiche le delta signé (avec code couleur), un libellé d'orientation (« Tendance en hausse/baisse/stable ») et rappelle combien de tests composaient la période antérieure pour contextualiser la donnée.
+
 ## Bloc `notation-jlg/score-insights`
 
 Dans Gutenberg, le bloc reprend ces attributs :
