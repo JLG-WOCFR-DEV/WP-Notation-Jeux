@@ -9,36 +9,116 @@ En observant IGN, GameSpot et OpenCritic, on note trois attentes récurrentes :
 Ces constats éclairent les optimisations UX/UI ci-dessous pour Notation JLG.
 
 ## 1. Header de review « décision instantanée »
-- Introduire un bandeau sticky (desktop/tablette) affichant note rédaction, statut (Draft/In progress/Final) et verdict en une phrase.
-- Ajouter un micro-carousel de tags clés (ex. « Campagne solide », « Technique instable ») inspiré des "Verdict" d'IGN pour faciliter la lecture diagonale.
-- Prévoir un CTA secondaire « Voir comparatif plateformes » aligné à droite pour les utilisateurs en phase d'achat.
+**Objectif UX.** Offrir une synthèse actionnable en 3 secondes pour accélérer la prise de décision des lecteurs pressés.
+
+**Livrables design.**
+- Wireframes desktop/tablette précisant la hauteur max du bandeau sticky (≤96 px), les états de statut (Draft / In progress / Final) et les règles de troncature du verdict (120 caractères max).
+- Bibliothèque de 12 tags pré-remplis (thématiques gameplay, technique, narration) avec code couleur subtil afin d’alimenter le micro-carousel.
+- Prototype Figma micro-interactions (auto-scroll + pause au survol) pour validation accessibilité et confort visuel.
+
+**Implémentation.**
+- Exposer un nouveau réglage bloc `review-header-sticky` dans Gutenberg (toggle + champ texte verdict court) stocké via `wp.data.dispatch( 'core/editor' )`.
+- Intégrer un composant React `StickyVerdictBar` réutilisable côté front et éditeur, en s’assurant que le sticky ne masque pas les ancres internes (offset configurable via option thème).
+- Déclencher un événement `notation.header.cta_platforms` lors du clic sur le CTA « Voir comparatif plateformes » pour instrumentation analytics.
+
+**Suivi & QA.**
+- Tests manuels sur Safari iPad (scroll + orientation) et Chrome desktop pour valider le comportement sticky.
+- Ajout d’un scénario Lighthouse ciblant le focus du CTA secondaire et la lisibilité 400 % zoom.
 
 ## 2. Carte verdict responsive dans le bloc Gutenberg
-- Créer un sous-bloc optionnel `VerdictCard` avec mise en page cartes : avatar du rédacteur, date de mise à jour, note, 3 points forts/faibles.
-- Utiliser un système de tokens couleur (succès/attention/alerte) inspiré de GameSpot pour améliorer la hiérarchie visuelle.
-- En mode mobile, basculer les points forts/faibles en accordéon accessible (focus visible, icône ARIA).
+**Objectif UX.** Humaniser l’avis rédaction et guider les lecteurs vers les points clés sans friction.
+
+**Livrables design.**
+- Déclinaison carte (mode clair/sombre) avec options avatar rond/carré et placeholders lorsque la rédaction est collective.
+- Styles typographiques alignés avec la charte (titre 20 px, interlignage 1.4, icônes 20 px) et palette tokens (succès #1B8A5A, attention #E69F17, alerte #D64545).
+- Maquettes mobile présentant l’accordéon accessible pour les points forts/faibles (icônes +/- et animations ≤150 ms).
+
+**Implémentation.**
+- Créer le sous-bloc `notation/verdict-card` avec `InnerBlocks` verrouillés (slots avatar, meta, note, points +/−) et attributs JSON pour les 3 points forts/faibles.
+- Ajouter un système de tokens SCSS partagé (`_tokens.scss`) pour garantir la cohérence des couleurs et permettre un theming rapide.
+- Mettre en place un hook `useReducedMotion` afin de désactiver les transitions accordéon si `prefers-reduced-motion` est activé.
+
+**Suivi & QA.**
+- Tests unitaires PHP pour vérifier la sérialisation du sous-bloc et la présence des attributs ARIA (`aria-controls`, `aria-expanded`).
+- Checklist responsive : affichage 320 px, 768 px, 1280 px + capture à intégrer dans les release notes.
 
 ## 3. Tableau comparatif plateformes enrichi
-- Déployer un layout en colonnes compressées (max 4 visibles) avec pagination horizontale façon OpenCritic.
-- Intégrer indicateurs de compatibilité (FPS, DualSense, cross-save) via pictogrammes vectoriels pour limiter le texte.
-- Ajouter des badges dynamiques ("Meilleure expérience", "Édition la plus stable") calculés sur les sous-notes existantes.
+**Objectif UX.** Permettre une comparaison rapide tout en évitant la surcharge cognitive.
+
+**Livrables design.**
+- Tableaux responsive avec pagination horizontale (max 4 colonnes visibles) et indicateurs de scroll (ombre + flèches).
+- Kit d’icônes vectorielles (FPS, DualSense, Cross-save, Ray-tracing) avec guidelines taille min 24 px.
+- Badges dynamiques (ex. « Meilleure expérience », « Édition la plus stable ») avec codes couleurs neutres pour conserver l’impartialité.
+
+**Implémentation.**
+- Introduire un composant `PlatformComparisonCarousel` utilisant `aria-roledescription="carousel"` et navigation clavier (flèches, Home/End).
+- Ajouter un calcul automatique des badges basé sur les sous-notes existantes (poids : technique 40 %, gameplay 30 %, stabilité 30 %).
+- Charger les pictogrammes via sprites SVG et fournir des alternatives texte (`aria-label`) pour les lecteurs d’écran.
+
+**Suivi & QA.**
+- Tests de performance (Lighthouse) pour vérifier que la pagination n’alourdit pas le LCP (>2,5 s).
+- Cas de test analytics : `notation.platforms.badge_view` + `notation.platforms.swipe`.
 
 ## 4. Score Insights plus actionnable
-- Avant la distribution des notes, afficher un bandeau "Confiance des lecteurs" avec jauge (niveaux IGN Reader Reviews).
-- Proposer une timeline interactive (sparklines) des notes lecteurs sur les 30 derniers jours pour visualiser la tendance.
-- Ajouter un CTA "Inviter la rédaction" qui génère un lien partageable (copie dans le presse-papiers) pour stimuler les retours communautaires.
+**Objectif UX.** Renforcer la confiance dans la note communautaire et encourager la participation.
+
+**Livrables design.**
+- Bandeau « Confiance des lecteurs » avec jauge 0–100 % (code couleurs : rouge <40, orange 40-69, vert ≥70) et infobulle expliquant la méthodologie.
+- Timeline sparklines (30 jours) avec tooltips jour par jour et marqueur d’événements (patchs, DLC) pour contextualiser les variations.
+- Popover CTA « Inviter la rédaction » décrivant le partage (copie lien + suggestions diffusion Slack/email).
+
+**Implémentation.**
+- Étendre l’API REST interne pour exposer l’historique des notes lecteurs (endpoint `/notation/v1/scores/history?post=<id>` avec cache 15 min).
+- Intégrer une librairie de mini-charts légère (Sparkline custom ou micro D3) avec fallback HTML pour navigateurs sans JS.
+- Ajouter un utilitaire `copyShareLink()` utilisant l’API Clipboard et un message toast ARIA-live « Lien copié ».
+
+**Suivi & QA.**
+- Tests unitaires REST pour la route d’historique + mock données.
+- Mesure post-déploiement : progression du taux de participation (objectif +15 %) et temps moyen passé sur la section insights.
 
 ## 5. Accessibilité et modes d'affichage
-- Introduire un mode "Contraste élevé" (toggle) en s'inspirant des options d'accessibilité GameSpot : couleurs renforcées, bordures accentuées.
-- Garantir une navigation clavier complète des modules (ordres de tab, focus outlines, aria-expanded cohérents).
-- Préparer des variantes "mode sombre" et "mode clair" pour la carte verdict et le comparatif plateformes avec captures à intégrer dans les release notes.
+**Objectif UX.** Garantir l’inclusivité et la flexibilité de lecture sur l’ensemble des modules.
+
+**Livrables design.**
+- Variantes High Contrast (ratio ≥7:1 pour texte principal, ≥4.5:1 pour UI) et mode sombre documentés dans un guide PDF.
+- Spécification des focus states (couleur, épaisseur 2 px, offset 3 px) homogène sur tous les CTA et accordéons.
+- Table d’équivalence des tokens couleurs pour chaque mode (clair/sombre/contraste élevé) afin de faciliter la maintenance.
+
+**Implémentation.**
+- Ajouter un toggle accessibilité persistant (`localStorage` + `prefers-contrast`) avec annonce via `aria-live`.
+- Factoriser les styles via CSS custom properties (`--nj-color-primary`, etc.) pour basculer dynamiquement les thèmes.
+- Auditer les modules existants afin de corriger les ordres de tabulation et injecter des `skip-links` lorsque nécessaire.
+
+**Suivi & QA.**
+- Audit Lighthouse Accessibilité (>90) en mode clair/sombre/contraste.
+- Tests clavier complets (Tab, Shift+Tab, Enter, Space) + revue lecteur d’écran NVDA/VoiceOver.
 
 ## 6. Parcours de conversion affiliée
-- Ajouter, sous le comparatif plateformes, un bloc "Où acheter" avec boutons de taille uniforme, logos marchands et mention du suivi de prix (pattern IGN Deals).
-- Mettre en place un état vide documenté (texte + illustration légère) lorsque aucun deal n'est disponible, évitant le « trou visuel » actuel.
-- Prévoir un bandeau informatif sur la politique d'affiliation (transparence, comme OpenCritic) pour rassurer sur l'indépendance éditoriale.
+**Objectif UX.** Fluidifier la transition entre la consultation du test et l’acte d’achat tout en conservant la transparence éditoriale.
+
+**Livrables design.**
+- Bloc « Où acheter » modulable (3–5 marchands) avec boutons taille 48 px, logos vectorisés et affichage du meilleur prix.
+- Template d’état vide (illustration, message empathique, CTA vers wishlist) pour maintenir la cohérence visuelle.
+- Bandeau informatif sur la politique d’affiliation (texte court + lien vers page de transparence) positionné sous les deals.
+
+**Implémentation.**
+- Étendre le schéma ACF/Meta pour stocker les partenaires affiliés (nom, URL taguée, prix, devise, disponibilité).
+- Implémenter un composant `AffiliateGrid` avec tri automatique (prix croissant, fallback alphabétique) et tracking `notation.deals.click`.
+- Prévoir un CRON journalier rafraîchissant les prix via API marchands (timeout 3 s + gestion des erreurs avec messages utilisateur).
+
+**Suivi & QA.**
+- Vérifier la conformité RGPD (cookies, consentement) si des scripts externes sont nécessaires.
+- Mesurer le taux de clics affiliés (objectif +10 % sur 3 mois) et l’absence de churn (rebonds suite à transparence).
 
 ## 7. Métriques & suivi
-- Instrumenter les interactions clés (clics CTA verdict, onglet plateformes, deals) dans l'outil analytics pour mesurer l'adoption.
-- Fixer un objectif de **+12 %** sur le scroll depth moyen et **+15 %** de participation lecteurs dans les 3 mois suivant le déploiement.
-- Mettre à jour la checklist QA `docs/responsive-testing.md` avec scénarios header sticky, toggles accessibilité et accordéons mobiles.
+**Objectif.** S’assurer que chaque piste produit un impact mesurable et documenté.
+
+**Roadmap & instrumentation.**
+- Créer un tableau de bord dédié dans l’outil analytics (Looker / Matomo) regroupant les événements `notation.header.*`, `notation.platforms.*`, `notation.deals.*`.
+- Définir des checkpoints mensuels pour suivre les KPI : scroll depth, participation lecteurs, CTR deals, activation du mode contraste élevé.
+- Associer chaque livraison à une entrée dans `docs/product-roadmap` avec date, owner et statut (Discovery / Delivery / Measure).
+
+**Qualité documentaire.**
+- Mettre à jour `docs/responsive-testing.md` avec les nouveaux scénarios (sticky header, accordéons mobile, toggle accessibilité, carousel plateformes).
+- Ajouter des captures (clair/sombre/contraste) dans les release notes et documenter les tokens dans `assets/css/_tokens.scss`.
+- Prévoir un post-mortem à 90 jours pour consolider les enseignements (ce qui a fonctionné, à itérer, à abandonner).
