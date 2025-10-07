@@ -34,6 +34,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **Accessibilité renforcée** : respect de `prefers-reduced-motion`, focus visibles, aria-current sur la navigation et boutons de filtres annotés.
 * **Gestion dynamique des plateformes** : ajoutez, triez, supprimez ou réinitialisez depuis l'onglet Plateformes.
 * **Responsive** : design adapté mobile/tablette et chargement conditionnel des assets via `JLG_Frontend::mark_shortcode_rendered()`.
+* **Sous-bloc verdict éditorial** : affichez un résumé court, le statut du test, la date de mise à jour et un CTA dédié dans le bloc tout-en-un.
 
 = Histogramme des votes lecteurs =
 
@@ -54,9 +55,16 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * Le champ **Nom du jeu** est normalisé (espaces superflus, longueur maximale) avant sauvegarde pour garantir un affichage homogène.
 * Les formulaires d'édition utilisent un champ HTML `type="date"` et les réponses de l'API RAWG sont normalisées pour renvoyer le format `AAAA-MM-JJ` ainsi qu'une valeur PEGI conforme lorsque disponible, garantissant une expérience cohérente.
 
+= Carte verdict & statut éditorial =
+
+* Une section **📝 Verdict de la rédaction** est disponible dans la metabox principale : saisissez un résumé court (HTML léger autorisé), un libellé et une URL pour le bouton de verdict.
+* Le statut éditorial (`Brouillon`, `Mise à jour en cours`, `Version finale`) reste géré via le sélecteur existant et s'affiche dans la carte verdict avec la date de dernière mise à jour calculée automatiquement.
+* Le champ « Dernier patch vérifié » pilote désormais une finalisation automatique : après le délai configuré, le cron `jlg_review_status_auto_finalize` repasse la review en « Version finale » et déclenche le hook `jlg_review_status_transition` pour vos intégrations.
+* Si l'URL est vide, le permalien de l'article est utilisé pour proposer un CTA « Lire le test complet ».
+
 = Shortcodes disponibles =
 
-* `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles et tagline. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`, `display_mode` (`absolute` ou `percent`). Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
+* `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles, tagline et carte verdict. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline`, `afficher_verdict` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`, `display_mode` (`absolute` ou `percent`). Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
 * `[bloc_notation_jeu]` - Bloc de notation principal. Attributs : `post_id` (ID du test), `score_layout` (`text` ou `circle`), `animations` (`oui`/`non`), `accent_color`, `display_mode` (`absolute` ou `percent`) pour choisir entre une note affichée en valeur absolue ou en pourcentage, ainsi que `preview_theme` (`light` ou `dark`) et `preview_animations` (`inherit`, `enabled`, `disabled`) pour forcer un thème et simuler l’état des animations dans les aperçus (éditeur, shortcodes dans Gutenberg, etc.). Lorsque le badge « Coup de cœur » est activé dans les réglages et que la note atteint le seuil défini, le bloc met en avant la sélection de la rédaction et affiche la moyenne lecteurs ainsi que le delta.
 * `[jlg_fiche_technique]` - Fiche technique du jeu. Attributs : `post_id` (optionnel, ID d'un test publié à afficher ; sinon l'article courant est utilisé), `champs` (liste de champs séparés par des virgules) et `titre`.
 * `[tagline_notation_jlg]` - Phrase d'accroche bilingue
@@ -120,7 +128,7 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 1. Téléchargez le plugin et décompressez l'archive
 2. Uploadez le dossier `plugin-notation-jeux` dans `/wp-content/plugins/`
 3. Activez le plugin depuis le menu 'Extensions' de WordPress
-4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'. La section *Contenus* vous permet de choisir les types de publications (articles, CPT publics…) autorisés pour la notation ; si besoin, un développeur peut ajuster cette liste via le filtre PHP `jlg_rated_post_types`.
+4. Configurez le plugin dans 'Notation - JLG' > 'Réglages'. La section *Contenus* vous permet de choisir les types de publications (articles, CPT publics…) autorisés pour la notation ; si besoin, un développeur peut ajuster cette liste via le filtre PHP `jlg_rated_post_types`. Activez au passage la finalisation automatique du statut et définissez le délai (en jours) pour laisser le cron ramener les reviews en « Version finale » après vérification des patchs.
 5. Créez votre premier test avec notation !
 
 == Tests manuels de sécurité CSS ==
@@ -153,7 +161,7 @@ Le plugin est conçu pour être compatible avec tous les thèmes WordPress stand
 
 = Puis-je désactiver certains modules ? =
 
-Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, badge « Coup de cœur », taglines, animations, schema SEO.
+Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, badge « Coup de cœur », taglines, animations, schema SEO ainsi que la finalisation automatique du statut de review.
 
 = Comment obtenir une clé API RAWG ? =
 

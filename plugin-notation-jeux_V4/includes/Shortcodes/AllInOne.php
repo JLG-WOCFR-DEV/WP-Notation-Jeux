@@ -96,6 +96,7 @@ class AllInOne {
 				'afficher_notation'    => 'oui',
 				'afficher_points'      => 'oui',
 				'afficher_tagline'     => 'oui',
+				'afficher_verdict'     => 'oui',
 				'afficher_video'       => 'oui',
 				'titre_points_forts'   => 'Points Forts',
 				'titre_points_faibles' => 'Points Faibles',
@@ -115,6 +116,7 @@ class AllInOne {
         $atts['afficher_notation']    = sanitize_text_field( $atts['afficher_notation'] );
         $atts['afficher_points']      = sanitize_text_field( $atts['afficher_points'] );
         $atts['afficher_tagline']     = sanitize_text_field( $atts['afficher_tagline'] );
+        $atts['afficher_verdict']     = sanitize_text_field( $atts['afficher_verdict'] );
         $atts['afficher_video']       = sanitize_text_field( $atts['afficher_video'] );
         $atts['titre_points_forts']   = sanitize_text_field( $atts['titre_points_forts'] );
         $atts['titre_points_faibles'] = sanitize_text_field( $atts['titre_points_faibles'] );
@@ -266,6 +268,13 @@ class AllInOne {
 
         $score_layout = $options['score_layout'] ?? 'text';
 
+        $verdict_payload     = Helpers::get_review_verdict_for_post( $post_id );
+        $display_verdict     = ( $atts['afficher_verdict'] === 'oui' );
+        $verdict_summary     = isset( $verdict_payload['summary'] ) ? trim( (string) $verdict_payload['summary'] ) : '';
+        $verdict_has_content = $verdict_summary !== ''
+            || ! empty( $verdict_payload['last_updated']['display'] ?? '' );
+        $display_verdict     = $display_verdict && $verdict_has_content;
+
         $css_variables = array(
             '--jlg-aio-bg'                    => $palette['bg_color'] ?? '',
             '--jlg-aio-bg-secondary'          => $palette['bg_color_secondary'] ?? '',
@@ -291,6 +300,11 @@ class AllInOne {
             '--jlg-aio-circle-shadow'         => $this->build_circle_shadow( $accent_color ),
             '--jlg-aio-cta-bg'                => $accent_color,
             '--jlg-aio-cta-text'              => '#ffffff',
+            '--jlg-aio-verdict-bg'            => $palette['bg_color'] ?? '',
+            '--jlg-aio-verdict-border'        => $palette['border_color'] ?? '',
+            '--jlg-aio-verdict-text'          => $palette['text_color'] ?? '',
+            '--jlg-aio-verdict-meta'          => $palette['text_color_secondary'] ?? '',
+            '--jlg-aio-verdict-accent'        => $accent_color,
         );
 
         if ( $score_layout === 'circle' ) {
@@ -448,6 +462,8 @@ class AllInOne {
 				'animations_enabled'       => ! empty( $options['enable_animations'] ),
 				'score_max'                => $score_max_value,
 				'display_mode'             => $display_mode,
+				'verdict'                  => $verdict_payload,
+				'display_verdict'          => $display_verdict,
 			)
         );
     }

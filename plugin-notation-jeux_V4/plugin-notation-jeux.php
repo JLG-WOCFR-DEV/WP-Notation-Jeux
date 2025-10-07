@@ -119,6 +119,8 @@ final class JLG_Plugin_De_Notation_Main {
         $this->load_dependencies();
         if ( class_exists( \JLG\Notation\Helpers::class ) ) {
             \JLG\Notation\Helpers::migrate_legacy_rating_configuration();
+            add_action( \JLG\Notation\Helpers::REVIEW_STATUS_CRON_HOOK, array( \JLG\Notation\Helpers::class, 'run_review_status_automation' ) );
+            add_action( 'init', array( \JLG\Notation\Helpers::class, 'maybe_schedule_review_status_automation' ) );
         }
         $this->init_components();
         add_action( 'jlg_process_v5_migration', array( $this, 'process_migration_batch' ) );
@@ -206,6 +208,11 @@ final class JLG_Plugin_De_Notation_Main {
         }
 
         update_option( 'jlg_notation_version', JLG_NOTATION_VERSION );
+
+        if ( class_exists( \JLG\Notation\Helpers::class ) ) {
+            \JLG\Notation\Helpers::activate_review_status_automation();
+        }
+
         flush_rewrite_rules();
     }
 
@@ -213,6 +220,10 @@ final class JLG_Plugin_De_Notation_Main {
         if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
             wp_clear_scheduled_hook( 'jlg_process_v5_migration' );
             wp_clear_scheduled_hook( \JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK );
+        }
+
+        if ( class_exists( \JLG\Notation\Helpers::class ) ) {
+            \JLG\Notation\Helpers::deactivate_review_status_automation();
         }
 
         delete_option( 'jlg_migration_v5_queue' );
