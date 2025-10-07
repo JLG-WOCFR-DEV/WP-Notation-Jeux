@@ -15,6 +15,14 @@ $table_id          = ! empty( $table_id ) ? sanitize_html_class( $table_id ) : '
 if ( $table_id === '' && isset( $atts['id'] ) ) {
     $table_id = sanitize_html_class( $atts['id'] );
 }
+$query = isset( $query ) && $query instanceof WP_Query ? $query : null;
+if ( $query === null ) {
+    global $wp_query;
+
+    if ( isset( $wp_query ) && $wp_query instanceof WP_Query ) {
+        $query = $wp_query;
+    }
+}
 $layout                = isset( $atts['layout'] ) ? $atts['layout'] : 'table';
 $base_url              = isset( $base_url ) ? esc_url_raw( $base_url ) : '';
 $current_orderby       = ! empty( $orderby ) ? $orderby : 'date';
@@ -272,10 +280,10 @@ if ( ! empty( $active_filter_labels ) ) {
 if ( $layout === 'grid' ) :
     ?>
     <div class="jlg-summary-grid-wrapper">
-        <?php
-        if ( $query instanceof WP_Query && $query->have_posts() ) :
-            while ( $query->have_posts() ) :
-				$query->the_post();
+        <?php if ( $query instanceof WP_Query && $query->have_posts() ) : ?>
+            <?php while ( $query->have_posts() ) : ?>
+                <?php
+                $query->the_post();
                 $post_id    = get_the_ID();
                 $game_title = \JLG\Notation\Helpers::get_game_title( $post_id );
                 $score_data = \JLG\Notation\Helpers::get_resolved_average_score( $post_id );
@@ -303,14 +311,12 @@ if ( $layout === 'grid' ) :
                         <?php echo wp_kses_post( $genre_badges_html ); ?>
                     <?php endif; ?>
                 </a>
-				<?php
-            endwhile;
-        else :
-            echo wp_kses_post( $empty_message );
-        endif;
-        ?>
+            <?php endwhile; ?>
+        <?php else : ?>
+            <?php echo wp_kses_post( $empty_message ); ?>
+        <?php endif; ?>
     </div>
-	<?php
+    <?php
 else :
     ?>
     <div class="jlg-summary-table-wrapper">
@@ -456,7 +462,7 @@ else :
 endif;
 
 if ( $query instanceof WP_Query ) {
-    $total_pages = intval( $query->max_num_pages );
+    $total_pages = (int) $query->max_num_pages;
 } else {
     $total_pages = 0;
 }

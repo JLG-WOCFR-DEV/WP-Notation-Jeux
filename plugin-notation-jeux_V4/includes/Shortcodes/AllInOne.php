@@ -275,7 +275,21 @@ class AllInOne {
 
         $score_layout = $options['score_layout'] ?? 'text';
 
-        $verdict_payload     = Helpers::get_review_verdict_for_post( $post_id );
+        $verdict_overrides = array( 'context' => 'all-in-one' );
+
+        if ( $atts['verdict_summary'] !== '' ) {
+            $verdict_overrides['summary'] = $atts['verdict_summary'];
+        }
+
+        if ( $atts['verdict_cta_label'] !== '' ) {
+            $verdict_overrides['cta_label'] = $atts['verdict_cta_label'];
+        }
+
+        if ( $atts['verdict_cta_url'] !== '' ) {
+            $verdict_overrides['cta_url'] = $atts['verdict_cta_url'];
+        }
+
+        $verdict_payload     = Helpers::get_review_verdict_for_post( $post_id, $verdict_overrides, $options );
         $display_verdict     = ( $atts['afficher_verdict'] === 'oui' );
         $verdict_summary     = isset( $verdict_payload['summary'] ) ? trim( (string) $verdict_payload['summary'] ) : '';
         $verdict_has_content = $verdict_summary !== ''
@@ -313,6 +327,16 @@ class AllInOne {
             '--jlg-aio-verdict-meta'          => $palette['text_color_secondary'] ?? '',
             '--jlg-aio-verdict-accent'        => $accent_color,
         );
+
+        if ( ! $display_verdict ) {
+            unset(
+                $css_variables['--jlg-aio-verdict-bg'],
+                $css_variables['--jlg-aio-verdict-border'],
+                $css_variables['--jlg-aio-verdict-text'],
+                $css_variables['--jlg-aio-verdict-meta'],
+                $css_variables['--jlg-aio-verdict-accent']
+            );
+        }
 
         if ( $score_layout === 'circle' ) {
             $css_variables['--jlg-aio-circle-bg']     = $this->build_circle_background( $options, $accent_color, $average_score, $score_gradient_2 ?: $score_gradient_1 );
@@ -440,20 +464,6 @@ class AllInOne {
             }
         }
 
-        $verdict_overrides = array( 'context' => 'all-in-one' );
-
-        if ( $atts['verdict_summary'] !== '' ) {
-            $verdict_overrides['summary'] = $atts['verdict_summary'];
-        }
-
-        if ( $atts['verdict_cta_label'] !== '' ) {
-            $verdict_overrides['cta_label'] = $atts['verdict_cta_label'];
-        }
-
-        if ( $atts['verdict_cta_url'] !== '' ) {
-            $verdict_overrides['cta_url'] = $atts['verdict_cta_url'];
-        }
-
         $verdict_data            = Helpers::get_verdict_data_for_post( $post_id, $options, $verdict_overrides );
         $raw_show_verdict        = strtolower( $atts['afficher_verdict'] );
         $should_show_verdict     = ! in_array( $raw_show_verdict, array( 'non', 'no', 'false', '0', 'off' ), true );
@@ -488,6 +498,7 @@ class AllInOne {
 				'animations_enabled'       => ! empty( $options['enable_animations'] ),
 				'score_max'                => $score_max_value,
 				'display_mode'             => $display_mode,
+				'display_verdict'          => $display_verdict,
 				'verdict'                  => $verdict_data,
 			)
         );

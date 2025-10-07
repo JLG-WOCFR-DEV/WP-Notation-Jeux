@@ -986,6 +986,253 @@ class Helpers {
         return apply_filters( 'jlg_review_status_display', $payload, $post_id );
     }
 
+    public static function maybe_schedule_review_status_automation( $force = false ) {
+        $options = self::get_plugin_options();
+
+        $automation_enabled = ! empty( $options['review_status_enabled'] )
+            && ! empty( $options['review_status_auto_finalize_enabled'] );
+
+        if ( ! $automation_enabled ) {
+            if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+                wp_clear_scheduled_hook( self::REVIEW_STATUS_CRON_HOOK );
+            }
+
+            return false;
+        }
+
+        if ( ! function_exists( 'wp_schedule_event' ) || ! function_exists( 'wp_next_scheduled' ) ) {
+            return false;
+        }
+
+        if ( ! $force && wp_next_scheduled( self::REVIEW_STATUS_CRON_HOOK ) ) {
+            return false;
+        }
+
+        if ( $force && function_exists( 'wp_clear_scheduled_hook' ) ) {
+            wp_clear_scheduled_hook( self::REVIEW_STATUS_CRON_HOOK );
+        }
+
+        $current_timestamp = self::get_current_timestamp();
+
+        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : 86400;
+
+        /**
+         * Permet d'ajuster le décalage initial avant la première exécution du cron.
+         *
+         * @param int   $offset   Nombre de secondes à ajouter au timestamp courant.
+         * @param array $options  Options du plugin.
+         */
+        $offset = apply_filters( 'jlg_review_status_auto_finalize_schedule_offset', $day_in_seconds, $options );
+
+        if ( ! is_numeric( $offset ) ) {
+            $offset = $day_in_seconds;
+        }
+
+        $offset = (int) $offset;
+
+        if ( $offset <= 0 ) {
+            $offset = $day_in_seconds;
+        }
+
+        $timestamp = $current_timestamp + $offset;
+
+        /**
+         * Permet de modifier la récurrence de l'événement planifié.
+         *
+         * @param string $recurrence Identifiant du cron (ex. `daily`).
+         * @param array  $options    Options du plugin.
+         */
+        $recurrence = apply_filters( 'jlg_review_status_auto_finalize_recurrence', 'daily', $options );
+
+        if ( ! is_string( $recurrence ) || $recurrence === '' ) {
+            $recurrence = 'daily';
+        }
+
+        $scheduled = wp_schedule_event( $timestamp, $recurrence, self::REVIEW_STATUS_CRON_HOOK );
+
+        return (bool) $scheduled;
+    }
+
+    public static function run_review_status_automation() {
+        $options = self::get_plugin_options();
+
+        $automation_enabled = ! empty( $options['review_status_enabled'] )
+            && ! empty( $options['review_status_auto_finalize_enabled'] );
+
+        if ( ! $automation_enabled ) {
+            return 0;
+        }
+
+        $days = isset( $options['review_status_auto_finalize_days'] )
+            ? (int) $options['review_status_auto_finalize_days']
+            : 7;
+
+        if ( $days <= 0 ) {
+            $days = 7;
+        }
+
+        $days = max( 1, min( 60, $days ) );
+
+        $now = self::get_current_timestamp();
+
+        $day_in_seconds      = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : 86400;
+        $threshold_timestamp = $now - ( $days * $day_in_seconds );
+
+        /**
+         * Ajuste le timestamp seuil utilisé pour la comparaison avec `_jlg_last_patch_date`.
+         *
+         * @param int   $timestamp Timestamp de référence.
+         * @param int   $days      Nombre de jours configuré.
+         * @param array $options   Options du plugin.
+         */
+        $threshold_timestamp = (int) apply_filters(
+            'jlg_review_status_auto_finalize_threshold_timestamp',
+            $threshold_timestamp,
+            $days,
+            $options
+        );
+
+        $threshold_date = gmdate( 'Y-m-d', $threshold_timestamp );
+
+        /**
+         * Permet de remplacer la date seuil (format `Y-m-d`).
+         *
+         * @param string $date      Date calculée.
+         * @param int    $timestamp Timestamp utilisé pour le calcul.
+         * @param array  $options   Options du plugin.
+         */
+        $threshold_date = apply_filters(
+            'jlg_review_status_auto_finalize_threshold',
+            $threshold_date,
+            $threshold_timestamp,
+            $options
+        );
+
+        if ( ! is_string( $threshold_date ) || $threshold_date === '' ) {
+            $threshold_date = gmdate( 'Y-m-d', $threshold_timestamp );
+        }
+
+        $statuses = apply_filters( 'jlg_review_status_auto_finalize_statuses', array( 'in_progress' ), $options );
+
+        if ( ! is_array( $statuses ) ) {
+            $statuses = array();
+        }
+
+        $normalized_statuses = array();
+
+        foreach ( $statuses as $status ) {
+            $normalized = self::normalize_review_status( $status );
+
+            if ( $normalized !== '' ) {
+                $normalized_statuses[] = $normalized;
+            }
+        }
+
+        $normalized_statuses = array_values( array_unique( $normalized_statuses ) );
+
+        if ( empty( $normalized_statuses ) ) {
+            return 0;
+        }
+
+        $target_status = apply_filters( 'jlg_review_status_auto_finalize_target', 'final', $options );
+        $target_status = self::normalize_review_status( $target_status );
+
+        if ( $target_status === '' ) {
+            $target_status = self::get_default_review_status_slug();
+        }
+
+        $batch_size = apply_filters( 'jlg_review_status_auto_finalize_batch_size', 20, $options );
+
+        if ( ! is_numeric( $batch_size ) ) {
+            $batch_size = 20;
+        }
+
+        $batch_size = max( 1, (int) $batch_size );
+
+        $meta_query = array(
+            'relation' => 'AND',
+            array(
+                'key'     => self::REVIEW_STATUS_META_KEY,
+                'value'   => $normalized_statuses,
+                'compare' => 'IN',
+            ),
+            array(
+                'key'     => self::REVIEW_STATUS_LAST_PATCH_META_KEY,
+                'value'   => $threshold_date,
+                'compare' => '<=',
+                'type'    => 'DATE',
+            ),
+        );
+
+        $query_args = array(
+            'post_type'      => self::get_allowed_post_types(),
+            'post_status'    => array( 'publish' ),
+            'posts_per_page' => $batch_size,
+            'orderby'        => 'ID',
+            'order'          => 'ASC',
+            'meta_query'     => $meta_query,
+            'no_found_rows'  => true,
+            'fields'         => 'all',
+        );
+
+        $query_args = apply_filters(
+            'jlg_review_status_auto_finalize_query_args',
+            $query_args,
+            $options,
+            $threshold_date,
+            $normalized_statuses,
+            $target_status
+        );
+
+        $query = new \WP_Query( $query_args );
+
+        if ( ! isset( $query->posts ) || ! is_array( $query->posts ) || empty( $query->posts ) ) {
+            return 0;
+        }
+
+        $updated = 0;
+
+        foreach ( $query->posts as $post ) {
+            $post_id = isset( $post->ID ) ? (int) $post->ID : 0;
+
+            if ( $post_id <= 0 ) {
+                continue;
+            }
+
+            $current_status = get_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, true );
+            $current_status = self::normalize_review_status( $current_status );
+
+            if ( ! in_array( $current_status, $normalized_statuses, true ) ) {
+                continue;
+            }
+
+            if ( $current_status === $target_status ) {
+                continue;
+            }
+
+            update_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, $target_status );
+            ++$updated;
+
+            /**
+             * Action déclenchée lorsqu'un statut est automatiquement finalisé.
+             *
+             * @param int    $post_id        Identifiant du post.
+             * @param string $previous       Statut précédent.
+             * @param string $target         Statut cible.
+             * @param string $automation_key Identifiant du mécanisme déclencheur.
+             */
+            do_action( 'jlg_review_status_transition', $post_id, $current_status, $target_status, 'auto_finalize' );
+        }
+
+        if ( method_exists( $query, 'reset_postdata' ) ) {
+            $query->reset_postdata();
+        } else {
+            wp_reset_postdata();
+        }
+
+        return $updated;
+    }
+
     public static function get_verdict_data_for_post( $post_id, ?array $options = null, array $overrides = array() ) {
         $post_id = (int) $post_id;
         $post    = $post_id > 0 ? get_post( $post_id ) : null;
@@ -1126,28 +1373,281 @@ class Helpers {
 
         if ( ! is_array( $payload ) ) {
             return array(
-                'enabled'   => false,
-                'summary'   => '',
-                'cta'       => array(
+                'enabled'      => false,
+                'summary'      => '',
+                'cta'          => array(
 					'label'     => '',
 					'url'       => '',
 					'rel'       => '',
 					'available' => false,
 				),
-                'status'    => array(
+                'cta_label'    => '',
+                'cta_url'      => '',
+                'cta_rel'      => '',
+                'status'       => array(
 					'slug'        => '',
 					'label'       => '',
 					'description' => '',
 				),
-                'updated'   => array(
+                'updated'      => array(
 					'timestamp' => null,
 					'display'   => '',
 					'datetime'  => '',
 					'title'     => '',
 				),
-                'permalink' => $permalink,
+                'last_updated' => array(
+					'timestamp' => null,
+					'display'   => '',
+					'iso'       => '',
+					'title'     => '',
+				),
+                'permalink'    => $permalink,
             );
         }
+
+        $cta_data = isset( $payload['cta'] ) && is_array( $payload['cta'] ) ? $payload['cta'] : array();
+
+        if ( ! isset( $payload['cta_label'] ) ) {
+            $payload['cta_label'] = isset( $cta_data['label'] ) ? (string) $cta_data['label'] : '';
+        }
+
+        if ( ! isset( $payload['cta_url'] ) ) {
+            $payload['cta_url'] = isset( $cta_data['url'] ) ? (string) $cta_data['url'] : '';
+        }
+
+        if ( ! isset( $payload['cta_rel'] ) ) {
+            $payload['cta_rel'] = isset( $cta_data['rel'] ) ? (string) $cta_data['rel'] : '';
+        }
+
+        $payload['cta_available'] = isset( $payload['cta_available'] )
+            ? (bool) $payload['cta_available']
+            : ( ! empty( $cta_data['available'] ) && $payload['cta_label'] !== '' && $payload['cta_url'] !== '' );
+
+        $updated_data = isset( $payload['updated'] ) && is_array( $payload['updated'] ) ? $payload['updated'] : array();
+        $last_updated = array(
+            'timestamp' => isset( $updated_data['timestamp'] ) ? (int) $updated_data['timestamp'] : null,
+            'display'   => isset( $updated_data['display'] ) ? (string) $updated_data['display'] : '',
+            'iso'       => isset( $updated_data['datetime'] ) ? (string) $updated_data['datetime'] : '',
+            'title'     => isset( $updated_data['title'] ) ? (string) $updated_data['title'] : '',
+        );
+
+        if ( isset( $payload['last_updated'] ) && is_array( $payload['last_updated'] ) ) {
+            $payload['last_updated'] = array_merge( $last_updated, $payload['last_updated'] );
+        } else {
+            $payload['last_updated'] = $last_updated;
+        }
+
+        return $payload;
+    }
+
+    public static function get_review_verdict_for_post( $post_id, array $overrides = array(), ?array $options = null ) {
+        $post_id = (int) $post_id;
+
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        $module_enabled = ! empty( $options['verdict_module_enabled'] );
+
+        $permalink = '';
+
+        if ( $post_id > 0 ) {
+            $permalink = get_permalink( $post_id );
+        }
+
+        if ( ! is_string( $permalink ) ) {
+            $permalink = '';
+        }
+
+        $summary_limit = (int) apply_filters( 'jlg_verdict_summary_length', 160, $post_id, $options );
+        if ( $summary_limit < 0 ) {
+            $summary_limit = 0;
+        }
+
+        $summary = '';
+        if ( $post_id > 0 ) {
+            $stored_summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
+            if ( is_string( $stored_summary ) ) {
+                $summary = trim( wp_kses_post( $stored_summary ) );
+            }
+        }
+
+        if ( isset( $overrides['summary'] ) && is_string( $overrides['summary'] ) ) {
+            $summary = trim( wp_kses_post( $overrides['summary'] ) );
+        }
+
+        if ( $summary !== '' && strpos( $summary, '<' ) === false && $summary_limit > 0 ) {
+            $plain_summary = trim( wp_strip_all_tags( $summary, true ) );
+
+            $length_callback = function_exists( 'mb_strlen' ) ? 'mb_strlen' : 'strlen';
+            $slice_callback  = function_exists( 'mb_substr' ) ? 'mb_substr' : 'substr';
+
+            if ( $plain_summary !== '' && $length_callback( $plain_summary ) > $summary_limit ) {
+                $ellipsis     = '…';
+                $ellipsis_len = $length_callback( $ellipsis );
+                $slice_length = max( 0, $summary_limit - $ellipsis_len );
+                $summary      = rtrim( (string) $slice_callback( $plain_summary, 0, $slice_length ) ) . $ellipsis;
+            }
+        }
+
+        $cta_label = '';
+        if ( $post_id > 0 ) {
+            $stored_label = get_post_meta( $post_id, '_jlg_verdict_cta_label', true );
+            $cta_label    = self::prepare_verdict_cta_label( $stored_label );
+        }
+
+        if ( isset( $overrides['cta_label'] ) ) {
+            $cta_label = self::prepare_verdict_cta_label( $overrides['cta_label'] );
+        }
+
+        if ( $cta_label === '' ) {
+            $cta_label = __( 'Lire le test complet', 'notation-jlg' );
+        }
+
+        $cta_url = '';
+        if ( $post_id > 0 ) {
+            $stored_url = get_post_meta( $post_id, '_jlg_verdict_cta_url', true );
+            $cta_url    = self::prepare_verdict_cta_url( $stored_url );
+        }
+
+        if ( isset( $overrides['cta_url'] ) ) {
+            $cta_url = self::prepare_verdict_cta_url( $overrides['cta_url'] );
+        }
+
+        if ( $cta_url === '' ) {
+            $cta_url = $permalink;
+        }
+
+        if ( $cta_url !== '' && ! Validator::is_valid_http_url( $cta_url ) ) {
+            $cta_url = '';
+        }
+
+        $cta_rel       = $cta_url !== '' ? self::determine_verdict_cta_rel( $cta_url ) : '';
+        $cta_available = ( $cta_label !== '' && $cta_url !== '' );
+
+        $status = self::get_review_status_for_post( $post_id );
+
+        $updated_payload = array(
+            'timestamp' => null,
+            'iso'       => '',
+            'display'   => '',
+            'title'     => '',
+        );
+
+        if ( $post_id > 0 ) {
+            $modified_gmt   = get_post_modified_time( 'U', true, $post_id );
+            $modified_local = get_post_modified_time( 'U', false, $post_id );
+
+            if ( ! $modified_gmt || ! $modified_local ) {
+                $post_object = get_post( $post_id );
+
+                if ( $post_object instanceof \WP_Post ) {
+                    if ( ! $modified_gmt ) {
+                        $raw_gmt = isset( $post_object->post_modified_gmt ) ? (string) $post_object->post_modified_gmt : '';
+                        if ( $raw_gmt !== '' ) {
+                            $parsed_gmt = strtotime( $raw_gmt . ' UTC' );
+                            if ( is_int( $parsed_gmt ) ) {
+                                $modified_gmt = $parsed_gmt;
+                            }
+                        }
+                    }
+
+                    if ( ! $modified_local ) {
+                        $raw_local = isset( $post_object->post_modified ) ? (string) $post_object->post_modified : '';
+                        if ( $raw_local !== '' ) {
+                            $parsed_local = strtotime( $raw_local );
+                            if ( is_int( $parsed_local ) ) {
+                                $modified_local = $parsed_local;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ( $modified_gmt ) {
+                $display_source = $modified_local ? (int) $modified_local : (int) $modified_gmt;
+
+                $updated_payload['timestamp'] = (int) $modified_gmt;
+                $updated_payload['iso']       = gmdate( 'c', (int) $modified_gmt );
+
+                $date_format = get_option( 'date_format', 'F j, Y' );
+                if ( ! is_string( $date_format ) || $date_format === '' ) {
+                    $date_format = 'F j, Y';
+                }
+
+                $updated_payload['display'] = date_i18n( $date_format, $display_source );
+
+                $time_format = get_option( 'time_format', 'H:i' );
+                if ( ! is_string( $time_format ) || $time_format === '' ) {
+                    $time_format = 'H:i';
+                }
+
+                $updated_payload['title'] = date_i18n( $date_format . ' ' . $time_format, $display_source );
+            }
+        }
+
+        $payload = array(
+            'enabled'       => (bool) $module_enabled,
+            'summary'       => $summary,
+            'summary_limit' => $summary_limit,
+            'status'        => array(
+                'slug'        => isset( $status['slug'] ) ? (string) $status['slug'] : '',
+                'label'       => isset( $status['label'] ) ? (string) $status['label'] : '',
+                'description' => isset( $status['description'] ) ? (string) $status['description'] : '',
+            ),
+            'cta_label'     => $cta_label,
+            'cta_url'       => $cta_url,
+            'cta_rel'       => $cta_rel,
+            'cta_available' => $cta_available,
+            'permalink'     => $permalink,
+            'last_updated'  => $updated_payload,
+        );
+
+        /**
+         * Filtre les données utilisées par le shortcode pour afficher la carte verdict.
+         *
+         * @param array $payload   Données du verdict.
+         * @param int   $post_id   Identifiant du post.
+         * @param array $options   Options du plugin.
+         * @param array $overrides Valeurs forcées par le shortcode/bloc.
+         */
+        $payload = apply_filters( 'jlg_review_verdict_payload', $payload, $post_id, $options, $overrides );
+
+        if ( ! is_array( $payload ) ) {
+            return array();
+        }
+
+        if ( ! isset( $payload['last_updated'] ) || ! is_array( $payload['last_updated'] ) ) {
+            $payload['last_updated'] = $updated_payload;
+        } else {
+            $payload['last_updated'] = array_merge( $updated_payload, $payload['last_updated'] );
+        }
+
+        $payload['cta_label'] = isset( $payload['cta_label'] ) ? (string) $payload['cta_label'] : '';
+        $payload['cta_url']   = isset( $payload['cta_url'] ) ? (string) $payload['cta_url'] : '';
+        $payload['cta_rel']   = isset( $payload['cta_rel'] ) ? (string) $payload['cta_rel'] : '';
+
+        if ( $payload['cta_url'] === '' && $permalink !== '' ) {
+            $payload['cta_url'] = $permalink;
+        }
+
+        if ( $payload['cta_label'] === '' ) {
+            $payload['cta_label'] = __( 'Lire le test complet', 'notation-jlg' );
+        }
+
+        if ( $payload['cta_url'] !== '' && ! Validator::is_valid_http_url( $payload['cta_url'] ) ) {
+            $payload['cta_url'] = '';
+        }
+
+        if ( $payload['cta_rel'] === '' && $payload['cta_url'] !== '' ) {
+            $payload['cta_rel'] = self::determine_verdict_cta_rel( $payload['cta_url'] );
+        }
+
+        $payload['cta_available'] = ! empty( $payload['cta_label'] ) && ! empty( $payload['cta_url'] );
+        $payload['enabled']       = ! empty( $payload['enabled'] );
+        $payload['summary']       = isset( $payload['summary'] ) ? (string) $payload['summary'] : '';
+        $payload['permalink']     = isset( $payload['permalink'] ) ? (string) $payload['permalink'] : $permalink;
+        $payload['summary_limit'] = isset( $payload['summary_limit'] ) ? (int) $payload['summary_limit'] : $summary_limit;
 
         return $payload;
     }
@@ -1253,6 +1753,18 @@ class Helpers {
         }
 
         return '';
+    }
+
+    private static function get_current_timestamp() {
+        if ( function_exists( 'current_datetime' ) ) {
+            $datetime = current_datetime();
+
+            if ( $datetime instanceof \DateTimeInterface ) {
+                return $datetime->getTimestamp();
+            }
+        }
+
+        return time();
     }
 
     public static function get_related_guides_for_post( $post_id, ?array $options = null ) {
@@ -1531,88 +2043,88 @@ class Helpers {
             'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
 
             // Couleurs de Thème Sombre personnalisables
-            'dark_bg_color'                       => $dark_defaults['bg_color'],
-            'dark_bg_color_secondary'             => $dark_defaults['bg_color_secondary'],
-            'dark_border_color'                   => $dark_defaults['border_color'],
-            'dark_text_color'                     => $dark_defaults['text_color'],
-            'dark_text_color_secondary'           => $dark_defaults['text_color_secondary'],
-            'tagline_bg_color'                    => $dark_defaults['tagline_bg_color'],
-            'tagline_text_color'                  => $dark_defaults['tagline_text_color'],
+            'dark_bg_color'                      => $dark_defaults['bg_color'],
+            'dark_bg_color_secondary'            => $dark_defaults['bg_color_secondary'],
+            'dark_border_color'                  => $dark_defaults['border_color'],
+            'dark_text_color'                    => $dark_defaults['text_color'],
+            'dark_text_color_secondary'          => $dark_defaults['text_color_secondary'],
+            'tagline_bg_color'                   => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'                 => $dark_defaults['tagline_text_color'],
 
             // Couleurs de Thème Clair personnalisables
-            'light_bg_color'                      => $light_defaults['bg_color'],
-            'light_bg_color_secondary'            => $light_defaults['bg_color_secondary'],
-            'light_border_color'                  => $light_defaults['border_color'],
-            'light_text_color'                    => $light_defaults['text_color'],
-            'light_text_color_secondary'          => $light_defaults['text_color_secondary'],
+            'light_bg_color'                     => $light_defaults['bg_color'],
+            'light_bg_color_secondary'           => $light_defaults['bg_color_secondary'],
+            'light_border_color'                 => $light_defaults['border_color'],
+            'light_text_color'                   => $light_defaults['text_color'],
+            'light_text_color_secondary'         => $light_defaults['text_color_secondary'],
 
             // Couleurs sémantiques et de marque
-            'score_gradient_1'                    => '#60a5fa',
-            'score_gradient_2'                    => '#c084fc',
-            'color_low'                           => '#ef4444',
-            'color_mid'                           => '#f97316',
-            'color_high'                          => '#22c55e',
-            'user_rating_star_color'              => '#f59e0b',
-            'user_rating_text_color'              => '#a1a1aa',
-            'user_rating_title_color'             => '#fafafa',
+            'score_gradient_1'                   => '#60a5fa',
+            'score_gradient_2'                   => '#c084fc',
+            'color_low'                          => '#ef4444',
+            'color_mid'                          => '#f97316',
+            'color_high'                         => '#22c55e',
+            'user_rating_star_color'             => '#f59e0b',
+            'user_rating_text_color'             => '#a1a1aa',
+            'user_rating_title_color'            => '#fafafa',
 
             // Options cercle
-            'circle_dynamic_bg_enabled'           => 0,
-            'circle_border_enabled'               => 1,
-            'circle_border_width'                 => 5,
-            'circle_border_color'                 => '#60a5fa',
+            'circle_dynamic_bg_enabled'          => 0,
+            'circle_border_enabled'              => 1,
+            'circle_border_width'                => 5,
+            'circle_border_color'                => '#60a5fa',
 
             // Options glow pour mode texte
-            'text_glow_enabled'                   => 0,
-            'text_glow_color_mode'                => 'dynamic',
-            'text_glow_custom_color'              => '#ffffff',
-            'text_glow_intensity'                 => 15,
-            'text_glow_pulse'                     => 0,
-            'text_glow_speed'                     => 2.5,
+            'text_glow_enabled'                  => 0,
+            'text_glow_color_mode'               => 'dynamic',
+            'text_glow_custom_color'             => '#ffffff',
+            'text_glow_intensity'                => 15,
+            'text_glow_pulse'                    => 0,
+            'text_glow_speed'                    => 2.5,
 
             // Options glow pour mode cercle
-            'circle_glow_enabled'                 => 0,
-            'circle_glow_color_mode'              => 'dynamic',
-            'circle_glow_custom_color'            => '#ffffff',
-            'circle_glow_intensity'               => 15,
-            'circle_glow_pulse'                   => 0,
-            'circle_glow_speed'                   => 2.5,
+            'circle_glow_enabled'                => 0,
+            'circle_glow_color_mode'             => 'dynamic',
+            'circle_glow_custom_color'           => '#ffffff',
+            'circle_glow_intensity'              => 15,
+            'circle_glow_pulse'                  => 0,
+            'circle_glow_speed'                  => 2.5,
 
             // Options des modules
-            'tagline_enabled'                     => 1,
-            'user_rating_enabled'                 => 1,
-            'user_rating_requires_login'          => 0,
-            'user_rating_weighting_enabled'       => 0,
-            'user_rating_guest_weight_start'      => 0.5,
-            'user_rating_guest_weight_increment'  => 0.1,
-            'user_rating_guest_weight_max'        => 1.0,
-            'table_zebra_striping'                => 0,
-            'table_border_style'                  => 'horizontal',
-            'table_border_width'                  => 1,
-            'table_header_bg_color'               => '#3f3f46',
-            'table_header_text_color'             => '#ffffff',
-            'table_row_bg_color'                  => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
-            'table_row_text_color'                => '#a1a1aa',
-            'table_zebra_bg_color'                => '#27272a',
-            'thumb_text_color'                    => '#ffffff',
-            'thumb_font_size'                     => 14,
-            'thumb_padding'                       => 8,
-            'thumb_border_radius'                 => 4,
+            'tagline_enabled'                    => 1,
+            'user_rating_enabled'                => 1,
+            'user_rating_requires_login'         => 0,
+            'user_rating_weighting_enabled'      => 0,
+            'user_rating_guest_weight_start'     => 0.5,
+            'user_rating_guest_weight_increment' => 0.1,
+            'user_rating_guest_weight_max'       => 1.0,
+            'table_zebra_striping'               => 0,
+            'table_border_style'                 => 'horizontal',
+            'table_border_width'                 => 1,
+            'table_header_bg_color'              => '#3f3f46',
+            'table_header_text_color'            => '#ffffff',
+            'table_row_bg_color'                 => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
+            'table_row_text_color'               => '#a1a1aa',
+            'table_zebra_bg_color'               => '#27272a',
+            'thumb_text_color'                   => '#ffffff',
+            'thumb_font_size'                    => 14,
+            'thumb_padding'                      => 8,
+            'thumb_border_radius'                => 4,
 
             // Options Game Explorer
-            'game_explorer_columns'               => 3,
-            'game_explorer_posts_per_page'        => 12,
-            'game_explorer_filters'               => self::GAME_EXPLORER_DEFAULT_FILTERS,
-            'game_explorer_score_position'        => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
+            'game_explorer_columns'              => 3,
+            'game_explorer_posts_per_page'       => 12,
+            'game_explorer_filters'              => self::GAME_EXPLORER_DEFAULT_FILTERS,
+            'game_explorer_score_position'       => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés & catégories de notation
-            'rating_categories'                   => self::get_default_category_definitions(),
+            'rating_categories'                  => self::get_default_category_definitions(),
 
             // Options techniques et diverses
-            'custom_css'                          => '',
-            'seo_schema_enabled'                  => 1,
-            'debug_mode_enabled'                  => 0,
-            'rawg_api_key'                        => '',
+            'custom_css'                         => '',
+            'seo_schema_enabled'                 => 1,
+            'debug_mode_enabled'                 => 0,
+            'rawg_api_key'                       => '',
         );
 
         return self::$default_settings_cache;
