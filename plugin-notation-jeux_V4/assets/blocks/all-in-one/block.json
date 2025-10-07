@@ -31,6 +31,11 @@
       "type": "boolean",
       "default": true
     },
+    "showVerdict": {
+      "type": "string",
+      "default": "inherit",
+      "enum": ["inherit", "show", "hide"]
+    },
     "style": {
       "type": "string",
       "default": "moderne"
@@ -67,6 +72,18 @@
     "ctaRel": {
       "type": "string",
       "default": "nofollow sponsored"
+    },
+    "verdictSummary": {
+      "type": "string",
+      "default": ""
+    },
+    "verdictCtaLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "verdictCtaUrl": {
+      "type": "string",
+      "default": ""
     }
   },
   "editorScript": "notation-jlg-all-in-one-editor",

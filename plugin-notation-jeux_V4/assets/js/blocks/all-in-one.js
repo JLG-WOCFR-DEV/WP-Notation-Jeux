@@ -18,6 +18,7 @@
     var ToggleControl = wp.components.ToggleControl;
     var SelectControl = wp.components.SelectControl;
     var TextControl = wp.components.TextControl;
+    var TextareaControl = wp.components.TextareaControl;
     var ColorPalette = (blockEditor && blockEditor.ColorPalette) || wp.components.ColorPalette;
     var PanelColorSettings = blockEditor.PanelColorSettings || blockEditor.__experimentalPanelColorSettings;
     var createElement = wp.element.createElement;
@@ -132,6 +133,18 @@
                             onChange: function (value) {
                                 setAttributes({ showVideo: !!value });
                             },
+                        }),
+                        createElement(SelectControl, {
+                            label: __('Affichage du verdict', 'notation-jlg'),
+                            value: attributes.showVerdict || 'inherit',
+                            options: [
+                                { value: 'inherit', label: __('Suivre les réglages du module', 'notation-jlg') },
+                                { value: 'show', label: __('Toujours afficher (si disponible)', 'notation-jlg') },
+                                { value: 'hide', label: __('Masquer la carte verdict', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ showVerdict: value || 'inherit' });
+                            },
                         })
                     ),
                     colorControl,
@@ -189,6 +202,36 @@
                             },
                             help: __('Par défaut : nofollow sponsored', 'notation-jlg'),
                         })
+                    ),
+                    createElement(
+                        PanelBody,
+                        { title: __('Carte verdict', 'notation-jlg'), initialOpen: false },
+                        createElement(TextareaControl, {
+                            label: __('Résumé personnalisé', 'notation-jlg'),
+                            value: attributes.verdictSummary || '',
+                            onChange: function (value) {
+                                setAttributes({ verdictSummary: value || '' });
+                            },
+                            help: __('Laissez vide pour utiliser le résumé de la métabox.', 'notation-jlg'),
+                            rows: 3,
+                        }),
+                        createElement(TextControl, {
+                            label: __('Texte du bouton verdict', 'notation-jlg'),
+                            value: attributes.verdictCtaLabel || '',
+                            onChange: function (value) {
+                                setAttributes({ verdictCtaLabel: value || '' });
+                            },
+                            help: __('Par défaut : « Lire le test complet ».', 'notation-jlg'),
+                        }),
+                        createElement(TextControl, {
+                            label: __('URL du bouton verdict', 'notation-jlg'),
+                            type: 'url',
+                            value: attributes.verdictCtaUrl || '',
+                            onChange: function (value) {
+                                setAttributes({ verdictCtaUrl: value || '' });
+                            },
+                            help: __('Utilisez une URL absolue ou laissez vide pour pointer vers l’article.', 'notation-jlg'),
+                        })
                     )
                 ),
                 createElement(
@@ -202,6 +245,7 @@
                             showProsCons: typeof attributes.showProsCons === 'boolean' ? attributes.showProsCons : true,
                             showTagline: typeof attributes.showTagline === 'boolean' ? attributes.showTagline : true,
                             showVideo: typeof attributes.showVideo === 'boolean' ? attributes.showVideo : true,
+                            showVerdict: attributes.showVerdict || 'inherit',
                             style: attributes.style || 'moderne',
                             scoreDisplay: attributes.scoreDisplay || 'absolute',
                             accentColor: attributes.accentColor || '',
@@ -211,6 +255,9 @@
                             ctaUrl: attributes.ctaUrl || '',
                             ctaRole: attributes.ctaRole || '',
                             ctaRel: attributes.ctaRel || '',
+                            verdictSummary: attributes.verdictSummary || '',
+                            verdictCtaLabel: attributes.verdictCtaLabel || '',
+                            verdictCtaUrl: attributes.verdictCtaUrl || '',
                         },
                         label: __('Bloc tout-en-un', 'notation-jlg'),
                     })

@@ -371,6 +371,30 @@ class Blocks {
             }
         }
 
+        if ( isset( $attributes['showVerdict'] ) && is_string( $attributes['showVerdict'] ) ) {
+            $verdict_visibility = sanitize_key( $attributes['showVerdict'] );
+            if ( 'show' === $verdict_visibility ) {
+                $atts['show_verdict'] = 'oui';
+            } elseif ( 'hide' === $verdict_visibility ) {
+                $atts['show_verdict'] = 'non';
+            }
+        }
+
+        if ( ! empty( $attributes['verdictSummary'] ) && is_string( $attributes['verdictSummary'] ) ) {
+            $atts['verdict_summary'] = sanitize_text_field( $attributes['verdictSummary'] );
+        }
+
+        if ( ! empty( $attributes['verdictCtaLabel'] ) && is_string( $attributes['verdictCtaLabel'] ) ) {
+            $atts['verdict_cta_label'] = sanitize_text_field( $attributes['verdictCtaLabel'] );
+        }
+
+        if ( ! empty( $attributes['verdictCtaUrl'] ) && is_string( $attributes['verdictCtaUrl'] ) ) {
+            $url = esc_url_raw( $attributes['verdictCtaUrl'] );
+            if ( $url !== '' && Validator::is_valid_http_url( $url ) ) {
+                $atts['verdict_cta_url'] = $url;
+            }
+        }
+
         if ( array_key_exists( 'showAnimations', $attributes ) ) {
             $is_enabled         = (bool) $attributes['showAnimations'];
             $atts['animations'] = $is_enabled ? 'oui' : 'non';
@@ -506,6 +530,15 @@ class Blocks {
             }
         }
 
+        if ( isset( $attributes['showVerdict'] ) && is_string( $attributes['showVerdict'] ) ) {
+            $verdict_visibility = sanitize_key( $attributes['showVerdict'] );
+            if ( 'show' === $verdict_visibility ) {
+                $atts['afficher_verdict'] = 'oui';
+            } elseif ( 'hide' === $verdict_visibility ) {
+                $atts['afficher_verdict'] = 'non';
+            }
+        }
+
         if ( ! empty( $attributes['style'] ) && is_string( $attributes['style'] ) ) {
             $style = sanitize_key( $attributes['style'] );
             if ( in_array( $style, array( 'moderne', 'classique', 'compact' ), true ) ) {
@@ -533,6 +566,21 @@ class Blocks {
 
         if ( ! empty( $attributes['consTitle'] ) && is_string( $attributes['consTitle'] ) ) {
             $atts['titre_points_faibles'] = sanitize_text_field( $attributes['consTitle'] );
+        }
+
+        if ( ! empty( $attributes['verdictSummary'] ) && is_string( $attributes['verdictSummary'] ) ) {
+            $atts['verdict_summary'] = sanitize_text_field( $attributes['verdictSummary'] );
+        }
+
+        if ( ! empty( $attributes['verdictCtaLabel'] ) && is_string( $attributes['verdictCtaLabel'] ) ) {
+            $atts['verdict_cta_label'] = sanitize_text_field( $attributes['verdictCtaLabel'] );
+        }
+
+        if ( ! empty( $attributes['verdictCtaUrl'] ) && is_string( $attributes['verdictCtaUrl'] ) ) {
+            $url = esc_url_raw( $attributes['verdictCtaUrl'] );
+            if ( $url !== '' && Validator::is_valid_http_url( $url ) ) {
+                $atts['verdict_cta_url'] = $url;
+            }
         }
 
         if ( ! empty( $attributes['ctaLabel'] ) && is_string( $attributes['ctaLabel'] ) ) {

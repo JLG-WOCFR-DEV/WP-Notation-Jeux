@@ -986,44 +986,63 @@ class Helpers {
         return apply_filters( 'jlg_review_status_display', $payload, $post_id );
     }
 
-    public static function get_review_verdict_for_post( $post_id ) {
+    public static function get_verdict_data_for_post( $post_id, ?array $options = null, array $overrides = array() ) {
         $post_id = (int) $post_id;
+        $post    = $post_id > 0 ? get_post( $post_id ) : null;
 
-        $post = $post_id > 0 ? get_post( $post_id ) : null;
-        if ( ! $post ) {
-            $status = self::get_review_status_for_post( $post_id );
-
-            return apply_filters(
-                'jlg_review_verdict_payload',
-                array(
-                    'summary'      => '',
-                    'cta_label'    => '',
-                    'cta_url'      => '',
-                    'cta_rel'      => 'bookmark',
-                    'status'       => $status,
-                    'last_updated' => array(
-                        'timestamp' => null,
-                        'display'   => '',
-                        'iso'       => '',
-                    ),
-                    'permalink'    => '',
-                ),
-                $post_id,
-                null
-            );
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
         }
 
-        $summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
-        $summary = is_string( $summary ) ? trim( wp_kses_post( $summary ) ) : '';
+        $module_enabled = ! empty( $options['verdict_module_enabled'] );
 
-        $cta_label = get_post_meta( $post_id, '_jlg_verdict_cta_label', true );
-        $cta_label = is_string( $cta_label ) ? trim( sanitize_text_field( $cta_label ) ) : '';
+        $summary_limit = (int) apply_filters( 'jlg_verdict_summary_length', 160, $post_id, $options );
+        if ( $summary_limit < 40 ) {
+            $summary_limit = 40;
+        }
 
-        $cta_url = get_post_meta( $post_id, '_jlg_verdict_cta_url', true );
-        $cta_url = is_string( $cta_url ) ? trim( esc_url_raw( $cta_url ) ) : '';
+        $summary = '';
+        if ( $post_id > 0 ) {
+            $stored_summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
+            $summary        = self::prepare_verdict_summary( $stored_summary, $summary_limit );
+        }
 
-        $permalink = function_exists( 'get_permalink' ) ? get_permalink( $post ) : '';
-        $permalink = is_string( $permalink ) ? $permalink : '';
+        if ( isset( $overrides['summary'] ) && is_string( $overrides['summary'] ) && $overrides['summary'] !== '' ) {
+            $summary = self::prepare_verdict_summary( $overrides['summary'], $summary_limit );
+        }
+
+        $cta_label = '';
+        if ( $post_id > 0 ) {
+            $stored_label = get_post_meta( $post_id, '_jlg_verdict_cta_label', true );
+            $cta_label    = self::prepare_verdict_cta_label( $stored_label );
+        }
+
+        if ( isset( $overrides['cta_label'] ) && is_string( $overrides['cta_label'] ) && $overrides['cta_label'] !== '' ) {
+            $cta_label = self::prepare_verdict_cta_label( $overrides['cta_label'] );
+        }
+
+        $cta_url = '';
+        if ( $post_id > 0 ) {
+            $stored_url = get_post_meta( $post_id, '_jlg_verdict_cta_url', true );
+            $cta_url    = self::prepare_verdict_cta_url( $stored_url );
+        }
+
+        if ( isset( $overrides['cta_url'] ) && is_string( $overrides['cta_url'] ) && $overrides['cta_url'] !== '' ) {
+            $cta_url = self::prepare_verdict_cta_url( $overrides['cta_url'] );
+        }
+
+        $permalink = '';
+        if ( $post instanceof \WP_Post ) {
+            $permalink = get_permalink( $post );
+        } elseif ( $post_id > 0 ) {
+            $permalink = get_permalink( $post_id );
+        }
+
+        if ( ! is_string( $permalink ) ) {
+            $permalink = '';
+        }
+
+        $permalink = trim( $permalink );
 
         if ( $cta_label === '' ) {
             $cta_label = __( 'Lire le test complet', 'notation-jlg' );
@@ -1033,375 +1052,207 @@ class Helpers {
             $cta_url = $permalink;
         }
 
+        if ( $cta_url !== '' && ! Validator::is_valid_http_url( $cta_url ) ) {
+            $cta_url = '';
+        }
+
+        $cta_rel = '';
+        if ( $cta_url !== '' ) {
+            $cta_rel = self::determine_verdict_cta_rel( $cta_url );
+        }
+
         $status = self::get_review_status_for_post( $post_id );
 
-        $timestamp = false;
-        if ( function_exists( 'get_post_modified_time' ) ) {
-            $timestamp = get_post_modified_time( 'U', true, $post );
-        }
+        $updated = array(
+            'timestamp' => null,
+            'display'   => '',
+            'datetime'  => '',
+            'title'     => '',
+        );
 
-        if ( ! is_int( $timestamp ) ) {
-            $timestamp = false;
-        }
+        if ( $post_id > 0 ) {
+            $modified_gmt   = get_post_modified_time( 'U', true, $post_id );
+            $modified_local = get_post_modified_time( 'U', false, $post_id );
 
-        $date_format = get_option( 'date_format', 'F j, Y' );
-        if ( ! is_string( $date_format ) || $date_format === '' ) {
-            $date_format = 'F j, Y';
-        }
+            if ( $modified_gmt ) {
+                $updated['timestamp'] = (int) $modified_gmt;
+                $updated['datetime']  = gmdate( 'c', (int) $modified_gmt );
 
-        $display_date = '';
-        $iso_date     = '';
+                $display_source = $modified_local ? (int) $modified_local : (int) $modified_gmt;
+                $date_format    = get_option( 'date_format', 'F j, Y' );
+                if ( ! is_string( $date_format ) || $date_format === '' ) {
+                    $date_format = 'F j, Y';
+                }
 
-        if ( $timestamp ) {
-            if ( function_exists( 'wp_date' ) ) {
-                $display_date = wp_date( $date_format, $timestamp );
-                $iso_date     = wp_date( DATE_W3C, $timestamp );
-            } else {
-                $display_date = date_i18n( $date_format, $timestamp );
-                $iso_date     = gmdate( DATE_W3C, $timestamp );
+                $updated['display'] = date_i18n( $date_format, $display_source );
+
+                $time_format = get_option( 'time_format', 'H:i' );
+                if ( ! is_string( $time_format ) || $time_format === '' ) {
+                    $time_format = 'H:i';
+                }
+
+                $updated['title'] = date_i18n( $date_format . ' ' . $time_format, $display_source );
             }
         }
 
         $payload = array(
-            'summary'      => $summary,
-            'cta_label'    => $cta_label,
-            'cta_url'      => $cta_url,
-            'cta_rel'      => 'bookmark',
-            'status'       => $status,
-            'last_updated' => array(
-                'timestamp' => $timestamp ?: null,
-                'display'   => $display_date,
-                'iso'       => $iso_date,
+            'enabled'       => (bool) $module_enabled,
+            'summary'       => $summary,
+            'summary_limit' => $summary_limit,
+            'cta'           => array(
+                'label'     => $cta_label,
+                'url'       => $cta_url,
+                'rel'       => $cta_rel,
+                'available' => $cta_label !== '' && $cta_url !== '',
             ),
-            'permalink'    => $permalink,
+            'status'        => array(
+                'slug'        => isset( $status['slug'] ) ? (string) $status['slug'] : '',
+                'label'       => isset( $status['label'] ) ? (string) $status['label'] : '',
+                'description' => isset( $status['description'] ) ? (string) $status['description'] : '',
+            ),
+            'updated'       => $updated,
+            'permalink'     => $permalink,
         );
 
         /**
-         * Filtre les données du verdict de review.
+         * Permet d'ajuster les données utilisées pour construire la carte verdict.
          *
-         * @param array     $payload Données formatées pour le rendu.
-         * @param int       $post_id Identifiant de l'article.
-         * @param \WP_Post $post    Objet post courant.
+         * @param array $payload   Données prêtes à être utilisées par les templates.
+         * @param int   $post_id   Identifiant de l'article concerné.
+         * @param array $options   Options du plugin.
+         * @param array $overrides Données forcées par le shortcode/bloc.
          */
-        return apply_filters( 'jlg_review_verdict_payload', $payload, $post_id, $post );
-    }
+        $payload = apply_filters( 'jlg_verdict_data', $payload, $post_id, $options, $overrides );
 
-    /**
-     * Programme l'automatisation du statut de review si l'option est active.
-     *
-     * @param bool $force Permet de forcer une reprogrammation immédiate.
-     *
-     * @return bool True si un événement a été planifié, false sinon.
-     */
-    public static function maybe_schedule_review_status_automation( $force = false ) {
-        if ( ! self::is_review_status_auto_finalize_enabled() ) {
-            self::clear_review_status_automation_schedule();
-
-            return false;
-        }
-
-        if ( ! function_exists( 'wp_schedule_event' ) || ! function_exists( 'wp_next_scheduled' ) ) {
-            return false;
-        }
-
-        $hook = self::REVIEW_STATUS_CRON_HOOK;
-
-        if ( $force ) {
-            self::clear_review_status_automation_schedule();
-        } elseif ( wp_next_scheduled( $hook ) ) {
-            return false;
-        }
-
-        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : 86400;
-        $now            = self::get_current_timestamp();
-
-        wp_schedule_event( $now + $day_in_seconds, 'daily', $hook );
-
-        return true;
-    }
-
-    /**
-     * Déprogramme l'événement CRON lié au statut automatisé.
-     */
-    public static function clear_review_status_automation_schedule() {
-        if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
-            wp_clear_scheduled_hook( self::REVIEW_STATUS_CRON_HOOK );
-        }
-    }
-
-    /**
-     * Prépare le hook CRON lors de l'activation du plugin.
-     */
-    public static function activate_review_status_automation() {
-        self::maybe_schedule_review_status_automation( true );
-    }
-
-    /**
-     * Nettoie le hook CRON lors de la désactivation du plugin.
-     */
-    public static function deactivate_review_status_automation() {
-        self::clear_review_status_automation_schedule();
-    }
-
-    /**
-     * Indique si l'automatisation du statut de review est active.
-     *
-     * @param array|null $options Options du plugin à analyser.
-     */
-    private static function is_review_status_auto_finalize_enabled( ?array $options = null ) {
-        if ( $options === null ) {
-            $options = self::get_plugin_options();
-        }
-
-        if ( empty( $options['review_status_enabled'] ) ) {
-            return false;
-        }
-
-        if ( empty( $options['review_status_auto_finalize_enabled'] ) ) {
-            return false;
-        }
-
-        $days = isset( $options['review_status_auto_finalize_days'] )
-            ? (int) $options['review_status_auto_finalize_days']
-            : 0;
-
-        return $days > 0;
-    }
-
-    /**
-     * Exécute le traitement automatisé des statuts de review.
-     *
-     * @param array|null $options Options du plugin.
-     *
-     * @return int Nombre d'articles mis à jour.
-     */
-    public static function run_review_status_automation( ?array $options = null ) {
-        if ( $options === null ) {
-            $options = self::get_plugin_options();
-        }
-
-        if ( ! self::is_review_status_auto_finalize_enabled( $options ) ) {
-            self::clear_review_status_automation_schedule();
-
-            return 0;
-        }
-
-        if ( ! class_exists( '\\WP_Query' ) ) {
-            return 0;
-        }
-
-        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : 86400;
-        $now            = self::get_current_timestamp();
-
-        $days = (int) $options['review_status_auto_finalize_days'];
-
-        $threshold_timestamp = $now - ( $days * $day_in_seconds );
-        $threshold_timestamp = (int) apply_filters(
-            'jlg_review_status_auto_finalize_threshold_timestamp',
-            $threshold_timestamp,
-            $options
-        );
-
-        if ( $threshold_timestamp < 0 ) {
-            $threshold_timestamp = 0;
-        }
-
-        $threshold_date = gmdate( 'Y-m-d', $threshold_timestamp );
-        $threshold_date = apply_filters(
-            'jlg_review_status_auto_finalize_threshold',
-            $threshold_date,
-            $options,
-            $threshold_timestamp
-        );
-        $threshold_date = is_string( $threshold_date ) ? trim( $threshold_date ) : '';
-
-        if ( $threshold_date === '' ) {
-            return 0;
-        }
-
-        $eligible_statuses = apply_filters(
-            'jlg_review_status_auto_finalize_statuses',
-            array( 'in_progress' ),
-            $options
-        );
-
-        if ( ! is_array( $eligible_statuses ) ) {
-            $eligible_statuses = array();
-        }
-
-        $eligible_statuses = array_values(
-            array_filter(
-                array_map(
-                    'sanitize_key',
-                    $eligible_statuses
-                )
-            )
-        );
-
-        if ( empty( $eligible_statuses ) ) {
-            $eligible_statuses = array( 'in_progress' );
-        }
-
-        $target_status = apply_filters(
-            'jlg_review_status_auto_finalize_target',
-            'final',
-            $options
-        );
-        $target_status = self::normalize_review_status( $target_status );
-
-        $post_types = self::get_allowed_post_types();
-
-        $batch_size = (int) apply_filters(
-            'jlg_review_status_auto_finalize_batch_size',
-            25,
-            $options
-        );
-
-        if ( $batch_size <= 0 ) {
-            $batch_size = 25;
-        }
-
-        $page          = 1;
-        $updated_count = 0;
-
-        do {
-            $query_args = array(
-                'post_type'      => $post_types,
-                'post_status'    => array( 'publish' ),
-                'posts_per_page' => $batch_size,
-                'paged'          => $page,
-                'fields'         => 'ids',
-                'orderby'        => 'ID',
-                'order'          => 'ASC',
-                'meta_query'     => array(
-                    'relation' => 'AND',
-                    array(
-                        'key'     => self::REVIEW_STATUS_META_KEY,
-                        'value'   => $eligible_statuses,
-                        'compare' => 'IN',
-                    ),
-                    array(
-                        'key'     => self::REVIEW_STATUS_LAST_PATCH_META_KEY,
-                        'value'   => $threshold_date,
-                        'compare' => '<=',
-                        'type'    => 'DATE',
-                    ),
-                ),
+        if ( ! is_array( $payload ) ) {
+            return array(
+                'enabled'   => false,
+                'summary'   => '',
+                'cta'       => array(
+					'label'     => '',
+					'url'       => '',
+					'rel'       => '',
+					'available' => false,
+				),
+                'status'    => array(
+					'slug'        => '',
+					'label'       => '',
+					'description' => '',
+				),
+                'updated'   => array(
+					'timestamp' => null,
+					'display'   => '',
+					'datetime'  => '',
+					'title'     => '',
+				),
+                'permalink' => $permalink,
             );
+        }
 
-            $query_args = apply_filters(
-                'jlg_review_status_auto_finalize_query_args',
-                $query_args,
-                $options,
-                $threshold_date,
-                $eligible_statuses,
-                $target_status
-            );
-
-            $query    = new \WP_Query( $query_args );
-            $post_ids = isset( $query->posts ) && is_array( $query->posts ) ? $query->posts : array();
-
-            if ( empty( $post_ids ) ) {
-                break;
-            }
-
-            foreach ( $post_ids as $post_candidate ) {
-                if ( is_object( $post_candidate ) && isset( $post_candidate->ID ) ) {
-                    $post_id = (int) $post_candidate->ID;
-                } else {
-                    $post_id = (int) $post_candidate;
-                }
-
-                if ( self::maybe_finalize_review_status_for_post( $post_id, $target_status, $eligible_statuses, $threshold_date ) ) {
-                    ++$updated_count;
-                }
-            }
-
-            ++$page;
-            $max_pages = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0;
-
-            if ( $max_pages <= 0 ) {
-                if ( count( $post_ids ) < $batch_size ) {
-                    break;
-                }
-            } elseif ( $page > $max_pages ) {
-                break;
-            }
-        } while ( true );
-
-        return $updated_count;
+        return $payload;
     }
 
-    /**
-     * Finalise le statut d'un article lorsqu'il est éligible.
-     *
-     * @param int      $post_id           Identifiant de l'article.
-     * @param string   $target_status     Statut cible.
-     * @param string[] $eligible_statuses Liste des statuts à surveiller.
-     * @param string   $threshold_date    Date seuil (Y-m-d).
-     */
-    private static function maybe_finalize_review_status_for_post( $post_id, $target_status, array $eligible_statuses, $threshold_date ) {
-        $post_id = (int) $post_id;
-
-        if ( $post_id <= 0 ) {
-            return false;
+    private static function prepare_verdict_summary( $value, $limit ) {
+        if ( ! is_string( $value ) || $value === '' ) {
+            return '';
         }
 
-        $current_status = get_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, true );
-        $current_status = self::normalize_review_status( $current_status );
+        $normalized = wp_strip_all_tags( $value, true );
+        $normalized = preg_replace( '/\s+/u', ' ', $normalized );
+        $normalized = is_string( $normalized ) ? trim( $normalized ) : '';
 
-        if ( $current_status === $target_status || ! in_array( $current_status, $eligible_statuses, true ) ) {
-            return false;
+        if ( $normalized === '' ) {
+            return '';
         }
 
-        $last_patch_date = get_post_meta( $post_id, self::REVIEW_STATUS_LAST_PATCH_META_KEY, true );
-        $last_patch_date = is_string( $last_patch_date ) ? trim( $last_patch_date ) : '';
-
-        if ( $last_patch_date === '' ) {
-            return false;
+        if ( $limit <= 0 ) {
+            return $normalized;
         }
 
-        if ( strcmp( $last_patch_date, $threshold_date ) > 0 ) {
-            return false;
+        $length_callback = function_exists( 'mb_strlen' ) ? 'mb_strlen' : 'strlen';
+        $slice_callback  = function_exists( 'mb_substr' ) ? 'mb_substr' : 'substr';
+
+        $length = (int) $length_callback( $normalized );
+
+        if ( $length <= $limit ) {
+            return $normalized;
         }
 
-        update_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, $target_status );
+        $ellipsis     = '…';
+        $ellipsis_len = (int) $length_callback( $ellipsis );
+        $slice_length = max( 0, $limit - $ellipsis_len );
+        $truncated    = (string) $slice_callback( $normalized, 0, $slice_length );
 
-        /**
-         * Se déclenche lorsqu'un statut est finalisé automatiquement.
-         *
-         * @param int    $post_id        Identifiant de l'article.
-         * @param string $previous_state Ancien statut.
-         * @param string $new_state      Nouveau statut.
-         * @param string $context        Contexte d'exécution.
-         */
-        do_action( 'jlg_review_status_transition', $post_id, $current_status, $target_status, 'auto_finalize' );
-
-        return true;
+        return rtrim( $truncated ) . $ellipsis;
     }
 
-    /**
-     * Retourne un timestamp courant en respectant la timezone WordPress quand disponible.
-     */
-    private static function get_current_timestamp() {
-        if ( function_exists( 'current_datetime' ) ) {
-            $datetime = current_datetime();
+    private static function prepare_verdict_cta_label( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
 
-            if ( $datetime instanceof \DateTimeInterface ) {
-                return $datetime->getTimestamp();
+        $label = sanitize_text_field( $value );
+        $label = trim( $label );
+
+        if ( $label === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            $label = mb_substr( $label, 0, 80 );
+        } else {
+            $label = substr( $label, 0, 80 );
+        }
+
+        return trim( $label );
+    }
+
+    private static function prepare_verdict_cta_url( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $url = trim( $value );
+
+        if ( $url === '' ) {
+            return '';
+        }
+
+        $sanitized = esc_url_raw( $url );
+
+        if ( $sanitized === '' || ! Validator::is_valid_http_url( $sanitized ) ) {
+            return '';
+        }
+
+        return $sanitized;
+    }
+
+    private static function determine_verdict_cta_rel( $url ) {
+        if ( ! is_string( $url ) || $url === '' ) {
+            return '';
+        }
+
+        $home_host = '';
+        $home_url  = home_url();
+
+        if ( is_string( $home_url ) && $home_url !== '' ) {
+            $home_parts = wp_parse_url( $home_url );
+            if ( is_array( $home_parts ) && isset( $home_parts['host'] ) ) {
+                $home_host = strtolower( (string) $home_parts['host'] );
             }
         }
 
-        try {
-            $timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new \DateTimeZone( 'UTC' );
-            $now      = new \DateTimeImmutable( 'now', $timezone );
-
-            return $now->getTimestamp();
-        } catch ( \Exception $exception ) {
-            unset( $exception );
+        $target_host  = '';
+        $target_parts = wp_parse_url( $url );
+        if ( is_array( $target_parts ) && isset( $target_parts['host'] ) ) {
+            $target_host = strtolower( (string) $target_parts['host'] );
         }
 
-        return time();
+        if ( $home_host !== '' && $target_host !== '' && $home_host !== $target_host ) {
+            return 'noopener noreferrer';
+        }
+
+        return '';
     }
 
     public static function get_related_guides_for_post( $post_id, ?array $options = null ) {
@@ -1665,20 +1516,19 @@ class Helpers {
 
         self::$default_settings_cache = array(
             // Options générales
-            'visual_theme'                        => 'dark',
-            'score_layout'                        => 'text',
-            'score_max'                           => 10,
-            'enable_animations'                   => 1,
-            'allowed_post_types'                  => array( 'post' ),
-            'tagline_font_size'                   => 16,
-            'rating_badge_enabled'                => 0,
-            'rating_badge_threshold'              => 8,
-            'review_status_enabled'               => 1,
-            'review_status_auto_finalize_enabled' => 0,
-            'review_status_auto_finalize_days'    => 7,
-            'related_guides_enabled'              => 0,
-            'related_guides_limit'                => 4,
-            'related_guides_taxonomies'           => 'guide,astuce,category,post_tag',
+            'visual_theme'                       => 'dark',
+            'score_layout'                       => 'text',
+            'score_max'                          => 10,
+            'enable_animations'                  => 1,
+            'allowed_post_types'                 => array( 'post' ),
+            'tagline_font_size'                  => 16,
+            'rating_badge_enabled'               => 0,
+            'rating_badge_threshold'             => 8,
+            'review_status_enabled'              => 1,
+            'verdict_module_enabled'             => 1,
+            'related_guides_enabled'             => 0,
+            'related_guides_limit'               => 4,
+            'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
 
             // Couleurs de Thème Sombre personnalisables
             'dark_bg_color'                       => $dark_defaults['bg_color'],

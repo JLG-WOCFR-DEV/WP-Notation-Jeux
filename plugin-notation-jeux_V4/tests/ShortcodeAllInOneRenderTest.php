@@ -30,6 +30,8 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $GLOBALS['jlg_test_options'] = [];
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $GLOBALS['jlg_test_filters'] = [];
+        $GLOBALS['jlg_test_post_modified'] = [];
+        $GLOBALS['jlg_test_permalinks'] = [];
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
@@ -44,7 +46,9 @@ class ShortcodeAllInOneRenderTest extends TestCase
             $GLOBALS['jlg_test_styles'],
             $GLOBALS['jlg_test_options'],
             $GLOBALS['jlg_test_current_post_id'],
-            $GLOBALS['jlg_test_filters']
+            $GLOBALS['jlg_test_filters'],
+            $GLOBALS['jlg_test_post_modified'],
+            $GLOBALS['jlg_test_permalinks']
         );
     }
 
@@ -216,37 +220,63 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $this->assertStringContainsString('Vidéo de test hébergée par YouTube', $output);
     }
 
-    public function test_render_outputs_verdict_section_when_summary_provided(): void
+    public function test_render_displays_verdict_card_when_enabled(): void
     {
-        $post_id = 2006;
+        $post_id = 2010;
         $this->seedPost($post_id);
-        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_summary']    = 'Une aventure magistrale qui culmine avec un final mémorable.';
-        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_cta_label']  = 'Lire notre verdict complet';
-        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_cta_url']    = 'https://example.com/review';
-        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_review_status']      = 'in_progress';
+        $this->setPluginOptions([
+            'score_layout'           => 'text',
+            'visual_theme'           => 'dark',
+            'score_gradient_1'       => '#336699',
+            'score_gradient_2'       => '#9933cc',
+            'color_high'             => '#22c55e',
+            'color_low'              => '#ef4444',
+            'enable_animations'      => 0,
+            'verdict_module_enabled' => 1,
+        ]);
+
+        $GLOBALS['jlg_test_post_modified'][$post_id] = [
+            'gmt'   => 1714995600,
+            'local' => 1714999200,
+        ];
+
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
+        $output    = $shortcode->render([
+            'post_id'           => (string) $post_id,
+            'afficher_verdict'  => 'oui',
+            'verdict_summary'   => 'Verdict concentré accessible pour tous les lecteurs.',
+            'verdict_cta_label' => 'Lire le test complet',
+            'verdict_cta_url'   => 'https://example.com/tests/jeu-du-moment',
+        ]);
+
+        $this->assertStringContainsString('jlg-aio-verdict', $output);
+        $this->assertStringContainsString('Verdict concentré accessible', $output);
+        $this->assertStringContainsString('Lire le test complet', $output);
+        $this->assertStringContainsString('https://example.com/tests/jeu-du-moment', $output);
+        $this->assertMatchesRegularExpression('/<time[^>]+datetime="[^"]+"/', $output);
+    }
+
+    public function test_render_skips_verdict_when_disabled_in_shortcode(): void
+    {
+        $post_id = 2011;
+        $this->seedPost($post_id);
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_summary'] = 'Résumé de secours.';
+        $GLOBALS['jlg_test_post_modified'][$post_id] = [
+            'gmt'   => 1714995600,
+            'local' => 1714999200,
+        ];
 
         $this->setPluginOptions([
-            'score_layout'      => 'text',
-            'visual_theme'      => 'dark',
-            'score_gradient_1'  => '#336699',
-            'score_gradient_2'  => '#9933cc',
-            'color_high'        => '#22c55e',
-            'color_low'         => '#ef4444',
-            'tagline_font_size' => 18,
-            'enable_animations' => 0,
+            'verdict_module_enabled' => 1,
         ]);
 
         $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
         $output    = $shortcode->render([
             'post_id'          => (string) $post_id,
-            'afficher_verdict' => 'oui',
+            'afficher_verdict' => 'non',
         ]);
 
-        $this->assertNotSame('', $output);
-        $this->assertMatchesRegularExpression('/class="jlg-aio-verdict"/', $output);
-        $this->assertStringContainsString('Lire notre verdict complet', $output);
-        $this->assertMatchesRegularExpression('/jlg-aio-verdict__status--in_progress/', $output);
-        $this->assertMatchesRegularExpression('/Mise à jour le/', $output);
+        $this->assertStringNotContainsString('jlg-aio-verdict', $output);
     }
 
     private function seedPost(int $post_id, string $post_type = 'post'): void

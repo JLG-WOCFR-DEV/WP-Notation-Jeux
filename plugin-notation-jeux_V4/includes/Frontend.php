@@ -3196,6 +3196,7 @@ class Frontend {
                 'review_status'            => array(),
                 'related_guides_enabled'   => false,
                 'related_guides'           => array(),
+                'verdict'                  => array(),
                 'paged'                    => 1,
                 'orderby'                  => '',
                 'order'                    => '',
