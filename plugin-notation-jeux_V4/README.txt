@@ -24,7 +24,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **Blocs Gutenberg** : neuf blocs dynamiques (notation, tout-en-un, fiche technique, points forts/faibles, tagline, notation lecteurs, tableau récapitulatif, Game Explorer, Score Insights) garantissant la parité éditeur/front.
 * **Notation utilisateurs** : votes AJAX, histogramme accessible rafraîchi en direct, verrouillage anti double clic et option *Connexion obligatoire avant le vote*.
 * **Tableau récapitulatif & Game Explorer** : vues triables/filtrables avec navigation accessible sans JavaScript et panneaux responsives.
-* **Score Insights** : tableau de bord statistique (moyenne, médiane, histogramme, plateformes dominantes) filtrable par période et plateforme.
+* **Score Insights** : tableau de bord statistique (moyenne, médiane, histogramme, plateformes dominantes) filtrable par période et plateforme, agrémenté d'un indicateur de tendance comparant la moyenne à la période précédente.
 * **Nom de jeu personnalisé** : remplace le titre WordPress dans tableaux, widgets et données structurées.
 * **Widget « Derniers tests »** : met en avant vos dernières reviews notées.
 * **Intégration vidéo enrichie** : détection automatique YouTube, Vimeo, Twitch, Dailymotion pour un embed conforme.
@@ -92,7 +92,7 @@ Le plugin expose neuf blocs dynamiques prêts à l'emploi :
 * **Bloc tout-en-un** (`notation-jlg/all-in-one`) — activez/désactivez chaque sous-bloc, modifiez le style, la couleur d'accent, les titres et le format du score (valeur absolue ou pourcentage).
 * **Game Explorer** (`notation-jlg/game-explorer`) — configurez le tri initial, les filtres proposés et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
-* **Score Insights** (`notation-jlg/score-insights`) — sélectionnez la période analysée, filtrez par plateforme et limitez le nombre de plateformes listées pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes).
+* **Score Insights** (`notation-jlg/score-insights`) — sélectionnez la période analysée, filtrez par plateforme et limitez le nombre de plateformes listées pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes) accompagnée d'un indicateur de tendance vs la période précédente.
  
 
 Chaque bloc délègue le rendu à la logique PHP historique (shortcodes) tout en appelant `JLG_Frontend::mark_shortcode_rendered()`

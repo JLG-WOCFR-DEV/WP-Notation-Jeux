@@ -46,8 +46,9 @@ class ScoreInsights {
         $platform_slug  = $this->sanitize_platform_slug( $atts['platform'] ?? '' );
         $platform_limit = $this->sanitize_platform_limit( $atts['platform_limit'] ?? self::DEFAULT_PLATFORM_LIMIT );
 
-        $post_ids = $this->resolve_post_ids( $time_range, $platform_slug );
-        $insights = Helpers::get_posts_score_insights( $post_ids );
+        $post_context = $this->resolve_post_ids_with_history( $time_range, $platform_slug );
+        $post_ids     = $post_context['current'];
+        $insights     = Helpers::get_posts_score_insights( $post_ids );
 
         if ( isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ) {
             $insights['platform_rankings'] = array_slice( $insights['platform_rankings'], 0, $platform_limit );
@@ -55,6 +56,8 @@ class ScoreInsights {
 
         $time_ranges = $this->get_available_time_ranges();
         $platforms   = Helpers::get_registered_platform_labels();
+
+        $trend = $this->build_trend_summary( $insights, $post_context, $time_range, $time_ranges );
 
         $platform_label = '';
         if ( $platform_slug !== '' ) {
@@ -77,6 +80,7 @@ class ScoreInsights {
             'platform_label'        => $platform_label,
             'platform_limit'        => $platform_limit,
             'post_ids'              => $post_ids,
+            'trend'                 => $trend,
         );
 
         Frontend::mark_shortcode_rendered( $shortcode );
@@ -190,70 +194,19 @@ class ScoreInsights {
     }
 
     private function resolve_post_ids( $time_range, $platform_slug ) {
-        $post_ids = Helpers::get_rated_post_ids();
+        $context = $this->resolve_post_ids_with_history( $time_range, $platform_slug );
 
-        if ( empty( $post_ids ) || ! is_array( $post_ids ) ) {
-            return array();
-        }
-
-        $post_ids = array_values(
-            array_filter(
-                array_map( 'absint', $post_ids ),
-                static function ( $post_id ) {
-                    return $post_id > 0;
-                }
-            )
-        );
-
-        $ranges           = $this->get_available_time_ranges();
-        $range_definition = $ranges[ $time_range ] ?? array();
-        $since_clause     = isset( $range_definition['since'] ) ? $range_definition['since'] : null;
-        $threshold        = null;
-
-        if ( is_string( $since_clause ) && $since_clause !== '' ) {
-            $threshold = $this->get_threshold_timestamp( $since_clause );
-        }
-
-        $filtered = array();
-
-        foreach ( $post_ids as $post_id ) {
-            if ( $threshold !== null ) {
-                $post_timestamp = $this->get_post_timestamp( $post_id );
-                if ( $post_timestamp === null || $post_timestamp < $threshold ) {
-                    continue;
-                }
-            }
-
-            if ( $platform_slug !== '' && ! $this->post_matches_platform( $post_id, $platform_slug ) ) {
-                continue;
-            }
-
-            $filtered[] = $post_id;
-        }
-
-        return $filtered;
+        return $context['current'];
     }
 
     private function get_threshold_timestamp( $relative_time ) {
-        $relative_time = is_string( $relative_time ) ? trim( $relative_time ) : '';
-        if ( $relative_time === '' ) {
+        $bounds = $this->get_time_range_bounds( $relative_time );
+
+        if ( $bounds === null ) {
             return null;
         }
 
-        try {
-            $timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
-        } catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-            $timezone = new DateTimeZone( 'UTC' );
-        }
-
-        $now    = new DateTimeImmutable( 'now', $timezone );
-        $target = strtotime( $relative_time, $now->getTimestamp() );
-
-        if ( $target === false ) {
-            return null;
-        }
-
-        return (int) $target;
+        return $bounds['start'];
     }
 
     private function get_post_timestamp( $post_id ) {
@@ -346,5 +299,206 @@ class ScoreInsights {
         }
 
         return ucwords( $slug );
+    }
+
+    private function resolve_post_ids_with_history( $time_range, $platform_slug ) {
+        $post_ids = Helpers::get_rated_post_ids();
+
+        if ( empty( $post_ids ) || ! is_array( $post_ids ) ) {
+            return array(
+                'current'  => array(),
+                'previous' => array(),
+                'bounds'   => null,
+            );
+        }
+
+        $post_ids = array_values(
+            array_filter(
+                array_map( 'absint', $post_ids ),
+                static function ( $post_id ) {
+                    return $post_id > 0;
+                }
+            )
+        );
+
+        $ranges           = $this->get_available_time_ranges();
+        $range_definition = $ranges[ $time_range ] ?? array();
+        $since_clause     = isset( $range_definition['since'] ) ? $range_definition['since'] : null;
+        $bounds           = $this->get_time_range_bounds( $since_clause );
+
+        $current  = array();
+        $previous = array();
+
+        $duration = null;
+        if ( $bounds !== null ) {
+            $duration = max( 0, $bounds['end'] - $bounds['start'] );
+        }
+
+        foreach ( $post_ids as $post_id ) {
+            if ( $platform_slug !== '' && ! $this->post_matches_platform( $post_id, $platform_slug ) ) {
+                continue;
+            }
+
+            if ( $bounds === null ) {
+                $current[] = $post_id;
+                continue;
+            }
+
+            $timestamp = $this->get_post_timestamp( $post_id );
+            if ( $timestamp === null ) {
+                continue;
+            }
+
+            if ( $timestamp >= $bounds['start'] && $timestamp <= $bounds['end'] ) {
+                $current[] = $post_id;
+                continue;
+            }
+
+            if ( $duration === null || $duration === 0 ) {
+                continue;
+            }
+
+            $previous_start = $bounds['start'] - $duration;
+            if ( $timestamp >= $previous_start && $timestamp < $bounds['start'] ) {
+                $previous[] = $post_id;
+            }
+        }
+
+        return array(
+            'current'  => $current,
+            'previous' => $previous,
+            'bounds'   => $bounds,
+        );
+    }
+
+    private function get_time_range_bounds( $relative_time ) {
+        $relative_time = is_string( $relative_time ) ? trim( $relative_time ) : '';
+        if ( $relative_time === '' ) {
+            return null;
+        }
+
+        try {
+            $timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+        } catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+            $timezone = new DateTimeZone( 'UTC' );
+        }
+
+        $now        = new DateTimeImmutable( 'now', $timezone );
+        $now_stamp  = $now->getTimestamp();
+        $start_time = strtotime( $relative_time, $now_stamp );
+
+        if ( $start_time === false ) {
+            return null;
+        }
+
+        $start_time = (int) $start_time;
+
+        if ( $start_time > $now_stamp ) {
+            return null;
+        }
+
+        return array(
+            'start' => $start_time,
+            'end'   => $now_stamp,
+        );
+    }
+
+    private function build_trend_summary( $current_insights, $post_context, $time_range, $time_ranges ) {
+        $bounds         = $post_context['bounds'] ?? null;
+        $previous_ids   = $post_context['previous'] ?? array();
+        $current_mean   = isset( $current_insights['mean']['value'] ) ? $current_insights['mean']['value'] : null;
+        $current_total  = isset( $current_insights['total'] ) ? (int) $current_insights['total'] : 0;
+        $time_range_key = is_string( $time_range ) ? $time_range : '';
+
+        if ( $bounds === null || empty( $previous_ids ) || ! is_numeric( $current_mean ) || $current_total === 0 ) {
+            return array(
+                'available' => false,
+            );
+        }
+
+        $previous_insights = Helpers::get_posts_score_insights( $previous_ids );
+
+        $previous_mean  = isset( $previous_insights['mean']['value'] ) ? $previous_insights['mean']['value'] : null;
+        $previous_total = isset( $previous_insights['total'] ) ? (int) $previous_insights['total'] : 0;
+
+        if ( ! is_numeric( $previous_mean ) || $previous_total === 0 ) {
+            return array(
+                'available' => false,
+            );
+        }
+
+        $delta     = $current_mean - $previous_mean;
+        $direction = $this->resolve_trend_direction( $delta );
+
+        $comparison_label = sprintf(
+            /* translators: %s: Human readable time range label. */
+            __( 'Période précédente (%s)', 'notation-jlg' ),
+            $time_ranges[ $time_range_key ]['label'] ?? __( 'Période glissante', 'notation-jlg' )
+        );
+
+        $previous_mean_formatted = $previous_insights['mean']['formatted'] ?? null;
+
+        return array(
+            'available'                => true,
+            'comparison_label'         => $comparison_label,
+            'previous_total'           => $previous_total,
+            'previous_total_formatted' => number_format_i18n( $previous_total ),
+            'mean'                     => array(
+                'delta'              => round( $delta, 1 ),
+                'delta_formatted'    => $this->format_signed_delta( $delta ),
+                'direction'          => $direction,
+                'direction_label'    => $this->get_trend_direction_label( $direction ),
+                'previous_formatted' => $previous_mean_formatted !== null ? (string) $previous_mean_formatted : '',
+            ),
+        );
+    }
+
+    private function resolve_trend_direction( $delta ) {
+        if ( ! is_numeric( $delta ) ) {
+            return 'stable';
+        }
+
+        $rounded = round( (float) $delta, 1 );
+
+        if ( $rounded > 0.0 ) {
+            return 'up';
+        }
+
+        if ( $rounded < 0.0 ) {
+            return 'down';
+        }
+
+        return 'stable';
+    }
+
+    private function format_signed_delta( $value ) {
+        if ( ! is_numeric( $value ) ) {
+            return '±' . number_format_i18n( 0, 1 );
+        }
+
+        $rounded = round( (float) $value, 1 );
+
+        if ( abs( $rounded ) < 0.05 ) {
+            return '±' . number_format_i18n( 0, 1 );
+        }
+
+        $formatted = number_format_i18n( abs( $rounded ), 1 );
+
+        if ( $rounded > 0 ) {
+            return '+' . $formatted;
+        }
+
+        return '-' . $formatted;
+    }
+
+    private function get_trend_direction_label( $direction ) {
+        switch ( $direction ) {
+            case 'up':
+                return __( 'Tendance en hausse', 'notation-jlg' );
+            case 'down':
+                return __( 'Tendance en baisse', 'notation-jlg' );
+            default:
+                return __( 'Tendance stable', 'notation-jlg' );
+        }
     }
 }

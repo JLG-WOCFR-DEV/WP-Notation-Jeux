@@ -23,13 +23,22 @@ $platform_label   = isset( $platform_label ) ? (string) $platform_label : '';
 $platform_slug    = isset( $platform_slug ) ? (string) $platform_slug : '';
 $platform_limit   = isset( $platform_limit ) ? intval( $platform_limit ) : 5;
 
-$total_reviews   = isset( $insights['total'] ) ? intval( $insights['total'] ) : 0;
-$mean_value      = $insights['mean']['formatted'] ?? null;
-$median_value    = $insights['median']['formatted'] ?? null;
-$distribution    = isset( $insights['distribution'] ) && is_array( $insights['distribution'] ) ? $insights['distribution'] : array();
-$rankings        = isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ? $insights['platform_rankings'] : array();
-$badges          = isset( $insights['divergence_badges'] ) && is_array( $insights['divergence_badges'] ) ? $insights['divergence_badges'] : array();
-$badge_threshold = isset( $insights['badge_threshold'] ) ? (float) $insights['badge_threshold'] : 1.5;
+$total_reviews         = isset( $insights['total'] ) ? intval( $insights['total'] ) : 0;
+$mean_value            = $insights['mean']['formatted'] ?? null;
+$median_value          = $insights['median']['formatted'] ?? null;
+$distribution          = isset( $insights['distribution'] ) && is_array( $insights['distribution'] ) ? $insights['distribution'] : array();
+$rankings              = isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ? $insights['platform_rankings'] : array();
+$badges                = isset( $insights['divergence_badges'] ) && is_array( $insights['divergence_badges'] ) ? $insights['divergence_badges'] : array();
+$badge_threshold       = isset( $insights['badge_threshold'] ) ? (float) $insights['badge_threshold'] : 1.5;
+$trend                 = isset( $trend ) && is_array( $trend ) ? $trend : array();
+$trend_available       = ! empty( $trend['available'] );
+$trend_label           = isset( $trend['comparison_label'] ) ? (string) $trend['comparison_label'] : '';
+$trend_mean            = isset( $trend['mean'] ) && is_array( $trend['mean'] ) ? $trend['mean'] : array();
+$trend_delta           = isset( $trend_mean['delta_formatted'] ) ? (string) $trend_mean['delta_formatted'] : '';
+$trend_direction       = isset( $trend_mean['direction'] ) ? (string) $trend_mean['direction'] : 'stable';
+$trend_direction_label = isset( $trend_mean['direction_label'] ) ? (string) $trend_mean['direction_label'] : '';
+$trend_previous_mean   = isset( $trend_mean['previous_formatted'] ) ? (string) $trend_mean['previous_formatted'] : '';
+$trend_previous_total  = isset( $trend['previous_total_formatted'] ) ? (string) $trend['previous_total_formatted'] : '';
 
 $title = '';
 if ( ! empty( $atts['title'] ) ) {
@@ -108,6 +117,38 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
                         </dd>
                     </div>
                 </dl>
+                <?php if ( $trend_available ) : ?>
+                    <?php
+                    $trend_classes = array( 'jlg-score-insights__trend-value' );
+                    if ( $trend_direction !== '' ) {
+                        $trend_classes[] = 'jlg-score-insights__trend-value--' . sanitize_html_class( $trend_direction );
+                    }
+                    $trend_value_class = implode( ' ', array_map( 'sanitize_html_class', $trend_classes ) );
+                    ?>
+                    <div class="jlg-score-insights__trend" role="status">
+                        <p class="jlg-score-insights__trend-delta">
+                            <span class="<?php echo esc_attr( $trend_value_class ); ?>" aria-hidden="true">
+                                <?php echo esc_html( $trend_delta ); ?>
+                            </span>
+                            <span class="jlg-score-insights__trend-label">
+                                <?php echo esc_html( $trend_label ); ?>
+                            </span>
+                        </p>
+                        <p class="jlg-score-insights__trend-details">
+                            <?php
+                            echo esc_html(
+                                sprintf(
+                                    /* translators: 1: textual direction (up/down/stable), 2: previous mean, 3: number of reviews. */
+                                    __( '%1$s — moyenne précédente %2$s sur %3$s tests.', 'notation-jlg' ),
+                                    $trend_direction_label !== '' ? $trend_direction_label : __( 'Tendance stable', 'notation-jlg' ),
+                                    $trend_previous_mean !== '' ? $trend_previous_mean : __( 'N/A', 'notation-jlg' ),
+                                    $trend_previous_total !== '' ? $trend_previous_total : number_format_i18n( 0 )
+                                )
+                            );
+                            ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <?php if ( ! empty( $badges ) ) : ?>

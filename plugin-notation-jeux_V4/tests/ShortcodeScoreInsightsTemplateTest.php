@@ -36,6 +36,18 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
             ),
         );
 
+        $trend = array(
+            'available' => true,
+            'comparison_label' => 'Période précédente (30 derniers jours)',
+            'previous_total_formatted' => '4',
+            'mean' => array(
+                'delta_formatted' => '+0,5',
+                'direction' => 'up',
+                'direction_label' => 'Tendance en hausse',
+                'previous_formatted' => '7,7',
+            ),
+        );
+
         $time_range = 'last_30_days';
         $time_range_label = '30 derniers jours';
         $platform_slug = '';
@@ -50,5 +62,8 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
         $this->assertMatchesRegularExpression('/<progress[^>]*aria-label="[^"]+"/i', $output, 'Histogram buckets should expose accessible aria-labels.');
         $this->assertMatchesRegularExpression('/<progress[^>]*value="40"/i', $output, 'Histogram buckets should expose numeric progress values.');
         $this->assertMatchesRegularExpression('/<span class="screen-reader-text">[^<]+PC[^<]+tests/i', $output, 'Platform ranking should provide a screen reader summary.');
+        $this->assertStringContainsString('Période précédente (30 derniers jours)', $output, 'Trend label should be rendered.');
+        $this->assertStringContainsString('Tendance en hausse', $output, 'Trend direction label should be present.');
+        $this->assertMatchesRegularExpression('/jlg-score-insights__trend-value--up/', $output, 'Trend block should reflect positive direction class.');
     }
 }
