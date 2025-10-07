@@ -187,6 +187,26 @@ if (!function_exists('wp_next_scheduled')) {
     }
 }
 
+if (!function_exists('wp_schedule_event')) {
+    /**
+     * Capture recurring cron events so tests can assert scheduling logic.
+     */
+    function wp_schedule_event($timestamp, $recurrence, $hook, $args = []) {
+        if (!isset($GLOBALS['jlg_test_scheduled_events'])) {
+            $GLOBALS['jlg_test_scheduled_events'] = [];
+        }
+
+        $GLOBALS['jlg_test_scheduled_events'][] = [
+            'timestamp'  => (int) $timestamp,
+            'hook'       => (string) $hook,
+            'recurrence' => (string) $recurrence,
+            'args'       => is_array($args) ? $args : [$args],
+        ];
+
+        return true;
+    }
+}
+
 if (!function_exists('wp_schedule_single_event')) {
     /**
      * Capture single-event schedules so tests can validate cron behaviour.
@@ -706,6 +726,37 @@ if (!function_exists('wp_timezone')) {
         } catch (Exception $exception) {
             return new DateTimeZone('UTC');
         }
+    }
+}
+
+if (!function_exists('wp_date')) {
+    function wp_date($format, $timestamp, $timezone = null) {
+        if (!is_int($timestamp)) {
+            $timestamp = is_numeric($timestamp) ? (int) $timestamp : strtotime((string) $timestamp);
+        }
+
+        if (!is_int($timestamp)) {
+            return '';
+        }
+
+        if (!($timezone instanceof DateTimeZone)) {
+            try {
+                $timezone = wp_timezone();
+            } catch (Exception $exception) {
+                $timezone = new DateTimeZone('UTC');
+            }
+        }
+
+        try {
+            $date = new DateTimeImmutable('@' . $timestamp);
+            $date = $date->setTimezone($timezone);
+        } catch (Exception $exception) {
+            return '';
+        }
+
+        $format = is_string($format) && $format !== '' ? $format : 'Y-m-d H:i:s';
+
+        return $date->format($format);
     }
 }
 
@@ -1975,6 +2026,43 @@ if (!function_exists('get_post_meta')) {
         }
 
         return [$value];
+    }
+}
+
+if (!function_exists('get_post_modified_time')) {
+    function get_post_modified_time($d = 'U', $gmt = false, $post = null, $translate = true)
+    {
+        unset($translate);
+
+        if ($post === null) {
+            $post = get_post();
+        }
+
+        if (!$post instanceof WP_Post) {
+            return false;
+        }
+
+        $field = $gmt ? 'post_modified_gmt' : 'post_modified';
+        $value = isset($post->$field) ? (string) $post->$field : '';
+
+        if ($value === '') {
+            return false;
+        }
+
+        try {
+            $timezone = $gmt ? new DateTimeZone('UTC') : wp_timezone();
+            $date     = new DateTimeImmutable($value, $timezone);
+        } catch (Exception $exception) {
+            return false;
+        }
+
+        if ($d === 'U' || $d === 'G') {
+            return $date->getTimestamp();
+        }
+
+        $format = is_string($d) && $d !== '' ? $d : 'Y-m-d H:i:s';
+
+        return $date->format($format);
     }
 }
 

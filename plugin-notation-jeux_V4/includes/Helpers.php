@@ -14,9 +14,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Helpers {
 
-    public const SCORE_SCALE_MIGRATION_OPTION = 'jlg_score_scale_migration';
-    public const SCORE_SCALE_QUEUE_OPTION     = 'jlg_score_scale_queue';
-    public const SCORE_SCALE_EVENT_HOOK       = 'jlg_process_score_scale_migration';
+    public const SCORE_SCALE_MIGRATION_OPTION      = 'jlg_score_scale_migration';
+    public const SCORE_SCALE_QUEUE_OPTION          = 'jlg_score_scale_queue';
+    public const SCORE_SCALE_EVENT_HOOK            = 'jlg_process_score_scale_migration';
+    public const REVIEW_STATUS_CRON_HOOK           = 'jlg_review_status_auto_finalize';
+    public const REVIEW_STATUS_META_KEY            = '_jlg_review_status';
+    public const REVIEW_STATUS_LAST_PATCH_META_KEY = '_jlg_last_patch_date';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search' );
@@ -1528,88 +1531,88 @@ class Helpers {
             'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
 
             // Couleurs de Thème Sombre personnalisables
-            'dark_bg_color'                      => $dark_defaults['bg_color'],
-            'dark_bg_color_secondary'            => $dark_defaults['bg_color_secondary'],
-            'dark_border_color'                  => $dark_defaults['border_color'],
-            'dark_text_color'                    => $dark_defaults['text_color'],
-            'dark_text_color_secondary'          => $dark_defaults['text_color_secondary'],
-            'tagline_bg_color'                   => $dark_defaults['tagline_bg_color'],
-            'tagline_text_color'                 => $dark_defaults['tagline_text_color'],
+            'dark_bg_color'                       => $dark_defaults['bg_color'],
+            'dark_bg_color_secondary'             => $dark_defaults['bg_color_secondary'],
+            'dark_border_color'                   => $dark_defaults['border_color'],
+            'dark_text_color'                     => $dark_defaults['text_color'],
+            'dark_text_color_secondary'           => $dark_defaults['text_color_secondary'],
+            'tagline_bg_color'                    => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'                  => $dark_defaults['tagline_text_color'],
 
             // Couleurs de Thème Clair personnalisables
-            'light_bg_color'                     => $light_defaults['bg_color'],
-            'light_bg_color_secondary'           => $light_defaults['bg_color_secondary'],
-            'light_border_color'                 => $light_defaults['border_color'],
-            'light_text_color'                   => $light_defaults['text_color'],
-            'light_text_color_secondary'         => $light_defaults['text_color_secondary'],
+            'light_bg_color'                      => $light_defaults['bg_color'],
+            'light_bg_color_secondary'            => $light_defaults['bg_color_secondary'],
+            'light_border_color'                  => $light_defaults['border_color'],
+            'light_text_color'                    => $light_defaults['text_color'],
+            'light_text_color_secondary'          => $light_defaults['text_color_secondary'],
 
             // Couleurs sémantiques et de marque
-            'score_gradient_1'                   => '#60a5fa',
-            'score_gradient_2'                   => '#c084fc',
-            'color_low'                          => '#ef4444',
-            'color_mid'                          => '#f97316',
-            'color_high'                         => '#22c55e',
-            'user_rating_star_color'             => '#f59e0b',
-            'user_rating_text_color'             => '#a1a1aa',
-            'user_rating_title_color'            => '#fafafa',
+            'score_gradient_1'                    => '#60a5fa',
+            'score_gradient_2'                    => '#c084fc',
+            'color_low'                           => '#ef4444',
+            'color_mid'                           => '#f97316',
+            'color_high'                          => '#22c55e',
+            'user_rating_star_color'              => '#f59e0b',
+            'user_rating_text_color'              => '#a1a1aa',
+            'user_rating_title_color'             => '#fafafa',
 
             // Options cercle
-            'circle_dynamic_bg_enabled'          => 0,
-            'circle_border_enabled'              => 1,
-            'circle_border_width'                => 5,
-            'circle_border_color'                => '#60a5fa',
+            'circle_dynamic_bg_enabled'           => 0,
+            'circle_border_enabled'               => 1,
+            'circle_border_width'                 => 5,
+            'circle_border_color'                 => '#60a5fa',
 
             // Options glow pour mode texte
-            'text_glow_enabled'                  => 0,
-            'text_glow_color_mode'               => 'dynamic',
-            'text_glow_custom_color'             => '#ffffff',
-            'text_glow_intensity'                => 15,
-            'text_glow_pulse'                    => 0,
-            'text_glow_speed'                    => 2.5,
+            'text_glow_enabled'                   => 0,
+            'text_glow_color_mode'                => 'dynamic',
+            'text_glow_custom_color'              => '#ffffff',
+            'text_glow_intensity'                 => 15,
+            'text_glow_pulse'                     => 0,
+            'text_glow_speed'                     => 2.5,
 
             // Options glow pour mode cercle
-            'circle_glow_enabled'                => 0,
-            'circle_glow_color_mode'             => 'dynamic',
-            'circle_glow_custom_color'           => '#ffffff',
-            'circle_glow_intensity'              => 15,
-            'circle_glow_pulse'                  => 0,
-            'circle_glow_speed'                  => 2.5,
+            'circle_glow_enabled'                 => 0,
+            'circle_glow_color_mode'              => 'dynamic',
+            'circle_glow_custom_color'            => '#ffffff',
+            'circle_glow_intensity'               => 15,
+            'circle_glow_pulse'                   => 0,
+            'circle_glow_speed'                   => 2.5,
 
             // Options des modules
-            'tagline_enabled'                    => 1,
-            'user_rating_enabled'                => 1,
-            'user_rating_requires_login'         => 0,
-            'user_rating_weighting_enabled'      => 0,
-            'user_rating_guest_weight_start'     => 0.5,
-            'user_rating_guest_weight_increment' => 0.1,
-            'user_rating_guest_weight_max'       => 1.0,
-            'table_zebra_striping'               => 0,
-            'table_border_style'                 => 'horizontal',
-            'table_border_width'                 => 1,
-            'table_header_bg_color'              => '#3f3f46',
-            'table_header_text_color'            => '#ffffff',
-            'table_row_bg_color'                 => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
-            'table_row_text_color'               => '#a1a1aa',
-            'table_zebra_bg_color'               => '#27272a',
-            'thumb_text_color'                   => '#ffffff',
-            'thumb_font_size'                    => 14,
-            'thumb_padding'                      => 8,
-            'thumb_border_radius'                => 4,
+            'tagline_enabled'                     => 1,
+            'user_rating_enabled'                 => 1,
+            'user_rating_requires_login'          => 0,
+            'user_rating_weighting_enabled'       => 0,
+            'user_rating_guest_weight_start'      => 0.5,
+            'user_rating_guest_weight_increment'  => 0.1,
+            'user_rating_guest_weight_max'        => 1.0,
+            'table_zebra_striping'                => 0,
+            'table_border_style'                  => 'horizontal',
+            'table_border_width'                  => 1,
+            'table_header_bg_color'               => '#3f3f46',
+            'table_header_text_color'             => '#ffffff',
+            'table_row_bg_color'                  => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
+            'table_row_text_color'                => '#a1a1aa',
+            'table_zebra_bg_color'                => '#27272a',
+            'thumb_text_color'                    => '#ffffff',
+            'thumb_font_size'                     => 14,
+            'thumb_padding'                       => 8,
+            'thumb_border_radius'                 => 4,
 
             // Options Game Explorer
-            'game_explorer_columns'              => 3,
-            'game_explorer_posts_per_page'       => 12,
-            'game_explorer_filters'              => self::GAME_EXPLORER_DEFAULT_FILTERS,
-            'game_explorer_score_position'       => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
+            'game_explorer_columns'               => 3,
+            'game_explorer_posts_per_page'        => 12,
+            'game_explorer_filters'               => self::GAME_EXPLORER_DEFAULT_FILTERS,
+            'game_explorer_score_position'        => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés & catégories de notation
-            'rating_categories'                  => self::get_default_category_definitions(),
+            'rating_categories'                   => self::get_default_category_definitions(),
 
             // Options techniques et diverses
-            'custom_css'                         => '',
-            'seo_schema_enabled'                 => 1,
-            'debug_mode_enabled'                 => 0,
-            'rawg_api_key'                       => '',
+            'custom_css'                          => '',
+            'seo_schema_enabled'                  => 1,
+            'debug_mode_enabled'                  => 0,
+            'rawg_api_key'                        => '',
         );
 
         return self::$default_settings_cache;

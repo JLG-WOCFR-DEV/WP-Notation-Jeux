@@ -80,6 +80,30 @@ $video_region_label  = $video_provider_name !== ''
     : __( 'Vidéo de test', 'notation-jlg' );
 $video_region_id     = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-aio-video-label-' ) : 'jlg-aio-video-label-' . uniqid();
 
+$verdict_data         = isset( $verdict ) && is_array( $verdict ) ? $verdict : array();
+$display_verdict      = ! empty( $display_verdict );
+$verdict_summary_raw  = isset( $verdict_data['summary'] ) ? trim( (string) $verdict_data['summary'] ) : '';
+$verdict_summary_html = '';
+if ( $verdict_summary_raw !== '' ) {
+    if ( strpos( $verdict_summary_raw, '<' ) === false ) {
+        $verdict_summary_html = '<p>' . str_replace( array( "\r\n", "\r", "\n" ), '</p><p>', esc_html( $verdict_summary_raw ) ) . '</p>';
+    } else {
+        $verdict_summary_html = wp_kses_post( $verdict_summary_raw );
+    }
+}
+$verdict_status             = isset( $verdict_data['status'] ) && is_array( $verdict_data['status'] ) ? $verdict_data['status'] : array();
+$verdict_status_slug        = isset( $verdict_status['slug'] ) ? sanitize_html_class( (string) $verdict_status['slug'] ) : '';
+$verdict_status_label       = isset( $verdict_status['label'] ) ? (string) $verdict_status['label'] : '';
+$verdict_status_description = isset( $verdict_status['description'] ) ? (string) $verdict_status['description'] : '';
+$verdict_cta_label          = isset( $verdict_data['cta_label'] ) ? (string) $verdict_data['cta_label'] : '';
+$verdict_cta_url            = isset( $verdict_data['cta_url'] ) ? (string) $verdict_data['cta_url'] : '';
+$verdict_cta_rel            = isset( $verdict_data['cta_rel'] ) ? (string) $verdict_data['cta_rel'] : 'bookmark';
+$verdict_permalink          = isset( $verdict_data['permalink'] ) ? (string) $verdict_data['permalink'] : '';
+$verdict_timestamp          = isset( $verdict_data['last_updated']['timestamp'] ) ? $verdict_data['last_updated']['timestamp'] : null;
+$verdict_iso_date           = isset( $verdict_data['last_updated']['iso'] ) ? (string) $verdict_data['last_updated']['iso'] : '';
+$verdict_date_label         = isset( $verdict_data['last_updated']['display'] ) ? (string) $verdict_data['last_updated']['display'] : '';
+$verdict_section_id         = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-aio-verdict-' ) : 'jlg-aio-verdict-' . uniqid();
+
 if ( $average_score_display !== '' ) {
     if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
         $visible_value = sprintf(
@@ -170,6 +194,71 @@ if ( $average_score_display !== '' ) {
         </div>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
+
+    <?php if ( $display_verdict ) : ?>
+    <section class="jlg-aio-verdict" aria-labelledby="<?php echo esc_attr( $verdict_section_id ); ?>">
+        <div class="jlg-aio-verdict__meta">
+            <?php if ( $verdict_status_label !== '' ) : ?>
+				<?php
+				$status_classes = array( 'jlg-aio-verdict__status' );
+				if ( $verdict_status_slug !== '' ) {
+					$status_classes[] = 'jlg-aio-verdict__status--' . $verdict_status_slug;
+				}
+				$status_class_attr = implode( ' ', array_map( 'sanitize_html_class', $status_classes ) );
+				?>
+            <span class="<?php echo esc_attr( $status_class_attr ); ?>">
+                <span class="jlg-aio-verdict__status-indicator" aria-hidden="true"></span>
+                <span class="jlg-aio-verdict__status-label"><?php echo esc_html( $verdict_status_label ); ?></span>
+                <?php if ( $verdict_status_description !== '' ) : ?>
+                <span class="jlg-aio-verdict__status-description"><?php echo esc_html( $verdict_status_description ); ?></span>
+                <?php endif; ?>
+            </span>
+            <?php endif; ?>
+
+            <?php if ( $verdict_date_label !== '' ) : ?>
+            <span class="jlg-aio-verdict__updated">
+                <?php
+                $formatted_update = sprintf(
+                    /* translators: %s: formatted update date. */
+                    esc_html__( 'Mise à jour le %s', 'notation-jlg' ),
+                    $verdict_date_label
+                );
+                ?>
+                <?php if ( $verdict_iso_date !== '' ) : ?>
+                    <time datetime="<?php echo esc_attr( $verdict_iso_date ); ?>"><?php echo $formatted_update; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></time>
+                <?php else : ?>
+                    <?php echo $formatted_update; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php endif; ?>
+            </span>
+            <?php endif; ?>
+        </div>
+
+        <div class="jlg-aio-verdict__body">
+            <div class="jlg-aio-verdict__heading">
+                <h3 id="<?php echo esc_attr( $verdict_section_id ); ?>" class="jlg-aio-verdict__title"><?php echo esc_html__( 'Verdict de la rédaction', 'notation-jlg' ); ?></h3>
+                <?php if ( $verdict_permalink !== '' ) : ?>
+                <a class="jlg-aio-verdict__permalink" href="<?php echo esc_url( $verdict_permalink ); ?>">
+                    <span class="screen-reader-text"><?php esc_html_e( 'Voir le test complet', 'notation-jlg' ); ?></span>
+                </a>
+                <?php endif; ?>
+            </div>
+
+            <?php if ( $verdict_summary_html !== '' ) : ?>
+            <div class="jlg-aio-verdict__summary">
+                <?php echo $verdict_summary_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ( $verdict_cta_url !== '' && $verdict_cta_label !== '' ) : ?>
+            <div class="jlg-aio-verdict__actions">
+                <a class="jlg-aio-verdict__cta" href="<?php echo esc_url( $verdict_cta_url ); ?>"<?php echo $verdict_cta_rel !== '' ? ' rel="' . esc_attr( $verdict_cta_rel ) . '"' : ''; ?>>
+                    <span class="jlg-aio-verdict__cta-label"><?php echo esc_html( $verdict_cta_label ); ?></span>
+                </a>
+            </div>
+            <?php endif; ?>
+        </div>
+    </section>
     <?php endif; ?>
 
     <?php if ( $video_should_render ) : ?>

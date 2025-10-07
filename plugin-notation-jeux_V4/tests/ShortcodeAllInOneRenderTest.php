@@ -285,6 +285,8 @@ class ShortcodeAllInOneRenderTest extends TestCase
             'ID'          => $post_id,
             'post_type'   => $post_type,
             'post_status' => 'publish',
+            'post_modified' => '2025-10-05 12:34:00',
+            'post_modified_gmt' => '2025-10-05 10:34:00',
         ]);
 
         $GLOBALS['jlg_test_meta'][$post_id] = [

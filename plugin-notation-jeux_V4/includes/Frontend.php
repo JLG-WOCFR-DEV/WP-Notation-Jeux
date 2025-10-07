@@ -3186,6 +3186,8 @@ class Frontend {
                 'extra_classes'            => '',
                 'score_layout'             => 'text',
                 'animations_enabled'       => false,
+                'verdict'                  => array(),
+                'display_verdict'          => false,
                 'should_show_rating_badge' => false,
                 'user_rating_average'      => null,
                 'user_rating_delta'        => null,

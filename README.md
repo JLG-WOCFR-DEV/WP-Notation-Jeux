@@ -3,14 +3,14 @@
 Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un système complet de notation destiné aux sites de tests de jeux vidéo. Il fournit un rendu professionnel pour vos reviews avec des shortcodes prêts à l'emploi, un widget et des helpers PHP pour intégrer la note partout dans votre thème.
 
 ## Présentation rapide
-- **Fonctionnalités clés :** 6 catégories de notes personnalisables avec badge « Coup de cœur » éditorial, notation lecteurs avec histogramme dynamique, remplissage RAWG, validation PEGI/date/nom du jeu, Game Explorer filtrable, Score Insights (moyenne, médiane, histogramme, top plateformes), tableau récapitulatif triable, widget des derniers tests, indicateur de statut éditorial (brouillon/mise à jour/final) et guides associés configurables pour orienter les lecteurs vers des contenus complémentaires.
+- **Fonctionnalités clés :** 6 catégories de notes personnalisables avec badge « Coup de cœur » éditorial, notation lecteurs avec histogramme dynamique, remplissage RAWG, validation PEGI/date/nom du jeu, Game Explorer filtrable, Score Insights (moyenne, médiane, histogramme, top plateformes), tableau récapitulatif triable, widget des derniers tests, indicateur de statut éditorial (brouillon/mise à jour/final) avec automatisation configurable pour repasser les reviews en « Version finale » après X jours sans patch, et guides associés configurables pour orienter les lecteurs vers des contenus complémentaires.
 - **Prérequis techniques :** WordPress 5.0 minimum et PHP 7.4 ou supérieur, vérifiés automatiquement à l’activation du plugin.
 - **Architecture :** le cœur du plugin charge dynamiquement les composants admin et front-office, inclut un widget et expose des fonctions helper globales (`jlg_notation()`, `jlg_get_post_rating()`, `jlg_display_post_rating()`).
 
 ## Installation et configuration initiale
 1. **Installer le plugin** depuis ce dépôt (copier `plugin-notation-jeux_V4` dans `wp-content/plugins/`) puis l’activer depuis le menu *Extensions* de WordPress.
 2. **Remplir les metaboxes** dédiées aux notes et aux détails du test dans l’éditeur d’articles : les six catégories sont notées sur 10 et la metabox principale capture fiche technique, plateformes, taglines bilingues, points forts/faibles, etc.
-3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels. La section *Contenus* permet désormais de sélectionner les types de publications (articles, CPT publics…) autorisés pour la notation ; au besoin, un développeur peut toujours compléter ou restreindre cette liste via le filtre PHP `jlg_rated_post_types`.
+3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels. La section *Contenus* permet désormais de sélectionner les types de publications (articles, CPT publics…) autorisés pour la notation ; au besoin, un développeur peut toujours compléter ou restreindre cette liste via le filtre PHP `jlg_rated_post_types`. Le module *Statut de review* propose un toggle « Finalisation auto du statut » ainsi qu’un champ « Délai avant finalisation » (en jours) pour laisser le cron `jlg_review_status_auto_finalize` ramener automatiquement les tests en « Version finale » après vérification des patchs.
 4. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
 5. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu.
 
@@ -39,6 +39,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).
 - **Gestion des traductions** : le modèle `languages/notation-jlg.pot` est prêt pour générer les fichiers `.po/.mo`.
+- **Automatisation du statut** : l’événement planifié `jlg_review_status_auto_finalize` inspecte la métadonnée `_jlg_last_patch_date` et bascule les articles éligibles vers le statut « final » ; le hook `jlg_review_status_transition` se déclenche lors de chaque bascule (manuelle ou automatique) pour journaliser l’action ou notifier des services tiers.
 - **Routine de désinstallation** : `uninstall.php` supprime proprement options, métadonnées et transients si l’utilisateur choisit de purger les données lors de la désactivation définitive.
 - **Assets & templates** :
   - [`assets/`](plugin-notation-jeux_V4/assets) regroupe styles, scripts et images front/back.

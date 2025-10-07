@@ -17,7 +17,7 @@ Ce document décline les opportunités identifiées dans le benchmark du 5 octob
 | Deliverable | Description | Piliers UX | Estimation | Notes |
 | --- | --- | --- | --- | --- |
 | Sous-bloc Verdict | Encapsule résumé, verdict, CTA vers review complète, statut et date de mise à jour. | Hiérarchie info, crédibilité | 6 j | Inclure toggle Gutenberg + attributs shortcode. |
-| Mode « Review en cours » automatisé | Cron qui vérifie les métadonnées `last_patch_date` et bascule statut → Final après X jours. | Fraîcheur du contenu | 3 j | Ajouter tests unitaires + hook `jlg_review_status_transition`. |
+| Mode « Review en cours » automatisé | Cron qui vérifie les métadonnées `last_patch_date` et bascule statut → Final après X jours. (✅ livré via `jlg_review_status_auto_finalize` + hook `jlg_review_status_transition`) | Fraîcheur du contenu | 3 j | Ajouter tests unitaires + hook `jlg_review_status_transition`. |
 | Comparateur plateformes | Shortcode/bloc `jlg_platform_breakdown` avec colonnes performances, recommandations. | Guidance d'achat | 8 j | Requiert extension metabox plateformes + data structure. |
 
 ## Vague 2 – Monétisation & insights (S+8 à S+16)

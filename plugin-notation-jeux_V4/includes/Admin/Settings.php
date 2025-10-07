@@ -879,13 +879,14 @@ class Settings {
         // Section 7: Modules
         add_settings_section( 'jlg_modules', '7. 🧩 Modules', null, 'notation_jlg_page' );
         $module_fields = array(
-            'user_rating_enabled'    => 'Notation utilisateurs',
-            'rating_badge_enabled'   => 'Badge « Coup de cœur »',
-            'review_status_enabled'  => 'Statut de review',
-            'related_guides_enabled' => 'Guides associés',
-            'tagline_enabled'        => 'Taglines bilingues',
-            'seo_schema_enabled'     => 'Schéma SEO (étoiles Google)',
-            'enable_animations'      => 'Animations des barres',
+            'user_rating_enabled'                 => 'Notation utilisateurs',
+            'rating_badge_enabled'                => 'Badge « Coup de cœur »',
+            'review_status_enabled'               => 'Statut de review',
+            'review_status_auto_finalize_enabled' => __( 'Finalisation auto du statut', 'notation-jlg' ),
+            'related_guides_enabled'              => 'Guides associés',
+            'tagline_enabled'                     => 'Taglines bilingues',
+            'seo_schema_enabled'                  => 'Schéma SEO (étoiles Google)',
+            'enable_animations'                   => 'Animations des barres',
         );
         foreach ( $module_fields as $id => $title ) {
             add_settings_field(
@@ -900,6 +901,23 @@ class Settings {
 				)
             );
         }
+
+        $auto_finalize_days_args = array(
+            'id'   => 'review_status_auto_finalize_days',
+            'type' => 'number',
+            'min'  => 1,
+            'max'  => 60,
+            'desc' => __( 'Nombre de jours à attendre après le dernier patch vérifié avant de repasser en « Version finale ».', 'notation-jlg' ),
+        );
+        add_settings_field(
+            'review_status_auto_finalize_days',
+            __( 'Délai avant finalisation (jours)', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            $auto_finalize_days_args
+        );
+        $this->store_field_constraints( $auto_finalize_days_args );
 
         $rating_badge_threshold_args = array(
             'id'   => 'rating_badge_threshold',
