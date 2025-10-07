@@ -2,6 +2,42 @@
 :root {
     --jlg-focus-ring-color: var(--jlg-score-gradient-1, #60a5fa);
     --jlg-focus-ring-contrast-color: #ffffff;
+    --jlg-bg-color: #ffffff;
+    --jlg-bg-color-secondary: #f8fafc;
+    --jlg-border-color: #e2e8f0;
+    --jlg-main-text-color: #0f172a;
+    --jlg-secondary-text-color: #475569;
+    --jlg-bar-bg-color: #f1f5f9;
+    --jlg-score-gradient-1: #60a5fa;
+    --jlg-score-gradient-2: #2563eb;
+    --jlg-score-gradient-1-hover: #3b82f6;
+    --jlg-color-high: #16a34a;
+    --jlg-color-low: #dc2626;
+    --jlg-color-mid: #f97316;
+    --jlg-tagline-bg-color: #eff6ff;
+    --jlg-tagline-text-color: #0f172a;
+    --jlg-tagline-font-size: 1rem;
+    --jlg-user-rating-text-color: #1f2937;
+    --jlg-user-rating-star-color: #fbbf24;
+    --jlg-table-header-bg-color: #f8fafc;
+    --jlg-table-header-text-color: #0f172a;
+    --jlg-table-row-bg-color: #ffffff;
+    --jlg-table-row-text-color: #475569;
+    --jlg-table-row-hover-color: #e2e8f0;
+    --jlg-table-link-color: #2563eb;
+    --jlg-table-zebra-bg-color: transparent;
+    --jlg-summary-overlay-color: rgba(15, 23, 42, 0.35);
+    --jlg-ge-accent: #2563eb;
+    --jlg-ge-card-border: #e2e8f0;
+    --jlg-ge-card-bg: #ffffff;
+    --jlg-ge-text: #0f172a;
+    --jlg-ge-text-muted: #64748b;
+    --jlg-score-insights-surface: rgba(248, 250, 252, 0.75);
+    --jlg-score-insights-border: rgba(148, 163, 184, 0.35);
+    --jlg-score-insights-text: #475569;
+    --jlg-score-insights-neutral: #0f172a;
+    --jlg-score-insights-positive: #16a34a;
+    --jlg-score-insights-negative: #dc2626;
 }
 
 .review-box-jlg {
