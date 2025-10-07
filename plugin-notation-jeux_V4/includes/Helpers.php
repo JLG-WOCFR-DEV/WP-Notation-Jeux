@@ -1652,6 +1652,137 @@ class Helpers {
         return $payload;
     }
 
+    public static function get_review_verdict_for_post( $post_id, array $overrides = array(), ?array $options = null ) {
+        $post_id = (int) $post_id;
+
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        $verdict = self::get_verdict_data_for_post( $post_id, $options, $overrides );
+
+        $payload = array(
+            'enabled'       => (bool) ( $verdict['enabled'] ?? false ),
+            'summary'       => '',
+            'summary_limit' => isset( $verdict['summary_limit'] ) ? (int) $verdict['summary_limit'] : 0,
+            'cta_label'     => '',
+            'cta_url'       => '',
+            'cta_rel'       => '',
+            'status'        => array(
+                'slug'        => '',
+                'label'       => '',
+                'description' => '',
+            ),
+            'last_updated'  => array(
+                'timestamp' => null,
+                'display'   => '',
+                'iso'       => '',
+                'title'     => '',
+            ),
+            'permalink'     => isset( $verdict['permalink'] ) ? (string) $verdict['permalink'] : '',
+        );
+
+        $raw_summary = '';
+        if ( isset( $overrides['summary'] ) && is_string( $overrides['summary'] ) ) {
+            $raw_summary = trim( $overrides['summary'] );
+        } elseif ( $post_id > 0 ) {
+            $stored_summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
+            if ( is_string( $stored_summary ) ) {
+                $raw_summary = trim( $stored_summary );
+            }
+        }
+
+        if ( $raw_summary === '' && isset( $verdict['summary'] ) ) {
+            $raw_summary = (string) $verdict['summary'];
+        }
+
+        $payload['summary'] = $raw_summary;
+
+        if ( isset( $verdict['cta'] ) && is_array( $verdict['cta'] ) ) {
+            $payload['cta_label'] = isset( $verdict['cta']['label'] ) ? (string) $verdict['cta']['label'] : '';
+            $payload['cta_url']   = isset( $verdict['cta']['url'] ) ? (string) $verdict['cta']['url'] : '';
+            $payload['cta_rel']   = isset( $verdict['cta']['rel'] ) ? (string) $verdict['cta']['rel'] : '';
+        }
+
+        if ( isset( $verdict['status'] ) && is_array( $verdict['status'] ) ) {
+            $payload['status'] = array(
+                'slug'        => isset( $verdict['status']['slug'] ) ? (string) $verdict['status']['slug'] : '',
+                'label'       => isset( $verdict['status']['label'] ) ? (string) $verdict['status']['label'] : '',
+                'description' => isset( $verdict['status']['description'] ) ? (string) $verdict['status']['description'] : '',
+            );
+        }
+
+        if ( isset( $verdict['updated'] ) && is_array( $verdict['updated'] ) ) {
+            $timestamp = isset( $verdict['updated']['timestamp'] )
+                ? $verdict['updated']['timestamp']
+                : null;
+
+            $payload['last_updated'] = array(
+                'timestamp' => is_numeric( $timestamp ) ? (int) $timestamp : null,
+                'display'   => isset( $verdict['updated']['display'] ) ? (string) $verdict['updated']['display'] : '',
+                'iso'       => isset( $verdict['updated']['datetime'] ) ? (string) $verdict['updated']['datetime'] : '',
+                'title'     => isset( $verdict['updated']['title'] ) ? (string) $verdict['updated']['title'] : '',
+            );
+        }
+
+        if ( $post_id > 0 && ( $payload['last_updated']['display'] === '' || $payload['last_updated']['iso'] === '' ) ) {
+            $post_object = get_post( $post_id );
+
+            if ( $post_object instanceof \WP_Post ) {
+                $raw_gmt   = isset( $post_object->post_modified_gmt ) ? trim( (string) $post_object->post_modified_gmt ) : '';
+                $raw_local = isset( $post_object->post_modified ) ? trim( (string) $post_object->post_modified ) : '';
+
+                $timestamp = $raw_gmt !== '' ? strtotime( $raw_gmt . ' UTC' ) : null;
+
+                if ( ! is_int( $timestamp ) && $raw_local !== '' ) {
+                    $timestamp = strtotime( $raw_local );
+                }
+
+                if ( is_int( $timestamp ) && $timestamp > 0 ) {
+                    $payload['last_updated']['timestamp'] = $payload['last_updated']['timestamp'] ?? $timestamp;
+                    if ( $payload['last_updated']['display'] === '' ) {
+                        $date_format = get_option( 'date_format', 'F j, Y' );
+                        if ( ! is_string( $date_format ) || $date_format === '' ) {
+                            $date_format = 'F j, Y';
+                        }
+
+                        $payload['last_updated']['display'] = date_i18n( $date_format, $timestamp );
+                    }
+
+                    if ( $payload['last_updated']['iso'] === '' ) {
+                        $payload['last_updated']['iso'] = gmdate( 'c', $timestamp );
+                    }
+
+                    if ( $payload['last_updated']['title'] === '' ) {
+                        $date_format = get_option( 'date_format', 'F j, Y' );
+                        $time_format = get_option( 'time_format', 'H:i' );
+
+                        if ( ! is_string( $date_format ) || $date_format === '' ) {
+                            $date_format = 'F j, Y';
+                        }
+
+                        if ( ! is_string( $time_format ) || $time_format === '' ) {
+                            $time_format = 'H:i';
+                        }
+
+                        $payload['last_updated']['title'] = date_i18n( $date_format . ' ' . $time_format, $timestamp );
+                    }
+                }
+            }
+        }
+
+        /**
+         * Permet d'ajuster le payload simplifié utilisé pour afficher la carte verdict.
+         *
+         * @param array $payload  Données normalisées pour le front.
+         * @param int   $post_id  Identifiant du post.
+         * @param array $verdict  Données complètes retournées par get_verdict_data_for_post().
+         * @param array $options  Options du plugin.
+         * @param array $overrides Valeurs forcées.
+         */
+        return apply_filters( 'jlg_review_verdict_payload', $payload, $post_id, $verdict, $options, $overrides );
+    }
+
     private static function prepare_verdict_summary( $value, $limit ) {
         if ( ! is_string( $value ) || $value === '' ) {
             return '';

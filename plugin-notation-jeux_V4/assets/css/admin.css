@@ -1,17 +1,37 @@
 .jlg-admin-card {
-    background-color: var(--wp-admin-surface-color, #fff);
-    color: var(--wp-admin-page-content-text, #1d2327);
+    --jlg-admin-surface: var(--wp-admin-surface-color, #fff);
+    --jlg-admin-border-color: var(--wp-admin-border-color, #c3c4c7);
+    --jlg-admin-heading-color: var(--wp-admin-page-content-text, #1d2327);
+    --jlg-admin-muted-color: var(--wp-admin-page-content-meta, #50575e);
+    --jlg-admin-subtle-surface: #f8fafc;
+    --jlg-admin-table-cell-bg: var(--jlg-admin-surface);
+    --jlg-admin-table-header-bg: rgba(148, 163, 184, 0.16);
+    --jlg-admin-table-divider: rgba(148, 163, 184, 0.25);
+    --jlg-admin-table-shadow: 0 12px 28px -18px rgba(15, 23, 42, 0.45);
+    --jlg-admin-table-hover-shadow: 0 18px 34px -20px rgba(56, 88, 233, 0.45);
+    background-color: var(--jlg-admin-surface);
+    color: var(--jlg-admin-heading-color);
     padding: 20px;
     margin-top: 20px;
-    border-radius: 8px;
-    border: 1px solid var(--wp-admin-border-color, #c3c4c7);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    border: 1px solid var(--jlg-admin-border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 body.is-dark-theme .jlg-admin-card {
-    background-color: var(--wp-admin-surface-color, #1d2327);
-    color: var(--wp-admin-page-content-text, #f0f0f1);
-    border-color: var(--wp-admin-border-color, #3c434a);
+    --jlg-admin-surface: var(--wp-admin-surface-color, #1d2327);
+    --jlg-admin-border-color: var(--wp-admin-border-color, #3c434a);
+    --jlg-admin-heading-color: var(--wp-admin-page-content-text, #f0f0f1);
+    --jlg-admin-muted-color: rgba(226, 232, 240, 0.75);
+    --jlg-admin-subtle-surface: rgba(148, 163, 184, 0.12);
+    --jlg-admin-table-cell-bg: rgba(23, 32, 45, 0.9);
+    --jlg-admin-table-header-bg: rgba(148, 163, 184, 0.2);
+    --jlg-admin-table-divider: rgba(148, 163, 184, 0.35);
+    --jlg-admin-table-shadow: 0 18px 34px -22px rgba(15, 23, 42, 0.9);
+    --jlg-admin-table-hover-shadow: 0 20px 40px -24px rgba(56, 130, 246, 0.55);
+    background-color: var(--jlg-admin-surface);
+    color: var(--jlg-admin-heading-color);
+    border-color: var(--jlg-admin-border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -22,6 +42,15 @@ body.is-dark-theme .jlg-admin-card a {
 body.is-dark-theme .jlg-admin-card a:hover,
 body.is-dark-theme .jlg-admin-card a:focus {
     color: var(--wp-admin-theme-color-darker-10, #1d8fd1);
+}
+
+body:not(.is-dark-theme) .jlg-admin-card a {
+    color: var(--wp-admin-theme-color, #2271b1);
+}
+
+body:not(.is-dark-theme) .jlg-admin-card a:hover,
+body:not(.is-dark-theme) .jlg-admin-card a:focus {
+    color: var(--wp-admin-theme-color-darker-10, #135e96);
 }
 
 .jlg-admin-insights {
@@ -102,36 +131,199 @@ body.is-dark-theme .jlg-admin-card a:focus {
 }
 
 .jlg-platform-ranking {
-    list-style: decimal inside;
+    list-style: decimal;
+    list-style-position: outside;
     margin: 0;
-    padding-left: 1rem;
+    padding-left: 1.5rem;
     display: grid;
     gap: 6px;
 }
 
 .jlg-platform-ranking__item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+    column-gap: 0;
+    align-items: center;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 480px) {
     .jlg-platform-ranking__item {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) minmax(4rem, max-content) max-content;
+        column-gap: 16px;
     }
 }
 
 .jlg-platform-ranking__name {
     font-weight: 600;
+    min-width: 0;
 }
 
 .jlg-platform-ranking__score {
     font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 .jlg-platform-ranking__count {
     color: var(--wp-admin-page-content-meta, #50575e);
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (min-width: 960px) {
+    .jlg-admin-card .form-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 18px;
+        background: transparent;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.42fr) minmax(0, 1fr);
+        align-items: stretch;
+        position: relative;
+        background: var(--jlg-admin-subtle-surface);
+        border: 1px solid var(--jlg-admin-border-color);
+        border-radius: 14px;
+        box-shadow: var(--jlg-admin-table-shadow);
+        overflow: hidden;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > th,
+    .jlg-admin-card .form-table > tbody > tr > td {
+        margin: 0;
+        padding: 20px 24px;
+        background: transparent;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > th {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.5;
+        color: var(--jlg-admin-heading-color);
+        background: var(--jlg-admin-table-header-bg);
+        border-right: 1px solid var(--jlg-admin-table-divider);
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td {
+        background: var(--jlg-admin-table-cell-bg);
+        color: var(--jlg-admin-heading-color);
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td .description,
+    .jlg-admin-card .form-table > tbody > tr > td p.description {
+        margin-top: 8px;
+        color: var(--jlg-admin-muted-color);
+    }
+
+    .jlg-admin-card .form-table > tbody > tr:hover,
+    .jlg-admin-card .form-table > tbody > tr:focus-within {
+        border-color: var(--wp-admin-theme-color, #3858e9);
+        box-shadow: var(--jlg-admin-table-hover-shadow);
+        transform: translateY(-1px);
+    }
+
+    .jlg-admin-card .form-table > tbody > tr:hover > th,
+    .jlg-admin-card .form-table > tbody > tr:focus-within > th {
+        border-right-color: rgba(56, 88, 233, 0.35);
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td :where(.regular-text, select, textarea) {
+        width: min(100%, 420px);
+        max-width: 100%;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 6px;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--jlg-admin-table-divider);
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.08);
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item:hover,
+    .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item:focus-within {
+        border-color: var(--wp-admin-theme-color, #3858e9);
+        background: rgba(56, 88, 233, 0.1);
+    }
+
+    .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .jlg-admin-card .wp-list-table {
+        border: 1px solid var(--jlg-admin-border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--jlg-admin-table-cell-bg);
+        box-shadow: var(--jlg-admin-table-shadow);
+    }
+
+    .jlg-admin-card .wp-list-table thead tr {
+        background: var(--jlg-admin-table-header-bg);
+    }
+
+    .jlg-admin-card .wp-list-table thead th {
+        color: var(--jlg-admin-heading-color);
+        font-weight: 600;
+    }
+
+    .jlg-admin-card .wp-list-table tbody tr {
+        border-bottom: 1px solid var(--jlg-admin-table-divider);
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .jlg-admin-card .wp-list-table tbody tr:last-child {
+        border-bottom: 0;
+    }
+
+    .jlg-admin-card .wp-list-table tbody tr:hover,
+    .jlg-admin-card .wp-list-table tbody tr:focus-within {
+        background-color: var(--jlg-admin-subtle-surface);
+        transform: translateY(-1px);
+    }
+}
+
+body.is-dark-theme .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item {
+    background: rgba(148, 163, 184, 0.12);
+}
+
+body.is-dark-theme .jlg-admin-card .form-table > tbody > tr:hover > th,
+body.is-dark-theme .jlg-admin-card .form-table > tbody > tr:focus-within > th {
+    border-right-color: rgba(56, 130, 246, 0.45);
+}
+
+body.is-dark-theme .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item:hover,
+body.is-dark-theme .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item:focus-within {
+    background: rgba(56, 130, 246, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jlg-admin-card .form-table > tbody > tr,
+    .jlg-admin-card .form-table > tbody > tr > td .jlg-checkbox-group__item,
+    .jlg-admin-card .wp-list-table tbody tr {
+        transition: none !important;
+        transform: none !important;
+    }
 }
