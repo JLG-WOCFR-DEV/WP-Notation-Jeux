@@ -560,11 +560,16 @@
     border-bottom: 1px solid transparent;
 }
 
-.jlg-score-insights__badge-link:focus,
 .jlg-score-insights__badge-link:hover,
+.jlg-score-insights__badge-link:focus {
+    border-bottom-color: currentColor;
+}
+
 .jlg-score-insights__badge-link:focus-visible {
     border-bottom-color: currentColor;
-    outline: none;
+    outline: 2px solid var(--jlg-focus-ring-color);
+    outline-offset: 3px;
+    border-radius: 4px;
 }
 
 .jlg-score-insights__badge-summary {
