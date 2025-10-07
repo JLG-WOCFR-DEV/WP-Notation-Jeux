@@ -214,6 +214,19 @@ class DynamicCss {
         $table_row_hover_color  = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $bg_color_secondary, 5 ) );
         $table_link_color       = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $table_row_text_color, 20 ) );
         $score_gradient_1_hover = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $score_gradient_1, 20 ) );
+        $focus_ring_color       = $this->sanitize_color_value( Helpers::adjust_hex_brightness( $score_gradient_1, 10 ) );
+
+        if ( $focus_ring_color === '' ) {
+            $focus_ring_color = $score_gradient_1 !== '' ? $score_gradient_1 : $default_score_gradient_1;
+        }
+
+        $focus_ring_contrast_color = $this->sanitize_color_value(
+            Helpers::get_high_contrast_color( $focus_ring_color )
+        );
+
+        if ( $focus_ring_contrast_color === '' ) {
+            $focus_ring_contrast_color = '#ffffff';
+        }
 
         $inline_css = ':root{'
             . '--jlg-bg-color:' . $bg_color . ';'
@@ -239,6 +252,8 @@ class DynamicCss {
             . '--jlg-table-link-color:' . $table_link_color . ';'
             . '--jlg-score-gradient-1-hover:' . $score_gradient_1_hover . ';'
             . '--jlg-table-zebra-bg-color:' . $table_zebra_bg_color . ';'
+            . '--jlg-focus-ring-color:' . $focus_ring_color . ';'
+            . '--jlg-focus-ring-contrast-color:' . $focus_ring_contrast_color . ';'
             . '}';
 
         $inline_css .= $this->build_table_zebra_css( $options, $table_zebra_bg_color );

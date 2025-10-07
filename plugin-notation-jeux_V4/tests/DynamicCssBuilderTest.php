@@ -85,6 +85,8 @@ class DynamicCssBuilderTest extends TestCase
                     '--jlg-table-link-color' => '#bebebe',
                     '--jlg-score-gradient-1-hover' => '#252525',
                     '--jlg-table-zebra-bg-color' => '#bbbbbb',
+                    '--jlg-focus-ring-color' => '#1b1b1b',
+                    '--jlg-focus-ring-contrast-color' => '#ffffff',
                 ],
             ],
             'light theme falling back to defaults when colors missing' => [
@@ -128,6 +130,8 @@ class DynamicCssBuilderTest extends TestCase
                     '--jlg-table-link-color' => '#b5b5be',
                     '--jlg-score-gradient-1-hover' => '#74b9ff',
                     '--jlg-table-zebra-bg-color' => '#27272a',
+                    '--jlg-focus-ring-color' => '#6aafff',
+                    '--jlg-focus-ring-contrast-color' => '#000000',
                 ],
             ],
             'transparent palette entries keep permitted values' => [
@@ -175,6 +179,8 @@ class DynamicCssBuilderTest extends TestCase
                     '--jlg-table-link-color' => '#26486a',
                     '--jlg-score-gradient-1-hover' => '#232323',
                     '--jlg-table-zebra-bg-color' => 'transparent',
+                    '--jlg-focus-ring-color' => '#191919',
+                    '--jlg-focus-ring-contrast-color' => '#ffffff',
                 ],
             ],
         ];
