@@ -18,6 +18,7 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $GLOBALS['jlg_test_terms'] = [];
         $GLOBALS['jlg_test_permalinks'] = [];
+        $GLOBALS['jlg_test_post_modified'] = [];
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
@@ -33,6 +34,7 @@ class ShortcodeRatingBlockRenderTest extends TestCase
             $GLOBALS['jlg_test_current_post_id'],
             $GLOBALS['jlg_test_terms'],
             $GLOBALS['jlg_test_permalinks'],
+            $GLOBALS['jlg_test_post_modified'],
             $GLOBALS['jlg_test_is_admin'],
             $GLOBALS['jlg_test_doing_ajax'],
             $GLOBALS['jlg_test_doing_filters']
@@ -248,6 +250,7 @@ class ShortcodeRatingBlockRenderTest extends TestCase
             'related_guides_enabled'    => 1,
             'related_guides_limit'      => 2,
             'related_guides_taxonomies' => 'guide',
+            'verdict_module_enabled'    => 0,
         ]);
 
         $this->seedPost(1410, [
@@ -289,6 +292,71 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertStringContainsString('Soluce experte', $output);
         $this->assertStringContainsString('https://example.com/guides/soluce-experte', $output);
         $this->assertStringNotContainsString('Guide hors sujet', $output);
+    }
+
+    public function test_render_includes_verdict_section_when_available(): void
+    {
+        $post_id = 1320;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 8.8,
+            'graphismes' => 8.2,
+        ]);
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_summary']   = 'Synthèse accessible pour les lecteurs.';
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_cta_label'] = 'Lire le verdict complet';
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_cta_url']   = 'https://example.com/tests/verdict';
+        $GLOBALS['jlg_test_post_modified'][$post_id] = [
+            'gmt'   => 1714822800,
+            'local' => 1714826400,
+        ];
+
+        $this->setPluginOptions([
+            'verdict_module_enabled' => 1,
+        ]);
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id'          => (string) $post_id,
+            'show_verdict'     => 'oui',
+            'verdict_summary'  => 'Verdict personnalisé pour le test.',
+            'verdict_cta_label'=> 'Découvrir le test',
+            'verdict_cta_url'  => 'https://example.com/tests/verdict-personnalise',
+        ]);
+
+        $this->assertStringContainsString('review-box-jlg__verdict', $output);
+        $this->assertStringContainsString('Verdict personnalisé pour le test.', $output);
+        $this->assertStringContainsString('Découvrir le test', $output);
+        $this->assertStringContainsString('https://example.com/tests/verdict-personnalise', $output);
+        $this->assertMatchesRegularExpression('/<time[^>]+datetime="[^"]+"/', $output);
+    }
+
+    public function test_render_hides_verdict_when_forced_off(): void
+    {
+        $post_id = 1321;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 7.9,
+            'graphismes' => 8.1,
+        ]);
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_summary'] = 'Résumé par défaut.';
+        $GLOBALS['jlg_test_post_modified'][$post_id] = [
+            'gmt'   => 1714822800,
+            'local' => 1714826400,
+        ];
+
+        $this->setPluginOptions([
+            'verdict_module_enabled' => 1,
+        ]);
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id'      => (string) $post_id,
+            'show_verdict' => 'non',
+        ]);
+
+        $this->assertStringNotContainsString('review-box-jlg__verdict', $output);
     }
 
     private function seedPost(int $post_id, array $overrides = []): void

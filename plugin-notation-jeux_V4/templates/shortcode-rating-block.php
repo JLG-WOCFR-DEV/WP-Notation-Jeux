@@ -59,9 +59,33 @@ $review_status_slug        = isset( $review_status_data['slug'] ) ? (string) $re
 $review_status_message     = isset( $review_status_data['description'] ) ? (string) $review_status_data['description'] : '';
 $related_guides_enabled    = ! empty( $related_guides_enabled );
 $related_guides_list       = isset( $related_guides ) && is_array( $related_guides ) ? $related_guides : array();
-$extra_classes_string      = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
-$extra_classes_list        = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
-$wrapper_classes           = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
+
+$verdict_data             = isset( $verdict ) && is_array( $verdict ) ? $verdict : array();
+$verdict_enabled          = ! empty( $verdict_data['enabled'] );
+$verdict_summary          = isset( $verdict_data['summary'] ) ? (string) $verdict_data['summary'] : '';
+$verdict_cta_data         = isset( $verdict_data['cta'] ) && is_array( $verdict_data['cta'] ) ? $verdict_data['cta'] : array();
+$verdict_cta_label        = isset( $verdict_cta_data['label'] ) ? (string) $verdict_cta_data['label'] : '';
+$verdict_cta_url          = isset( $verdict_cta_data['url'] ) ? (string) $verdict_cta_data['url'] : '';
+$verdict_cta_rel          = isset( $verdict_cta_data['rel'] ) ? (string) $verdict_cta_data['rel'] : '';
+$verdict_cta_available    = ! empty( $verdict_cta_data['available'] ) && $verdict_cta_label !== '' && $verdict_cta_url !== '';
+$verdict_status_data      = isset( $verdict_data['status'] ) && is_array( $verdict_data['status'] ) ? $verdict_data['status'] : array();
+$verdict_status_label     = isset( $verdict_status_data['label'] ) ? (string) $verdict_status_data['label'] : '';
+$verdict_status_desc      = isset( $verdict_status_data['description'] ) ? (string) $verdict_status_data['description'] : '';
+$verdict_status_slug      = isset( $verdict_status_data['slug'] ) ? (string) $verdict_status_data['slug'] : '';
+$verdict_updated_data     = isset( $verdict_data['updated'] ) && is_array( $verdict_data['updated'] ) ? $verdict_data['updated'] : array();
+$verdict_updated_display  = isset( $verdict_updated_data['display'] ) ? (string) $verdict_updated_data['display'] : '';
+$verdict_updated_datetime = isset( $verdict_updated_data['datetime'] ) ? (string) $verdict_updated_data['datetime'] : '';
+$verdict_updated_title    = isset( $verdict_updated_data['title'] ) ? (string) $verdict_updated_data['title'] : '';
+$verdict_has_summary      = $verdict_summary !== '';
+$verdict_has_meta         = ( $verdict_status_label !== '' || $verdict_status_desc !== '' || $verdict_updated_display !== '' );
+$verdict_should_render    = $verdict_enabled && ( $verdict_has_summary || $verdict_has_meta || $verdict_cta_available );
+
+$should_display_status_banner = $review_status_enabled && $review_status_label !== '' && ! $verdict_should_render;
+$verdict_section_id           = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-verdict-' ) : 'jlg-verdict-' . uniqid();
+$verdict_summary_id           = $verdict_section_id . '-summary';
+$extra_classes_string         = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
+$extra_classes_list           = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
+$wrapper_classes              = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
 
 if ( $animations_on ) {
     $wrapper_classes[] = 'jlg-animate';
@@ -193,7 +217,7 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
             </div>
         <?php endif; ?>
 
-        <?php if ( $review_status_enabled && $review_status_label !== '' ) : ?>
+        <?php if ( $should_display_status_banner ) : ?>
             <div class="jlg-review-status" role="status">
                 <span class="jlg-review-status__label"><?php esc_html_e( 'Statut du test', 'notation-jlg' ); ?> :</span>
                 <span class="jlg-review-status__value"><?php echo esc_html( $review_status_label ); ?></span>
@@ -203,6 +227,63 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
             </div>
         <?php endif; ?>
     </div>
+
+    <?php if ( $verdict_should_render ) : ?>
+        <section class="review-box-jlg__verdict" aria-labelledby="<?php echo esc_attr( $verdict_section_id ); ?>">
+            <h3 id="<?php echo esc_attr( $verdict_section_id ); ?>" class="review-box-jlg__subtitle">
+                <?php esc_html_e( 'Verdict de la rédaction', 'notation-jlg' ); ?>
+            </h3>
+            <?php if ( $verdict_has_summary ) : ?>
+                <p class="review-box-jlg__verdict-summary" id="<?php echo esc_attr( $verdict_summary_id ); ?>">
+                    <?php echo esc_html( $verdict_summary ); ?>
+                </p>
+            <?php endif; ?>
+            <?php if ( $verdict_has_meta ) : ?>
+                <dl class="review-box-jlg__verdict-meta"<?php echo $verdict_has_summary ? ' aria-describedby="' . esc_attr( $verdict_summary_id ) . '"' : ''; ?>>
+                    <?php if ( $verdict_status_label !== '' ) : ?>
+                        <?php
+                        $verdict_status_classes = array( 'review-box-jlg__verdict-status' );
+                        if ( $verdict_status_slug !== '' ) {
+                            $verdict_status_classes[] = 'review-box-jlg__verdict-status--' . sanitize_html_class( $verdict_status_slug );
+                        }
+                        ?>
+                        <div class="review-box-jlg__verdict-meta-item">
+                            <dt><?php esc_html_e( 'Statut du test', 'notation-jlg' ); ?></dt>
+                            <dd>
+                                <span class="<?php echo esc_attr( implode( ' ', $verdict_status_classes ) ); ?>">
+                                    <?php echo esc_html( $verdict_status_label ); ?>
+                                </span>
+                                <?php if ( $verdict_status_desc !== '' ) : ?>
+                                    <span class="review-box-jlg__verdict-status-description"><?php echo esc_html( $verdict_status_desc ); ?></span>
+                                <?php endif; ?>
+                            </dd>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ( $verdict_updated_display !== '' ) : ?>
+                        <div class="review-box-jlg__verdict-meta-item">
+                            <dt><?php esc_html_e( 'Dernière mise à jour', 'notation-jlg' ); ?></dt>
+                            <dd>
+                                <?php if ( $verdict_updated_datetime !== '' ) : ?>
+                                    <time datetime="<?php echo esc_attr( $verdict_updated_datetime ); ?>"<?php echo $verdict_updated_title !== '' ? ' title="' . esc_attr( $verdict_updated_title ) . '"' : ''; ?>>
+                                        <?php echo esc_html( $verdict_updated_display ); ?>
+                                    </time>
+                                <?php else : ?>
+                                    <span><?php echo esc_html( $verdict_updated_display ); ?></span>
+                                <?php endif; ?>
+                            </dd>
+                        </div>
+                    <?php endif; ?>
+                </dl>
+            <?php endif; ?>
+            <?php if ( $verdict_cta_available ) : ?>
+                <p class="review-box-jlg__verdict-cta">
+                    <a class="review-box-jlg__verdict-button" href="<?php echo esc_url( $verdict_cta_url ); ?>"<?php echo $verdict_cta_rel !== '' ? ' rel="' . esc_attr( $verdict_cta_rel ) . '"' : ''; ?>>
+                        <span><?php echo esc_html( $verdict_cta_label ); ?></span>
+                    </a>
+                </p>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
 
     <hr>
 

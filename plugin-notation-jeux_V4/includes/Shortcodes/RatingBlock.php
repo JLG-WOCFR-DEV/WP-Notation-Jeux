@@ -26,6 +26,10 @@ class RatingBlock {
                 'display_mode'       => '',
                 'preview_theme'      => '',
                 'preview_animations' => '',
+                'show_verdict'       => '',
+                'verdict_summary'    => '',
+                'verdict_cta_label'  => '',
+                'verdict_cta_url'    => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -218,6 +222,27 @@ class RatingBlock {
             ? Helpers::get_related_guides_for_post( $post_id, $options )
             : array();
 
+        $verdict_overrides = array( 'context' => 'rating-block' );
+
+        if ( is_string( $atts['verdict_summary'] ) && $atts['verdict_summary'] !== '' ) {
+            $verdict_overrides['summary'] = sanitize_text_field( $atts['verdict_summary'] );
+        }
+
+        if ( is_string( $atts['verdict_cta_label'] ) && $atts['verdict_cta_label'] !== '' ) {
+            $verdict_overrides['cta_label'] = sanitize_text_field( $atts['verdict_cta_label'] );
+        }
+
+        if ( is_string( $atts['verdict_cta_url'] ) && $atts['verdict_cta_url'] !== '' ) {
+            $verdict_overrides['cta_url'] = esc_url_raw( $atts['verdict_cta_url'] );
+        }
+
+        $verdict_data             = Helpers::get_verdict_data_for_post( $post_id, $options, $verdict_overrides );
+        $verdict_enabled_override = $this->normalize_bool_attribute( $atts['show_verdict'] );
+
+        if ( $verdict_enabled_override !== null ) {
+            $verdict_data['enabled'] = (bool) $verdict_enabled_override;
+        }
+
         Frontend::mark_shortcode_rendered( $shortcode_tag ?: 'bloc_notation_jeu' );
 
         return Frontend::get_template_html(
@@ -244,6 +269,7 @@ class RatingBlock {
                 'review_status'            => $review_status,
                 'related_guides_enabled'   => $related_guides_enabled,
                 'related_guides'           => $related_guides,
+                'verdict'                  => $verdict_data,
             )
         );
     }
@@ -320,6 +346,27 @@ class RatingBlock {
             );
         }
 
+        $current_timestamp   = time();
+        $placeholder_verdict = array(
+            'enabled'       => ! empty( $options['verdict_module_enabled'] ),
+            'summary'       => __( 'Ajoutez un verdict court et percutant pour guider vos lecteurs vers la critique complète.', 'notation-jlg' ),
+            'summary_limit' => 160,
+            'cta'           => array(
+                'label'     => __( 'Lire le test complet', 'notation-jlg' ),
+                'url'       => '#',
+                'rel'       => '',
+                'available' => true,
+            ),
+            'status'        => $review_status,
+            'updated'       => array(
+                'timestamp' => $current_timestamp,
+                'display'   => date_i18n( get_option( 'date_format', 'F j, Y' ), $current_timestamp ),
+                'datetime'  => gmdate( 'c', $current_timestamp ),
+                'title'     => date_i18n( get_option( 'date_format', 'F j, Y' ) . ' ' . get_option( 'time_format', 'H:i' ), $current_timestamp ),
+            ),
+            'permalink'     => '',
+        );
+
         return array(
             'post'                     => $post,
             'post_id'                  => $post_id,
@@ -346,6 +393,7 @@ class RatingBlock {
             'review_status'            => $review_status,
             'related_guides_enabled'   => $related_guides_enabled,
             'related_guides'           => $placeholder_guides,
+            'verdict'                  => $placeholder_verdict,
         );
     }
 

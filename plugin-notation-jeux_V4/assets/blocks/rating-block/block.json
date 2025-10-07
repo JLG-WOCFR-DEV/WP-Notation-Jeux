@@ -29,6 +29,23 @@
       "default": "absolute",
       "enum": ["absolute", "percent"]
     },
+    "showVerdict": {
+      "type": "string",
+      "default": "inherit",
+      "enum": ["inherit", "show", "hide"]
+    },
+    "verdictSummary": {
+      "type": "string",
+      "default": ""
+    },
+    "verdictCtaLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "verdictCtaUrl": {
+      "type": "string",
+      "default": ""
+    },
     "showAnimations": {
       "type": "boolean",
       "default": true

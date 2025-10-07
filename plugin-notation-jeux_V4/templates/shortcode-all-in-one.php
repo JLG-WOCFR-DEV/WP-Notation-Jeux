@@ -38,6 +38,28 @@ $data_attributes  = sprintf(
     esc_attr( $has_dual_tagline ? 'true' : 'false' )
 );
 
+$verdict_data             = isset( $verdict ) && is_array( $verdict ) ? $verdict : array();
+$verdict_enabled          = ! empty( $verdict_data['enabled'] );
+$verdict_summary          = isset( $verdict_data['summary'] ) ? (string) $verdict_data['summary'] : '';
+$verdict_cta_data         = isset( $verdict_data['cta'] ) && is_array( $verdict_data['cta'] ) ? $verdict_data['cta'] : array();
+$verdict_cta_label        = isset( $verdict_cta_data['label'] ) ? (string) $verdict_cta_data['label'] : '';
+$verdict_cta_url          = isset( $verdict_cta_data['url'] ) ? (string) $verdict_cta_data['url'] : '';
+$verdict_cta_rel          = isset( $verdict_cta_data['rel'] ) ? (string) $verdict_cta_data['rel'] : '';
+$verdict_cta_available    = ! empty( $verdict_cta_data['available'] ) && $verdict_cta_label !== '' && $verdict_cta_url !== '';
+$verdict_status_data      = isset( $verdict_data['status'] ) && is_array( $verdict_data['status'] ) ? $verdict_data['status'] : array();
+$verdict_status_label     = isset( $verdict_status_data['label'] ) ? (string) $verdict_status_data['label'] : '';
+$verdict_status_desc      = isset( $verdict_status_data['description'] ) ? (string) $verdict_status_data['description'] : '';
+$verdict_status_slug      = isset( $verdict_status_data['slug'] ) ? (string) $verdict_status_data['slug'] : '';
+$verdict_updated_data     = isset( $verdict_data['updated'] ) && is_array( $verdict_data['updated'] ) ? $verdict_data['updated'] : array();
+$verdict_updated_display  = isset( $verdict_updated_data['display'] ) ? (string) $verdict_updated_data['display'] : '';
+$verdict_updated_datetime = isset( $verdict_updated_data['datetime'] ) ? (string) $verdict_updated_data['datetime'] : '';
+$verdict_updated_title    = isset( $verdict_updated_data['title'] ) ? (string) $verdict_updated_data['title'] : '';
+$verdict_has_summary      = $verdict_summary !== '';
+$verdict_has_meta         = ( $verdict_status_label !== '' || $verdict_status_desc !== '' || $verdict_updated_display !== '' );
+$verdict_should_render    = $verdict_enabled && ( $verdict_has_summary || $verdict_has_meta || $verdict_cta_available );
+$verdict_section_id       = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-aio-verdict-' ) : 'jlg-aio-verdict-' . uniqid();
+$verdict_summary_id       = $verdict_section_id . '-summary';
+
 $score_max_label_safe       = esc_html( $score_max_label );
 $average_score_display      = $average_score !== null ? esc_html( number_format_i18n( $average_score, 1 ) ) : '';
 $average_percentage_display = $average_percentage_value !== null
@@ -304,6 +326,65 @@ if ( $average_score_display !== '' ) {
             <?php endforeach; ?>
         </div>
     </div>
+    <?php endif; ?>
+
+    <?php if ( $verdict_should_render ) : ?>
+    <section class="jlg-aio-verdict" aria-labelledby="<?php echo esc_attr( $verdict_section_id ); ?>">
+        <div class="jlg-aio-verdict-header">
+            <h3 id="<?php echo esc_attr( $verdict_section_id ); ?>" class="jlg-aio-verdict-title">
+                <?php esc_html_e( 'Verdict de la rédaction', 'notation-jlg' ); ?>
+            </h3>
+        </div>
+        <?php if ( $verdict_has_summary ) : ?>
+        <p class="jlg-aio-verdict-summary" id="<?php echo esc_attr( $verdict_summary_id ); ?>">
+            <?php echo esc_html( $verdict_summary ); ?>
+        </p>
+        <?php endif; ?>
+        <?php if ( $verdict_has_meta ) : ?>
+        <dl class="jlg-aio-verdict-meta"<?php echo $verdict_has_summary ? ' aria-describedby="' . esc_attr( $verdict_summary_id ) . '"' : ''; ?>>
+            <?php if ( $verdict_status_label !== '' ) : ?>
+				<?php
+				$verdict_status_classes = array( 'jlg-aio-verdict-status' );
+				if ( $verdict_status_slug !== '' ) {
+					$verdict_status_classes[] = 'jlg-aio-verdict-status--' . sanitize_html_class( $verdict_status_slug );
+				}
+				?>
+            <div class="jlg-aio-verdict-meta-item">
+                <dt><?php esc_html_e( 'Statut du test', 'notation-jlg' ); ?></dt>
+                <dd>
+                    <span class="<?php echo esc_attr( implode( ' ', $verdict_status_classes ) ); ?>">
+                        <?php echo esc_html( $verdict_status_label ); ?>
+                    </span>
+                    <?php if ( $verdict_status_desc !== '' ) : ?>
+                        <span class="jlg-aio-verdict-status-description"><?php echo esc_html( $verdict_status_desc ); ?></span>
+                    <?php endif; ?>
+                </dd>
+            </div>
+            <?php endif; ?>
+            <?php if ( $verdict_updated_display !== '' ) : ?>
+            <div class="jlg-aio-verdict-meta-item">
+                <dt><?php esc_html_e( 'Dernière mise à jour', 'notation-jlg' ); ?></dt>
+                <dd>
+                    <?php if ( $verdict_updated_datetime !== '' ) : ?>
+                        <time datetime="<?php echo esc_attr( $verdict_updated_datetime ); ?>"<?php echo $verdict_updated_title !== '' ? ' title="' . esc_attr( $verdict_updated_title ) . '"' : ''; ?>>
+                            <?php echo esc_html( $verdict_updated_display ); ?>
+                        </time>
+                    <?php else : ?>
+                        <span><?php echo esc_html( $verdict_updated_display ); ?></span>
+                    <?php endif; ?>
+                </dd>
+            </div>
+            <?php endif; ?>
+        </dl>
+        <?php endif; ?>
+        <?php if ( $verdict_cta_available ) : ?>
+        <p class="jlg-aio-verdict-cta">
+            <a class="jlg-aio-verdict-button" href="<?php echo esc_url( $verdict_cta_url ); ?>"<?php echo $verdict_cta_rel !== '' ? ' rel="' . esc_attr( $verdict_cta_rel ) . '"' : ''; ?>>
+                <span><?php echo esc_html( $verdict_cta_label ); ?></span>
+            </a>
+        </p>
+        <?php endif; ?>
+    </section>
     <?php endif; ?>
 
     <?php if ( $show_points ) : ?>

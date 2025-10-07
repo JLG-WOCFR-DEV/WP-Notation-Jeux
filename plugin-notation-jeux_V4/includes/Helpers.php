@@ -983,6 +983,275 @@ class Helpers {
         return apply_filters( 'jlg_review_status_display', $payload, $post_id );
     }
 
+    public static function get_verdict_data_for_post( $post_id, ?array $options = null, array $overrides = array() ) {
+        $post_id = (int) $post_id;
+        $post    = $post_id > 0 ? get_post( $post_id ) : null;
+
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        $module_enabled = ! empty( $options['verdict_module_enabled'] );
+
+        $summary_limit = (int) apply_filters( 'jlg_verdict_summary_length', 160, $post_id, $options );
+        if ( $summary_limit < 40 ) {
+            $summary_limit = 40;
+        }
+
+        $summary = '';
+        if ( $post_id > 0 ) {
+            $stored_summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
+            $summary        = self::prepare_verdict_summary( $stored_summary, $summary_limit );
+        }
+
+        if ( isset( $overrides['summary'] ) && is_string( $overrides['summary'] ) && $overrides['summary'] !== '' ) {
+            $summary = self::prepare_verdict_summary( $overrides['summary'], $summary_limit );
+        }
+
+        $cta_label = '';
+        if ( $post_id > 0 ) {
+            $stored_label = get_post_meta( $post_id, '_jlg_verdict_cta_label', true );
+            $cta_label    = self::prepare_verdict_cta_label( $stored_label );
+        }
+
+        if ( isset( $overrides['cta_label'] ) && is_string( $overrides['cta_label'] ) && $overrides['cta_label'] !== '' ) {
+            $cta_label = self::prepare_verdict_cta_label( $overrides['cta_label'] );
+        }
+
+        $cta_url = '';
+        if ( $post_id > 0 ) {
+            $stored_url = get_post_meta( $post_id, '_jlg_verdict_cta_url', true );
+            $cta_url    = self::prepare_verdict_cta_url( $stored_url );
+        }
+
+        if ( isset( $overrides['cta_url'] ) && is_string( $overrides['cta_url'] ) && $overrides['cta_url'] !== '' ) {
+            $cta_url = self::prepare_verdict_cta_url( $overrides['cta_url'] );
+        }
+
+        $permalink = '';
+        if ( $post instanceof \WP_Post ) {
+            $permalink = get_permalink( $post );
+        } elseif ( $post_id > 0 ) {
+            $permalink = get_permalink( $post_id );
+        }
+
+        if ( ! is_string( $permalink ) ) {
+            $permalink = '';
+        }
+
+        $permalink = trim( $permalink );
+
+        if ( $cta_label === '' ) {
+            $cta_label = __( 'Lire le test complet', 'notation-jlg' );
+        }
+
+        if ( $cta_url === '' ) {
+            $cta_url = $permalink;
+        }
+
+        if ( $cta_url !== '' && ! Validator::is_valid_http_url( $cta_url ) ) {
+            $cta_url = '';
+        }
+
+        $cta_rel = '';
+        if ( $cta_url !== '' ) {
+            $cta_rel = self::determine_verdict_cta_rel( $cta_url );
+        }
+
+        $status = self::get_review_status_for_post( $post_id );
+
+        $updated = array(
+            'timestamp' => null,
+            'display'   => '',
+            'datetime'  => '',
+            'title'     => '',
+        );
+
+        if ( $post_id > 0 ) {
+            $modified_gmt   = get_post_modified_time( 'U', true, $post_id );
+            $modified_local = get_post_modified_time( 'U', false, $post_id );
+
+            if ( $modified_gmt ) {
+                $updated['timestamp'] = (int) $modified_gmt;
+                $updated['datetime']  = gmdate( 'c', (int) $modified_gmt );
+
+                $display_source = $modified_local ? (int) $modified_local : (int) $modified_gmt;
+                $date_format    = get_option( 'date_format', 'F j, Y' );
+                if ( ! is_string( $date_format ) || $date_format === '' ) {
+                    $date_format = 'F j, Y';
+                }
+
+                $updated['display'] = date_i18n( $date_format, $display_source );
+
+                $time_format = get_option( 'time_format', 'H:i' );
+                if ( ! is_string( $time_format ) || $time_format === '' ) {
+                    $time_format = 'H:i';
+                }
+
+                $updated['title'] = date_i18n( $date_format . ' ' . $time_format, $display_source );
+            }
+        }
+
+        $payload = array(
+            'enabled'       => (bool) $module_enabled,
+            'summary'       => $summary,
+            'summary_limit' => $summary_limit,
+            'cta'           => array(
+                'label'     => $cta_label,
+                'url'       => $cta_url,
+                'rel'       => $cta_rel,
+                'available' => $cta_label !== '' && $cta_url !== '',
+            ),
+            'status'        => array(
+                'slug'        => isset( $status['slug'] ) ? (string) $status['slug'] : '',
+                'label'       => isset( $status['label'] ) ? (string) $status['label'] : '',
+                'description' => isset( $status['description'] ) ? (string) $status['description'] : '',
+            ),
+            'updated'       => $updated,
+            'permalink'     => $permalink,
+        );
+
+        /**
+         * Permet d'ajuster les données utilisées pour construire la carte verdict.
+         *
+         * @param array $payload   Données prêtes à être utilisées par les templates.
+         * @param int   $post_id   Identifiant de l'article concerné.
+         * @param array $options   Options du plugin.
+         * @param array $overrides Données forcées par le shortcode/bloc.
+         */
+        $payload = apply_filters( 'jlg_verdict_data', $payload, $post_id, $options, $overrides );
+
+        if ( ! is_array( $payload ) ) {
+            return array(
+                'enabled'   => false,
+                'summary'   => '',
+                'cta'       => array(
+					'label'     => '',
+					'url'       => '',
+					'rel'       => '',
+					'available' => false,
+				),
+                'status'    => array(
+					'slug'        => '',
+					'label'       => '',
+					'description' => '',
+				),
+                'updated'   => array(
+					'timestamp' => null,
+					'display'   => '',
+					'datetime'  => '',
+					'title'     => '',
+				),
+                'permalink' => $permalink,
+            );
+        }
+
+        return $payload;
+    }
+
+    private static function prepare_verdict_summary( $value, $limit ) {
+        if ( ! is_string( $value ) || $value === '' ) {
+            return '';
+        }
+
+        $normalized = wp_strip_all_tags( $value, true );
+        $normalized = preg_replace( '/\s+/u', ' ', $normalized );
+        $normalized = is_string( $normalized ) ? trim( $normalized ) : '';
+
+        if ( $normalized === '' ) {
+            return '';
+        }
+
+        if ( $limit <= 0 ) {
+            return $normalized;
+        }
+
+        $length_callback = function_exists( 'mb_strlen' ) ? 'mb_strlen' : 'strlen';
+        $slice_callback  = function_exists( 'mb_substr' ) ? 'mb_substr' : 'substr';
+
+        $length = (int) $length_callback( $normalized );
+
+        if ( $length <= $limit ) {
+            return $normalized;
+        }
+
+        $ellipsis     = '…';
+        $ellipsis_len = (int) $length_callback( $ellipsis );
+        $slice_length = max( 0, $limit - $ellipsis_len );
+        $truncated    = (string) $slice_callback( $normalized, 0, $slice_length );
+
+        return rtrim( $truncated ) . $ellipsis;
+    }
+
+    private static function prepare_verdict_cta_label( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $label = sanitize_text_field( $value );
+        $label = trim( $label );
+
+        if ( $label === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            $label = mb_substr( $label, 0, 80 );
+        } else {
+            $label = substr( $label, 0, 80 );
+        }
+
+        return trim( $label );
+    }
+
+    private static function prepare_verdict_cta_url( $value ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $url = trim( $value );
+
+        if ( $url === '' ) {
+            return '';
+        }
+
+        $sanitized = esc_url_raw( $url );
+
+        if ( $sanitized === '' || ! Validator::is_valid_http_url( $sanitized ) ) {
+            return '';
+        }
+
+        return $sanitized;
+    }
+
+    private static function determine_verdict_cta_rel( $url ) {
+        if ( ! is_string( $url ) || $url === '' ) {
+            return '';
+        }
+
+        $home_host = '';
+        $home_url  = home_url();
+
+        if ( is_string( $home_url ) && $home_url !== '' ) {
+            $home_parts = wp_parse_url( $home_url );
+            if ( is_array( $home_parts ) && isset( $home_parts['host'] ) ) {
+                $home_host = strtolower( (string) $home_parts['host'] );
+            }
+        }
+
+        $target_host  = '';
+        $target_parts = wp_parse_url( $url );
+        if ( is_array( $target_parts ) && isset( $target_parts['host'] ) ) {
+            $target_host = strtolower( (string) $target_parts['host'] );
+        }
+
+        if ( $home_host !== '' && $target_host !== '' && $home_host !== $target_host ) {
+            return 'noopener noreferrer';
+        }
+
+        return '';
+    }
+
     public static function get_related_guides_for_post( $post_id, ?array $options = null ) {
         $post_id = (int) $post_id;
 
@@ -1253,6 +1522,7 @@ class Helpers {
             'rating_badge_enabled'               => 0,
             'rating_badge_threshold'             => 8,
             'review_status_enabled'              => 1,
+            'verdict_module_enabled'             => 1,
             'related_guides_enabled'             => 0,
             'related_guides_limit'               => 4,
             'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',

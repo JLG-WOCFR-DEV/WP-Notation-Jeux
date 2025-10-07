@@ -1878,6 +1878,43 @@ if (!function_exists('get_post')) {
     }
 }
 
+if (!function_exists('get_post_modified_time')) {
+    function get_post_modified_time($format = 'U', $gmt = false, $post = null, $translate = true)
+    {
+        unset($translate);
+
+        $post_id = 0;
+        if ($post instanceof WP_Post) {
+            $post_id = (int) ($post->ID ?? 0);
+        } elseif (is_numeric($post)) {
+            $post_id = (int) $post;
+        }
+
+        if ($post_id <= 0) {
+            return false;
+        }
+
+        $store = $GLOBALS['jlg_test_post_modified'] ?? [];
+        $entry = $store[$post_id] ?? null;
+
+        if (!is_array($entry)) {
+            return false;
+        }
+
+        $timestamp = $gmt ? ($entry['gmt'] ?? null) : ($entry['local'] ?? null);
+
+        if (!is_int($timestamp)) {
+            return false;
+        }
+
+        if ($format === 'U') {
+            return $timestamp;
+        }
+
+        return gmdate($format, $timestamp);
+    }
+}
+
 if (!function_exists('get_permalink')) {
     function get_permalink($post = 0)
     {

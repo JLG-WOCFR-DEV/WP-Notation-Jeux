@@ -94,18 +94,22 @@ class AllInOne {
             array(
 				'post_id'              => get_the_ID(),
 				'afficher_notation'    => 'oui',
-				'afficher_points'      => 'oui',
-				'afficher_tagline'     => 'oui',
-				'afficher_video'       => 'oui',
-				'titre_points_forts'   => 'Points Forts',
-				'titre_points_faibles' => 'Points Faibles',
-				'style'                => 'moderne', // moderne, classique, compact
-				'couleur_accent'       => '', // Permet de surcharger la couleur d'accent
-				'cta_label'            => '',
-				'cta_url'              => '',
-				'cta_role'             => 'button',
-				'cta_rel'              => 'nofollow sponsored',
-				'display_mode'         => '',
+                'afficher_points'      => 'oui',
+                'afficher_tagline'     => 'oui',
+                'afficher_video'       => 'oui',
+                'afficher_verdict'     => 'oui',
+                'titre_points_forts'   => 'Points Forts',
+                'titre_points_faibles' => 'Points Faibles',
+                'style'                => 'moderne', // moderne, classique, compact
+                'couleur_accent'       => '', // Permet de surcharger la couleur d'accent
+                'cta_label'            => '',
+                'cta_url'              => '',
+                'cta_role'             => 'button',
+                'cta_rel'              => 'nofollow sponsored',
+                'display_mode'         => '',
+                'verdict_summary'      => '',
+                'verdict_cta_label'    => '',
+                'verdict_cta_url'      => '',
             ),
             $atts,
             'jlg_bloc_complet'
@@ -116,10 +120,14 @@ class AllInOne {
         $atts['afficher_points']      = sanitize_text_field( $atts['afficher_points'] );
         $atts['afficher_tagline']     = sanitize_text_field( $atts['afficher_tagline'] );
         $atts['afficher_video']       = sanitize_text_field( $atts['afficher_video'] );
+        $atts['afficher_verdict']     = sanitize_text_field( $atts['afficher_verdict'] );
         $atts['titre_points_forts']   = sanitize_text_field( $atts['titre_points_forts'] );
         $atts['titre_points_faibles'] = sanitize_text_field( $atts['titre_points_faibles'] );
         $atts['style']                = sanitize_text_field( $atts['style'] );
         $atts['couleur_accent']       = sanitize_hex_color( $atts['couleur_accent'] );
+        $atts['verdict_summary']      = is_string( $atts['verdict_summary'] ) ? sanitize_text_field( $atts['verdict_summary'] ) : '';
+        $atts['verdict_cta_label']    = is_string( $atts['verdict_cta_label'] ) ? sanitize_text_field( $atts['verdict_cta_label'] ) : '';
+        $atts['verdict_cta_url']      = is_string( $atts['verdict_cta_url'] ) ? esc_url_raw( $atts['verdict_cta_url'] ) : '';
         $atts['cta_label']            = sanitize_text_field( $atts['cta_label'] );
         $atts['cta_url']              = esc_url_raw( $atts['cta_url'] );
         $atts['cta_role']             = sanitize_key( $atts['cta_role'] );
@@ -419,6 +427,25 @@ class AllInOne {
             }
         }
 
+        $verdict_overrides = array( 'context' => 'all-in-one' );
+
+        if ( $atts['verdict_summary'] !== '' ) {
+            $verdict_overrides['summary'] = $atts['verdict_summary'];
+        }
+
+        if ( $atts['verdict_cta_label'] !== '' ) {
+            $verdict_overrides['cta_label'] = $atts['verdict_cta_label'];
+        }
+
+        if ( $atts['verdict_cta_url'] !== '' ) {
+            $verdict_overrides['cta_url'] = $atts['verdict_cta_url'];
+        }
+
+        $verdict_data            = Helpers::get_verdict_data_for_post( $post_id, $options, $verdict_overrides );
+        $raw_show_verdict        = strtolower( $atts['afficher_verdict'] );
+        $should_show_verdict     = ! in_array( $raw_show_verdict, array( 'non', 'no', 'false', '0', 'off' ), true );
+        $verdict_data['enabled'] = ! empty( $verdict_data['enabled'] ) && $should_show_verdict;
+
         $tag = $shortcode_tag !== '' ? $shortcode_tag : 'jlg_bloc_complet';
         Frontend::mark_shortcode_rendered( $tag );
 
@@ -448,6 +475,7 @@ class AllInOne {
 				'animations_enabled'       => ! empty( $options['enable_animations'] ),
 				'score_max'                => $score_max_value,
 				'display_mode'             => $display_mode,
+				'verdict'                  => $verdict_data,
 			)
         );
     }

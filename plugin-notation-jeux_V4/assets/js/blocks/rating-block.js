@@ -16,6 +16,8 @@
     var PanelBody = wp.components.PanelBody;
     var ToggleControl = wp.components.ToggleControl;
     var SelectControl = wp.components.SelectControl;
+    var TextControl = wp.components.TextControl;
+    var TextareaControl = wp.components.TextareaControl;
     var ColorPalette = (blockEditor && blockEditor.ColorPalette) || wp.components.ColorPalette;
     var PanelColorSettings = blockEditor.PanelColorSettings || blockEditor.__experimentalPanelColorSettings;
     var useBlockPropsHook = blockEditor.useBlockProps;
@@ -142,6 +144,48 @@
                             },
                         })
                     ),
+                    createElement(
+                        PanelBody,
+                        { title: __('Carte verdict', 'notation-jlg'), initialOpen: false },
+                        createElement(SelectControl, {
+                            label: __('Affichage du verdict', 'notation-jlg'),
+                            value: attributes.showVerdict || 'inherit',
+                            options: [
+                                { value: 'inherit', label: __('Suivre les réglages du module', 'notation-jlg') },
+                                { value: 'show', label: __('Toujours afficher (si disponible)', 'notation-jlg') },
+                                { value: 'hide', label: __('Masquer la carte verdict', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ showVerdict: value || 'inherit' });
+                            },
+                        }),
+                        createElement(TextareaControl, {
+                            label: __('Résumé personnalisé', 'notation-jlg'),
+                            value: attributes.verdictSummary || '',
+                            onChange: function (value) {
+                                setAttributes({ verdictSummary: value || '' });
+                            },
+                            help: __('Laissez vide pour reprendre le résumé saisi dans la métabox.', 'notation-jlg'),
+                            rows: 3,
+                        }),
+                        createElement(TextControl, {
+                            label: __('Texte du bouton verdict', 'notation-jlg'),
+                            value: attributes.verdictCtaLabel || '',
+                            onChange: function (value) {
+                                setAttributes({ verdictCtaLabel: value || '' });
+                            },
+                            help: __('Par défaut : « Lire le test complet ».', 'notation-jlg'),
+                        }),
+                        createElement(TextControl, {
+                            label: __('URL du bouton verdict', 'notation-jlg'),
+                            type: 'url',
+                            value: attributes.verdictCtaUrl || '',
+                            onChange: function (value) {
+                                setAttributes({ verdictCtaUrl: value || '' });
+                            },
+                            help: __('Utilisez une URL absolue ou laissez vide pour pointer vers l’article.', 'notation-jlg'),
+                        })
+                    ),
                     colorControl
                 ),
                 createElement(
@@ -153,6 +197,10 @@
                             postId: attributes.postId || 0,
                             scoreLayout: attributes.scoreLayout || 'text',
                             scoreDisplay: attributes.scoreDisplay || 'absolute',
+                            showVerdict: attributes.showVerdict || 'inherit',
+                            verdictSummary: attributes.verdictSummary || '',
+                            verdictCtaLabel: attributes.verdictCtaLabel || '',
+                            verdictCtaUrl: attributes.verdictCtaUrl || '',
                             showAnimations: typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
                             accentColor: attributes.accentColor || '',
                             previewTheme: attributes.previewTheme || 'auto',
