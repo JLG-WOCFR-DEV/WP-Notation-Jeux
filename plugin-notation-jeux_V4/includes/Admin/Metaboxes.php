@@ -179,7 +179,29 @@ class Metaboxes {
 
         // Récupérer les métadonnées
         $meta = array();
-        $keys = array( 'game_title', 'tagline_fr', 'tagline_en', 'points_forts', 'points_faibles', 'developpeur', 'editeur', 'date_sortie', 'version', 'pegi', 'temps_de_jeu', 'plateformes', 'cover_image_url', 'cta_label', 'cta_url', 'review_video_url', 'review_video_provider' );
+        $keys = array(
+            'game_title',
+            'tagline_fr',
+            'tagline_en',
+            'points_forts',
+            'points_faibles',
+            'developpeur',
+            'editeur',
+            'date_sortie',
+            'version',
+            'pegi',
+            'temps_de_jeu',
+            'plateformes',
+            'cover_image_url',
+            'cta_label',
+            'cta_url',
+            'review_video_url',
+            'review_video_provider',
+            'verdict_summary',
+            'verdict_cta_label',
+            'verdict_cta_url',
+            'last_patch_date',
+        );
         foreach ( $keys as $key ) {
             $meta[ $key ] = get_post_meta( $post->ID, '_jlg_' . $key, true );
         }
@@ -200,6 +222,13 @@ class Metaboxes {
         }
         echo '</select>';
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Ce statut est affiché sous la note globale pour informer les lecteurs de la fraîcheur de la review.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+
+        $last_patch_value = isset( $meta['last_patch_date'] ) ? (string) $meta['last_patch_date'] : '';
+        echo '<div style="margin-bottom:20px;">';
+        echo '<label for="jlg_last_patch_date"><strong>' . esc_html__( 'Dernier patch vérifié', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="date" id="jlg_last_patch_date" name="jlg_last_patch_date" value="' . esc_attr( $last_patch_value ) . '" style="width:100%; max-width:260px;">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Utilisé par l’automatisation du statut pour revenir en « Version finale » après le délai configuré.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 
         echo '<div style="margin-bottom:20px;">';
@@ -342,6 +371,27 @@ class Metaboxes {
         echo '</div>';
         echo '</div>';
 
+        echo '<h3>' . esc_html__( '📝 Verdict de la rédaction', 'notation-jlg' ) . '</h3>';
+        echo '<div style="display:grid; grid-template-columns:1fr; gap:15px; margin-bottom:20px;">';
+        echo '<div>';
+        echo '<label for="jlg_verdict_summary"><strong>' . esc_html__( 'Résumé court', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<textarea id="jlg_verdict_summary" name="jlg_verdict_summary" rows="4" style="width:100%;" placeholder="' . esc_attr__( 'Un verdict concis pour guider les lecteurs…', 'notation-jlg' ) . '">' . esc_textarea( $meta['verdict_summary'] ?? '' ) . '</textarea>';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Limitez-vous à 3-4 phrases pour conserver une lecture instantanée.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+
+        echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">';
+        echo '<div>';
+        echo '<label for="jlg_verdict_cta_label"><strong>' . esc_html__( 'Texte du bouton verdict', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="text" id="jlg_verdict_cta_label" name="jlg_verdict_cta_label" value="' . esc_attr( $meta['verdict_cta_label'] ?? '' ) . '" style="width:100%;" placeholder="' . esc_attr__( 'Lire le test complet', 'notation-jlg' ) . '">';
+        echo '</div>';
+        echo '<div>';
+        echo '<label for="jlg_verdict_cta_url"><strong>' . esc_html__( 'URL du bouton verdict', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="url" id="jlg_verdict_cta_url" name="jlg_verdict_cta_url" value="' . esc_attr( $meta['verdict_cta_url'] ?? '' ) . '" style="width:100%;" placeholder="https://">';
+        echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Laissez vide pour utiliser automatiquement le permalien de l’article.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+
         echo '</div>';
     }
 
@@ -429,13 +479,14 @@ class Metaboxes {
 
             // Champs texte simples
             $text_fields = array(
-                'game_title'   => __( 'Nom du jeu', 'notation-jlg' ),
-                'developpeur'  => __( 'Développeur(s)', 'notation-jlg' ),
-                'editeur'      => __( 'Éditeur(s)', 'notation-jlg' ),
-                'date_sortie'  => __( 'Date de sortie', 'notation-jlg' ),
-                'version'      => __( 'Version testée', 'notation-jlg' ),
-                'pegi'         => __( 'PEGI', 'notation-jlg' ),
-                'temps_de_jeu' => __( 'Temps de jeu', 'notation-jlg' ),
+                'game_title'      => __( 'Nom du jeu', 'notation-jlg' ),
+                'developpeur'     => __( 'Développeur(s)', 'notation-jlg' ),
+                'editeur'         => __( 'Éditeur(s)', 'notation-jlg' ),
+                'date_sortie'     => __( 'Date de sortie', 'notation-jlg' ),
+                'version'         => __( 'Version testée', 'notation-jlg' ),
+                'pegi'            => __( 'PEGI', 'notation-jlg' ),
+                'temps_de_jeu'    => __( 'Temps de jeu', 'notation-jlg' ),
+                'last_patch_date' => __( 'Dernier patch vérifié', 'notation-jlg' ),
             );
             foreach ( $text_fields as $field => $label ) {
                 if ( isset( $_POST[ 'jlg_' . $field ] ) ) {
@@ -453,7 +504,7 @@ class Metaboxes {
                         continue;
                     }
 
-                    if ( $field === 'date_sortie' ) {
+                    if ( in_array( $field, array( 'date_sortie', 'last_patch_date' ), true ) ) {
                         $sanitized_date = Validator::sanitize_date( $value );
                         if ( $sanitized_date === null ) {
                             delete_post_meta( $post_id, '_jlg_' . $field );
@@ -520,6 +571,15 @@ class Metaboxes {
                 }
             }
 
+            if ( isset( $_POST['jlg_verdict_summary'] ) ) {
+                $summary_value = wp_kses_post( wp_unslash( $_POST['jlg_verdict_summary'] ) );
+                if ( $summary_value === '' ) {
+                    delete_post_meta( $post_id, '_jlg_verdict_summary' );
+                } else {
+                    update_post_meta( $post_id, '_jlg_verdict_summary', $summary_value );
+                }
+            }
+
             $cta_label = isset( $_POST['jlg_cta_label'] ) ? sanitize_text_field( wp_unslash( $_POST['jlg_cta_label'] ) ) : '';
             $cta_label = is_string( $cta_label ) ? trim( $cta_label ) : '';
             $cta_url   = isset( $_POST['jlg_cta_url'] ) ? esc_url_raw( wp_unslash( $_POST['jlg_cta_url'] ) ) : '';
@@ -542,6 +602,33 @@ class Metaboxes {
                 } else {
                     update_post_meta( $post_id, '_jlg_cta_label', $cta_label );
                     update_post_meta( $post_id, '_jlg_cta_url', esc_url_raw( $cta_url ) );
+                }
+            }
+
+            $verdict_cta_label = isset( $_POST['jlg_verdict_cta_label'] ) ? sanitize_text_field( wp_unslash( $_POST['jlg_verdict_cta_label'] ) ) : '';
+            $verdict_cta_label = is_string( $verdict_cta_label ) ? trim( $verdict_cta_label ) : '';
+            $verdict_cta_url   = isset( $_POST['jlg_verdict_cta_url'] ) ? wp_unslash( $_POST['jlg_verdict_cta_url'] ) : '';
+            $verdict_cta_url   = is_string( $verdict_cta_url ) ? trim( $verdict_cta_url ) : '';
+
+            if ( $verdict_cta_label === '' && $verdict_cta_url === '' ) {
+                delete_post_meta( $post_id, '_jlg_verdict_cta_label' );
+                delete_post_meta( $post_id, '_jlg_verdict_cta_url' );
+            } elseif ( $verdict_cta_label === '' && $verdict_cta_url !== '' ) {
+                delete_post_meta( $post_id, '_jlg_verdict_cta_label' );
+                delete_post_meta( $post_id, '_jlg_verdict_cta_url' );
+                $validation_errors[] = __( 'Bouton verdict : ajoutez un libellé pour le lien de verdict.', 'notation-jlg' );
+            } elseif ( $verdict_cta_label !== '' && $verdict_cta_url === '' ) {
+                delete_post_meta( $post_id, '_jlg_verdict_cta_label' );
+                delete_post_meta( $post_id, '_jlg_verdict_cta_url' );
+                $validation_errors[] = __( 'Bouton verdict : renseignez une URL ou laissez les deux champs vides.', 'notation-jlg' );
+            } else {
+                if ( ! Validator::is_valid_http_url( $verdict_cta_url ) ) {
+                    delete_post_meta( $post_id, '_jlg_verdict_cta_label' );
+                    delete_post_meta( $post_id, '_jlg_verdict_cta_url' );
+                    $validation_errors[] = __( 'Bouton verdict : l’URL doit être absolue et commencer par http ou https.', 'notation-jlg' );
+                } else {
+                    update_post_meta( $post_id, '_jlg_verdict_cta_label', $verdict_cta_label );
+                    update_post_meta( $post_id, '_jlg_verdict_cta_url', esc_url_raw( $verdict_cta_url ) );
                 }
             }
 

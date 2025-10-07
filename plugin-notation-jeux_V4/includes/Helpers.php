@@ -14,9 +14,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Helpers {
 
-    public const SCORE_SCALE_MIGRATION_OPTION = 'jlg_score_scale_migration';
-    public const SCORE_SCALE_QUEUE_OPTION     = 'jlg_score_scale_queue';
-    public const SCORE_SCALE_EVENT_HOOK       = 'jlg_process_score_scale_migration';
+    public const SCORE_SCALE_MIGRATION_OPTION      = 'jlg_score_scale_migration';
+    public const SCORE_SCALE_QUEUE_OPTION          = 'jlg_score_scale_queue';
+    public const SCORE_SCALE_EVENT_HOOK            = 'jlg_process_score_scale_migration';
+    public const REVIEW_STATUS_CRON_HOOK           = 'jlg_review_status_auto_finalize';
+    public const REVIEW_STATUS_META_KEY            = '_jlg_review_status';
+    public const REVIEW_STATUS_LAST_PATCH_META_KEY = '_jlg_last_patch_date';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search' );
@@ -983,6 +986,424 @@ class Helpers {
         return apply_filters( 'jlg_review_status_display', $payload, $post_id );
     }
 
+    public static function get_review_verdict_for_post( $post_id ) {
+        $post_id = (int) $post_id;
+
+        $post = $post_id > 0 ? get_post( $post_id ) : null;
+        if ( ! $post ) {
+            $status = self::get_review_status_for_post( $post_id );
+
+            return apply_filters(
+                'jlg_review_verdict_payload',
+                array(
+                    'summary'      => '',
+                    'cta_label'    => '',
+                    'cta_url'      => '',
+                    'cta_rel'      => 'bookmark',
+                    'status'       => $status,
+                    'last_updated' => array(
+                        'timestamp' => null,
+                        'display'   => '',
+                        'iso'       => '',
+                    ),
+                    'permalink'    => '',
+                ),
+                $post_id,
+                null
+            );
+        }
+
+        $summary = get_post_meta( $post_id, '_jlg_verdict_summary', true );
+        $summary = is_string( $summary ) ? trim( wp_kses_post( $summary ) ) : '';
+
+        $cta_label = get_post_meta( $post_id, '_jlg_verdict_cta_label', true );
+        $cta_label = is_string( $cta_label ) ? trim( sanitize_text_field( $cta_label ) ) : '';
+
+        $cta_url = get_post_meta( $post_id, '_jlg_verdict_cta_url', true );
+        $cta_url = is_string( $cta_url ) ? trim( esc_url_raw( $cta_url ) ) : '';
+
+        $permalink = function_exists( 'get_permalink' ) ? get_permalink( $post ) : '';
+        $permalink = is_string( $permalink ) ? $permalink : '';
+
+        if ( $cta_label === '' ) {
+            $cta_label = __( 'Lire le test complet', 'notation-jlg' );
+        }
+
+        if ( $cta_url === '' ) {
+            $cta_url = $permalink;
+        }
+
+        $status = self::get_review_status_for_post( $post_id );
+
+        $timestamp = false;
+        if ( function_exists( 'get_post_modified_time' ) ) {
+            $timestamp = get_post_modified_time( 'U', true, $post );
+        }
+
+        if ( ! is_int( $timestamp ) ) {
+            $timestamp = false;
+        }
+
+        $date_format = get_option( 'date_format', 'F j, Y' );
+        if ( ! is_string( $date_format ) || $date_format === '' ) {
+            $date_format = 'F j, Y';
+        }
+
+        $display_date = '';
+        $iso_date     = '';
+
+        if ( $timestamp ) {
+            if ( function_exists( 'wp_date' ) ) {
+                $display_date = wp_date( $date_format, $timestamp );
+                $iso_date     = wp_date( DATE_W3C, $timestamp );
+            } else {
+                $display_date = date_i18n( $date_format, $timestamp );
+                $iso_date     = gmdate( DATE_W3C, $timestamp );
+            }
+        }
+
+        $payload = array(
+            'summary'      => $summary,
+            'cta_label'    => $cta_label,
+            'cta_url'      => $cta_url,
+            'cta_rel'      => 'bookmark',
+            'status'       => $status,
+            'last_updated' => array(
+                'timestamp' => $timestamp ?: null,
+                'display'   => $display_date,
+                'iso'       => $iso_date,
+            ),
+            'permalink'    => $permalink,
+        );
+
+        /**
+         * Filtre les données du verdict de review.
+         *
+         * @param array     $payload Données formatées pour le rendu.
+         * @param int       $post_id Identifiant de l'article.
+         * @param \WP_Post $post    Objet post courant.
+         */
+        return apply_filters( 'jlg_review_verdict_payload', $payload, $post_id, $post );
+    }
+
+    /**
+     * Programme l'automatisation du statut de review si l'option est active.
+     *
+     * @param bool $force Permet de forcer une reprogrammation immédiate.
+     *
+     * @return bool True si un événement a été planifié, false sinon.
+     */
+    public static function maybe_schedule_review_status_automation( $force = false ) {
+        if ( ! self::is_review_status_auto_finalize_enabled() ) {
+            self::clear_review_status_automation_schedule();
+
+            return false;
+        }
+
+        if ( ! function_exists( 'wp_schedule_event' ) || ! function_exists( 'wp_next_scheduled' ) ) {
+            return false;
+        }
+
+        $hook = self::REVIEW_STATUS_CRON_HOOK;
+
+        if ( $force ) {
+            self::clear_review_status_automation_schedule();
+        } elseif ( wp_next_scheduled( $hook ) ) {
+            return false;
+        }
+
+        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : 86400;
+        $now            = self::get_current_timestamp();
+
+        wp_schedule_event( $now + $day_in_seconds, 'daily', $hook );
+
+        return true;
+    }
+
+    /**
+     * Déprogramme l'événement CRON lié au statut automatisé.
+     */
+    public static function clear_review_status_automation_schedule() {
+        if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+            wp_clear_scheduled_hook( self::REVIEW_STATUS_CRON_HOOK );
+        }
+    }
+
+    /**
+     * Prépare le hook CRON lors de l'activation du plugin.
+     */
+    public static function activate_review_status_automation() {
+        self::maybe_schedule_review_status_automation( true );
+    }
+
+    /**
+     * Nettoie le hook CRON lors de la désactivation du plugin.
+     */
+    public static function deactivate_review_status_automation() {
+        self::clear_review_status_automation_schedule();
+    }
+
+    /**
+     * Indique si l'automatisation du statut de review est active.
+     *
+     * @param array|null $options Options du plugin à analyser.
+     */
+    private static function is_review_status_auto_finalize_enabled( ?array $options = null ) {
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        if ( empty( $options['review_status_enabled'] ) ) {
+            return false;
+        }
+
+        if ( empty( $options['review_status_auto_finalize_enabled'] ) ) {
+            return false;
+        }
+
+        $days = isset( $options['review_status_auto_finalize_days'] )
+            ? (int) $options['review_status_auto_finalize_days']
+            : 0;
+
+        return $days > 0;
+    }
+
+    /**
+     * Exécute le traitement automatisé des statuts de review.
+     *
+     * @param array|null $options Options du plugin.
+     *
+     * @return int Nombre d'articles mis à jour.
+     */
+    public static function run_review_status_automation( ?array $options = null ) {
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        if ( ! self::is_review_status_auto_finalize_enabled( $options ) ) {
+            self::clear_review_status_automation_schedule();
+
+            return 0;
+        }
+
+        if ( ! class_exists( '\\WP_Query' ) ) {
+            return 0;
+        }
+
+        $day_in_seconds = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : 86400;
+        $now            = self::get_current_timestamp();
+
+        $days = (int) $options['review_status_auto_finalize_days'];
+
+        $threshold_timestamp = $now - ( $days * $day_in_seconds );
+        $threshold_timestamp = (int) apply_filters(
+            'jlg_review_status_auto_finalize_threshold_timestamp',
+            $threshold_timestamp,
+            $options
+        );
+
+        if ( $threshold_timestamp < 0 ) {
+            $threshold_timestamp = 0;
+        }
+
+        $threshold_date = gmdate( 'Y-m-d', $threshold_timestamp );
+        $threshold_date = apply_filters(
+            'jlg_review_status_auto_finalize_threshold',
+            $threshold_date,
+            $options,
+            $threshold_timestamp
+        );
+        $threshold_date = is_string( $threshold_date ) ? trim( $threshold_date ) : '';
+
+        if ( $threshold_date === '' ) {
+            return 0;
+        }
+
+        $eligible_statuses = apply_filters(
+            'jlg_review_status_auto_finalize_statuses',
+            array( 'in_progress' ),
+            $options
+        );
+
+        if ( ! is_array( $eligible_statuses ) ) {
+            $eligible_statuses = array();
+        }
+
+        $eligible_statuses = array_values(
+            array_filter(
+                array_map(
+                    'sanitize_key',
+                    $eligible_statuses
+                )
+            )
+        );
+
+        if ( empty( $eligible_statuses ) ) {
+            $eligible_statuses = array( 'in_progress' );
+        }
+
+        $target_status = apply_filters(
+            'jlg_review_status_auto_finalize_target',
+            'final',
+            $options
+        );
+        $target_status = self::normalize_review_status( $target_status );
+
+        $post_types = self::get_allowed_post_types();
+
+        $batch_size = (int) apply_filters(
+            'jlg_review_status_auto_finalize_batch_size',
+            25,
+            $options
+        );
+
+        if ( $batch_size <= 0 ) {
+            $batch_size = 25;
+        }
+
+        $page          = 1;
+        $updated_count = 0;
+
+        do {
+            $query_args = array(
+                'post_type'      => $post_types,
+                'post_status'    => array( 'publish' ),
+                'posts_per_page' => $batch_size,
+                'paged'          => $page,
+                'fields'         => 'ids',
+                'orderby'        => 'ID',
+                'order'          => 'ASC',
+                'meta_query'     => array(
+                    'relation' => 'AND',
+                    array(
+                        'key'     => self::REVIEW_STATUS_META_KEY,
+                        'value'   => $eligible_statuses,
+                        'compare' => 'IN',
+                    ),
+                    array(
+                        'key'     => self::REVIEW_STATUS_LAST_PATCH_META_KEY,
+                        'value'   => $threshold_date,
+                        'compare' => '<=',
+                        'type'    => 'DATE',
+                    ),
+                ),
+            );
+
+            $query_args = apply_filters(
+                'jlg_review_status_auto_finalize_query_args',
+                $query_args,
+                $options,
+                $threshold_date,
+                $eligible_statuses,
+                $target_status
+            );
+
+            $query    = new \WP_Query( $query_args );
+            $post_ids = isset( $query->posts ) && is_array( $query->posts ) ? $query->posts : array();
+
+            if ( empty( $post_ids ) ) {
+                break;
+            }
+
+            foreach ( $post_ids as $post_candidate ) {
+                if ( is_object( $post_candidate ) && isset( $post_candidate->ID ) ) {
+                    $post_id = (int) $post_candidate->ID;
+                } else {
+                    $post_id = (int) $post_candidate;
+                }
+
+                if ( self::maybe_finalize_review_status_for_post( $post_id, $target_status, $eligible_statuses, $threshold_date ) ) {
+                    ++$updated_count;
+                }
+            }
+
+            ++$page;
+            $max_pages = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0;
+
+            if ( $max_pages <= 0 ) {
+                if ( count( $post_ids ) < $batch_size ) {
+                    break;
+                }
+            } elseif ( $page > $max_pages ) {
+                break;
+            }
+        } while ( true );
+
+        return $updated_count;
+    }
+
+    /**
+     * Finalise le statut d'un article lorsqu'il est éligible.
+     *
+     * @param int      $post_id           Identifiant de l'article.
+     * @param string   $target_status     Statut cible.
+     * @param string[] $eligible_statuses Liste des statuts à surveiller.
+     * @param string   $threshold_date    Date seuil (Y-m-d).
+     */
+    private static function maybe_finalize_review_status_for_post( $post_id, $target_status, array $eligible_statuses, $threshold_date ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return false;
+        }
+
+        $current_status = get_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, true );
+        $current_status = self::normalize_review_status( $current_status );
+
+        if ( $current_status === $target_status || ! in_array( $current_status, $eligible_statuses, true ) ) {
+            return false;
+        }
+
+        $last_patch_date = get_post_meta( $post_id, self::REVIEW_STATUS_LAST_PATCH_META_KEY, true );
+        $last_patch_date = is_string( $last_patch_date ) ? trim( $last_patch_date ) : '';
+
+        if ( $last_patch_date === '' ) {
+            return false;
+        }
+
+        if ( strcmp( $last_patch_date, $threshold_date ) > 0 ) {
+            return false;
+        }
+
+        update_post_meta( $post_id, self::REVIEW_STATUS_META_KEY, $target_status );
+
+        /**
+         * Se déclenche lorsqu'un statut est finalisé automatiquement.
+         *
+         * @param int    $post_id        Identifiant de l'article.
+         * @param string $previous_state Ancien statut.
+         * @param string $new_state      Nouveau statut.
+         * @param string $context        Contexte d'exécution.
+         */
+        do_action( 'jlg_review_status_transition', $post_id, $current_status, $target_status, 'auto_finalize' );
+
+        return true;
+    }
+
+    /**
+     * Retourne un timestamp courant en respectant la timezone WordPress quand disponible.
+     */
+    private static function get_current_timestamp() {
+        if ( function_exists( 'current_datetime' ) ) {
+            $datetime = current_datetime();
+
+            if ( $datetime instanceof \DateTimeInterface ) {
+                return $datetime->getTimestamp();
+            }
+        }
+
+        try {
+            $timezone = function_exists( 'wp_timezone' ) ? wp_timezone() : new \DateTimeZone( 'UTC' );
+            $now      = new \DateTimeImmutable( 'now', $timezone );
+
+            return $now->getTimestamp();
+        } catch ( \Exception $exception ) {
+            unset( $exception );
+        }
+
+        return time();
+    }
+
     public static function get_related_guides_for_post( $post_id, ?array $options = null ) {
         $post_id = (int) $post_id;
 
@@ -1244,102 +1665,104 @@ class Helpers {
 
         self::$default_settings_cache = array(
             // Options générales
-            'visual_theme'                       => 'dark',
-            'score_layout'                       => 'text',
-            'score_max'                          => 10,
-            'enable_animations'                  => 1,
-            'allowed_post_types'                 => array( 'post' ),
-            'tagline_font_size'                  => 16,
-            'rating_badge_enabled'               => 0,
-            'rating_badge_threshold'             => 8,
-            'review_status_enabled'              => 1,
-            'related_guides_enabled'             => 0,
-            'related_guides_limit'               => 4,
-            'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
+            'visual_theme'                        => 'dark',
+            'score_layout'                        => 'text',
+            'score_max'                           => 10,
+            'enable_animations'                   => 1,
+            'allowed_post_types'                  => array( 'post' ),
+            'tagline_font_size'                   => 16,
+            'rating_badge_enabled'                => 0,
+            'rating_badge_threshold'              => 8,
+            'review_status_enabled'               => 1,
+            'review_status_auto_finalize_enabled' => 0,
+            'review_status_auto_finalize_days'    => 7,
+            'related_guides_enabled'              => 0,
+            'related_guides_limit'                => 4,
+            'related_guides_taxonomies'           => 'guide,astuce,category,post_tag',
 
             // Couleurs de Thème Sombre personnalisables
-            'dark_bg_color'                      => $dark_defaults['bg_color'],
-            'dark_bg_color_secondary'            => $dark_defaults['bg_color_secondary'],
-            'dark_border_color'                  => $dark_defaults['border_color'],
-            'dark_text_color'                    => $dark_defaults['text_color'],
-            'dark_text_color_secondary'          => $dark_defaults['text_color_secondary'],
-            'tagline_bg_color'                   => $dark_defaults['tagline_bg_color'],
-            'tagline_text_color'                 => $dark_defaults['tagline_text_color'],
+            'dark_bg_color'                       => $dark_defaults['bg_color'],
+            'dark_bg_color_secondary'             => $dark_defaults['bg_color_secondary'],
+            'dark_border_color'                   => $dark_defaults['border_color'],
+            'dark_text_color'                     => $dark_defaults['text_color'],
+            'dark_text_color_secondary'           => $dark_defaults['text_color_secondary'],
+            'tagline_bg_color'                    => $dark_defaults['tagline_bg_color'],
+            'tagline_text_color'                  => $dark_defaults['tagline_text_color'],
 
             // Couleurs de Thème Clair personnalisables
-            'light_bg_color'                     => $light_defaults['bg_color'],
-            'light_bg_color_secondary'           => $light_defaults['bg_color_secondary'],
-            'light_border_color'                 => $light_defaults['border_color'],
-            'light_text_color'                   => $light_defaults['text_color'],
-            'light_text_color_secondary'         => $light_defaults['text_color_secondary'],
+            'light_bg_color'                      => $light_defaults['bg_color'],
+            'light_bg_color_secondary'            => $light_defaults['bg_color_secondary'],
+            'light_border_color'                  => $light_defaults['border_color'],
+            'light_text_color'                    => $light_defaults['text_color'],
+            'light_text_color_secondary'          => $light_defaults['text_color_secondary'],
 
             // Couleurs sémantiques et de marque
-            'score_gradient_1'                   => '#60a5fa',
-            'score_gradient_2'                   => '#c084fc',
-            'color_low'                          => '#ef4444',
-            'color_mid'                          => '#f97316',
-            'color_high'                         => '#22c55e',
-            'user_rating_star_color'             => '#f59e0b',
-            'user_rating_text_color'             => '#a1a1aa',
-            'user_rating_title_color'            => '#fafafa',
+            'score_gradient_1'                    => '#60a5fa',
+            'score_gradient_2'                    => '#c084fc',
+            'color_low'                           => '#ef4444',
+            'color_mid'                           => '#f97316',
+            'color_high'                          => '#22c55e',
+            'user_rating_star_color'              => '#f59e0b',
+            'user_rating_text_color'              => '#a1a1aa',
+            'user_rating_title_color'             => '#fafafa',
 
             // Options cercle
-            'circle_dynamic_bg_enabled'          => 0,
-            'circle_border_enabled'              => 1,
-            'circle_border_width'                => 5,
-            'circle_border_color'                => '#60a5fa',
+            'circle_dynamic_bg_enabled'           => 0,
+            'circle_border_enabled'               => 1,
+            'circle_border_width'                 => 5,
+            'circle_border_color'                 => '#60a5fa',
 
             // Options glow pour mode texte
-            'text_glow_enabled'                  => 0,
-            'text_glow_color_mode'               => 'dynamic',
-            'text_glow_custom_color'             => '#ffffff',
-            'text_glow_intensity'                => 15,
-            'text_glow_pulse'                    => 0,
-            'text_glow_speed'                    => 2.5,
+            'text_glow_enabled'                   => 0,
+            'text_glow_color_mode'                => 'dynamic',
+            'text_glow_custom_color'              => '#ffffff',
+            'text_glow_intensity'                 => 15,
+            'text_glow_pulse'                     => 0,
+            'text_glow_speed'                     => 2.5,
 
             // Options glow pour mode cercle
-            'circle_glow_enabled'                => 0,
-            'circle_glow_color_mode'             => 'dynamic',
-            'circle_glow_custom_color'           => '#ffffff',
-            'circle_glow_intensity'              => 15,
-            'circle_glow_pulse'                  => 0,
-            'circle_glow_speed'                  => 2.5,
+            'circle_glow_enabled'                 => 0,
+            'circle_glow_color_mode'              => 'dynamic',
+            'circle_glow_custom_color'            => '#ffffff',
+            'circle_glow_intensity'               => 15,
+            'circle_glow_pulse'                   => 0,
+            'circle_glow_speed'                   => 2.5,
 
             // Options des modules
-            'tagline_enabled'                    => 1,
-            'user_rating_enabled'                => 1,
-            'user_rating_requires_login'         => 0,
-            'user_rating_weighting_enabled'      => 0,
-            'user_rating_guest_weight_start'     => 0.5,
-            'user_rating_guest_weight_increment' => 0.1,
-            'user_rating_guest_weight_max'       => 1.0,
-            'table_zebra_striping'               => 0,
-            'table_border_style'                 => 'horizontal',
-            'table_border_width'                 => 1,
-            'table_header_bg_color'              => '#3f3f46',
-            'table_header_text_color'            => '#ffffff',
-            'table_row_bg_color'                 => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
-            'table_row_text_color'               => '#a1a1aa',
-            'table_zebra_bg_color'               => '#27272a',
-            'thumb_text_color'                   => '#ffffff',
-            'thumb_font_size'                    => 14,
-            'thumb_padding'                      => 8,
-            'thumb_border_radius'                => 4,
+            'tagline_enabled'                     => 1,
+            'user_rating_enabled'                 => 1,
+            'user_rating_requires_login'          => 0,
+            'user_rating_weighting_enabled'       => 0,
+            'user_rating_guest_weight_start'      => 0.5,
+            'user_rating_guest_weight_increment'  => 0.1,
+            'user_rating_guest_weight_max'        => 1.0,
+            'table_zebra_striping'                => 0,
+            'table_border_style'                  => 'horizontal',
+            'table_border_width'                  => 1,
+            'table_header_bg_color'               => '#3f3f46',
+            'table_header_text_color'             => '#ffffff',
+            'table_row_bg_color'                  => 'transparent', // Must remain literal "transparent" so CSS vars keep default transparency
+            'table_row_text_color'                => '#a1a1aa',
+            'table_zebra_bg_color'                => '#27272a',
+            'thumb_text_color'                    => '#ffffff',
+            'thumb_font_size'                     => 14,
+            'thumb_padding'                       => 8,
+            'thumb_border_radius'                 => 4,
 
             // Options Game Explorer
-            'game_explorer_columns'              => 3,
-            'game_explorer_posts_per_page'       => 12,
-            'game_explorer_filters'              => self::GAME_EXPLORER_DEFAULT_FILTERS,
-            'game_explorer_score_position'       => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
+            'game_explorer_columns'               => 3,
+            'game_explorer_posts_per_page'        => 12,
+            'game_explorer_filters'               => self::GAME_EXPLORER_DEFAULT_FILTERS,
+            'game_explorer_score_position'        => self::GAME_EXPLORER_DEFAULT_SCORE_POSITION,
 
             // Libellés & catégories de notation
-            'rating_categories'                  => self::get_default_category_definitions(),
+            'rating_categories'                   => self::get_default_category_definitions(),
 
             // Options techniques et diverses
-            'custom_css'                         => '',
-            'seo_schema_enabled'                 => 1,
-            'debug_mode_enabled'                 => 0,
-            'rawg_api_key'                       => '',
+            'custom_css'                          => '',
+            'seo_schema_enabled'                  => 1,
+            'debug_mode_enabled'                  => 0,
+            'rawg_api_key'                        => '',
         );
 
         return self::$default_settings_cache;

@@ -216,12 +216,47 @@ class ShortcodeAllInOneRenderTest extends TestCase
         $this->assertStringContainsString('Vidéo de test hébergée par YouTube', $output);
     }
 
+    public function test_render_outputs_verdict_section_when_summary_provided(): void
+    {
+        $post_id = 2006;
+        $this->seedPost($post_id);
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_summary']    = 'Une aventure magistrale qui culmine avec un final mémorable.';
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_cta_label']  = 'Lire notre verdict complet';
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_verdict_cta_url']    = 'https://example.com/review';
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_review_status']      = 'in_progress';
+
+        $this->setPluginOptions([
+            'score_layout'      => 'text',
+            'visual_theme'      => 'dark',
+            'score_gradient_1'  => '#336699',
+            'score_gradient_2'  => '#9933cc',
+            'color_high'        => '#22c55e',
+            'color_low'         => '#ef4444',
+            'tagline_font_size' => 18,
+            'enable_animations' => 0,
+        ]);
+
+        $shortcode = new \JLG\Notation\Shortcodes\AllInOne();
+        $output    = $shortcode->render([
+            'post_id'          => (string) $post_id,
+            'afficher_verdict' => 'oui',
+        ]);
+
+        $this->assertNotSame('', $output);
+        $this->assertMatchesRegularExpression('/class="jlg-aio-verdict"/', $output);
+        $this->assertStringContainsString('Lire notre verdict complet', $output);
+        $this->assertMatchesRegularExpression('/jlg-aio-verdict__status--in_progress/', $output);
+        $this->assertMatchesRegularExpression('/Mise à jour le/', $output);
+    }
+
     private function seedPost(int $post_id, string $post_type = 'post'): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
             'ID'          => $post_id,
             'post_type'   => $post_type,
             'post_status' => 'publish',
+            'post_modified' => '2025-10-05 12:34:00',
+            'post_modified_gmt' => '2025-10-05 10:34:00',
         ]);
 
         $GLOBALS['jlg_test_meta'][$post_id] = [

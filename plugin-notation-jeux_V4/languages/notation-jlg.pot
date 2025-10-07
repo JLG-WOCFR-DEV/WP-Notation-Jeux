@@ -9,20 +9,10 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-19T00:00:00+00:00\n"
+"POT-Creation-Date: 2025-10-07T20:42:10+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: notation-jlg\n"
-
-#. translators: Sort option label for descending popularity (most votes first).
-#: includes/Shortcodes/GameExplorer.php:279 assets/js/blocks/game-explorer.js:48
-msgid "Popularité (plus de votes)"
-msgstr ""
-
-#. translators: Sort option label for ascending popularity (least votes first).
-#: includes/Shortcodes/GameExplorer.php:285 assets/js/blocks/game-explorer.js:49
-msgid "Popularité (moins de votes)"
-msgstr ""
 
 #. Plugin Name of the plugin
 #: plugin-notation-jeux.php
@@ -44,804 +34,2057 @@ msgstr ""
 msgid "Jérôme Le Gousse"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:20
+#: admin/templates/tabs/posts-list.php:34
+msgid "Synthèse des notes"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:38
+#, php-format
+msgid "%d article analysé."
+msgid_plural "%d articles analysés."
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/templates/tabs/posts-list.php:45
+msgid "Score moyen"
+msgstr ""
+
+#. translators: Abbreviation meaning that the user rating is not available.
+#: admin/templates/tabs/posts-list.php:46
+#: admin/templates/tabs/posts-list.php:51
+#: admin/templates/tabs/posts-list.php:96
+#: includes/Admin/Menu.php:177
+#: includes/Assets.php:176
+#: includes/Shortcodes/GameExplorer.php:1763
+#: templates/shortcode-score-insights.php:144
+#: templates/shortcode-score-insights.php:209
+#: templates/shortcode-score-insights.php:210
+#: templates/shortcode-score-insights.php:302
+#: templates/shortcode-score-insights.php:313
+#: templates/shortcode-user-rating.php:154
+#: templates/summary-table-fragment.php:289
+#: templates/summary-table-fragment.php:378
+#: templates/summary-table-fragment.php:422
+msgid "N/A"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:47
+msgid "Moyenne pondérée des notes finales."
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:50
+#: templates/shortcode-score-insights.php:114
+msgid "Médiane"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:52
+msgid "Score central sur l’ensemble des publications."
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:55
+#: templates/shortcode-score-insights.php:247
+msgid "Répartition des notes"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:63
+#, php-format
+msgid "%1$s : %2$d articles, %3$s%% du total"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:81
+msgid "Classement par plateforme"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:82
+msgid "Classement des plateformes les mieux notées"
+msgstr ""
+
+#: admin/templates/tabs/posts-list.php:90
+#, php-format
+msgid "%d jeu noté"
+msgid_plural "%d jeux notés"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/templates/tabs/posts-list.php:102
+msgid "Pas encore de plateforme renseignée."
+msgstr ""
+
+#. translators: %s: Maximum possible rating value.
+#. translators: %s: Maximum rating value displayed with the thumbnail score.
+#: admin/templates/tabs/posts-list.php:146
+#: plugin-notation-jeux.php:529
+#: templates/game-explorer-fragment.php:166
+#: templates/widget-thumbnail-score.php:43
+#, php-format
+msgid "/%s"
+msgstr ""
+
+#: includes/Admin/Ajax.php:55
+msgid "Permissions insuffisantes."
+msgstr ""
+
+#: includes/Admin/Ajax.php:66
+msgid "Terme de recherche vide."
+msgstr ""
+
+#: includes/Admin/Ajax.php:95
+msgid "Recherche simulée. Configurez une vraie clé API RAWG dans les réglages pour des résultats réels."
+msgstr ""
+
+#: includes/Admin/Ajax.php:132
+msgid "Erreur de communication avec RAWG.io. Veuillez réessayer ultérieurement."
+msgstr ""
+
+#. translators: %d: HTTP status code returned by RAWG.io
+#: includes/Admin/Ajax.php:145
+#, php-format
+msgid "La requête RAWG.io a échoué avec le code HTTP %d."
+msgstr ""
+
+#: includes/Admin/Ajax.php:159
+msgid "Réponse RAWG.io invalide : données JSON non valides."
+msgstr ""
+
+#: includes/Admin/Ajax.php:180
+msgid "Résultats récupérés depuis RAWG.io."
+msgstr ""
+
+#: includes/Admin/Menu.php:28
 msgctxt "Admin page title"
 msgid "Notation JLG"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:21
+#: includes/Admin/Menu.php:29
 msgctxt "Admin menu title"
 msgid "Notation - JLG"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:32
+#: includes/Admin/Menu.php:40
 msgid "Accès refusé."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:45
+#: includes/Admin/Menu.php:55
 msgid "⭐ Notation JLG v5.0"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:53
+#: includes/Admin/Menu.php:64
 msgid "⚙️ Réglages"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:54
+#: includes/Admin/Menu.php:65
 msgid "📊 Articles Notés"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:55
+#: includes/Admin/Menu.php:66
 msgid "🎮 Plateformes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:56
+#: includes/Admin/Menu.php:67
 msgid "📝 Shortcodes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:57
+#: includes/Admin/Menu.php:68
 msgid "📚 Tutoriels"
 msgstr ""
 
-#. translators: Abbreviation meaning that the user rating is not available.
-#: includes/admin/class-jlg-admin-menu.php:153
-#: includes/class-jlg-assets.php:117
-#: templates/shortcode-user-rating.php:15
-#: templates/summary-table-fragment.php:97
-#: templates/summary-table-fragment.php:157
-msgid "N/A"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-menu.php:178
+#: includes/Admin/Menu.php:202
 msgid "Page "
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:203
+#: includes/Admin/Menu.php:230
 msgid "🖨️ Imprimer cette liste"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:209
+#: includes/Admin/Menu.php:238
 msgid "Titre"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:210
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:184
+#: includes/Admin/Menu.php:242
+#: includes/Shortcodes/SummaryDisplay.php:356
+#: assets/js/blocks/summary-display.js:38
 msgid "Date"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:211
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:192
+#: includes/Admin/Menu.php:246
+#: includes/Shortcodes/SummaryDisplay.php:364
 msgid "Note"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:249
+#: includes/Admin/Menu.php:289
 msgid "🎮 Gestion des Plateformes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:268
+#: includes/Admin/Menu.php:296
 msgid "La classe de gestion des plateformes n'a pas pu être chargée."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:271
-msgid "Fichier class-jlg-admin-platforms.php introuvable."
-msgstr ""
-
-#: includes/admin/class-jlg-admin-menu.php:283
+#: includes/Admin/Menu.php:312
 msgid "⚡ Démarrage rapide avec le Bloc Complet"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:284
+#: includes/Admin/Menu.php:313
 msgid "La méthode la plus simple pour créer un test professionnel."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:286
-#: includes/admin/class-jlg-admin-menu.php:297
+#: includes/Admin/Menu.php:315
+#: includes/Admin/Menu.php:326
 msgid "Créer un nouvel article"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:287
+#: includes/Admin/Menu.php:316
 msgid "Remplir les notes dans la metabox (colonne droite)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:288
+#: includes/Admin/Menu.php:317
 msgid "Ajouter tagline et points forts/faibles"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:289
+#: includes/Admin/Menu.php:318
 msgid "Insérer [jlg_bloc_complet] dans le contenu"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:290
+#: includes/Admin/Menu.php:319
 msgid "C'est tout ! Publiez votre test"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:294
+#: includes/Admin/Menu.php:323
 msgid "🎮 Créer un test détaillé (méthode classique)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:295
+#: includes/Admin/Menu.php:324
 msgid "Guide pas-à-pas pour un contrôle total."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:298
+#: includes/Admin/Menu.php:327
 msgid "Remplir la metabox \"Notation\" (colonne droite)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:299
+#: includes/Admin/Menu.php:328
 msgid "Ajouter les détails du jeu (metabox principale)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:300
+#: includes/Admin/Menu.php:329
 msgid "Intégrer les shortcodes séparés si besoin"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:301
+#: includes/Admin/Menu.php:330
 msgid "Publier et vérifier l'affichage"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:305
+#: includes/Admin/Menu.php:334
 msgid "🎨 Personnalisation du Bloc Complet"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:306
+#: includes/Admin/Menu.php:335
 msgid "Créez un rendu unique."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:308
+#: includes/Admin/Menu.php:337
 msgid "Choisir le style (moderne/classique/compact)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:309
+#: includes/Admin/Menu.php:338
 msgid "Définir une couleur d'accent personnalisée"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:310
+#: includes/Admin/Menu.php:339
 msgid "Activer/désactiver les sections"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:311
+#: includes/Admin/Menu.php:340
 msgid "Personnaliser les titres des sections"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:312
+#: includes/Admin/Menu.php:341
 msgid "Combiner avec d'autres shortcodes si besoin"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:316
+#: includes/Admin/Menu.php:345
 msgid "🎨 Personnalisation visuelle globale"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:317
+#: includes/Admin/Menu.php:346
 msgid "Ajuster l'apparence générale."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:319
+#: includes/Admin/Menu.php:348
 msgid "Choisir le thème (clair/sombre)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:320
+#: includes/Admin/Menu.php:349
 msgid "Activer les effets Neon/Glow"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:321
+#: includes/Admin/Menu.php:350
 msgid "Configurer la pulsation"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:322
+#: includes/Admin/Menu.php:351
 msgid "Personnaliser les couleurs"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:323
+#: includes/Admin/Menu.php:352
 msgid "Ajouter du CSS personnalisé"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:327
+#: includes/Admin/Menu.php:356
 msgid "📊 Tableau récapitulatif avancé"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:328
+#: includes/Admin/Menu.php:357
 msgid "Maîtriser le shortcode tableau."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:330
+#: includes/Admin/Menu.php:359
 msgid "Choisir entre table et grille"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:331
+#: includes/Admin/Menu.php:360
 msgid "Sélectionner les colonnes à afficher"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:332
+#: includes/Admin/Menu.php:361
+#: templates/shortcode-game-explorer.php:341
+#: templates/shortcode-summary-display.php:121
 msgid "Filtrer par catégorie"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:333
+#: includes/Admin/Menu.php:362
 msgid "Ajuster la pagination"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:334
+#: includes/Admin/Menu.php:363
 msgid "Personnaliser les couleurs dans Réglages"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:338
+#: includes/Admin/Menu.php:367
 msgid "⚡ Optimisations"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:339
+#: includes/Admin/Menu.php:368
 msgid "Améliorer les performances."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:341
+#: includes/Admin/Menu.php:370
 msgid "Utiliser [jlg_bloc_complet] au lieu de 3 shortcodes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:342
+#: includes/Admin/Menu.php:371
 msgid "Activer un plugin de cache"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:343
+#: includes/Admin/Menu.php:372
 msgid "Optimiser les images de couverture"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:344
+#: includes/Admin/Menu.php:373
 msgid "Limiter le nombre d'articles affichés"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:345
+#: includes/Admin/Menu.php:374
 msgid "Désactiver les animations si non nécessaires"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:349
+#: includes/Admin/Menu.php:378
 msgid "🔧 Intégration dans le thème"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:350
+#: includes/Admin/Menu.php:379
 msgid "Pour les développeurs."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:352
+#: includes/Admin/Menu.php:381
 msgid "Ajouter jlg_display_thumbnail_score() dans les templates"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:353
+#: includes/Admin/Menu.php:382
 msgid "Utiliser jlg_get_post_rating() pour récupérer la note"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:354
+#: includes/Admin/Menu.php:383
 msgid "Personnaliser les templates dans /templates/"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:355
+#: includes/Admin/Menu.php:384
 msgid "Créer des hooks personnalisés"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:356
+#: includes/Admin/Menu.php:385
 msgid "Surcharger les styles CSS du plugin"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:360
+#: includes/Admin/Menu.php:389
 msgid "❓ Dépannage"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:361
+#: includes/Admin/Menu.php:390
 msgid "Résoudre les problèmes courants."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:363
+#: includes/Admin/Menu.php:392
 msgid "Vérifier les conflits de plugins"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:364
+#: includes/Admin/Menu.php:393
 msgid "Vider le cache navigateur et site"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:365
+#: includes/Admin/Menu.php:394
 msgid "Vérifier les permissions utilisateur"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:366
+#: includes/Admin/Menu.php:395
 msgid "Consulter les logs d'erreur"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-menu.php:367
+#: includes/Admin/Menu.php:396
 msgid "Réinitialiser les réglages si nécessaire"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:31
+#: includes/Admin/Metaboxes.php:62
 msgid "Notation JLG"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:46
+#: includes/Admin/Metaboxes.php:81
 msgid "⭐ Notation du Jeu Vidéo"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:55
+#: includes/Admin/Metaboxes.php:90
 msgid "🎮 Détails du Test"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:73
-msgid "Gameplay"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:74
-msgid "Graphismes"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:75
-msgid "Bande-son"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:76
-msgid "Durée de vie"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:77
-msgid "Scénario"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:78
-msgid "Originalité"
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:90
-msgid "Entrez les notes sur 10. Laissez vide si non pertinent."
-msgstr ""
-
-#: includes/admin/class-jlg-admin-metaboxes.php:96
-msgctxt "score input suffix"
-msgid "/ 10"
-msgstr ""
-
-#. translators: %s: average score value.
-#: includes/admin/class-jlg-admin-metaboxes.php:104
+#: includes/Admin/Metaboxes.php:121
 #, php-format
-msgid "%s / 10"
+msgid "Entrez les notes sur %s. Laissez vide si non pertinent."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:107
+#. translators: %s: Maximum possible rating value.
+#: includes/Admin/Metaboxes.php:144
+#, php-format
+msgctxt "score input suffix"
+msgid "/ %s"
+msgstr ""
+
+#. translators: 1: Average score value. 2: Maximum possible rating value.
+#. translators: 1: Rating value. 2: Maximum possible rating.
+#. translators: 1: reader score. 2: maximum possible score.
+#. translators: 1: category score. 2: maximum score.
+#. translators: %1$s: category score value. %2$s: maximum rating value.
+#: includes/Admin/Metaboxes.php:155
+#: templates/shortcode-all-in-one.php:350
+#: templates/shortcode-rating-block-empty.php:177
+#: templates/shortcode-rating-block-empty.php:233
+#: templates/shortcode-rating-block.php:170
+#: templates/shortcode-rating-block.php:281
+#: templates/summary-table-fragment.php:428
+#, php-format
+msgid "%1$s / %2$s"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:159
 msgid "Note moyenne :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:132
-#: includes/admin/class-jlg-admin-metaboxes.php:280
+#: includes/Admin/Metaboxes.php:216
+#: templates/shortcode-rating-block-empty.php:197
+#: templates/shortcode-rating-block.php:198
+msgid "Statut du test"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:224
+msgid "Ce statut est affiché sous la note globale pour informer les lecteurs de la fraîcheur de la review."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:229
+#: includes/Admin/Metaboxes.php:489
+msgid "Dernier patch vérifié"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:231
+msgid "Utilisé par l’automatisation du statut pour revenir en « Version finale » après le délai configuré."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:235
+#: includes/Admin/Metaboxes.php:482
 msgid "Nom du jeu"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:134
+#: includes/Admin/Metaboxes.php:237
 msgid "Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:138
+#: includes/Admin/Metaboxes.php:241
 msgid "📋 Fiche Technique"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:142
-#: includes/admin/class-jlg-admin-metaboxes.php:281
+#: includes/Admin/Metaboxes.php:245
+#: includes/Admin/Metaboxes.php:483
 msgid "Développeur(s)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:143
-#: includes/admin/class-jlg-admin-metaboxes.php:282
+#: includes/Admin/Metaboxes.php:246
+#: includes/Admin/Metaboxes.php:484
 msgid "Éditeur(s)"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:144
-#: includes/admin/class-jlg-admin-metaboxes.php:283
+#: includes/Admin/Metaboxes.php:247
+#: includes/Admin/Metaboxes.php:485
+#: assets/js/blocks/game-info.js:38
 msgid "Date de sortie"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:145
-#: includes/admin/class-jlg-admin-metaboxes.php:284
+#: includes/Admin/Metaboxes.php:248
+#: includes/Admin/Metaboxes.php:486
 msgid "Version testée"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:146
-#: includes/admin/class-jlg-admin-metaboxes.php:285
+#: includes/Admin/Metaboxes.php:249
+#: includes/Admin/Metaboxes.php:487
+#: assets/js/blocks/game-info.js:40
 msgid "PEGI"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:147
-#: includes/admin/class-jlg-admin-metaboxes.php:286
+#: includes/Admin/Metaboxes.php:250
+#: includes/Admin/Metaboxes.php:488
+#: assets/js/blocks/game-info.js:41
 msgid "Temps de jeu"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:148
+#: includes/Admin/Metaboxes.php:251
 msgid "URL de la jaquette"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:164
+#: includes/Admin/Metaboxes.php:267
 msgid "Plateformes :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:168
+#: includes/Admin/Metaboxes.php:271
 msgid "PC"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:169
+#: includes/Admin/Metaboxes.php:272
 msgid "PlayStation 5"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:170
+#: includes/Admin/Metaboxes.php:273
 msgid "Xbox Series S/X"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:171
+#: includes/Admin/Metaboxes.php:274
 msgid "Nintendo Switch"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:172
+#: includes/Admin/Metaboxes.php:275
 msgid "PlayStation 4"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:173
+#: includes/Admin/Metaboxes.php:276
 msgid "Xbox One"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:201
-msgid "💬 Taglines"
+#: includes/Admin/Metaboxes.php:304
+msgid "💬 Taglines & CTA"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:204
+#: includes/Admin/Metaboxes.php:307
 msgid "Française :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:208
+#: includes/Admin/Metaboxes.php:311
 msgid "Anglaise :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:214
+#: includes/Admin/Metaboxes.php:316
+msgid "Texte du bouton CTA"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:317
+msgid "Découvrir le jeu"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:318
+msgid "Obligatoire si vous renseignez une URL."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:321
+msgid "URL du bouton CTA"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:323
+msgid "Renseignez une URL absolue (https://...)."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:328
+msgid "🎬 Vidéo du test"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:331
+msgid "URL de la vidéo"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:333
+msgid "YouTube et Vimeo sont pris en charge. Le mode sans cookie sera appliqué automatiquement quand possible."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:341
+msgid "Fournisseur"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:343
+msgid "Détection automatique"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:356
+msgid "Sélectionnez le fournisseur si vous devez forcer la détection."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:361
 msgid "⚖️ Points Forts & Faibles"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:215
+#: includes/Admin/Metaboxes.php:362
 msgid "Un point par ligne"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:218
+#: includes/Admin/Metaboxes.php:365
 msgid "Points Forts :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:219
+#: includes/Admin/Metaboxes.php:366
 msgid ""
 "Gameplay addictif\n"
 "Graphismes superbes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:222
+#: includes/Admin/Metaboxes.php:369
 msgid "Points Faibles :"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-metaboxes.php:223
+#: includes/Admin/Metaboxes.php:370
 msgid ""
 "Durée de vie courte\n"
 "Bugs occasionnels"
 msgstr ""
 
+#: includes/Admin/Metaboxes.php:374
+msgid "📝 Verdict de la rédaction"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:377
+msgid "Résumé court"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:378
+msgid "Un verdict concis pour guider les lecteurs…"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:379
+msgid "Limitez-vous à 3-4 phrases pour conserver une lecture instantanée."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:384
+msgid "Texte du bouton verdict"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:385
+#: includes/Helpers.php:1029
+msgid "Lire le test complet"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:388
+msgid "URL du bouton verdict"
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:390
+msgid "Laissez vide pour utiliser automatiquement le permalien de l’article."
+msgstr ""
+
 #. translators: %s is the field label.
-#: includes/admin/class-jlg-admin-metaboxes.php:310
+#: includes/Admin/Metaboxes.php:513
 #, php-format
 msgid "%s : format de date invalide. Utilisez AAAA-MM-JJ."
 msgstr ""
 
 #. translators: %s is a list of allowed PEGI values
-#: includes/admin/class-jlg-admin-metaboxes.php:325
+#: includes/Admin/Metaboxes.php:528
 #, php-format
 msgid "PEGI invalide. Valeurs acceptées : %s."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:199
+#: includes/Admin/Metaboxes.php:595
+msgid "Bouton CTA : le texte et l'URL doivent être renseignés ensemble."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:601
+msgid "Bouton CTA : l'URL doit être absolue et commencer par http ou https."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:619
+msgid "Bouton verdict : ajoutez un libellé pour le lien de verdict."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:623
+msgid "Bouton verdict : renseignez une URL ou laissez les deux champs vides."
+msgstr ""
+
+#: includes/Admin/Metaboxes.php:628
+msgid "Bouton verdict : l’URL doit être absolue et commencer par http ou https."
+msgstr ""
+
+#: includes/Admin/Platforms.php:328
 msgid "Permissions insuffisantes"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:213
+#: includes/Admin/Platforms.php:342
 msgid "Erreur de sécurité"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:257
+#: includes/Admin/Platforms.php:382
 msgid "Plateformes réinitialisées avec succès !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:288
+#: includes/Admin/Platforms.php:433
 msgid "Le nom de la plateforme est requis."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:301
+#: includes/Admin/Platforms.php:449
 msgid "Nom de plateforme invalide."
 msgstr ""
 
 #. translators: %s: platform name.
-#: includes/admin/class-jlg-admin-platforms.php:349
+#: includes/Admin/Platforms.php:498
 #, php-format
 msgid "Plateforme '%s' ajoutée avec succès !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:355
+#: includes/Admin/Platforms.php:506
 msgid "Erreur lors de la sauvegarde."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:369
+#: includes/Admin/Platforms.php:523
 msgid "Clé de plateforme manquante."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:378
+#: includes/Admin/Platforms.php:535
 msgid "Plateforme introuvable."
 msgstr ""
 
 #. translators: %s: platform name.
-#: includes/admin/class-jlg-admin-platforms.php:388
+#: includes/Admin/Platforms.php:546
 #, php-format
 msgid "La plateforme '%s' est une plateforme par défaut et ne peut pas être supprimée."
 msgstr ""
 
 #. translators: %s: platform name.
-#: includes/admin/class-jlg-admin-platforms.php:406
+#: includes/Admin/Platforms.php:564
 #, php-format
 msgid "Plateforme '%s' supprimée avec succès !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:412
+#: includes/Admin/Platforms.php:572
 msgid "Erreur lors de la suppression."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:426
+#: includes/Admin/Platforms.php:589
 msgid "Données d'ordre manquantes."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:435
+#: includes/Admin/Platforms.php:604
 msgid "Ordre soumis invalide."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:457
+#: includes/Admin/Platforms.php:629
 msgid "Aucune plateforme valide reçue."
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:478
+#: includes/Admin/Platforms.php:653
 msgid "Ordre des plateformes mis à jour !"
 msgstr ""
 
-#: includes/admin/class-jlg-admin-platforms.php:481
+#: includes/Admin/Platforms.php:659
 msgid "Erreur lors de la mise à jour."
 msgstr ""
 
-#: includes/class-jlg-assets.php:99
-#: templates/shortcode-user-rating.php:37
+#: includes/Admin/Platforms.php:682
+msgid "Associations de tags mises à jour avec succès !"
+msgstr ""
+
+#: includes/Admin/Platforms.php:688
+msgid "Erreur lors de la mise à jour des tags."
+msgstr ""
+
+#: includes/Admin/Platforms.php:974
+msgid "Utilisez Ctrl/Cmd pour sélectionner plusieurs tags."
+msgstr ""
+
+#: includes/Admin/Platforms.php:982
+msgid "Les associations sauvegardées pourront être exploitées dans vos templates front-office."
+msgstr ""
+
+#: includes/Admin/Settings.php:501
+msgid "Catégories de notation"
+msgstr ""
+
+#: includes/Admin/Settings.php:508
+msgid "Ajoutez, réorganisez ou renommez les catégories utilisées pour vos notes détaillées."
+msgstr ""
+
+#: includes/Admin/Settings.php:517
+msgid "Sélectionnez les types de contenus qui peuvent utiliser les notations du plugin."
+msgstr ""
+
+#: includes/Admin/Settings.php:523
+msgid "Types de contenus autorisés"
+msgstr ""
+
+#: includes/Admin/Settings.php:531
+msgid "Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs types."
+msgstr ""
+
+#: includes/Admin/Settings.php:543
+msgid "Définissez la note maximale utilisée pour vos tests (par exemple 10, 20 ou 100)."
+msgstr ""
+
+#: includes/Admin/Settings.php:547
+msgid "Barème maximum"
+msgstr ""
+
+#: includes/Admin/Settings.php:885
+msgid "Finalisation auto du statut"
+msgstr ""
+
+#: includes/Admin/Settings.php:910
+msgid "Nombre de jours à attendre après le dernier patch vérifié avant de repasser en « Version finale »."
+msgstr ""
+
+#: includes/Admin/Settings.php:914
+msgid "Délai avant finalisation (jours)"
+msgstr ""
+
+#: includes/Admin/Settings.php:928
+msgid "Le badge apparaît lorsque la note globale atteint ce seuil. Utilisez le même barème que vos tests (ex. 8 pour un barème sur 10)."
+msgstr ""
+
+#: includes/Admin/Settings.php:932
+msgid "Seuil du badge"
+msgstr ""
+
+#: includes/Admin/Settings.php:946
+msgid "Nombre maximum de guides associés affichés sous la note."
+msgstr ""
+
+#: includes/Admin/Settings.php:950
+msgid "Nombre de guides associés"
+msgstr ""
+
+#: includes/Admin/Settings.php:960
+msgid "Taxonomies ciblées"
+msgstr ""
+
+#: includes/Admin/Settings.php:968
+msgid "Renseignez les slugs de taxonomie séparés par des virgules pour identifier les guides pertinents (ex. guide,astuce)."
+msgstr ""
+
+#: includes/Admin/Settings.php:1049
+msgid "Connexion obligatoire avant le vote"
+msgstr ""
+
+#: includes/Admin/Settings.php:1056
+msgid "Empêche les visiteurs non connectés de voter et leur affiche un lien de connexion."
+msgstr ""
+
+#: includes/Admin/Settings.php:1333
+#: assets/js/blocks/game-explorer.js:178
+msgid "Lettre"
+msgstr ""
+
+#: includes/Admin/Settings.php:1334
+msgid "Catégorie"
+msgstr ""
+
+#: includes/Admin/Settings.php:1335
+msgid "Plateforme"
+msgstr ""
+
+#: includes/Admin/Settings.php:1336
+#: assets/js/blocks/game-explorer.js:42
+msgid "Disponibilité"
+msgstr ""
+
+#: includes/Admin/Settings.php:1337
+#: assets/js/blocks/game-explorer.js:44
+msgid "Recherche"
+msgstr ""
+
+#: includes/Admin/Settings.php:1339
+msgid "Sélectionnez les filtres à afficher dans l’explorateur de jeux."
+msgstr ""
+
+#: includes/Admin/Settings.php:1344
+#: assets/js/blocks/game-explorer.js:59
+msgid "En haut à gauche"
+msgstr ""
+
+#: includes/Admin/Settings.php:1345
+#: assets/js/blocks/game-explorer.js:60
+msgid "En haut à droite"
+msgstr ""
+
+#: includes/Admin/Settings.php:1346
+#: assets/js/blocks/game-explorer.js:61
+msgid "Au centre à gauche"
+msgstr ""
+
+#: includes/Admin/Settings.php:1347
+#: assets/js/blocks/game-explorer.js:62
+msgid "Au centre à droite"
+msgstr ""
+
+#: includes/Admin/Settings.php:1348
+#: assets/js/blocks/game-explorer.js:63
+msgid "En bas à gauche"
+msgstr ""
+
+#: includes/Admin/Settings.php:1349
+#: assets/js/blocks/game-explorer.js:64
+msgid "En bas à droite"
+msgstr ""
+
+#: includes/Admin/Settings.php:1354
+#: assets/js/blocks/game-explorer.js:128
+msgid "Position de la note"
+msgstr ""
+
+#: includes/Admin/Settings.php:1398
+#: includes/Helpers.php:655
+#: includes/Helpers.php:1948
+#, php-format
+msgid "Catégorie %d"
+msgstr ""
+
+#: includes/Admin/Settings.php:1597
+msgid "Monter"
+msgstr ""
+
+#: includes/Admin/Settings.php:1598
+msgid "Descendre"
+msgstr ""
+
+#: includes/Admin/Settings.php:1599
+msgid "Monter la catégorie"
+msgstr ""
+
+#: includes/Admin/Settings.php:1600
+msgid "Descendre la catégorie"
+msgstr ""
+
+#: includes/Admin/Settings.php:1637
+#: includes/Admin/Settings.php:1678
+msgid "Libellé"
+msgstr ""
+
+#: includes/Admin/Settings.php:1641
+#: includes/Admin/Settings.php:1679
+msgid "Identifiant"
+msgstr ""
+
+#: includes/Admin/Settings.php:1643
+#: includes/Admin/Settings.php:1681
+msgid "Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement."
+msgstr ""
+
+#: includes/Admin/Settings.php:1646
+#: includes/Admin/Settings.php:1696
+msgid "Pondération"
+msgstr ""
+
+#: includes/Admin/Settings.php:1648
+#: includes/Admin/Settings.php:1698
+msgid "Coefficient utilisé pour la moyenne pondérée."
+msgstr ""
+
+#: includes/Admin/Settings.php:1653
+#: includes/Admin/Settings.php:1680
+msgid "Supprimer"
+msgstr ""
+
+#: includes/Admin/Settings.php:1670
+msgid "Ajouter une catégorie"
+msgstr ""
+
+#: includes/Assets.php:96
+msgid "Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?"
+msgstr ""
+
+#: includes/Assets.php:97
+#, php-format
+msgid "Êtes-vous sûr de vouloir supprimer la plateforme \"%s\" ?"
+msgstr ""
+
+#: includes/Assets.php:152
+#: templates/shortcode-user-rating.php:184
 msgid "Merci pour votre vote !"
 msgstr ""
 
-#: includes/class-jlg-assets.php:100
+#: includes/Assets.php:153
 msgid "Erreur. Veuillez réessayer."
 msgstr ""
 
-#: includes/class-jlg-assets.php:101
-#: includes/class-jlg-frontend.php:453
-#: assets/js/user-rating.js:12
+#: includes/Assets.php:154
+#: includes/Frontend.php:1368
+#: assets/js/user-rating.js:14
 msgid "Vous avez déjà voté !"
 msgstr ""
 
-#: includes/class-jlg-assets.php:107
+#: includes/Assets.php:155
+#: includes/Frontend.php:1298
+#: templates/shortcode-user-rating.php:18
+msgid "Connectez-vous pour voter."
+msgstr ""
+
+#: includes/Assets.php:156
+#: templates/shortcode-user-rating.php:19
+msgid "Se connecter"
+msgstr ""
+
+#: includes/Assets.php:166
 msgid "Configuration AJAX invalide."
 msgstr ""
 
-#: includes/class-jlg-assets.php:108
+#: includes/Assets.php:167
 msgid "Nonce de sécurité manquant. Actualisez la page."
 msgstr ""
 
-#: includes/class-jlg-assets.php:109
+#: includes/Assets.php:168
 msgid "Veuillez entrer au moins 3 caractères."
 msgstr ""
 
-#: includes/class-jlg-assets.php:110
+#: includes/Assets.php:169
 msgid "Recherche..."
 msgstr ""
 
-#: includes/class-jlg-assets.php:111
+#: includes/Assets.php:170
 msgid "Chargement..."
 msgstr ""
 
-#: includes/class-jlg-assets.php:112
+#: includes/Assets.php:171
 msgid "Rechercher"
 msgstr ""
 
-#: includes/class-jlg-assets.php:113
+#: includes/Assets.php:172
 msgid "Vérification de sécurité échouée. Actualisez la page."
 msgstr ""
 
-#: includes/class-jlg-assets.php:114
+#: includes/Assets.php:173
 msgid "Choisir"
 msgstr ""
 
-#: includes/class-jlg-assets.php:115
+#: includes/Assets.php:174
 msgid "Erreur de communication."
 msgstr ""
 
-#: includes/class-jlg-assets.php:116
+#: includes/Assets.php:175
 msgid "Fiche technique remplie !"
 msgstr ""
 
-#: includes/class-jlg-frontend.php:380
+#: includes/Assets.php:189
+msgid "Chargement des jeux..."
+msgstr ""
+
+#: includes/Assets.php:190
+msgid "Aucun jeu ne correspond à votre sélection."
+msgstr ""
+
+#: includes/Assets.php:191
+msgid "Réinitialiser les filtres"
+msgstr ""
+
+#: includes/Assets.php:192
+msgid "Impossible de charger les jeux pour le moment."
+msgstr ""
+
+#: includes/Assets.php:193
+#, php-format
+msgid "%d jeu"
+msgstr ""
+
+#: includes/Assets.php:194
+#, php-format
+msgid "%d jeux"
+msgstr ""
+
+#: includes/Blocks.php:287
+#: assets/js/blocks/shared.js:30
+msgid "Articles"
+msgstr ""
+
+#. translators: %s: nom de classe de shortcode manquante
+#: includes/Frontend.php:136
+#, php-format
+msgid "Classe de shortcode introuvable : %s"
+msgstr ""
+
+#: includes/Frontend.php:538
 msgid "Une erreur est survenue. Merci de réessayer plus tard."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:401
+#: includes/Frontend.php:1107
+msgid "Jeton invalide."
+msgstr ""
+
+#: includes/Frontend.php:1277
 msgid "Jeton de sécurité manquant ou invalide."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:405
-#: includes/class-jlg-frontend.php:707
+#: includes/Frontend.php:1281
+#: includes/Frontend.php:2060
+#: includes/Frontend.php:2172
 msgid "La vérification de sécurité a échoué."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:412
+#: includes/Frontend.php:1289
 msgid "La notation des lecteurs est désactivée."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:419
-#: includes/class-jlg-frontend.php:441
+#: includes/Frontend.php:1308
+#: includes/Frontend.php:1330
 msgid "Données invalides."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:425
+#: includes/Frontend.php:1314
 msgid "Article introuvable ou non disponible pour la notation."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:435
+#: includes/Frontend.php:1324
 msgid "La notation des lecteurs est désactivée pour ce contenu."
 msgstr ""
 
-#: includes/class-jlg-frontend.php:711
+#: includes/Frontend.php:1358
+msgid "Ce jeton a été bloqué par la rédaction."
+msgstr ""
+
+#: includes/Frontend.php:1376
+msgid "Un vote depuis cette adresse IP a déjà été enregistré."
+msgstr ""
+
+#: includes/Frontend.php:1387
+msgid "Veuillez patienter avant de voter à nouveau."
+msgstr ""
+
+#: includes/Frontend.php:2064
+#: includes/Frontend.php:2176
 msgid "Le shortcode requis est indisponible."
 msgstr ""
 
-#: includes/class-jlg-widget.php:9
+#: includes/Frontend.php:2475
+msgid "Editorial Score"
+msgstr ""
+
+#: includes/Frontend.php:2487
+msgid "Editorial Score (100 scale)"
+msgstr ""
+
+#: includes/Frontend.php:2521
+msgid "User Rating"
+msgstr ""
+
+#: includes/Frontend.php:2536
+msgid "User Rating (review scale)"
+msgstr ""
+
+#: includes/Frontend.php:2550
+msgid "User Rating (100 scale)"
+msgstr ""
+
+#: includes/Frontend.php:2570
+#, php-format
+msgid "Rating %s"
+msgstr ""
+
+#: includes/Frontend.php:2579
+msgid "User rating distribution"
+msgstr ""
+
+#: includes/Frontend.php:2602
+msgid "User rating trend"
+msgstr ""
+
+#: includes/Frontend.php:3062
+#, php-format
+msgid "%s – Review"
+msgstr ""
+
+#: includes/Frontend.php:3062
+msgid "Game review video"
+msgstr ""
+
+#: includes/Helpers.php:81
+#: includes/Helpers.php:177
+msgid "Impossible de préparer le lecteur vidéo pour cette URL."
+msgstr ""
+
+#: includes/Helpers.php:90
+msgid "Impossible d’identifier le fournisseur vidéo pour cette URL."
+msgstr ""
+
+#. translators: %s: video provider name.
+#: includes/Helpers.php:156
+#, php-format
+msgid "Lecteur vidéo %s"
+msgstr ""
+
+#. translators: %s: video provider name.
+#: includes/Helpers.php:182
+#, php-format
+msgid "Impossible de préparer le lecteur vidéo pour %s."
+msgstr ""
+
+#: includes/Helpers.php:882
+msgctxt "Review status label"
+msgid "Brouillon éditorial"
+msgstr ""
+
+#: includes/Helpers.php:883
+msgctxt "Review status description"
+msgid "Le test est en cours de rédaction et peut encore évoluer."
+msgstr ""
+
+#: includes/Helpers.php:886
+msgctxt "Review status label"
+msgid "Mise à jour en cours"
+msgstr ""
+
+#: includes/Helpers.php:887
+msgctxt "Review status description"
+msgid "La rédaction vérifie les derniers patchs ou ajoute des compléments."
+msgstr ""
+
+#: includes/Helpers.php:890
+msgctxt "Review status label"
+msgid "Version finale"
+msgstr ""
+
+#: includes/Helpers.php:891
+msgctxt "Review status description"
+msgid "La review est validée et reflète l’avis définitif de la rédaction."
+msgstr ""
+
+#: includes/Helpers.php:1480
+#: templates/shortcode-rating-block.php:330
+#, php-format
+msgid "Guide #%d"
+msgstr ""
+
+#: includes/Helpers.php:2962
+#: includes/Shortcodes/ScoreInsights.php:67
+msgctxt "Fallback platform label"
+msgid "Sans plateforme"
+msgstr ""
+
+#. translators: 1: start of the score range, 2: end of the score range.
+#: includes/Helpers.php:3201
+#, php-format
+msgctxt "Score range label"
+msgid "%1$s – %2$s"
+msgstr ""
+
+#: includes/LatestReviewsWidget.php:19
 msgid "Notation JLG : Derniers Tests"
 msgstr ""
 
-#: includes/class-jlg-widget.php:10
+#: includes/LatestReviewsWidget.php:20
 msgid "Affiche les derniers articles ayant reçu une note."
 msgstr ""
 
-#: includes/class-jlg-widget.php:15
-#: includes/class-jlg-widget.php:50
+#: includes/LatestReviewsWidget.php:25
+#: includes/LatestReviewsWidget.php:63
 msgid "Derniers Tests"
 msgstr ""
 
-#: includes/class-jlg-widget.php:25
-#: templates/widget-latest-reviews.php:20
+#: includes/LatestReviewsWidget.php:35
+#: templates/widget-latest-reviews.php:22
 msgid "Aucun test trouvé."
 msgstr ""
 
-#: includes/class-jlg-widget.php:54
+#: includes/LatestReviewsWidget.php:67
 msgid "Titre :"
 msgstr ""
 
-#: includes/class-jlg-widget.php:60
+#: includes/LatestReviewsWidget.php:73
 msgid "Nombre d'articles à afficher :"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:103
+#: includes/Shortcodes/GameExplorer.php:278
+#: assets/js/blocks/game-explorer.js:48
+msgid "Plus récents"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:284
+#: assets/js/blocks/game-explorer.js:49
+msgid "Plus anciens"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:290
+#: assets/js/blocks/game-explorer.js:50
+msgid "Meilleures notes"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:296
+#: assets/js/blocks/game-explorer.js:51
+msgid "Notes les plus basses"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:302
+#: assets/js/blocks/game-explorer.js:52
+msgid "Popularité (plus de votes)"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:308
+#: assets/js/blocks/game-explorer.js:53
+msgid "Popularité (moins de votes)"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:314
+#: assets/js/blocks/game-explorer.js:54
+msgid "Titre (A-Z)"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:320
+#: assets/js/blocks/game-explorer.js:55
+msgid "Titre (Z-A)"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:705
+#: includes/Shortcodes/GameExplorer.php:730
+#: includes/Shortcodes/GameExplorer.php:738
+#: includes/Shortcodes/GameExplorer.php:1529
+msgid "À confirmer"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:745
+#: includes/Shortcodes/GameExplorer.php:1528
+msgid "À venir"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:751
+#: includes/Shortcodes/GameExplorer.php:1527
+msgid "Disponible"
+msgstr ""
+
+#: includes/Shortcodes/GameExplorer.php:1444
+msgid "Aucun test noté n'est disponible pour le moment."
+msgstr ""
+
+#. translators: 1: Release year, 2: Number of games.
+#: includes/Shortcodes/GameExplorer.php:1575
+#, php-format
+msgid "%1$s – %2$d jeu"
+msgid_plural "%1$s – %2$d jeux"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Shortcodes/GameExplorer.php:1745
+msgid "Aucun jeu ne correspond à vos filtres actuels."
+msgstr ""
+
+#: includes/Shortcodes/RatingBlock.php:307
+#: templates/shortcode-rating-block-empty.php:252
+msgid "Guide stratégique"
+msgstr ""
+
+#: includes/Shortcodes/RatingBlock.php:312
+msgid "Astuces progression"
+msgstr ""
+
+#: includes/Shortcodes/RatingBlock.php:317
+msgid "Build recommandé"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:144
+#: includes/Shortcodes/ScoreInsights.php:171
+msgctxt "Score insights time range"
+msgid "Depuis toujours"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:148
+msgctxt "Score insights time range"
+msgid "30 derniers jours"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:152
+msgctxt "Score insights time range"
+msgid "90 derniers jours"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:156
+msgctxt "Score insights time range"
+msgid "12 derniers mois"
+msgstr ""
+
+#. translators: %s: Human readable time range label.
+#: includes/Shortcodes/ScoreInsights.php:435
+#, php-format
+msgid "Période précédente (%s)"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:436
+msgid "Période glissante"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:497
+msgid "Tendance en hausse"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:499
+msgid "Tendance en baisse"
+msgstr ""
+
+#: includes/Shortcodes/ScoreInsights.php:501
+#: templates/shortcode-score-insights.php:143
+msgid "Tendance stable"
+msgstr ""
+
+#: includes/Shortcodes/SummaryDisplay.php:173
 msgid "Aucun article noté trouvé."
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:175
+#: includes/Shortcodes/SummaryDisplay.php:347
+#: assets/js/blocks/summary-display.js:37
 msgid "Titre du jeu"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:202
+#: includes/Shortcodes/SummaryDisplay.php:374
+#: templates/game-explorer-fragment.php:191
+#: assets/js/blocks/game-info.js:36
+#: assets/js/blocks/summary-display.js:40
 msgid "Développeur"
 msgstr ""
 
-#: includes/shortcodes/class-jlg-shortcode-summary-display.php:213
+#: includes/Shortcodes/SummaryDisplay.php:385
+#: templates/game-explorer-fragment.php:197
+#: assets/js/blocks/game-info.js:37
+#: assets/js/blocks/summary-display.js:41
 msgid "Éditeur"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:23
-#: templates/shortcode-tagline.php:12
+#: includes/Utils/Validator.php:315
+msgid "URL de vidéo invalide. Utilisez un lien complet commençant par http ou https."
+msgstr ""
+
+#: includes/Utils/Validator.php:325
+msgid "Le fournisseur sélectionné ne correspond pas à l'URL fournie."
+msgstr ""
+
+#. translators: %s: list of allowed video providers.
+#: includes/Utils/Validator.php:347
+#, php-format
+msgid "Fournisseur vidéo non reconnu. Fournisseurs acceptés : %s."
+msgstr ""
+
+#: templates/game-explorer-fragment.php:157
+msgid "Visuel indisponible"
+msgstr ""
+
+#: templates/game-explorer-fragment.php:185
+msgid "Sortie"
+msgstr ""
+
+#: templates/game-explorer-fragment.php:208
+#, php-format
+msgid "+%d"
+msgstr ""
+
+#. translators: %d: number of additional platforms.
+#: templates/game-explorer-fragment.php:211
+#, php-format
+msgid "+%d plateforme"
+msgid_plural "+%d plateformes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/game-explorer-fragment.php:242
+msgid "Navigation des pages du Game Explorer"
+msgstr ""
+
+#: templates/game-explorer-fragment.php:256
+msgid "Précédent"
+msgstr ""
+
+#: templates/game-explorer-fragment.php:285
+msgid "Suivant"
+msgstr ""
+
+#. translators: %s is the video provider label.
+#: templates/shortcode-all-in-one.php:57
+#, php-format
+msgid "Vidéo de test hébergée par %s"
+msgstr ""
+
+#. translators: %s is the video provider label.
+#: templates/shortcode-all-in-one.php:58
+msgid "Vidéo de test"
+msgstr ""
+
+#. translators: %s: Global score percentage.
+#: templates/shortcode-all-in-one.php:89
+#: templates/shortcode-rating-block-empty.php:130
+#: templates/shortcode-rating-block.php:103
+#, php-format
+msgctxt "global percentage score"
+msgid "%s %%"
+msgstr ""
+
+#. translators: 1: Global score percentage. 2: Global score value. 3: Maximum score.
+#: templates/shortcode-all-in-one.php:94
+#: templates/shortcode-rating-block.php:108
+#, php-format
+msgid "Note globale : %1$s %%, soit %2$s sur %3$s"
+msgstr ""
+
+#. translators: 1: Global score value. 2: Maximum score.
+#. translators: 1: Rating value. 2: Maximum possible rating.
+#: templates/shortcode-all-in-one.php:101
+#: templates/shortcode-all-in-one.php:340
+#: templates/shortcode-rating-block.php:115
+#: templates/shortcode-rating-block.php:271
+#, php-format
+msgid "Équivalent à %1$s sur %2$s"
+msgstr ""
+
+#. translators: 1: Global score value. 2: Maximum score.
+#: templates/shortcode-all-in-one.php:112
+#: templates/shortcode-rating-block.php:125
+#, php-format
+msgid "Note globale : %1$s sur %2$s"
+msgstr ""
+
+#. translators: %s: Global score percentage.
+#. translators: %s: Rating percentage for a category.
+#: templates/shortcode-all-in-one.php:122
+#: templates/shortcode-all-in-one.php:367
+#: templates/shortcode-rating-block.php:134
+#: templates/shortcode-rating-block.php:298
+#, php-format
+msgid "Correspond à %s %%"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:145
+#: templates/shortcode-all-in-one.php:148
+#: templates/shortcode-tagline.php:20
 msgid "Français"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:27
-#: templates/shortcode-tagline.php:13
+#: templates/shortcode-all-in-one.php:155
+#: templates/shortcode-all-in-one.php:158
+#: templates/shortcode-tagline.php:30
 msgid "English"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:51 templates/shortcode-all-in-one.php:55
-#: templates/shortcode-rating-block.php:22 templates/shortcode-rating-block.php:27
-#: templates/shortcode-rating-block-empty.php:140
-#: templates/shortcode-rating-block-empty.php:145
+#. translators: %s: formatted update date.
+#: templates/shortcode-all-in-one.php:202
+#, php-format
+msgid "Mise à jour le %s"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:217
+msgid "Verdict de la rédaction"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:220
+msgid "Voir le test complet"
+msgstr ""
+
+#: templates/shortcode-all-in-one.php:272
+#: templates/shortcode-all-in-one.php:276
+#: templates/shortcode-rating-block-empty.php:158
+#: templates/shortcode-rating-block-empty.php:163
+#: templates/shortcode-rating-block.php:149
+#: templates/shortcode-rating-block.php:154
 msgid "Note Globale"
 msgstr ""
 
-#: templates/shortcode-rating-block.php:142
-#: templates/shortcode-rating-block-empty.php:150
-msgid "Sélection de la rédaction"
-msgstr ""
-
-#: templates/shortcode-rating-block.php:148
-#: templates/shortcode-rating-block-empty.php:153
-msgid "Note des lecteurs"
-msgstr ""
-
-#. translators: %s: difference between reader and editorial scores.
-#: templates/shortcode-rating-block.php:170
-#: templates/shortcode-rating-block-empty.php:170
+#. translators: %s: weight multiplier for a rating category.
+#: templates/shortcode-all-in-one.php:313
+#: templates/shortcode-rating-block.php:243
+#: templates/summary-table-fragment.php:112
 #, php-format
-msgid "Δ vs rédaction : %s"
+msgctxt "category weight multiplier"
+msgid "×%s"
 msgstr ""
 
-#: templates/shortcode-rating-block-empty.php:134
-msgid "Prévisualisation des notes avec des valeurs fictives. Renseignez la metabox « Notation JLG » pour publier vos notes."
+#. translators: %s: Rating percentage for a category.
+#: templates/shortcode-all-in-one.php:327
+#: templates/shortcode-rating-block.php:258
+#, php-format
+msgctxt "category percentage score"
+msgid "%s %%"
+msgstr ""
+
+#. translators: 1: Rating category label. 2: Rating percentage. 3: Rating value. 4: Maximum possible rating.
+#: templates/shortcode-all-in-one.php:332
+#: templates/shortcode-rating-block.php:263
+#, php-format
+msgid "%1$s : %2$s %%, soit %3$s sur %4$s"
+msgstr ""
+
+#. translators: 1: Rating category label. 2: Rating value. 3: Maximum possible rating.
+#: templates/shortcode-all-in-one.php:356
+#: templates/shortcode-rating-block.php:287
+#, php-format
+msgid "%1$s : %2$s sur %3$s"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:152
+#: templates/shortcode-summary-display.php:80
+msgid "Filtrer par lettre"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:179
+#: templates/shortcode-summary-display.php:91
+msgid "Tous"
+msgstr ""
+
+#. translators: %s: Letter without available games.
+#: templates/shortcode-game-explorer.php:215
+#, php-format
+msgid "Aucun jeu disponible pour %s."
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:218
+msgid "Aucun jeu disponible pour cette lettre."
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:260
+msgid "Trier par"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:280
+msgid "Appliquer"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:289
+#, php-format
+msgid "%s jeu"
+msgid_plural "%s jeux"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/shortcode-game-explorer.php:312
+msgid "Filtres"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:349
+#: templates/shortcode-summary-display.php:126
+msgid "Toutes les catégories"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:365
+msgid "Filtrer par plateforme"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:373
+#: templates/shortcode-score-insights.php:66
+msgid "Toutes les plateformes"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:389
+msgid "Filtrer par développeur"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:397
+msgid "Tous les studios"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:413
+msgid "Filtrer par éditeur"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:421
+msgid "Tous les éditeurs"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:437
+msgid "Filtrer par disponibilité"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:445
+msgid "Toutes les sorties"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:458
+msgid "Filtrer par année de sortie"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:467
+msgid "Toutes les années"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:483
+#, php-format
+msgid "Période couverte : %1$d – %2$d"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:491
+msgid "Sélectionnez une année pour filtrer les résultats."
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:500
+msgid "Rechercher un jeu"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:508
+msgid "Rechercher…"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:515
+msgid "Appliquer les filtres"
+msgstr ""
+
+#: templates/shortcode-game-explorer.php:518
+msgid "Réinitialiser"
+msgstr ""
+
+#. translators: Loading overlay message displayed while the Game Explorer refreshes via AJAX.
+#: templates/shortcode-game-explorer.php:531
+#: assets/js/blocks/shared.js:198
+msgid "Chargement…"
 msgstr ""
 
 #. translators: Section title for the list of advantages in the pros and cons block.
-#: templates/shortcode-pros-cons.php:10
+#: templates/shortcode-pros-cons.php:13
 msgid "Points Forts"
 msgstr ""
 
 #. translators: Section title for the list of drawbacks in the pros and cons block.
-#: templates/shortcode-pros-cons.php:19
+#: templates/shortcode-pros-cons.php:29
 msgid "Points Faibles"
 msgstr ""
 
-#. translators: 1: Rating value for a specific category. 2: Maximum possible rating.
-#: templates/shortcode-rating-block.php:46
-#: templates/shortcode-rating-block-empty.php:159
-#: templates/shortcode-rating-block-empty.php:205
+#: templates/shortcode-rating-block-empty.php:114
+msgid "Mise à jour en cours"
+msgstr ""
+
+#: templates/shortcode-rating-block-empty.php:137
+msgid "Prévisualisation des notes avec des valeurs fictives. Renseignez la metabox « Notation JLG » pour publier vos notes."
+msgstr ""
+
+#: templates/shortcode-rating-block-empty.php:168
+#: templates/shortcode-rating-block.php:159
+msgid "Sélection de la rédaction"
+msgstr ""
+
+#: templates/shortcode-rating-block-empty.php:172
+#: templates/shortcode-rating-block.php:165
+msgid "Note des lecteurs"
+msgstr ""
+
+#. translators: %s: difference between reader and editorial scores.
+#: templates/shortcode-rating-block-empty.php:188
+#: templates/shortcode-rating-block.php:187
 #, php-format
-msgid "%1$s / %2$s"
+msgid "Δ vs rédaction : %s"
 msgstr ""
 
-#: templates/shortcode-summary-display.php:47
-msgid "Toutes les catégories"
+#: templates/shortcode-rating-block-empty.php:249
+#: templates/shortcode-rating-block.php:324
+msgid "Guides associés"
 msgstr ""
 
-#: templates/shortcode-summary-display.php:56
+#. translators: %s: platform name
+#: templates/shortcode-score-insights.php:62
+#, php-format
+msgid "Plateforme : %s"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:80
+#: assets/js/blocks/score-insights.js:110
+#: assets/js/blocks/score-insights.js:125
+msgid "Score Insights"
+msgstr ""
+
+#. translators: 1: summary (time range/platform), 2: total number of reviews.
+#: templates/shortcode-score-insights.php:87
+#, php-format
+msgid "%1$s — %2$s tests analysés"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:88
+#: assets/js/blocks/score-insights.js:36
+msgid "Toutes les périodes"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:98
+msgid "Aucune note disponible pour ces critères. Ajustez la période ou la plateforme sélectionnée."
+msgstr ""
+
+#: templates/shortcode-score-insights.php:104
+msgid "Tendance centrale"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:108
+msgid "Moyenne"
+msgstr ""
+
+#. translators: 1: textual direction (up/down/stable), 2: previous mean, 3: number of reviews.
+#: templates/shortcode-score-insights.php:142
+#, php-format
+msgid "%1$s — moyenne précédente %2$s sur %3$s tests."
+msgstr ""
+
+#: templates/shortcode-score-insights.php:157
+msgid "Focus rédaction vs lecteurs"
+msgstr ""
+
+#. translators: %s: minimal absolute delta to display a badge.
+#: templates/shortcode-score-insights.php:164
+#, php-format
+msgid "Écarts supérieurs à %s point(s)."
+msgstr ""
+
+#. translators: %s: formatted score delta
+#: templates/shortcode-score-insights.php:187
+#, php-format
+msgid "Lecteurs +%s vs rédaction"
+msgstr ""
+
+#. translators: %s: formatted score delta
+#: templates/shortcode-score-insights.php:193
+#, php-format
+msgid "Lecteurs -%s vs rédaction"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:197
+msgid "Lecteurs au même niveau que la rédaction"
+msgstr ""
+
+#. translators: %s: number of reader votes
+#: templates/shortcode-score-insights.php:202
+#, php-format
+msgid "%s vote lecteur"
+msgid_plural "%s votes lecteurs"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: editorial score, 2: user score, 3: reader votes label
+#: templates/shortcode-score-insights.php:208
+#, php-format
+msgid "Rédaction %1$s · Lecteurs %2$s (%3$s)"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:228
+#: templates/shortcode-score-insights.php:232
+#, php-format
+msgid "Test #%d"
+msgstr ""
+
+#. translators: 1: score range label, 2: number of reviews, 3: percentage
+#: templates/shortcode-score-insights.php:257
+#, php-format
+msgid "%1$s : %2$s tests, %3$s%% des notes"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:274
+#, php-format
+msgctxt "Bucket percentage and count"
+msgid "%1$s%% · %2$s tests"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:283
+msgid "Top plateformes"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:287
+msgid "Aucune plateforme ne se détache encore sur cette période."
+msgstr ""
+
+#. translators: 1: ranking position, 2: platform name, 3: average score, 4: number of reviews
+#: templates/shortcode-score-insights.php:299
+#, php-format
+msgid "%1$s. %2$s — moyenne %3$s sur %4$s tests"
+msgstr ""
+
+#: templates/shortcode-score-insights.php:316
+#, php-format
+msgid "%s test"
+msgid_plural "%s tests"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/shortcode-summary-display.php:115
+#: templates/summary-table-fragment.php:61
+msgid "0-9"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:139
+msgid "Filtrer par genre"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:142
+msgid "Tous les genres"
+msgstr ""
+
+#: templates/shortcode-summary-display.php:152
 msgid "Filtrer"
 msgstr ""
 
-#: templates/shortcode-user-rating.php:6
+#: templates/shortcode-user-rating.php:51
+#: templates/shortcode-user-rating.php:124
+#, php-format
+msgid "%s vote"
+msgid_plural "%s votes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/shortcode-user-rating.php:52
+#, php-format
+msgid "%s votes"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:53
+#, php-format
+msgid "%1$s : %2$s (%3$s%%)"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:78
 msgid "Votre avis nous intéresse !"
 msgstr ""
 
-#. translators: 1: Average user rating value. 2: Maximum possible rating. 3: Number of user votes.
-#: templates/shortcode-user-rating.php:18
-#, php-format
-msgid "Note moyenne : <strong class=\"jlg-user-rating-avg-value\">%1$s</strong> sur %2$s (<span class=\"jlg-user-rating-count-value\">%3$s</span> votes)"
+#: templates/shortcode-user-rating.php:83
+msgid "Choisissez une note"
 msgstr ""
 
-#: templates/summary-table-fragment.php:20
+#. translators: 1: Selected rating value. 2: Maximum possible rating.
+#: templates/shortcode-user-rating.php:101
+#, php-format
+msgid "Attribuer %1$s sur %2$s"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:111
+msgid "Répartition des votes"
+msgstr ""
+
+#: templates/shortcode-user-rating.php:123
+#, php-format
+msgid "%s étoile"
+msgid_plural "%s étoiles"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: Average user rating value. 2: Maximum possible rating. 3: Number of user votes.
+#: templates/shortcode-user-rating.php:157
+#, php-format
+msgid "Note moyenne : <strong class=\"jlg-user-rating-avg-value\" aria-live=\"polite\" aria-atomic=\"true\">%1$s</strong> sur %2$s (<span class=\"jlg-user-rating-count-value\">%3$s</span> votes)"
+msgstr ""
+
+#: templates/summary-table-fragment.php:27
 msgid "Aucun article trouvé pour cette sélection."
 msgstr ""
 
-#: templates/summary-table-fragment.php:67
+#. translators: %s is the category name.
+#: templates/summary-table-fragment.php:53
+#, php-format
+msgid "Catégorie : %s"
+msgstr ""
+
+#. translators: %s is the first letter used to filter results.
+#: templates/summary-table-fragment.php:66
+#, php-format
+msgid "Lettre : %s"
+msgstr ""
+
+#. translators: %s is the selected genre.
+#: templates/summary-table-fragment.php:84
+#, php-format
+msgid "Genre : %s"
+msgstr ""
+
+#. translators: %s is the list of active filters.
+#: templates/summary-table-fragment.php:93
+#, php-format
+msgid "Aucun article ne correspond aux filtres : %s."
+msgstr ""
+
+#: templates/summary-table-fragment.php:198
 msgid " ▲"
 msgstr ""
 
-#: templates/summary-table-fragment.php:68
+#: templates/summary-table-fragment.php:199
 msgid " ▼"
 msgstr ""
 
+#: templates/summary-table-fragment.php:209
+#: templates/summary-table-fragment.php:213
+msgid "ordre croissant"
+msgstr ""
+
+#: templates/summary-table-fragment.php:210
+#: templates/summary-table-fragment.php:214
+msgid "ordre décroissant"
+msgstr ""
+
+#. translators: %1$s: column label, %2$s: current direction, %3$s: next direction.
+#: templates/summary-table-fragment.php:220
+#, php-format
+msgid "%1$s, actuellement trié en %2$s. Activer pour trier en %3$s"
+msgstr ""
+
+#. translators: %1$s: column label, %2$s: sorting direction.
+#: templates/summary-table-fragment.php:228
+#, php-format
+msgid "Trier par %1$s en %2$s"
+msgstr ""
+
 #. translators: %s: Maximum possible rating value.
-#: templates/summary-table-fragment.php:162
+#: templates/summary-table-fragment.php:383
 #, php-format
 msgid "/ %s"
 msgstr ""
 
-#: templates/summary-table-fragment.php:167
-#: templates/summary-table-fragment.php:171
+#: templates/summary-table-fragment.php:388
+#: templates/summary-table-fragment.php:392
 msgid "-"
 msgstr ""
 
-#: templates/summary-table-fragment.php:208
+#: templates/summary-table-fragment.php:474
 msgid "« Précédent"
 msgstr ""
 
-#: templates/summary-table-fragment.php:209
+#: templates/summary-table-fragment.php:475
 msgid "Suivant »"
 msgstr ""
 
-#. translators: %s: Maximum rating value displayed with the thumbnail score.
-#: templates/widget-thumbnail-score.php:35
-#, php-format
-msgid "/%s"
+#: assets/js/blocks/all-in-one.js:46
+#: assets/js/blocks/rating-block.js:42
+msgid "Couleurs"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:53
+#: assets/js/blocks/all-in-one.js:59
+#: assets/js/blocks/rating-block.js:49
+#: assets/js/blocks/rating-block.js:57
+msgid "Couleur d'accent"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:78
+#: assets/js/blocks/rating-block.js:84
+msgid "Source et affichage"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:86
+msgid "Style visuel"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:89
+msgid "Moderne"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:90
+msgid "Classique"
+msgstr ""
+
+#: assets/js/blocks/all-in-one.js:91
+msgid "Compact"
 msgstr ""
 
 #: assets/js/blocks/all-in-one.js:98
@@ -850,122 +2093,347 @@ msgid "Affichage du score"
 msgstr ""
 
 #: assets/js/blocks/all-in-one.js:101
-#: assets/js/blocks/rating-block.js:107
+#: assets/js/blocks/rating-block.js:106
 msgid "Valeur absolue"
 msgstr ""
 
 #: assets/js/blocks/all-in-one.js:102
-#: assets/js/blocks/rating-block.js:108
+#: assets/js/blocks/rating-block.js:107
 msgid "Pourcentage"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:36
-#: templates/shortcode-rating-block.php:63
-#: templates/shortcode-rating-block-empty.php:124
-msgctxt "global percentage score"
-msgid "%s %%"
+#: assets/js/blocks/all-in-one.js:109
+msgid "Afficher la notation"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:41
-#: templates/shortcode-rating-block.php:68
-msgid "Note globale : %1$s %%, soit %2$s sur %3$s"
+#: assets/js/blocks/all-in-one.js:116
+msgid "Afficher les points forts/faibles"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:47
-#: templates/shortcode-rating-block.php:74
-msgid "Équivalent à %1$s sur %2$s"
+#: assets/js/blocks/all-in-one.js:123
+msgid "Afficher la tagline"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:57
-#: templates/shortcode-rating-block.php:89
-msgid "Note globale : %1$s sur %2$s"
+#: assets/js/blocks/all-in-one.js:130
+msgid "Afficher la vidéo de test"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:63
-#: templates/shortcode-all-in-one.php:147
-#: templates/shortcode-rating-block.php:95
-#: templates/shortcode-rating-block.php:152
-msgid "Correspond à %s %%"
+#: assets/js/blocks/all-in-one.js:140
+msgid "Titres personnalisés"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:133
-#: templates/shortcode-rating-block.php:137
-msgctxt "category percentage score"
-msgid "%s %%"
+#: assets/js/blocks/all-in-one.js:142
+msgid "Titre Points forts"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:138
-#: templates/shortcode-rating-block.php:142
-msgid "%1$s : %2$s %%, soit %3$s sur %4$s"
+#: assets/js/blocks/all-in-one.js:149
+msgid "Titre Points faibles"
 msgstr ""
 
-#: templates/shortcode-all-in-one.php:147
-#: templates/shortcode-rating-block.php:152
-msgid "%1$s : %2$s sur %3$s"
-msgstr ""
-#. translators: Review status label.
-#: includes/Helpers.php:879
-msgctxt "Review status label"
-msgid "Brouillon éditorial"
+#: assets/js/blocks/all-in-one.js:158
+msgid "Bouton d'action"
 msgstr ""
 
-#. translators: Review status description.
-#: includes/Helpers.php:880
-msgctxt "Review status description"
-msgid "Le test est en cours de rédaction et peut encore évoluer."
+#: assets/js/blocks/all-in-one.js:160
+msgid "Texte du bouton"
 msgstr ""
 
-#. translators: Review status label.
-#: includes/Helpers.php:883
-msgctxt "Review status label"
-msgid "Mise à jour en cours"
+#: assets/js/blocks/all-in-one.js:165
+msgid "Laissez vide pour utiliser le texte défini dans la métabox."
 msgstr ""
 
-#. translators: Review status description.
-#: includes/Helpers.php:884
-msgctxt "Review status description"
-msgid "La rédaction vérifie les derniers patchs ou ajoute des compléments."
+#: assets/js/blocks/all-in-one.js:168
+msgid "URL du bouton"
 msgstr ""
 
-#. translators: Review status label.
-#: includes/Helpers.php:887
-msgctxt "Review status label"
-msgid "Version finale"
+#: assets/js/blocks/all-in-one.js:174
+msgid "Utilisez une URL absolue (https://...) ou laissez vide pour utiliser la métabox."
 msgstr ""
 
-#. translators: Review status description.
-#: includes/Helpers.php:888
-msgctxt "Review status description"
-msgid "La review est validée et reflète l’avis définitif de la rédaction."
+#: assets/js/blocks/all-in-one.js:177
+msgid "Attribut role"
 msgstr ""
 
-#: includes/Admin/Settings.php:884
-msgid "Statut de review"
+#: assets/js/blocks/all-in-one.js:182
+msgid "Par défaut : button"
 msgstr ""
 
-#: includes/Admin/Settings.php:885 templates/shortcode-rating-block.php:324 templates/shortcode-rating-block-empty.php:249
-msgid "Guides associés"
+#: assets/js/blocks/all-in-one.js:185
+msgid "Attribut rel"
 msgstr ""
 
-#: includes/Admin/Settings.php:922
-msgid "Nombre maximum de guides associés affichés sous la note."
+#: assets/js/blocks/all-in-one.js:190
+msgid "Par défaut : nofollow sponsored"
 msgstr ""
 
-#: includes/Admin/Settings.php:931
-msgid "Nombre de guides associés"
+#: assets/js/blocks/all-in-one.js:215
+msgid "Bloc tout-en-un"
 msgstr ""
 
-#: includes/Admin/Settings.php:941
-msgid "Taxonomies ciblées"
+#: assets/js/blocks/game-explorer.js:37
+#: assets/js/blocks/summary-display.js:134
+msgid "Filtre lettre"
 msgstr ""
 
-#: includes/Admin/Settings.php:947
-msgid "Renseignez les slugs de taxonomie séparés par des virgules pour identifier les guides pertinents (ex. guide,astuce)."
+#: assets/js/blocks/game-explorer.js:38
+msgid "Filtre catégorie"
 msgstr ""
 
-#: includes/Admin/Metaboxes.php:194 templates/shortcode-rating-block.php:198 templates/shortcode-rating-block-empty.php:197
-msgid "Statut du test"
+#: assets/js/blocks/game-explorer.js:39
+msgid "Filtre plateforme"
 msgstr ""
-#: includes/Admin/Metaboxes.php:202
-msgid "Ce statut est affiché sous la note globale pour informer les lecteurs de la fraîcheur de la review."
+
+#: assets/js/blocks/game-explorer.js:40
+msgid "Filtre développeur"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:41
+msgid "Filtre éditeur"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:43
+msgid "Filtre année de sortie"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:100
+msgid "Configuration du listing"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:102
+#: assets/js/blocks/summary-display.js:84
+msgid "Nombre d'éléments par page"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:115
+msgid "Colonnes"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:137
+msgid "Tri par défaut"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:147
+msgid "Filtres disponibles"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:162
+msgid "Pré-filtrage"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:164
+#: assets/js/blocks/summary-display.js:127
+msgid "Catégorie (slug)"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:171
+msgid "Plateforme (slug)"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:185
+msgid "Développeur (nom exact)"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:192
+msgid "Éditeur (nom exact)"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:199
+msgid "Année de sortie"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:207
+msgid "Recherche (mot-clé)"
+msgstr ""
+
+#: assets/js/blocks/game-explorer.js:234
+msgid "Game Explorer"
+msgstr ""
+
+#: assets/js/blocks/game-info.js:39
+msgid "Version"
+msgstr ""
+
+#: assets/js/blocks/game-info.js:42
+msgid "Plateformes"
+msgstr ""
+
+#: assets/js/blocks/game-info.js:90
+msgid "Source des données"
+msgstr ""
+
+#: assets/js/blocks/game-info.js:98
+#: assets/js/blocks/score-insights.js:105
+msgid "Titre personnalisé"
+msgstr ""
+
+#: assets/js/blocks/game-info.js:107
+msgid "Champs affichés"
+msgstr ""
+
+#: assets/js/blocks/game-info.js:122
+msgid "Décochez les éléments que vous ne souhaitez pas afficher."
+msgstr ""
+
+#: assets/js/blocks/game-info.js:136
+msgid "Fiche technique"
+msgstr ""
+
+#: assets/js/blocks/pros-cons.js:38
+msgid "Points forts / faibles"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:92
+msgid "Disposition du score"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:95
+msgid "Texte"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:96
+msgid "Cercle"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:114
+msgid "Thème de prévisualisation"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:117
+msgid "Selon les réglages du site"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:118
+msgid "Forcer le thème sombre"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:119
+msgid "Forcer le thème clair"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:126
+msgid "Animations (aperçu)"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:129
+msgid "Suivre la configuration globale"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:130
+msgid "Toujours activer"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:131
+msgid "Toujours désactiver"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:138
+msgid "Afficher les animations"
+msgstr ""
+
+#: assets/js/blocks/rating-block.js:161
+msgid "Bloc de notation"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:37
+msgid "30 derniers jours"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:38
+msgid "90 derniers jours"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:39
+msgid "12 derniers mois"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:64
+msgid "Données affichées"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:66
+msgid "Période analysée"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:74
+msgid "Filtrer par plateforme (slug)"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:79
+msgid "Laissez vide pour toutes les plateformes ou utilisez le slug enregistré dans Notation → Plateformes."
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:82
+msgid "Nombre de plateformes affichées"
+msgstr ""
+
+#: assets/js/blocks/score-insights.js:103
+msgid "Présentation"
+msgstr ""
+
+#: assets/js/blocks/shared.js:41
+msgid "Article cible"
+msgstr ""
+
+#: assets/js/blocks/shared.js:200
+msgid "Aucun élément trouvé."
+msgstr ""
+
+#: assets/js/blocks/shared.js:208
+msgid "Type de contenu"
+msgstr ""
+
+#: assets/js/blocks/shared.js:270
+msgid "Prévisualisation du bloc"
+msgstr ""
+
+#: assets/js/blocks/shared.js:277
+msgid "La prévisualisation n'est pas disponible dans cet environnement."
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:39
+msgid "Note moyenne"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:82
+msgid "Pagination et mise en page"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:97
+msgid "Disposition"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:100
+msgid "Tableau"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:101
+msgid "Grille"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:110
+msgid "Colonnes affichées"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:125
+msgid "Filtres initiaux"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:139
+msgid "Utilisez une lettre ou le symbole # pour regrouper chiffres et symboles."
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:142
+msgid "Filtre genre"
+msgstr ""
+
+#: assets/js/blocks/summary-display.js:163
+msgid "Tableau récapitulatif"
+msgstr ""
+
+#: assets/js/blocks/tagline.js:38
+msgid "Tagline bilingue"
+msgstr ""
+
+#: assets/js/blocks/user-rating.js:38
+msgid "Notation utilisateurs"
 msgstr ""

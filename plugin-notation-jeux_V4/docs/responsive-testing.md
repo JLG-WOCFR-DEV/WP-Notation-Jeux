@@ -29,3 +29,12 @@ Pour vérifier l'interaction mobile du Game Explorer (`[jlg_game_explorer]`) :
 3. Cliquez sur le bouton : un panneau coulissant doit apparaître depuis le bas de l'écran, avec un fond semi-transparent masquant l'arrière-plan.
 4. Modifiez un filtre (catégorie, plateforme, studio, éditeur, disponibilité ou recherche) puis validez. Le panneau doit se refermer automatiquement, les résultats se mettre à jour et le focus clavier passer sur le premier élément des résultats.
 5. Testez le bouton « Réinitialiser » : il doit fermer le panneau, remettre les filtres par défaut et replacer le focus sur les résultats.
+
+## Carte verdict du bloc tout-en-un
+
+Pour vérifier le rendu responsive de la carte verdict du shortcode/bloc `[jlg_bloc_complet]` :
+
+1. Créez un test avec les champs **Résumé court**, **Texte du bouton verdict** et **URL du bouton verdict** renseignés, puis sélectionnez un statut « Mise à jour en cours ».
+2. Affichez la page contenant le bloc tout-en-un sur un écran ≤ 768 px. Vérifiez que le statut reste lisible et que la date de mise à jour s’affiche sous forme de phrase.
+3. Réduisez à 320 px : le titre « Verdict de la rédaction » et le bouton doivent passer sur deux lignes sans chevauchement. Le focus clavier sur le bouton doit être visible.
+4. Agrandissez la fenêtre (>1024 px) et contrôlez que le résumé conserve une largeur raisonnable, que le statut ne se déforme pas et que le CTA aligne correctement son ombre portée.
