@@ -956,7 +956,7 @@ endforeach;
                                         'hide_empty'       => false,
                                         'name'             => 'platform_tags[' . $key . '][]',
                                         'id'               => 'platform_tags_' . $key,
-                                        'selected'         => $preselected,
+                                        'selected'         => '',
                                         'echo'             => false,
                                         'multiple'         => true,
                                         'show_option_none' => false,
@@ -965,6 +965,9 @@ endforeach;
                                         'orderby'          => 'name',
                                     )
                                 );
+                                if ( ! empty( $preselected ) ) {
+                                    $dropdown = $this->apply_multiple_dropdown_selection( $dropdown, $preselected );
+                                }
                                 ?>
                             <tr>
                                 <th scope="row"><?php echo esc_html( $platform['name'] ); ?></th>
@@ -1063,6 +1066,59 @@ endforeach;
         </div>
 
         <?php
+    }
+
+    /**
+     * Injecte les attributs selected="selected" dans un dropdown multi-sélection.
+     *
+     * @param string $dropdown      Markup HTML retourné par wp_dropdown_categories().
+     * @param array  $selected_ids  Identifiants de termes à présélectionner.
+     *
+     * @return string
+     */
+    private function apply_multiple_dropdown_selection( $dropdown, array $selected_ids ) {
+        if ( ! is_string( $dropdown ) || $dropdown === '' ) {
+            return (string) $dropdown;
+        }
+
+        $normalized = array();
+
+        foreach ( $selected_ids as $id ) {
+            if ( is_numeric( $id ) ) {
+                $normalized[] = (string) (int) $id;
+            }
+        }
+
+        if ( empty( $normalized ) ) {
+            return $dropdown;
+        }
+
+        $normalized = array_values( array_unique( $normalized ) );
+
+        foreach ( $normalized as $value ) {
+            $pattern = '/(<option\b[^>]*\bvalue="' . preg_quote( $value, '/' ) . '"[^>]*)(>)/i';
+            $count   = 0;
+
+            $dropdown = preg_replace_callback(
+                $pattern,
+                static function ( $matches ) {
+                    if ( stripos( $matches[1], 'selected=' ) !== false ) {
+                        return $matches[0];
+                    }
+
+                    return $matches[1] . ' selected="selected"' . $matches[2];
+                },
+                $dropdown,
+                1,
+                $count
+            );
+
+            if ( $dropdown === null || 0 === $count ) {
+                continue;
+            }
+        }
+
+        return $dropdown;
     }
 
     private function is_debug_enabled() {
