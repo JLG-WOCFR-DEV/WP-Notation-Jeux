@@ -148,8 +148,8 @@ class LatestReviewsWidget extends WP_Widget {
 
         $max_ids = $post_limit * 3;
         if ( $max_ids > 0 && count( $post_ids ) > $max_ids ) {
-            $start_index = count( $post_ids ) - $max_ids;
-            $post_ids    = array_slice( $post_ids, $start_index, null, false );
+            // Conserve the most recent rated posts by trimming from the end of the list.
+            $post_ids = array_slice( $post_ids, -$max_ids, $max_ids, false );
         }
 
         if ( empty( $post_ids ) ) {
