@@ -148,7 +148,7 @@ class LatestReviewsWidget extends WP_Widget {
 
         $max_ids = $post_limit * 3;
         if ( $max_ids > 0 && count( $post_ids ) > $max_ids ) {
-            $post_ids = array_slice( $post_ids, 0, $max_ids );
+            $post_ids = array_slice( $post_ids, -$max_ids );
         }
 
         if ( empty( $post_ids ) ) {

@@ -48,7 +48,7 @@ final class LatestReviewsWidgetTest extends TestCase
 
         $this->assertSame(3, $args['posts_per_page']);
         $this->assertSame(['post', 'custom_review'], $args['post_type']);
-        $this->assertCount(9, $args['post__in']);
+        $this->assertSame(range(42, 50), $args['post__in']);
         $this->assertTrue($args['ignore_sticky_posts']);
         $this->assertTrue($args['no_found_rows']);
         $this->assertFalse($args['update_post_meta_cache']);
