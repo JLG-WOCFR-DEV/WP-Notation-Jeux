@@ -1,5 +1,7 @@
 # Code review – Refactorisation de l'embed vidéo (13 octobre 2025)
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Verdict global
 Le découpage de `Helpers::get_review_video_embed_data()` en fournisseurs dédiés rend le code plus lisible et facilitera des tests ciblés. Cependant, quelques points bloquants subsistent avant de fusionner sereinement.
 

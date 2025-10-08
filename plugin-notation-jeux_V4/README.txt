@@ -178,6 +178,11 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 * **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
 * **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
 
+== Audit de la documentation – 14 octobre 2025 ==
+
+* **Synthèse disponible** : consultez `docs/documentation-audit-2025-10-14.md` pour retrouver les priorités produit (verdict enrichi, comparateur plateformes `jlg_platform_breakdown`, module deals & disponibilités, extension Score Insights) et les chantiers de refactoring (architecture vidéo, segmentation du `Frontend`, schéma de sanitisation).
+* **Actions transverses** : maintenir la parité README/README.txt, enrichir les checklists QA (responsive, blocs Gutenberg) et planifier un audit T1 2026 pour confronter la roadmap aux benchmarks IGN/GameSpot/OpenCritic.
+
 == Screenshots ==
 
 1. Bloc de notation principal avec barres de progression

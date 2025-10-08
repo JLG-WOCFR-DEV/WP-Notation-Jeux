@@ -1,5 +1,7 @@
 # Tests manuels – Options de prévisualisation du bloc de notation
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Préparation
 - Activer un test de jeu avec des notes complètes (catégories renseignées, badge coup de cœur optionnel).
 - Ouvrir l’éditeur Gutenberg et insérer le bloc **Bloc de notation (notation-jlg/rating-block)**.

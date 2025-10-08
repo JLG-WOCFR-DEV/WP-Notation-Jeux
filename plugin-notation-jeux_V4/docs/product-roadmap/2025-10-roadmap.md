@@ -1,5 +1,7 @@
 # Feuille de route produit – Octobre 2025
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](../documentation-audit-2025-10-14.md)._
+
 Ce document décline les opportunités identifiées dans le benchmark du 5 octobre 2025 et propose une trajectoire d'exécution en trois vagues. Chaque lot inclut portée, jalons, impacts techniques et critères de succès.
 
 ## Vision

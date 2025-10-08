@@ -1,5 +1,7 @@
 # Suggestions UX / UI – 8 octobre 2025
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Contexte benchmark
 En observant IGN, GameSpot et OpenCritic, on note trois attentes récurrentes :
 1. **Synthèse décisionnelle immédiate** – un header dense combine note globale, badge d'édition et principaux arguments.

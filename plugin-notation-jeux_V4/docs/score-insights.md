@@ -1,5 +1,7 @@
 # Shortcode & bloc « Score Insights »
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 Ce module affiche une synthèse statistique des notes publiées : moyenne, médiane, histogramme par tranches, classement des plateformes les plus performantes et badges de divergence entre la rédaction et les lecteurs. Il repose sur le helper `Helpers::get_posts_score_insights()`.
 
 ## Shortcode `[jlg_score_insights]`

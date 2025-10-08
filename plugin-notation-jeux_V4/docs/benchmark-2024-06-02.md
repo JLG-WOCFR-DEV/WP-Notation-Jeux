@@ -1,5 +1,7 @@
 # Benchmark – 2024-06-02
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Références étudiées
 - **IGN** : hub de tests avec filtres multiplateformes, segmentation par genre et indicateurs d'évolution des notes.
 - **GameSpot** : fiches détaillées mêlant critique, notation lecteur et recommandations croisées (« Best Of », jeux similaires) avec mise à jour continue.

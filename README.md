@@ -70,6 +70,11 @@ Bonne contribution ! Pensez à suivre les scripts Composer avant toute PR et à
 - **Mode rédaction collaborative en temps réel** : fournir une interface multi-utilisateurs (WebSocket) permettant aux membres d’une rédaction de compléter les catégories de notation, points forts/faibles et taglines simultanément tout en conservant un historique de contributions pour les chefs de rubrique.
 - **Tableau de bord analytics éditorial** : proposer un panneau synthétique côté administration affichant progression des tests, couverture par plateforme/genre, suivi des délais entre publication et mise à jour, ainsi que des alertes sur les jeux nécessitant une révision du verdict.
 
+## Audit de la documentation – 14 octobre 2025
+
+- **Synthèse disponible** : le mémo [`plugin-notation-jeux_V4/docs/documentation-audit-2025-10-14.md`](plugin-notation-jeux_V4/docs/documentation-audit-2025-10-14.md) recense l’ensemble des fichiers Markdown relus, les fonctionnalités à prioriser (verdict enrichi, comparateur plateformes `jlg_platform_breakdown`, module deals & disponibilités, extension Score Insights) ainsi que les refactorings en cours (architecture vidéo, segmentation du `Frontend`, schéma de sanitisation).
+- **Actions transverses** : aligner les READMEs, consolider les checklists QA (responsive, blocs Gutenberg) et programmer un nouvel audit T1 2026 pour confronter la roadmap aux benchmarks IGN/GameSpot/OpenCritic.
+
 ### Vérification du style
 - Exécutez `composer install` pour récupérer les dépendances de développement (WordPress Coding Standards).
 - Lancez `composer cs` avant chaque commit afin de vérifier que vos modifications respectent le standard défini dans `phpcs.xml.dist`.

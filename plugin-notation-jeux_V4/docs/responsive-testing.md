@@ -1,5 +1,7 @@
 # Contrôle manuel du rendu mobile
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 Pour valider l'affichage responsive du tableau récapitulatif :
 
 1. Ouvrez une page WordPress contenant le shortcode `[jlg_tableau_recap]` dans votre navigateur.
