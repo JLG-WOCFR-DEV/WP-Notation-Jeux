@@ -116,6 +116,7 @@ version interne. Deux filtres permettent des personnalisations supplémentaires 
 
 * `jlg_frontend_template_candidates` pour ajuster la liste des chemins passés à `locate_template()` ;
 * `jlg_frontend_template_path` pour modifier le chemin final inclus.
+* `jlg_latest_reviews_widget_query_args` pour personnaliser la requête `WP_Query` du widget « Derniers Tests » (filtrage, tri, pagination avancée).
 
 Ces points d'extension facilitent la conservation de vos surcharges lors des mises à jour du plugin.
 

@@ -120,6 +120,7 @@ etc., avant de revenir au fichier interne. Deux filtres sont disponibles pour al
 
 - `jlg_frontend_template_candidates` pour modifier la liste des chemins passés à `locate_template()` ;
 - `jlg_frontend_template_path` pour ajuster le chemin final utilisé.
+- `jlg_latest_reviews_widget_query_args` pour enrichir ou restreindre la requête du widget « Derniers Tests » (filtrage par taxonomie, tri personnalisé, etc.).
 
 Ces mécanismes vous permettent de conserver vos surcharges lors des mises à jour tout en offrant des points d'ancrage
 programmatiques pour les intégrations avancées.
