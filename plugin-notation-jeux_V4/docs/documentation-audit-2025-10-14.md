@@ -53,3 +53,8 @@ Ce mémo centralise la revue des fichiers Markdown du dépôt et synthétise les
 2. Lancer les refactorings structurants (vidéo, Frontend, sanitisation) avant d’étendre les APIs afin de sécuriser la base.
 3. Mettre à jour les checklists (`responsive-testing.md`, `rating-block-preview-options.md`) après chaque nouvelle fonctionnalité pour conserver la traçabilité QA.
 4. Planifier un nouvel audit documentation au 1er trimestre 2026 pour confronter l’avancement aux benchmarks et ajuster la roadmap.
+
+## Suivi – 16 octobre 2025
+
+- Première version du comparateur plateformes livrée : saisie dans la metabox « Comparatif plateformes » et restitution front via le shortcode `[jlg_platform_breakdown]`. Les tests responsives ont été ajoutés dans `docs/responsive-testing.md`.
+- Revue du 16/10 : document `code-review-2025-10-16.md` ouvert pour suivre la compatibilité Gutenberg du comparatif et le durcissement de la sanitisation (`wp_kses_post` côté template, tests REST à prévoir).

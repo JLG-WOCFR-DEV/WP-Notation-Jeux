@@ -16,7 +16,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 
 - **Shortcodes principaux** :
   - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) pour afficher en une seule fois notation, points forts/faibles et tagline avec de nombreux attributs (`post_id`, `style`, `couleur_accent`, etc.).
-  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]`, `[jlg_game_explorer]`, `[jlg_score_insights]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction, affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction, expose l’état éditorial du test (brouillon, mise à jour en cours, version finale) et propose une liste de guides liés lorsque l’option est activée. La nouvelle carte verdict respecte les critères WCAG 2.2 : résumé, statut et CTA sont restitués avec focus visibles, libellés ARIA et overrides par shortcode/bloc pour adapter le message aux différents canaux.
+  - `[bloc_notation_jeu]`, `[jlg_fiche_technique]`, `[jlg_points_forts_faibles]`, `[tagline_notation_jlg]`, `[notation_utilisateurs_jlg]`, `[jlg_tableau_recap]`, `[jlg_game_explorer]`, `[jlg_score_insights]`, `[jlg_platform_breakdown]` pour construire des mises en page modulaires ; le module de vote affiche désormais un histogramme dynamique accessible (barres ARIA, rafraîchies en direct). Lorsque le badge « Coup de cœur » est activé et que la note atteint le seuil défini dans les réglages, le bloc de notation met en avant la sélection de la rédaction, affiche la moyenne des lecteurs ainsi que l'écart avec la rédaction, expose l’état éditorial du test (brouillon, mise à jour en cours, version finale) et propose une liste de guides liés lorsque l’option est activée. La nouvelle carte verdict respecte les critères WCAG 2.2 : résumé, statut et CTA sont restitués avec focus visibles, libellés ARIA et overrides par shortcode/bloc pour adapter le message aux différents canaux.
 - **Blocs Gutenberg** :
   - `notation-jlg/rating-block` pour gérer format du score (texte/cercle), animations, thème clair/sombre, visibilité de la carte verdict et son contenu.
   - `notation-jlg/all-in-one` pour activer/désactiver chaque sous-composant (taglines, verdict, vidéo, points forts/faibles) et personnaliser style, titres et couleur d’accent sans sacrifier l’accessibilité clavier.
@@ -35,6 +35,11 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 - **CSS personnalisé** et réglages précis pour le tableau récapitulatif ou les vignettes (espacements, bordures, alternance de lignes) ainsi qu’un sélecteur couleur acceptant la valeur `transparent` lorsque pertinent.
 - **Notation des lecteurs** : personnalisez couleurs et textes du module dédié et profitez d'un histogramme accessible mis à jour en direct, avec verrouillage automatique des interactions pendant le traitement AJAX pour éviter les doubles clics. Les votes peuvent, au besoin, être réservés aux membres connectés via l'option *Connexion obligatoire avant le vote* dans les réglages.
 - **Gestion dynamique des plateformes** : ajoutez, triez, supprimez ou réinitialisez les plateformes proposées dans les metaboxes pour conserver des fiches homogènes.
+
+## Comparatif plateformes & recommandations
+
+- **Nouvelle metabox dédiée** : la section « Détails du test » accueille un comparatif par plateforme permettant de saisir performance/mode, recommandation éditoriale et badge « Meilleure expérience ». Chaque ligne peut recevoir un libellé personnalisé pour distinguer les éditions spéciales ou configurations PC.
+- **Shortcode `[jlg_platform_breakdown]`** : restitue ces informations sous forme de tableau accessible (badge, colonnes filtrables, structure responsive). Le rendu reprend automatiquement le libellé des plateformes enregistrées dans l’onglet *Notation – JLG > Plateformes* et propose un message de repli configurable lorsqu’aucune donnée n’est renseignée.
 
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).
@@ -69,6 +74,7 @@ Bonne contribution ! Pensez à suivre les scripts Composer avant toute PR et à
 - **Exports & intégrations partenaires** : ajouter une commande WP-CLI et un flux JSON dédié aux partenariats médias/affiliation (résumé, verdict, liens CTA configurables) pour faciliter la syndication de la note sur d’autres plateformes et newsletters sans ressaisie.
 - **Mode rédaction collaborative en temps réel** : fournir une interface multi-utilisateurs (WebSocket) permettant aux membres d’une rédaction de compléter les catégories de notation, points forts/faibles et taglines simultanément tout en conservant un historique de contributions pour les chefs de rubrique.
 - **Tableau de bord analytics éditorial** : proposer un panneau synthétique côté administration affichant progression des tests, couverture par plateforme/genre, suivi des délais entre publication et mise à jour, ainsi que des alertes sur les jeux nécessitant une révision du verdict.
+- **Bloc Gutenberg « Comparatif plateformes »** : livrer un bloc `notation-jlg/platform-breakdown` qui préremplit l’ID de l’article en mode éditeur, expose titre/message vide/badge comme attributs et restitue la même grille que le shortcode tout en restant fonctionnel dans les aperçus REST.
 
 ## Audit de la documentation – 14 octobre 2025
 
