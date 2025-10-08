@@ -44,6 +44,10 @@ $consensus_level       = isset( $consensus['level'] ) ? (string) $consensus['lev
 $consensus_label       = isset( $consensus['level_label'] ) ? (string) $consensus['level_label'] : '';
 $consensus_message     = isset( $consensus['message'] ) ? (string) $consensus['message'] : '';
 $consensus_deviation   = isset( $consensus['deviation_label'] ) ? (string) $consensus['deviation_label'] : '';
+$consensus_sample      = '';
+if ( isset( $consensus['sample'] ) && is_array( $consensus['sample'] ) ) {
+    $consensus_sample = isset( $consensus['sample']['label'] ) ? (string) $consensus['sample']['label'] : '';
+}
 $consensus_range_label = '';
 if ( isset( $consensus['range'] ) && is_array( $consensus['range'] ) ) {
     $consensus_range_label = isset( $consensus['range']['label'] ) ? (string) $consensus['range']['label'] : '';
@@ -176,6 +180,11 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
                             <span class="screen-reader-text">
                                 <?php echo esc_html( $consensus_label ); ?>
                             </span>
+                        </p>
+                    <?php endif; ?>
+                    <?php if ( $consensus_sample !== '' ) : ?>
+                        <p class="jlg-score-insights__consensus-sample">
+                            <?php echo esc_html( $consensus_sample ); ?>
                         </p>
                     <?php endif; ?>
                     <?php if ( $consensus_message !== '' ) : ?>

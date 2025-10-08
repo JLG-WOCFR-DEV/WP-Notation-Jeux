@@ -1870,6 +1870,10 @@ msgstr ""
 msgid "Ajoutez des tests pour analyser le consensus."
 msgstr ""
 
+#: includes/Helpers.php:3327
+msgid "Aucun test pris en compte"
+msgstr ""
+
 #: includes/Helpers.php:3622
 msgid "Échantillon limité"
 msgstr ""
@@ -1906,6 +1910,18 @@ msgstr ""
 
 #: includes/Helpers.php:3675
 msgid "Les notes varient fortement : consultez les badges de divergence pour comprendre les écarts."
+msgstr ""
+
+#. translators: %d: number of published tests in the sample (singular).
+#: includes/Helpers.php:3332
+#, php-format
+msgid "Basé sur %d test publié"
+msgstr ""
+
+#. translators: %d: number of published tests in the sample (plural).
+#: includes/Helpers.php:3332
+#, php-format
+msgid "Basé sur %d tests publiés"
 msgstr ""
 
 #. translators: %s: formatted standard deviation value.

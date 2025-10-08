@@ -40,6 +40,10 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
                 'level_label' => 'Consensus fort',
                 'message' => 'Les notes publiées sont très proches : verdict homogène.',
                 'deviation_label' => 'Écart-type : 0,3',
+                'sample' => array(
+                    'count' => 5,
+                    'label' => 'Basé sur 5 tests publiés',
+                ),
                 'range' => array(
                     'label' => 'Notes entre 8,0 et 8,5 (écart de 0,5 point(s)).',
                 ),
@@ -78,5 +82,6 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
         $this->assertStringContainsString('Niveau de consensus', $output, 'Consensus block title should be rendered.');
         $this->assertMatchesRegularExpression('/jlg-score-insights__consensus-chip--high/', $output, 'Consensus chip should reflect level class.');
         $this->assertStringContainsString('Écart-type : 0,3', $output, 'Consensus deviation label should be printed.');
+        $this->assertStringContainsString('Basé sur 5 tests publiés', $output, 'Consensus sample size should be rendered.');
     }
 }

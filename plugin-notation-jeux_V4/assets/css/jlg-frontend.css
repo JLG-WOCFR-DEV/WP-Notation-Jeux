@@ -920,6 +920,13 @@
     color: var(--jlg-score-insights-text);
 }
 
+.jlg-score-insights__consensus-sample {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--jlg-score-insights-text);
+}
+
 .jlg-score-insights__consensus-details {
     margin: 0;
     font-size: 0.8rem;
