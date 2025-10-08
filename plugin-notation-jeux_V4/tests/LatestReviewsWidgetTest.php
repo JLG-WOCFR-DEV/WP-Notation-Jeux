@@ -21,4 +21,38 @@ final class LatestReviewsWidgetTest extends TestCase
         $this->assertSame('Top Jeu Edition', preg_replace('/\s+/', ' ', $clean_instance['title']));
         $this->assertSame(8, $clean_instance['number']);
     }
+
+    public function test_parse_instance_settings_defaults_to_safe_values(): void
+    {
+        $widget = new LatestReviewsWidget();
+
+        $reflection = new \ReflectionMethod($widget, 'parse_instance_settings');
+        $reflection->setAccessible(true);
+
+        $result = $reflection->invoke($widget, ['title' => '', 'number' => 0]);
+
+        $this->assertSame('Derniers Tests', $result['title']);
+        $this->assertSame(5, $result['number']);
+    }
+
+    public function test_build_query_args_limits_post_ids_and_adds_optimisations(): void
+    {
+        $widget = new LatestReviewsWidget();
+
+        $method = new \ReflectionMethod($widget, 'build_query_args');
+        $method->setAccessible(true);
+
+        $post_ids = array_map('strval', range(1, 50));
+
+        $args = $method->invoke($widget, 3, $post_ids, ['post', 'custom_review']);
+
+        $this->assertSame(3, $args['posts_per_page']);
+        $this->assertSame(['post', 'custom_review'], $args['post_type']);
+        $this->assertCount(9, $args['post__in']);
+        $this->assertTrue($args['ignore_sticky_posts']);
+        $this->assertTrue($args['no_found_rows']);
+        $this->assertFalse($args['update_post_meta_cache']);
+        $this->assertFalse($args['update_post_term_cache']);
+        $this->assertFalse($args['lazy_load_term_meta']);
+    }
 }
