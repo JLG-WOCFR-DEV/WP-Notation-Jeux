@@ -4,8 +4,9 @@
     const nonce = l10n.nonce || '';
     const strings = l10n.strings || {};
     const DEFAULT_LOADING_TEXT = 'Chargement…';
+    const DEFAULT_SCORE_MAX = 100;
 
-    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search', 'paged'];
+    const REQUEST_KEYS = ['orderby', 'order', 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'score', 'search', 'paged'];
     const activeRequestControllers = new WeakMap();
     const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const MOBILE_BREAKPOINT = 768;
@@ -39,6 +40,18 @@
             : {};
         const baseState = Object.assign({}, initialState);
 
+        const meta = (config && config.meta && typeof config.meta === 'object') ? config.meta : {};
+        const scoresMeta = meta.scores && typeof meta.scores === 'object' ? meta.scores : {};
+        let rawScoreMax = scoresMeta.max;
+        if (typeof rawScoreMax === 'string') {
+            rawScoreMax = parseFloat(rawScoreMax);
+        }
+        let scoreMax = typeof rawScoreMax === 'number' && Number.isFinite(rawScoreMax) ? rawScoreMax : DEFAULT_SCORE_MAX;
+        if (!Number.isFinite(scoreMax) || scoreMax <= 0) {
+            scoreMax = DEFAULT_SCORE_MAX;
+        }
+        baseState.__scoreMax = Math.min(Math.max(scoreMax, 1), DEFAULT_SCORE_MAX);
+
         if (typeof baseState.orderby !== 'string' || baseState.orderby === '') {
             baseState.orderby = 'date';
         }
@@ -53,12 +66,55 @@
         }
 
         REQUEST_KEYS.forEach((key) => {
+            if (key === 'score') {
+                baseState[key] = normalizeScoreStateValue(baseState[key], baseState.__scoreMax);
+                return;
+            }
+
             if (typeof baseState[key] === 'undefined') {
                 baseState[key] = '';
             }
         });
 
         return baseState;
+    }
+
+    function normalizeScoreStateValue(value, scoreMax) {
+        if (value === null || typeof value === 'undefined') {
+            return '';
+        }
+
+        const maxCandidate = typeof scoreMax === 'number' && Number.isFinite(scoreMax)
+            ? scoreMax
+            : DEFAULT_SCORE_MAX;
+        const normalizedMax = Math.min(Math.max(maxCandidate, 1), DEFAULT_SCORE_MAX);
+
+        let candidate = value;
+        if (typeof candidate === 'string') {
+            candidate = candidate.replace(',', '.').trim();
+        }
+
+        if (candidate === '') {
+            return '';
+        }
+
+        const numericCandidate = Number(candidate);
+        if (!Number.isFinite(numericCandidate)) {
+            return '';
+        }
+
+        let numeric = Math.min(Math.max(numericCandidate, 0), normalizedMax);
+
+        if (normalizedMax > 20) {
+            return String(Math.round(numeric));
+        }
+
+        const rounded = Math.round(numeric * 10) / 10;
+        if (Math.abs(rounded - Math.round(rounded)) < 0.05) {
+            return String(Math.round(rounded));
+        }
+
+        return rounded.toFixed(1).replace(/\.0$/, '');
     }
 
     function normalizeStateValue(key, value, baseState) {
@@ -98,6 +154,11 @@
             }
 
             return /^\d{4}$/.test(trimmed) ? trimmed : '';
+        }
+
+        if (key === 'score') {
+            const baseMax = typeof baseState.__scoreMax === 'number' ? baseState.__scoreMax : DEFAULT_SCORE_MAX;
+            return normalizeScoreStateValue(value, baseMax);
         }
 
         return value.toString();
@@ -472,6 +533,10 @@
             refs.yearSelect.value = state.year || '';
         }
 
+        if (refs.scoreSelect) {
+            refs.scoreSelect.value = state.score || '';
+        }
+
         if (refs.searchInput) {
             refs.searchInput.value = state.search || '';
         }
@@ -819,6 +884,7 @@
         payload.set(getRequestKey(config, 'publisher'), config.state.publisher);
         payload.set(getRequestKey(config, 'availability'), config.state.availability);
         payload.set(getRequestKey(config, 'year'), config.state.year);
+        payload.set(getRequestKey(config, 'score'), config.state.score);
         payload.set(getRequestKey(config, 'search'), config.state.search);
         payload.set(getRequestKey(config, 'paged'), config.state.paged);
 
@@ -944,6 +1010,7 @@
             publisherSelect: container.querySelector('[data-role="publisher"]'),
             availabilitySelect: container.querySelector('[data-role="availability"]'),
             yearSelect: container.querySelector('[data-role="year"]'),
+            scoreSelect: container.querySelector('[data-role="score"]'),
             searchInput: container.querySelector('[data-role="search"]'),
             resetButton: container.querySelector('[data-role="reset"]'),
             filtersWrapper: container.querySelector('[data-role="filters-wrapper"]'),
@@ -1065,6 +1132,16 @@
             });
         }
 
+        if (refs.scoreSelect) {
+            refs.scoreSelect.addEventListener('change', () => {
+                config.state.score = refs.scoreSelect.value || '';
+                config.state.paged = 1;
+                writeConfig(container, config);
+                collapseFiltersForMobile(container, refs);
+                refreshResults(container, config, refs);
+            });
+        }
+
         if (refs.searchInput) {
             const scheduleSearchRefresh = debounce(() => {
                 refreshResults(container, config, refs);
@@ -1127,6 +1204,10 @@
 
                 if (refs.yearSelect) {
                     config.state.year = refs.yearSelect.value || '';
+                }
+
+                if (refs.scoreSelect) {
+                    config.state.score = refs.scoreSelect.value || '';
                 }
 
                 if (refs.searchInput) {

@@ -57,6 +57,7 @@ class ShortcodeGameExplorerTemplateTest extends TestCase
                 'publisher'   => false,
                 'availability'=> false,
                 'year'        => false,
+                'score'       => false,
                 'search'      => false,
             ],
             'current_filters'    => [
@@ -86,8 +87,10 @@ class ShortcodeGameExplorerTemplateTest extends TestCase
             'developers_list'    => [],
             'publishers_list'    => [],
             'platforms_list'     => [],
+            'scores_list'        => [],
             'years_list'         => [],
             'years_meta'         => [],
+            'scores_meta'        => [],
             'availability_options' => [],
             'total_items'        => 0,
             'sort_key'           => 'date',

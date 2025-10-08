@@ -35,6 +35,7 @@ class GameExplorer {
         'publisher',
         'availability',
         'year',
+        'score',
         'search',
         'paged',
     );
@@ -265,6 +266,7 @@ class GameExplorer {
             'developpeur'    => '',
             'editeur'        => '',
             'annee'          => '',
+            'note_min'       => '',
             'recherche'      => '',
         );
     }
@@ -437,6 +439,171 @@ class GameExplorer {
         }
 
         return (string) $year;
+    }
+
+    private static function get_score_filter_precision( $score_max ) {
+        $normalized_max = is_numeric( $score_max ) ? (float) $score_max : 10.0;
+
+        if ( $normalized_max <= 0 ) {
+            $normalized_max = 10.0;
+        }
+
+        if ( $normalized_max > 100 ) {
+            $normalized_max = 100.0;
+        }
+
+        return ( $normalized_max > 20 ) ? 0 : 1;
+    }
+
+    private static function format_score_value_attribute( $value, $precision ) {
+        $numeric_value = is_numeric( $value ) ? (float) $value : 0.0;
+
+        if ( $precision <= 0 ) {
+            return (string) (int) round( $numeric_value );
+        }
+
+        $rounded   = round( $numeric_value, (int) $precision );
+        $formatted = number_format( $rounded, (int) $precision, '.', '' );
+        $formatted = rtrim( rtrim( $formatted, '0' ), '.' );
+
+        if ( $formatted === '' ) {
+            return '0';
+        }
+
+        return $formatted;
+    }
+
+    private static function format_score_value_display( $value, $precision ) {
+        $numeric_value = is_numeric( $value ) ? (float) $value : 0.0;
+        $decimals      = $precision > 0 ? (int) $precision : 0;
+
+        if ( $decimals > 0 ) {
+            $rounded = round( $numeric_value, $decimals );
+            if ( abs( $rounded - round( $rounded ) ) < pow( 10, -$decimals ) ) {
+                $decimals = 0;
+                $rounded  = round( $rounded );
+            }
+        } else {
+            $rounded  = round( $numeric_value );
+            $decimals = 0;
+        }
+
+        if ( function_exists( 'number_format_i18n' ) ) {
+            return number_format_i18n( $rounded, $decimals );
+        }
+
+        return number_format( $rounded, $decimals, ',', ' ' );
+    }
+
+    protected static function normalize_score_filter( $value, $score_max ) {
+        if ( $value === null || $value === '' ) {
+            return '';
+        }
+
+        if ( is_string( $value ) ) {
+            $value = str_replace( ',', '.', $value );
+            $value = trim( $value );
+        }
+
+        if ( $value === '' || ! is_numeric( $value ) ) {
+            return '';
+        }
+
+        $normalized_max = is_numeric( $score_max ) ? (float) $score_max : 10.0;
+        if ( $normalized_max <= 0 ) {
+            $normalized_max = 10.0;
+        }
+        if ( $normalized_max > 100 ) {
+            $normalized_max = 100.0;
+        }
+
+        $numeric_value = (float) $value;
+        if ( $numeric_value < 0 ) {
+            $numeric_value = 0.0;
+        }
+        if ( $numeric_value > $normalized_max ) {
+            $numeric_value = $normalized_max;
+        }
+
+        $precision = self::get_score_filter_precision( $normalized_max );
+
+        return self::format_score_value_attribute( $numeric_value, $precision );
+    }
+
+    protected static function build_score_filter_options( $score_max, $active_value ) {
+        $normalized_max = is_numeric( $score_max ) ? (float) $score_max : 10.0;
+        if ( $normalized_max <= 0 ) {
+            $normalized_max = 10.0;
+        }
+        if ( $normalized_max > 100 ) {
+            $normalized_max = 100.0;
+        }
+
+        $precision = self::get_score_filter_precision( $normalized_max );
+        $ratios    = array( 0.5, 0.6, 0.7, 0.8, 0.9 );
+        $options   = array();
+        $seen      = array();
+
+        foreach ( $ratios as $ratio ) {
+            $raw_value = $normalized_max * $ratio;
+
+            if ( $precision <= 0 ) {
+                $raw_value = round( $raw_value );
+            }
+
+            if ( $raw_value <= 0 || $raw_value >= $normalized_max ) {
+                continue;
+            }
+
+            $value = self::format_score_value_attribute( $raw_value, $precision );
+
+            if ( isset( $seen[ $value ] ) ) {
+                continue;
+            }
+
+            $seen[ $value ] = true;
+
+            $options[] = array(
+                'value' => $value,
+                'label' => sprintf(
+                    /* translators: 1: Minimum score, 2: Maximum score. */
+                    esc_html__( 'Note ≥ %1$s / %2$s', 'notation-jlg' ),
+                    self::format_score_value_display( $value, $precision ),
+                    self::format_score_value_display( $normalized_max, $precision )
+                ),
+            );
+        }
+
+        if ( $active_value !== '' ) {
+            $normalized_active = self::normalize_score_filter( $active_value, $normalized_max );
+            if ( $normalized_active !== '' && ! isset( $seen[ $normalized_active ] ) ) {
+                $options[] = array(
+                    'value' => $normalized_active,
+                    'label' => sprintf(
+                        /* translators: 1: Minimum score, 2: Maximum score. */
+                        esc_html__( 'Note ≥ %1$s / %2$s', 'notation-jlg' ),
+                        self::format_score_value_display( $normalized_active, $precision ),
+                        self::format_score_value_display( $normalized_max, $precision )
+                    ),
+                );
+            }
+        }
+
+        usort(
+            $options,
+            static function ( $a, $b ) {
+                $a_value = isset( $a['value'] ) ? (float) $a['value'] : 0.0;
+                $b_value = isset( $b['value'] ) ? (float) $b['value'] : 0.0;
+
+                if ( abs( $a_value - $b_value ) < 0.0001 ) {
+                    return 0;
+                }
+
+                return ( $a_value < $b_value ) ? -1 : 1;
+            }
+        );
+
+        return $options;
     }
 
     protected static function tokenize_search_terms( $value ) {
@@ -1235,6 +1402,15 @@ class GameExplorer {
             $meta_clauses[] = $search_relation;
         }
 
+        if ( isset( $filters['score_min'] ) && $filters['score_min'] !== '' ) {
+            $meta_clauses[] = array(
+                'key'     => '_jlg_average_score',
+                'value'   => (float) $filters['score_min'],
+                'compare' => '>=',
+                'type'    => 'NUMERIC',
+            );
+        }
+
         if ( ! empty( $filters['category_id'] ) ) {
             $tax_query[] = array(
                 'taxonomy'         => 'category',
@@ -1306,6 +1482,7 @@ class GameExplorer {
      * - developer: Developer name filter.
      * - publisher: Publisher name filter.
      * - availability: Availability status filter.
+     * - score: Minimum editorial score filter.
      * - search: Search query string.
      * - paged: Current page number.
      *
@@ -1349,6 +1526,7 @@ class GameExplorer {
 
         $filters_enabled = self::normalize_filters( $atts['filters'] );
         $score_position  = Helpers::normalize_game_explorer_score_position( $atts['score_position'] ?? '' );
+        $score_max       = Helpers::get_score_max( $options );
 
         $orderby = ( isset( $request['orderby'] ) && is_string( $request['orderby'] ) ) ? sanitize_key( $request['orderby'] ) : 'date';
         $order   = isset( $request['order'] ) ? strtoupper( sanitize_text_field( $request['order'] ) ) : 'DESC';
@@ -1363,6 +1541,7 @@ class GameExplorer {
         $publisher_filter    = isset( $request['publisher'] ) ? trim( sanitize_text_field( $request['publisher'] ) ) : '';
         $availability_filter = ( isset( $request['availability'] ) && is_string( $request['availability'] ) ) ? sanitize_key( $request['availability'] ) : '';
         $year_filter_raw     = isset( $request['year'] ) ? sanitize_text_field( $request['year'] ) : '';
+        $score_filter_raw    = isset( $request['score'] ) ? sanitize_text_field( $request['score'] ) : '';
         $search_filter       = isset( $request['search'] ) ? sanitize_text_field( $request['search'] ) : '';
         $paged               = isset( $request['paged'] ) ? max( 1, (int) $request['paged'] ) : 1;
 
@@ -1386,6 +1565,9 @@ class GameExplorer {
         }
         if ( empty( $filters_enabled['year'] ) ) {
             $year_filter_raw = '';
+        }
+        if ( empty( $filters_enabled['score'] ) ) {
+            $score_filter_raw = '';
         }
         if ( empty( $filters_enabled['search'] ) ) {
             $search_filter = '';
@@ -1428,8 +1610,14 @@ class GameExplorer {
             $search_filter = $forced_search;
         }
 
+        $forced_score = isset( $atts['note_min'] ) ? sanitize_text_field( $atts['note_min'] ) : '';
+        if ( $forced_score !== '' ) {
+            $score_filter_raw = $forced_score;
+        }
+
         $developer_filter_key = $developer_filter !== '' ? self::normalize_text_key( $developer_filter ) : '';
         $publisher_filter_key = $publisher_filter !== '' ? self::normalize_text_key( $publisher_filter ) : '';
+        $score_filter         = self::normalize_score_filter( $score_filter_raw, $score_max );
 
         $allowed_orderby = self::get_allowed_sort_keys();
         if ( empty( $allowed_orderby ) ) {
@@ -1586,6 +1774,16 @@ class GameExplorer {
             }
         }
 
+        $scores_list = array();
+        if ( ! empty( $filters_enabled['score'] ) ) {
+            $scores_list = self::build_score_filter_options( $score_max, $score_filter );
+        }
+
+        $scores_meta = array(
+            'max'       => (int) round( is_numeric( $score_max ) ? (float) $score_max : Helpers::get_score_max() ),
+            'precision' => self::get_score_filter_precision( $score_max ),
+        );
+
         $search_tokens_map  = isset( $snapshot['search_tokens'] ) && is_array( $snapshot['search_tokens'] ) ? $snapshot['search_tokens'] : array();
         $search_suggestions = array();
         if ( ! empty( $search_tokens_map ) ) {
@@ -1645,6 +1843,7 @@ class GameExplorer {
             'publisher_key' => $publisher_filter_key,
             'availability'  => $availability_filter,
             'year'          => $year_filter,
+            'score_min'     => $score_filter,
             'search_terms'  => $search_terms,
         );
 
@@ -1880,6 +2079,7 @@ class GameExplorer {
                 'developpeur'    => $atts['developpeur'],
                 'editeur'        => $atts['editeur'],
                 'annee'          => $atts['annee'],
+                'note_min'       => $atts['note_min'],
                 'recherche'      => $atts['recherche'],
             ),
             'state'       => array(
@@ -1892,6 +2092,7 @@ class GameExplorer {
                 'publisher'    => $publisher_filter,
                 'availability' => $availability_filter,
                 'year'         => $year_filter,
+                'score'        => $score_filter,
                 'search'       => $search_filter,
                 'paged'        => $paged,
                 'total_items'  => $total_items,
@@ -1905,11 +2106,12 @@ class GameExplorer {
                 'query' => $query_cache_status,
             ),
             'meta'        => array(
-                'years' => array(
+                'years'  => array(
                     'min'     => $year_min,
                     'max'     => $year_max,
                     'buckets' => $year_buckets,
                 ),
+                'scores' => $scores_meta,
             ),
             'sorts'       => array(
                 'options' => self::get_sort_options(),
@@ -1946,6 +2148,7 @@ class GameExplorer {
                 'publisher'    => $publisher_filter,
                 'availability' => $availability_filter,
                 'year'         => $year_filter,
+                'score'        => $score_filter,
                 'search'       => $search_filter,
             ),
             'sort_options'         => self::get_sort_options(),
@@ -1960,6 +2163,7 @@ class GameExplorer {
             'publishers_list'      => $publishers_list,
             'platforms_list'       => $platform_entries,
             'availability_options' => $availability_options,
+            'scores_list'          => $scores_list,
             'total_items'          => $total_items,
             'message'              => $message,
             'config_payload'       => $config_payload,
@@ -1972,6 +2176,7 @@ class GameExplorer {
                 'max'     => $year_max,
                 'buckets' => $year_buckets,
             ),
+            'scores_meta'          => $scores_meta,
             'search_suggestions'   => $search_suggestions,
             'cache_status'         => array(
                 'query' => $query_cache_status,

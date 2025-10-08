@@ -22,9 +22,11 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                 'posts_per_page' => 9,
             ],
             'filters_enabled' => [
+                'score' => false,
                 'search' => true,
             ],
             'current_filters' => [
+                'score' => '',
                 'search' => $search_value,
             ],
             'config_payload' => [
@@ -37,6 +39,7 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                     'categorie' => '',
                     'plateforme' => '',
                     'lettre' => '',
+                    'note_min' => '',
                 ],
                 'state' => [
                     'orderby' => 'date',
@@ -45,9 +48,16 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                     'category' => '',
                     'platform' => '',
                     'availability' => '',
+                    'score' => '',
                     'search' => $search_value,
                     'paged' => 1,
                     'total_items' => 0,
+                ],
+                'meta' => [
+                    'scores' => [
+                        'max' => 10,
+                        'precision' => 1,
+                    ],
                 ],
             ],
             'games' => [],
@@ -56,6 +66,11 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                 'total' => 0,
             ],
             'total_items' => 0,
+            'scores_list' => [],
+            'scores_meta' => [
+                'max' => 10,
+                'precision' => 1,
+            ],
         ]);
 
         $this->assertStringContainsString('data-role="search"', $output, 'The search input should be rendered when enabled.');
@@ -84,9 +99,11 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                 'posts_per_page' => 6,
             ],
             'filters_enabled' => [
+                'score' => false,
                 'search' => true,
             ],
             'current_filters' => [
+                'score' => '',
                 'search' => 'épopée légende',
             ],
             'config_payload' => [
@@ -99,6 +116,7 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                     'categorie' => '',
                     'plateforme' => '',
                     'lettre' => '',
+                    'note_min' => '',
                 ],
                 'state' => [
                     'orderby' => 'popularity',
@@ -106,6 +124,7 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                     'letter' => '',
                     'category' => '',
                     'platform' => '',
+                    'score' => '',
                     'search' => 'épopée légende',
                     'paged' => 1,
                     'total_items' => 2,
@@ -127,6 +146,12 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                         'order' => 'DESC',
                     ],
                 ],
+                'meta' => [
+                    'scores' => [
+                        'max' => 10,
+                        'precision' => 1,
+                    ],
+                ],
             ],
             'games' => [],
             'pagination' => [
@@ -134,6 +159,11 @@ class ShortcodeGameExplorerSearchFilterTest extends TestCase
                 'total' => 1,
             ],
             'total_items' => 0,
+            'scores_list' => [],
+            'scores_meta' => [
+                'max' => 10,
+                'precision' => 1,
+            ],
         ]);
 
         preg_match('/data-config="([^"]+)"/', $output, $matches);
