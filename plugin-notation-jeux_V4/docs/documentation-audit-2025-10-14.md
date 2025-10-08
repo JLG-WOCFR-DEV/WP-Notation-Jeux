@@ -24,6 +24,7 @@ Ce mémo centralise la revue des fichiers Markdown du dépôt et synthétise les
 - Compléter `docs/responsive-testing.md` avec des scénarios Game Explorer + widget, en cohérence avec les actions recommandées le 8 octobre 2025.
 - Documenter l’audit Lighthouse/contraste lors de l’ajout de nouveaux presets UI (`ui-presets-prescription-2025-10-11.md`) et intégrer des captures avant/après lorsque les presets seront implémentés.
 - Alignement systématique entre `README.md`, `plugin-notation-jeux_V4/README.md` et `plugin-notation-jeux_V4/README.txt` pour refléter les mêmes pistes d’amélioration et la roadmap à jour.
+- Ajouter un plan d’implémentation dédié au bloc « Comparatif plateformes » (`platform-breakdown-block-plan.md`) et référencer la check-list responsive associée.
 
 ## Suivi par groupe de documents
 ### READMEs & documentation WordPress
@@ -42,6 +43,7 @@ Ce mémo centralise la revue des fichiers Markdown du dépôt et synthétise les
 ### Guides fonctionnels et checklists
 - `game-explorer-loading-overlay.md` (non listé dans le backlog initial mais présent) insiste sur l’overlay de chargement responsive : vérifier son intégration lors des évolutions Game Explorer.
 - `rating-block-preview-options.md`, `user-rating-histogram.md`, `score-insights.md`, `responsive-testing.md` et `review-status-automation.md` couvrent respectivement les tests manuels, l’accessibilité des modules et les checklists à maintenir.
+- `platform-breakdown-block-plan.md` formalise les livrables nécessaires au bloc Gutenberg et renvoie vers les tests automatiques/manuels attendus.
 
 ### Revues de code
 - `code-review-2025-10-08.md` : actions immédiates autour du widget « Derniers Tests ».
@@ -53,3 +55,9 @@ Ce mémo centralise la revue des fichiers Markdown du dépôt et synthétise les
 2. Lancer les refactorings structurants (vidéo, Frontend, sanitisation) avant d’étendre les APIs afin de sécuriser la base.
 3. Mettre à jour les checklists (`responsive-testing.md`, `rating-block-preview-options.md`) après chaque nouvelle fonctionnalité pour conserver la traçabilité QA.
 4. Planifier un nouvel audit documentation au 1er trimestre 2026 pour confronter l’avancement aux benchmarks et ajuster la roadmap.
+
+## Suivi – 16 octobre 2025
+
+- Première version du comparateur plateformes livrée : saisie dans la metabox « Comparatif plateformes » et restitution front via le shortcode `[jlg_platform_breakdown]`. Les tests responsives ont été ajoutés dans `docs/responsive-testing.md`.
+- Revue du 16/10 : document `code-review-2025-10-16.md` ouvert pour suivre la compatibilité Gutenberg du comparatif et le durcissement de la sanitisation (`wp_kses_post` côté template, tests REST à prévoir).
+- Plan Gutenberg : `platform-breakdown-block-plan.md` détaille le backlog technique (helper JSON, endpoint REST, bloc, sanitisation) ainsi que les tests PHPUnit/manuels et la documentation à produire.

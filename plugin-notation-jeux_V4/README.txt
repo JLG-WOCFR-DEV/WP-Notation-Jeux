@@ -62,6 +62,13 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * Le champ « Dernier patch vérifié » pilote désormais une finalisation automatique : après le délai configuré, le cron `jlg_review_status_auto_finalize` repasse la review en « Version finale » et déclenche le hook `jlg_review_status_transition` pour vos intégrations.
 * Si l'URL est vide, le permalien de l'article est utilisé pour proposer un CTA « Lire le test complet ».
 
+= Comparatif plateformes & recommandations =
+
+* La metabox **Détails du test** propose une grille « Comparatif plateformes » pour détailler performance/mode, recommandation éditoriale et marquage « Meilleure expérience » plateforme par plateforme. Chaque ligne accepte un libellé personnalisé afin de distinguer éditions spéciales ou configurations PC.
+* Le shortcode `[jlg_platform_breakdown]` restitue ces informations dans un tableau accessible : badge mis en avant, colonnes lisibles sur mobile grâce aux libellés `data-label` et message personnalisable lorsqu’aucune donnée n’est disponible.
+* **Sanitisation renforcée & filtres partenaires** : les entrées fournies par `jlg_platform_breakdown_entries` seront assainies (`wp_kses_post()` + troncature) dans la prochaine itération pour éviter tout HTML malicieux tout en autorisant les balises de mise en forme basiques (`<strong>`, `<em>`).
+* **Bloc Gutenberg dédié** : le plan de livraison du bloc `notation-jlg/platform-breakdown` (helper JSON, endpoint, prévisualisation REST, QA) est détaillé dans `docs/platform-breakdown-block-plan.md`. Les scénarios responsive correspondants ont été intégrés à `docs/responsive-testing.md`.
+
 = Shortcodes disponibles =
 
 * `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) — Bloc tout-en-un combinant notation, points forts/faibles, tagline et carte verdict. Principaux attributs : `post_id` (ID de l'article ciblé), `style` (`moderne`, `classique`, `compact`), `afficher_notation`, `afficher_points`, `afficher_tagline`, `afficher_verdict` (valeurs `oui`/`non`), `couleur_accent`, `titre_points_forts`, `titre_points_faibles`, `display_mode` (`absolute` ou `percent`). Remplace l'utilisation combinée des shortcodes `[bloc_notation_jeu]`, `[jlg_points_forts_faibles]` et `[tagline_notation_jlg]` pour un rendu unifié.
@@ -74,6 +81,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 * `[jlg_tableau_recap]` - Tableau/grille récapitulatif. Les entêtes sont triables par titre, date, note moyenne et métadonnées développeur/éditeur via `orderby=title`, `orderby=average_score`, `orderby=meta__jlg_developpeur` ou `orderby=meta__jlg_editeur`.
 * `[jlg_game_explorer]` - Game Explorer interactif avec cartes et filtres dynamiques. Attributs : `posts_per_page` (nombre d'articles par page), `columns` (2 à 4 colonnes), `filters` (liste séparée par des virgules parmi `letter`, `category`, `platform`, `developer`, `publisher`, `availability`, `year`, `score`, `search`), `categorie`, `plateforme`, `lettre`, `note_min` et `recherche` pour forcer un filtrage initial. La navigation (lettres, filtres, tri et pagination) reste pleinement fonctionnelle sans JavaScript grâce à des requêtes GET accessibles. Sur mobile, les filtres — y compris le sélecteur « Note minimale » — se replient dans un panneau masquable pour libérer l'écran tout en conservant l'accessibilité sans JavaScript.
 * `[jlg_score_insights]` - Tableau de bord statistique mettant en avant moyenne, médiane, histogramme et plateformes dominantes sur une période donnée, avec badges signalant tout écart supérieur à ±1,5 point entre rédaction et lecteurs. Attributs : `time_range` (`all`, `last_30_days`, `last_90_days`, `last_365_days`), `platform` (slug défini dans Notation → Plateformes), `platform_limit` (1 à 10 plateformes) et `title` pour personnaliser l'entête.
+* `[jlg_platform_breakdown]` - Comparatif plateformes affichant performance/mode, recommandation éditoriale et badge « Meilleure expérience ». Attributs : `post_id` (ID du test ciblé), `title` (titre optionnel), `show_best_badge` (`yes`/`no`), `highlight_badge_label` (libellé du badge) et `empty_message` pour définir le texte affiché lorsqu’aucune donnée n’est disponible.
 
 == Utilisation dans les widgets et blocs ==
 
@@ -177,6 +185,7 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 * **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
 * **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
 * **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
+* **Bloc Gutenberg « Comparatif plateformes »** : développer un bloc `notation-jlg/platform-breakdown` qui présélectionne l’article courant dans l’éditeur, expose titre/message vide/badge en attributs et reflète fidèlement le rendu front, y compris dans les aperçus REST.
 
 == Audit de la documentation – 14 octobre 2025 ==
 

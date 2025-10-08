@@ -1,6 +1,8 @@
 # Feuille de route produit – Octobre 2025
 
 > _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](../documentation-audit-2025-10-14.md)._
+>
+> _Mise à jour 2025-10-16 : première itération livrée du comparatif plateformes via le shortcode `[jlg_platform_breakdown]` et la nouvelle grille de metabox._
 
 Ce document décline les opportunités identifiées dans le benchmark du 5 octobre 2025 et propose une trajectoire d'exécution en trois vagues. Chaque lot inclut portée, jalons, impacts techniques et critères de succès.
 
@@ -21,6 +23,7 @@ Ce document décline les opportunités identifiées dans le benchmark du 5 octob
 | Sous-bloc Verdict | Encapsule résumé, verdict, CTA vers review complète, statut et date de mise à jour. | Hiérarchie info, crédibilité | 6 j | Inclure toggle Gutenberg + attributs shortcode. |
 | Mode « Review en cours » automatisé | Cron qui vérifie les métadonnées `last_patch_date` et bascule statut → Final après X jours. (✅ livré via `jlg_review_status_auto_finalize` + hook `jlg_review_status_transition`) | Fraîcheur du contenu | 3 j | Ajouter tests unitaires + hook `jlg_review_status_transition`. |
 | Comparateur plateformes | Shortcode/bloc `jlg_platform_breakdown` avec colonnes performances, recommandations. | Guidance d'achat | 8 j | Requiert extension metabox plateformes + data structure. |
+| Bloc Gutenberg comparatif | Bloc `notation-jlg/platform-breakdown` consommant l'API interne, prévisualisation REST et options badge/titre/message vide alignées sur le shortcode. | Parité éditeur/front | 6 j | Cf. [`docs/platform-breakdown-block-plan.md`](../platform-breakdown-block-plan.md) pour le backlog détaillé (helper JSON, endpoint, sanitisation, QA). |
 
 ## Vague 2 – Monétisation & insights (S+8 à S+16)
 | Deliverable | Description | Estimation | Dépendances | KPI |
@@ -43,5 +46,7 @@ Ce document décline les opportunités identifiées dans le benchmark du 5 octob
 
 ## Prochaines étapes
 - Valider la feuille de route avec 2 rédactions partenaires et prioriser la Vague 1 pour la release 5.1.
-- Évaluer l'effort design pour les nouveaux modules (maquettes Figma, guidelines). 
+- Évaluer l'effort design pour les nouveaux modules (maquettes Figma, guidelines).
 - Planifier un benchmark de suivi en avril 2026 pour mesurer les gains face aux concurrents.
+- Durcir la sanitisation post-filtre du comparatif plateformes (`wp_kses_post` sur performance/commentaire) afin de sécuriser les intégrations partenaires.
+- Alimenter le bloc Gutenberg via le helper JSON documenté dans `platform-breakdown-block-plan.md` et livrer les tests (PHPUnit + responsive) décrits dans le plan.

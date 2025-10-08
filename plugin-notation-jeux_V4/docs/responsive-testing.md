@@ -41,3 +41,12 @@ Pour vérifier le rendu responsive de la carte verdict du shortcode/bloc `[jlg_b
 2. Affichez la page contenant le bloc tout-en-un sur un écran ≤ 768 px. Vérifiez que le statut reste lisible et que la date de mise à jour s’affiche sous forme de phrase.
 3. Réduisez à 320 px : le titre « Verdict de la rédaction » et le bouton doivent passer sur deux lignes sans chevauchement. Le focus clavier sur le bouton doit être visible.
 4. Agrandissez la fenêtre (>1024 px) et contrôlez que le résumé conserve une largeur raisonnable, que le statut ne se déforme pas et que le CTA aligne correctement son ombre portée.
+
+## Comparatif plateformes `[jlg_platform_breakdown]`
+
+1. Préparez un article avec au moins trois entrées plateformes, dont une marquée « Meilleure expérience » et une recommandation contenant un long texte (>180 caractères).
+2. Affichez le shortcode/bloc sur un écran ≤ 480 px : chaque ligne doit se transformer en carte verticale avec les libellés `data-label` visibles au-dessus des valeurs et sans débordement horizontal. Le badge doit rester centré et lisible.
+3. Passez en mode tablette (768 px – 1024 px) : vérifier que les colonnes se réorganisent en grille deux colonnes, que la colonne commentaire se limite à trois lignes max et que les ellipses sont présentes si le texte est tronqué.
+4. Agrandissez à ≥ 1280 px : la table doit afficher toutes les colonnes sur une ligne, conserver une largeur maximale cohérente et aligner les badges sur la colonne plateforme.
+5. Activez `prefers-reduced-motion` (outil dev) et confirmez qu’aucune transition superflue ne persiste lors du survol des lignes.
+6. Injectez un filtre `jlg_platform_breakdown_entries` renvoyant du HTML (balise `<strong>` autorisée, `<script>` bloqué) et validez que seul le HTML autorisé est rendu.
