@@ -55,4 +55,18 @@ final class LatestReviewsWidgetTest extends TestCase
         $this->assertFalse($args['update_post_term_cache']);
         $this->assertFalse($args['lazy_load_term_meta']);
     }
+
+    public function test_build_query_args_prioritises_most_recent_rated_posts(): void
+    {
+        $widget = new LatestReviewsWidget();
+
+        $method = new \ReflectionMethod($widget, 'build_query_args');
+        $method->setAccessible(true);
+
+        $post_ids = range(1, 30);
+
+        $args = $method->invoke($widget, 5, $post_ids, ['post']);
+
+        $this->assertSame(range(16, 30), $args['post__in']);
+    }
 }
