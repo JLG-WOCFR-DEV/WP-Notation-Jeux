@@ -63,6 +63,33 @@ class HelpersReviewStatusAutomationTest extends TestCase
         $this->assertGreaterThan(time(), $event['timestamp']);
     }
 
+    public function test_activate_review_status_automation_forces_scheduling(): void
+    {
+        $this->enableAutomation();
+
+        $scheduled = \JLG\Notation\Helpers::activate_review_status_automation();
+
+        $this->assertTrue($scheduled);
+        $this->assertNotEmpty($GLOBALS['jlg_test_scheduled_events']);
+
+        $event = $GLOBALS['jlg_test_scheduled_events'][0];
+
+        $this->assertSame(\JLG\Notation\Helpers::REVIEW_STATUS_CRON_HOOK, $event['hook']);
+    }
+
+    public function test_deactivate_review_status_automation_clears_scheduled_hook(): void
+    {
+        $this->enableAutomation();
+        \JLG\Notation\Helpers::activate_review_status_automation();
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_scheduled_events']);
+
+        $cleared = \JLG\Notation\Helpers::deactivate_review_status_automation();
+
+        $this->assertTrue($cleared);
+        $this->assertEmpty($GLOBALS['jlg_test_scheduled_events']);
+    }
+
     public function test_run_review_status_automation_updates_posts_and_triggers_action(): void
     {
         $this->enableAutomation(['allowed_post_types' => ['post']]);
