@@ -1,5 +1,7 @@
 # Benchmark produit – 6 octobre 2025
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Périmètre et sources
 - **Plugin étudié :** Notation JLG v5.0 (fonctionnalités décrites dans la documentation actuelle).
 - **Références pro :** IGN (template Review 2024), GameSpot (Review hub 2024), OpenCritic (aggregator dashboards 2024).

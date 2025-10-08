@@ -1,5 +1,7 @@
 # Benchmark 2024-05-19 — Badge éditorial et comparaison des notes
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## IGN.com
 - Affiche un badge « Editor's Choice » sur les tests dépassant un certain seuil (9/10 et plus).
 - Le badge est placé à proximité immédiate de la note globale et reste lisible sur desktop comme mobile.

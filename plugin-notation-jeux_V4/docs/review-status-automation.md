@@ -1,5 +1,7 @@
 # Automatisation du statut de review
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Objectif
 La feuille de route d’octobre 2025 introduit un mode « Review en cours » automatisé. Ce document décrit le fonctionnement du cron `jlg_review_status_auto_finalize`, la configuration côté rédaction et les points d’extension disponibles pour les développeurs.
 

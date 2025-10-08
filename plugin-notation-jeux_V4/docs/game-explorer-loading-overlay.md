@@ -1,5 +1,7 @@
 # Game Explorer – Surcouche de chargement
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Contexte
 - La grille met désormais à disposition l'attribut `data-loading-text` côté PHP afin que le message "Chargement…" reste disponible même sans initialisation JavaScript.
 - Le script `game-explorer.js` synchronise ce texte avec la localisation front (`strings.loading`) et maintient `aria-busy` à jour pour les lecteurs d'écran. Un fallback commun (`Chargement…`) est partagé entre PHP et JavaScript via `DEFAULT_LOADING_TEXT` pour éviter les désynchronisations.

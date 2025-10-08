@@ -1,5 +1,7 @@
 # Revue de code – 12 octobre 2025
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Objectifs
 - Cartographier les zones de complexité qui freinent les évolutions (helpers vidéo, front controller, sanitisation des réglages).
 - Identifier les opportunités de refactoring structurants et de nettoyage des dépendances.

@@ -1,5 +1,7 @@
 # Presets graphiques modulaires – 11 octobre 2025
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Contexte & objectifs
 Le plugin Notation JLG doit proposer des styles clés en main alignés avec des bibliothèques UI modernes afin de réduire le temps d'intégration côté rédactions. Les presets ci-dessous s'inspirent de Headless UI, Shadcn UI, Radix UI, Bootstrap, Semantic UI et d'approches motion type Anime.js. Chaque preset décrit :
 

@@ -1,5 +1,7 @@
 # Benchmark – 2025-10-07
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Références analysées
 - **IGN** – Portails tests & fiches jeux : filtrage avancé (plateformes, genres, notes), timelines d'actualités, intégration vidéo systématique.
 - **GameSpot** – Hub tests avec résumé en tuiles, différenciation claire pro / lecteurs, filtres dynamiques et cartes plates-formes.

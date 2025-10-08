@@ -1,5 +1,7 @@
 # Benchmark du 2025-10-09 – Synthèse Score Insights
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 | Solution | Comportement observé | Impact utilisateur | Opportunité d'amélioration |
 | --- | --- | --- | --- |
 | **IGN – Guides & Reviews** | Les tableaux de review mettent en avant une mini-synthèse « Trending Score » affichant l'évolution de la moyenne sur 30 jours avec une pastille couleur (vert/rouge). | La rédaction identifie immédiatement si la perception monte ou baisse et peut ajuster la ligne éditoriale. | Ajouter un indicateur de tendance chiffré et visuel sur notre module Score Insights pour suivre la dynamique récente. |

@@ -169,6 +169,20 @@ Oui, vous pouvez activer/désactiver individuellement : notation utilisateurs, b
 
 Créez un compte gratuit sur [rawg.io/apidocs](https://rawg.io/apidocs) et copiez votre clé dans les réglages du plugin.
 
+## Pistes d’amélioration proposées
+
+- **Assistant de configuration guidée** : mettre en place, dès l’activation, un onboarding en quatre étapes (types de contenus autorisés, modules à activer, import d’exemples, connexion RAWG) pour accélérer la prise en main et réduire les erreurs constatées lors des tests utilisateurs.
+- **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test avec des pondérations par catégorie, des annotations individuelles et un historique, puis générer automatiquement le verdict éditorial publié.
+- **Timeline de mises à jour du jeu** : ajouter un module optionnel à la fiche technique recensant les patchs majeurs et leurs impacts sur la note (delta, points forts/faibles révisés), synchronisable avec RAWG ou saisi manuellement pour suivre la vie du jeu.
+- **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
+- **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
+- **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
+
+## Audit de la documentation – 14 octobre 2025
+
+- **Synthèse disponible** : [`docs/documentation-audit-2025-10-14.md`](docs/documentation-audit-2025-10-14.md) recense les priorités produit (verdict enrichi, comparateur plateformes `jlg_platform_breakdown`, module deals & disponibilités, extension Score Insights) ainsi que les chantiers de refactoring (architecture vidéo, segmentation du `Frontend`, schéma de sanitisation).
+- **Actions transverses** : maintenir la parité README/README.txt, enrichir les checklists QA (responsive, blocs Gutenberg) et planifier un audit T1 2026 pour confronter la roadmap aux benchmarks IGN/GameSpot/OpenCritic.
+
 ## Screenshots
 
 1. Bloc de notation principal avec barres de progression

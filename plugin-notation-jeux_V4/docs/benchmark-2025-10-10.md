@@ -1,5 +1,7 @@
 # Benchmark du 2025-10-10 – Consensus & Confiance des scores
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 | Solution | Comportement observé | Impact utilisateur | Opportunité d'amélioration |
 | --- | --- | --- | --- |
 | **Metacritic – Critic Reviews** | Affiche un label de consensus (« Generally Favorable », « Mixed », etc.) dérivé de l'écart entre les notes des critiques et expose le nombre de critiques pour donner un niveau de confiance. | Les rédactions comme les lecteurs comprennent en un coup d'œil si le verdict est homogène ou polarisé et peuvent décider s'il faut approfondir les écarts. | Ajouter un indicateur de consensus basé sur la dispersion des scores éditoriaux (écart-type + fourchette) pour donner le même niveau de lecture rapide. |

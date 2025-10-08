@@ -1,5 +1,7 @@
 # Benchmark produit – 2025-10-05
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Contexte
 - **Produit analysé :** Notation JLG v5.0 (shortcodes, blocs Gutenberg, modules Game Explorer & Score Insights, remplissage RAWG, histogramme lecteurs, badge « Coup de cœur », thèmes clair/sombre, validation PEGI/date, template overrides).
 - **Objectif :** comparer l’expérience offerte avec trois références du marché (IGN, GameSpot, OpenCritic) afin d’identifier les écarts et priorités d’évolution.

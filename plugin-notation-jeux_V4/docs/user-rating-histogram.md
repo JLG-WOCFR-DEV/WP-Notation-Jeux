@@ -1,5 +1,7 @@
 # Histogramme de la notation utilisateurs
 
+> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+
 ## Objectifs
 - Exposer la répartition 1→5 étoiles directement sous les étoiles interactives.
 - Annoncer l'évolution des votes via des attributs ARIA (`role="meter"`, `aria-live`, `aria-valuenow`).
