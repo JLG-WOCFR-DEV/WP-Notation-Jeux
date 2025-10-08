@@ -159,6 +159,35 @@ class AdminPlatformsTest extends TestCase
         $this->assertSame(['Steam Deck'], $sanitized);
     }
 
+    public function test_multi_select_walker_handles_array_of_selected_terms(): void
+    {
+        $walker = new \JLG\Notation\Admin\MultiSelectCategoryDropdownWalker();
+
+        $term = (object) [
+            'term_id' => 42,
+            'name'    => 'Action',
+            'count'   => 7,
+        ];
+
+        $output = '';
+
+        $walker->start_el(
+            $output,
+            $term,
+            0,
+            [
+                'selected'    => [99, 42],
+                'show_count'  => true,
+                'value_field' => 'term_id',
+            ]
+        );
+
+        $this->assertStringContainsString("value=\"42\"", $output);
+        $this->assertStringContainsString("selected=\"selected\"", $output);
+        $this->assertStringContainsString('Action', $output);
+        $this->assertStringContainsString('(7)', $output);
+    }
+
     public function test_sanitize_platforms_filters_obsolete_defaults_when_manager_unavailable(): void
     {
         $instanceProperty = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'instance');

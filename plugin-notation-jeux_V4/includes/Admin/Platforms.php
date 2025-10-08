@@ -963,6 +963,7 @@ endforeach;
                                         'value_field'      => 'term_id',
                                         'class'            => 'widefat',
                                         'orderby'          => 'name',
+                                        'walker'           => new MultiSelectCategoryDropdownWalker(),
                                     )
                                 );
                                 ?>
