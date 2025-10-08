@@ -17,7 +17,7 @@ Le template `templates/shortcode-score-insights.php` expose une structure access
 
 Un indicateur de tendance compare désormais la moyenne éditoriale de la période sélectionnée avec la période précédente de même durée. Le composant affiche le delta signé (avec code couleur), un libellé d'orientation (« Tendance en hausse/baisse/stable ») et rappelle combien de tests composaient la période antérieure pour contextualiser la donnée.
 
-Une section « Niveau de consensus » complète cette lecture en calculant l'écart-type des notes éditoriales et la fourchette min/max. Selon les seuils configurables (`jlg_score_insights_consensus_thresholds`), le module affiche un label (« Consensus fort », « Consensus partagé », « Avis divisés »), un message éditorial et des détails (écart-type formaté + amplitude des scores) pour aider la rédaction à prioriser ses revues.
+Une section « Niveau de consensus » complète cette lecture en calculant l'écart-type des notes éditoriales et la fourchette min/max. Selon les seuils configurables (`jlg_score_insights_consensus_thresholds`), le module affiche un label (« Consensus fort », « Consensus partagé », « Avis divisés »), un message éditorial et des détails (écart-type formaté + amplitude des scores) pour aider la rédaction à prioriser ses revues. Le bloc indique également le volume de tests agrégés (« Basé sur N tests publiés » ou « Basé sur 1 test publié ») afin de contextualiser le niveau de confiance, à la manière des bandeaux statistiques d’OpenCritic.
 
 ## Bloc `notation-jlg/score-insights`
 

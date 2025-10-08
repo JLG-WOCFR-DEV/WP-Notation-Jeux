@@ -3203,6 +3203,8 @@ class Helpers {
     private static function build_consensus_summary( array $scores ) {
         $count = count( $scores );
 
+        $sample = self::build_consensus_sample_data( $count );
+
         if ( $count === 0 ) {
             return array(
                 'available'           => false,
@@ -3213,6 +3215,7 @@ class Helpers {
                 'deviation_formatted' => number_format_i18n( 0, 1 ),
                 'deviation_label'     => '',
                 'range'               => array(),
+                'sample'              => $sample,
             );
         }
 
@@ -3250,6 +3253,7 @@ class Helpers {
                         ),
                     )
                 ),
+                'sample'              => $sample,
             );
         }
 
@@ -3310,6 +3314,28 @@ class Helpers {
                 number_format_i18n( $standard_deviation, 1 )
             ),
             'range'               => $range,
+            'sample'              => $sample,
+        );
+    }
+
+    private static function build_consensus_sample_data( $count ) {
+        $count = max( 0, (int) $count );
+
+        if ( $count === 0 ) {
+            return array(
+                'count' => 0,
+                'label' => __( 'Aucun test pris en compte', 'notation-jlg' ),
+            );
+        }
+
+        $label = sprintf(
+            _n( 'Basé sur %d test publié', 'Basé sur %d tests publiés', $count, 'notation-jlg' ),
+            $count
+        );
+
+        return array(
+            'count' => $count,
+            'label' => $label,
         );
     }
 
