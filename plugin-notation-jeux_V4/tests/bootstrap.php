@@ -934,12 +934,15 @@ if (!function_exists('esc_attr__')) {
 if (!function_exists('wp_dropdown_categories')) {
     function wp_dropdown_categories($args = []) {
         $defaults = [
-            'show_option_all' => '',
-            'name'            => 'cat',
-            'id'              => '',
-            'selected'        => 0,
-            'class'           => '',
-            'echo'            => 1,
+            'show_option_all'   => '',
+            'show_option_none'  => '',
+            'option_none_value' => '',
+            'name'              => 'cat',
+            'id'                => '',
+            'selected'          => '',
+            'class'             => '',
+            'multiple'          => false,
+            'echo'              => 1,
         ];
 
         if (!is_array($args)) {
@@ -952,17 +955,25 @@ if (!function_exists('wp_dropdown_categories')) {
             ? ' id="' . esc_attr($parsed['id']) . '"'
             : '';
 
+        $multiple_attr = !empty($parsed['multiple']) ? ' multiple="multiple"' : '';
+
         $options = [];
 
         if ($parsed['show_option_all'] !== '') {
             $options[] = '<option value="">' . esc_html($parsed['show_option_all']) . '</option>';
         }
 
-        $selected_value = (int) $parsed['selected'];
-        $selected_attr  = $selected_value > 0 ? ' selected="selected"' : '';
-        $options[]      = '<option value="' . esc_attr((string) $selected_value) . '"' . $selected_attr . '>' . esc_html((string) $selected_value) . '</option>';
+        if ($parsed['show_option_none'] !== '') {
+            $options[] = '<option value="' . esc_attr((string) $parsed['option_none_value']) . '">' . esc_html($parsed['show_option_none']) . '</option>';
+        }
 
-        $select = '<select name="' . esc_attr($parsed['name']) . '"' . $id_attr . ' class="' . esc_attr($parsed['class']) . '">' . implode('', $options) . '</select>';
+        $selected_attr = ((string) $parsed['selected'] !== '') ? ' selected="selected"' : '';
+        $option_value   = (string) $parsed['selected'];
+        $options[]      = '<option value="' . esc_attr($option_value) . '"' . $selected_attr . '>' . esc_html($option_value) . '</option>';
+
+        $select = '<select name="' . esc_attr($parsed['name']) . '"' . $id_attr . ' class="' . esc_attr($parsed['class']) . '"' . $multiple_attr . '>' . implode('', $options) . '</select>';
+
+        $select = apply_filters('wp_dropdown_cats', $select, $parsed);
 
         if (!empty($parsed['echo'])) {
             echo $select;
@@ -1518,6 +1529,30 @@ if (!function_exists('wp_hash')) {
 if (!function_exists('wp_create_nonce')) {
     function wp_create_nonce($action = -1) {
         return 'nonce-' . (string) $action;
+    }
+}
+
+if (!function_exists('wp_nonce_field')) {
+    function wp_nonce_field($action = -1, $name = '_wpnonce', $referer = true, $echo = true) {
+        $field = '<input type="hidden" name="' . esc_attr($name) . '" value="' . esc_attr(wp_create_nonce($action)) . '" />';
+
+        if ($referer) {
+            $field .= '<input type="hidden" name="_wp_http_referer" value="" />';
+        }
+
+        if ($echo) {
+            echo $field;
+        }
+
+        return $field;
+    }
+}
+
+if (!function_exists('get_terms')) {
+    function get_terms($args = []) {
+        unset($args);
+
+        return [];
     }
 }
 

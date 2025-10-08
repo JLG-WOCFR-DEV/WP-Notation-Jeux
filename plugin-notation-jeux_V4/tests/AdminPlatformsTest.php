@@ -199,4 +199,63 @@ class AdminPlatformsTest extends TestCase
 
         $this->assertSame(['Amiga 600'], $sanitized);
     }
+
+    public function test_render_platforms_page_handles_multiple_tag_selection_without_warnings(): void
+    {
+        $admin = new \JLG\Notation\Admin\Platforms();
+
+        update_option('jlg_platform_tag_map', [
+            'pc' => [12, '34'],
+        ]);
+
+        $captured_args = null;
+        $filter = static function ($output, $parsed_args) use (&$captured_args) {
+            $captured_args = $parsed_args;
+
+            return sprintf(
+                '<select name="%1$s" id="%2$s" class="%3$s" multiple="multiple">'
+                . '<option value="12">Action</option>'
+                . '<option value="34">RPG</option>'
+                . '<option value="56">Sport</option>'
+                . '</select>',
+                esc_attr($parsed_args['name'] ?? ''),
+                esc_attr($parsed_args['id'] ?? ''),
+                esc_attr($parsed_args['class'] ?? '')
+            );
+        };
+
+        add_filter('wp_dropdown_cats', $filter, 10, 2);
+
+        $previous_handler = set_error_handler(static function ($errno, $errstr) {
+            if ($errno === E_WARNING) {
+                throw new \RuntimeException($errstr);
+            }
+
+            return false;
+        });
+
+        $initial_level = ob_get_level();
+
+        try {
+            ob_start();
+            $admin->render_platforms_page();
+            $output = ob_get_clean();
+        } catch (\Throwable $exception) {
+            while (ob_get_level() > $initial_level) {
+                ob_end_clean();
+            }
+
+            throw $exception;
+        } finally {
+            restore_error_handler();
+            remove_filter('wp_dropdown_cats', $filter, 10);
+        }
+
+        $this->assertIsArray($captured_args, 'wp_dropdown_categories() arguments should be captured.');
+        $this->assertSame('', $captured_args['selected'] ?? null, 'The dropdown helper should not pass arrays to selected.');
+
+        $this->assertMatchesRegularExpression('/<option value="12"[^>]*selected="selected"/i', $output);
+        $this->assertMatchesRegularExpression('/<option value="34"[^>]*selected="selected"/i', $output);
+        $this->assertDoesNotMatchRegularExpression('/<option value="56"[^>]*selected="selected"/i', $output);
+    }
 }
