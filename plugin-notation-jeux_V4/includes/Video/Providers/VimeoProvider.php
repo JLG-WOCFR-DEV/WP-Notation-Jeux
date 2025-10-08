@@ -2,6 +2,10 @@
 
 namespace JLG\Notation\Video\Providers;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 class VimeoProvider implements VideoEmbedProviderInterface {
 
     public function get_slug(): string {
