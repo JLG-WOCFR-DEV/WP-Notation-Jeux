@@ -653,6 +653,20 @@ class Helpers {
         return (bool) $scheduled;
     }
 
+    public static function activate_review_status_automation() {
+        return self::maybe_schedule_review_status_automation( true );
+    }
+
+    public static function deactivate_review_status_automation() {
+        if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+            return false;
+        }
+
+        $cleared = wp_clear_scheduled_hook( self::REVIEW_STATUS_CRON_HOOK );
+
+        return (bool) $cleared;
+    }
+
     public static function run_review_status_automation() {
         $options = self::get_plugin_options();
 
