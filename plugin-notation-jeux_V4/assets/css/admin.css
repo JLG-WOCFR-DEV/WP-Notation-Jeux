@@ -130,44 +130,56 @@ body:not(.is-dark-theme) .jlg-admin-card a:focus {
     color: var(--wp-admin-page-content-meta, #50575e);
 }
 
-.jlg-platform-ranking {
-    list-style: decimal;
-    list-style-position: outside;
-    margin: 0;
-    padding-left: 1.5rem;
-    display: grid;
-    gap: 6px;
+.jlg-platform-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
 }
 
-.jlg-platform-ranking__item {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 2px;
-    column-gap: 0;
-    align-items: center;
-}
-
-@media (min-width: 480px) {
-    .jlg-platform-ranking__item {
-        grid-template-columns: minmax(0, 1fr) minmax(4rem, max-content) max-content;
-        column-gap: 16px;
-    }
-}
-
-.jlg-platform-ranking__name {
+.jlg-platform-ranking-table thead th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--wp-admin-page-content-meta, #50575e);
     font-weight: 600;
-    min-width: 0;
+    border-bottom: 1px solid var(--jlg-admin-border-color, #dcdcde);
 }
 
-.jlg-platform-ranking__score {
+.jlg-platform-ranking-table tbody th,
+.jlg-platform-ranking-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(220, 220, 222, 0.6);
+}
+
+.jlg-platform-ranking-table tbody tr:last-child th,
+.jlg-platform-ranking-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.jlg-platform-ranking-table tbody tr:nth-child(odd) {
+    background: var(--jlg-admin-subtle-surface);
+}
+
+.jlg-platform-ranking-table__name {
+    font-weight: 600;
+}
+
+.jlg-platform-ranking-table__score,
+.jlg-platform-ranking-table__score-header {
     font-variant-numeric: tabular-nums;
     text-align: right;
 }
 
-.jlg-platform-ranking__count {
-    color: var(--wp-admin-page-content-meta, #50575e);
+.jlg-platform-ranking-table__count,
+.jlg-platform-ranking-table__count-header {
     text-align: right;
     white-space: nowrap;
+    color: var(--wp-admin-page-content-meta, #50575e);
+}
+
+.jlg-platform-ranking-table__empty {
+    text-align: center;
+    color: var(--wp-admin-page-content-meta, #50575e);
+    font-style: italic;
 }
 
 @media (min-width: 960px) {

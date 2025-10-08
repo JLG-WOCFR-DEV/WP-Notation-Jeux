@@ -79,30 +79,40 @@ $column_count = count($columns) + 2;
             </article>
             <article class="jlg-admin-insight-card" aria-labelledby="jlg-insight-platform-title">
                 <h4 id="jlg-insight-platform-title"><?php echo esc_html__('Classement par plateforme', 'notation-jlg'); ?></h4>
-                <ol class="jlg-platform-ranking" aria-label="<?php echo esc_attr__('Classement des plateformes les mieux notées', 'notation-jlg'); ?>">
-                    <?php
-                    $rank_slice = array_slice($platform_rankings, 0, 5);
-                    foreach ($rank_slice as $platform) :
-                        $platform_label = $platform['label'] ?? '';
-                        $platform_avg = $platform['average_formatted'] ?? null;
-                        $platform_count = isset($platform['count']) ? (int) $platform['count'] : 0;
-                        $count_label = sprintf(
-                            esc_html(_n('%d jeu noté', '%d jeux notés', $platform_count, 'notation-jlg')),
-                            $platform_count
-                        );
-                        ?>
-                        <li class="jlg-platform-ranking__item">
-                            <span class="jlg-platform-ranking__name"><?php echo esc_html($platform_label); ?></span>
-                            <span class="jlg-platform-ranking__score"><?php echo $platform_avg !== null ? esc_html($platform_avg) : esc_html__('N/A', 'notation-jlg'); ?></span>
-                            <span class="jlg-platform-ranking__count"><?php echo esc_html($count_label); ?></span>
-                        </li>
-                    <?php endforeach; ?>
-                    <?php if (empty($rank_slice)) : ?>
-                        <li class="jlg-platform-ranking__item">
-                            <span class="jlg-platform-ranking__name"><?php esc_html_e('Pas encore de plateforme renseignée.', 'notation-jlg'); ?></span>
-                        </li>
-                    <?php endif; ?>
-                </ol>
+                <?php $rank_slice = array_slice($platform_rankings, 0, 5); ?>
+                <table class="jlg-platform-ranking-table">
+                    <caption class="screen-reader-text"><?php echo esc_html__('Classement des plateformes les mieux notées', 'notation-jlg'); ?></caption>
+                    <thead>
+                        <tr>
+                            <th scope="col"><?php echo esc_html__('Plateforme', 'notation-jlg'); ?></th>
+                            <th scope="col" class="jlg-platform-ranking-table__score-header"><?php echo esc_html__('Note moyenne', 'notation-jlg'); ?></th>
+                            <th scope="col" class="jlg-platform-ranking-table__count-header"><?php echo esc_html(_n('Jeu noté', 'Jeux notés', 2, 'notation-jlg')); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($rank_slice)) : ?>
+                            <?php foreach ($rank_slice as $platform) :
+                                $platform_label = $platform['label'] ?? '';
+                                $platform_avg = $platform['average_formatted'] ?? null;
+                                $platform_count = isset($platform['count']) ? (int) $platform['count'] : 0;
+                                $count_label = sprintf(
+                                    esc_html(_n('%d jeu noté', '%d jeux notés', $platform_count, 'notation-jlg')),
+                                    $platform_count
+                                );
+                                ?>
+                                <tr>
+                                    <th scope="row" class="jlg-platform-ranking-table__name"><?php echo esc_html($platform_label); ?></th>
+                                    <td class="jlg-platform-ranking-table__score"><?php echo $platform_avg !== null ? esc_html($platform_avg) : esc_html__('N/A', 'notation-jlg'); ?></td>
+                                    <td class="jlg-platform-ranking-table__count"><?php echo esc_html($count_label); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr>
+                                <td colspan="3" class="jlg-platform-ranking-table__empty"><?php esc_html_e('Pas encore de plateforme renseignée.', 'notation-jlg'); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </article>
         </div>
     </section>
