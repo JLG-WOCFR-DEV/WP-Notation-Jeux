@@ -421,7 +421,12 @@ final class JLG_Plugin_De_Notation_Main {
 
     private function finalize_migration() {
         $this->store_migration_queue( array() );
-        delete_option( 'jlg_migration_v5_scan_state' );
+        $this->store_migration_scan_state(
+            array(
+                'last_post_id' => 0,
+                'complete'     => true,
+            )
+        );
         update_option( 'jlg_migration_v5_completed', current_time( 'mysql' ), false );
     }
 

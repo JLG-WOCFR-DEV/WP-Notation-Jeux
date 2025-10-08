@@ -164,7 +164,15 @@ class MigrationScheduleTest extends TestCase
         $plugin->process_migration_batch();
 
         $this->assertSame([], get_option('jlg_migration_v5_queue', []));
-        $this->assertFalse(get_option('jlg_migration_v5_scan_state', false));
+        $scan_state = get_option('jlg_migration_v5_scan_state', []);
+        $this->assertIsArray($scan_state);
+        $this->assertSame(
+            [
+                'last_post_id' => 0,
+                'complete' => true,
+            ],
+            $scan_state
+        );
 
         $completed = get_option('jlg_migration_v5_completed', '');
         $this->assertIsString($completed);
