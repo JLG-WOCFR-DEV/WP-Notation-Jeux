@@ -91,63 +91,10 @@ class Helpers {
         }
 
         $provider_label = Validator::get_video_provider_label( $provider );
-        $iframe_src     = '';
         $fallback       = self::get_video_fallback_message( $provider_label );
+        $iframe_src     = self::generate_video_iframe_src( $provider, $sanitized_url );
 
-        if ( $provider === 'youtube' ) {
-            $video_id = self::extract_youtube_video_id( $sanitized_url );
-
-            if ( $video_id === '' ) {
-                return self::get_empty_video_embed_data( $fallback );
-            }
-
-            $iframe_src = add_query_arg(
-                array(
-                    'rel'            => 0,
-                    'modestbranding' => 1,
-                    'enablejsapi'    => 1,
-                ),
-                'https://www.youtube-nocookie.com/embed/' . rawurlencode( $video_id )
-            );
-        } elseif ( $provider === 'vimeo' ) {
-            $video_id = self::extract_vimeo_video_id( $sanitized_url );
-
-            if ( $video_id === '' ) {
-                return self::get_empty_video_embed_data( $fallback );
-            }
-
-            $iframe_src = add_query_arg(
-                array(
-                    'dnt' => 1,
-                ),
-                'https://player.vimeo.com/video/' . rawurlencode( $video_id )
-            );
-        } elseif ( $provider === 'twitch' ) {
-            $twitch_params = self::extract_twitch_embed_parameters( $sanitized_url );
-
-            if ( empty( $twitch_params ) ) {
-                return self::get_empty_video_embed_data( $fallback );
-            }
-
-            $iframe_src = self::build_twitch_iframe_src( $twitch_params );
-        } elseif ( $provider === 'dailymotion' ) {
-            $video_id = self::extract_dailymotion_video_id( $sanitized_url );
-
-            if ( $video_id === '' ) {
-                return self::get_empty_video_embed_data( $fallback );
-            }
-
-            $iframe_src = add_query_arg(
-                array(
-                    'autoplay' => '0',
-                ),
-                'https://www.dailymotion.com/embed/video/' . rawurlencode( $video_id )
-            );
-        } else {
-            return self::get_empty_video_embed_data( $fallback );
-        }
-
-        if ( ! is_string( $iframe_src ) || $iframe_src === '' ) {
+        if ( $iframe_src === '' ) {
             return self::get_empty_video_embed_data( $fallback );
         }
 
@@ -170,6 +117,66 @@ class Helpers {
             'fallback_message'       => '',
             'original_url'           => esc_url( $sanitized_url ),
         );
+    }
+
+    private static function generate_video_iframe_src( string $provider, string $sanitized_url ) {
+        switch ( $provider ) {
+            case 'youtube':
+                $video_id = self::extract_youtube_video_id( $sanitized_url );
+
+                if ( $video_id === '' ) {
+                    return '';
+                }
+
+                return add_query_arg(
+                    array(
+                        'rel'            => 0,
+                        'modestbranding' => 1,
+                        'enablejsapi'    => 1,
+                    ),
+                    'https://www.youtube-nocookie.com/embed/' . rawurlencode( $video_id )
+                );
+
+            case 'vimeo':
+                $video_id = self::extract_vimeo_video_id( $sanitized_url );
+
+                if ( $video_id === '' ) {
+                    return '';
+                }
+
+                return add_query_arg(
+                    array(
+                        'dnt' => 1,
+                    ),
+                    'https://player.vimeo.com/video/' . rawurlencode( $video_id )
+                );
+
+            case 'twitch':
+                $twitch_params = self::extract_twitch_embed_parameters( $sanitized_url );
+
+                if ( empty( $twitch_params ) ) {
+                    return '';
+                }
+
+                return self::build_twitch_iframe_src( $twitch_params );
+
+            case 'dailymotion':
+                $video_id = self::extract_dailymotion_video_id( $sanitized_url );
+
+                if ( $video_id === '' ) {
+                    return '';
+                }
+
+                return add_query_arg(
+                    array(
+                        'autoplay' => '0',
+                    ),
+                    'https://www.dailymotion.com/embed/video/' . rawurlencode( $video_id )
+                );
+
+            default:
+                return '';
+        }
     }
 
     private static function get_video_fallback_message( $provider_label = '' ) {
