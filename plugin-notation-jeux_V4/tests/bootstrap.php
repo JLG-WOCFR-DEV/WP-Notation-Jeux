@@ -931,6 +931,79 @@ if (!function_exists('esc_attr__')) {
     }
 }
 
+if (!class_exists('Walker')) {
+    /**
+     * Minimal Walker base class emulating the WordPress structure for tests.
+     */
+    class Walker
+    {
+        public $tree_type = '';
+        public $db_fields = [];
+
+        public function start_el(&$output, $data_object, $depth = 0, $args = [], $current_object_id = 0)
+        {
+            unset($output, $data_object, $depth, $args, $current_object_id);
+        }
+
+        public function end_el(&$output, $data_object, $depth = 0, $args = [])
+        {
+            unset($output, $data_object, $depth, $args);
+        }
+
+        public function start_lvl(&$output, $depth = 0, $args = [])
+        {
+            unset($output, $depth, $args);
+        }
+
+        public function end_lvl(&$output, $depth = 0, $args = [])
+        {
+            unset($output, $depth, $args);
+        }
+    }
+}
+
+if (!class_exists('Walker_CategoryDropdown')) {
+    /**
+     * Simplified Walker_CategoryDropdown implementation for unit tests.
+     */
+    class Walker_CategoryDropdown extends Walker
+    {
+        public $tree_type = 'category';
+
+        public $db_fields = [
+            'parent' => 'parent',
+            'id'     => 'term_id',
+        ];
+
+        public function start_el(&$output, $data_object, $depth = 0, $args = [], $current_object_id = 0)
+        {
+            unset($current_object_id);
+
+            $value_field = isset($args['value_field'], $data_object->{$args['value_field']})
+                ? $args['value_field']
+                : 'term_id';
+
+            $value = (string) ($data_object->{$value_field} ?? '');
+
+            $output .= "\t<option class=\"level-$depth\" value=\"" . esc_attr($value) . '"';
+
+            if ((string) ($args['selected'] ?? '') === $value) {
+                $output .= ' selected="selected"';
+            }
+
+            $output .= '>';
+            $output .= apply_filters('list_cats', $data_object->name ?? '', $data_object);
+
+            if (!empty($args['show_count'])) {
+                $count = isset($data_object->count) ? (int) $data_object->count : 0;
+                $output .= '&nbsp;&nbsp;(' . number_format_i18n($count) . ')';
+            }
+
+            $output .= "</option>\n";
+        }
+    }
+}
+
 if (!function_exists('wp_dropdown_categories')) {
     function wp_dropdown_categories($args = []) {
         $defaults = [
