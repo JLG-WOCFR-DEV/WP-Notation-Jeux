@@ -28,6 +28,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                 'publisher' => true,
                 'availability' => false,
                 'year' => false,
+                'score' => false,
                 'search' => true,
             ],
             'current_filters' => [
@@ -38,6 +39,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                 'publisher' => 'publisher-beta',
                 'availability' => '',
                 'year' => '',
+                'score' => '',
                 'search' => '',
             ],
             'developers_list' => [
@@ -68,6 +70,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                     'editeur' => '',
                     'annee' => '',
                     'recherche' => '',
+                    'note_min' => '',
                 ],
                 'state' => [
                     'orderby' => 'date',
@@ -79,9 +82,21 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                     'publisher' => 'publisher-beta',
                     'availability' => '',
                     'year' => '',
+                    'score' => '',
                     'search' => '',
                     'paged' => 1,
                 ],
+                'meta' => [
+                    'scores' => [
+                        'max' => 10,
+                        'precision' => 1,
+                    ],
+                ],
+            ],
+            'scores_list' => [],
+            'scores_meta' => [
+                'max' => 10,
+                'precision' => 1,
             ],
         ]);
 
@@ -117,6 +132,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                 'publisher' => false,
                 'availability' => false,
                 'year' => true,
+                'score' => false,
                 'search' => true,
             ],
             'current_filters' => [
@@ -127,6 +143,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                 'publisher' => '',
                 'availability' => '',
                 'year' => '2023',
+                'score' => '',
                 'search' => '',
             ],
             'years_list' => [
@@ -158,6 +175,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                     'editeur' => '',
                     'annee' => '2023',
                     'recherche' => '',
+                    'note_min' => '',
                 ],
                 'state' => [
                     'orderby' => 'date',
@@ -169,6 +187,7 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                     'publisher' => '',
                     'availability' => '',
                     'year' => '2023',
+                    'score' => '',
                     'search' => '',
                     'paged' => 1,
                 ],
@@ -178,7 +197,16 @@ class ShortcodeGameExplorerExtendedFiltersTest extends TestCase
                         'max' => 2024,
                         'buckets' => [2015 => 2, 2023 => 5],
                     ],
+                    'scores' => [
+                        'max' => 10,
+                        'precision' => 1,
+                    ],
                 ],
+            ],
+            'scores_list' => [],
+            'scores_meta' => [
+                'max' => 10,
+                'precision' => 1,
             ],
         ]);
 

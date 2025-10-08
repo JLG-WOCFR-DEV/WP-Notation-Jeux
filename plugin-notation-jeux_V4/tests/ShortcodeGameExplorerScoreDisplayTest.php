@@ -99,9 +99,16 @@ class ShortcodeGameExplorerScoreDisplayTest extends TestCase
                     'category' => '',
                     'platform' => '',
                     'availability' => '',
+                    'score' => '',
                     'search' => '',
                     'paged' => 1,
                     'total_items' => 1,
+                ],
+                'meta' => [
+                    'scores' => [
+                        'max' => 10,
+                        'precision' => 1,
+                    ],
                 ],
             ],
             'games' => [$game],
@@ -109,12 +116,21 @@ class ShortcodeGameExplorerScoreDisplayTest extends TestCase
                 'current' => 1,
                 'total' => 1,
             ],
-            'filters_enabled' => [],
-            'current_filters' => [],
+            'filters_enabled' => [
+                'score' => false,
+            ],
+            'current_filters' => [
+                'score' => '',
+            ],
             'letters' => [],
             'sort_options' => [],
             'categories_list' => [],
             'platforms_list' => [],
+            'scores_list' => [],
+            'scores_meta' => [
+                'max' => 10,
+                'precision' => 1,
+            ],
             'availability_options' => [],
             'total_items' => 1,
         ]);

@@ -18,6 +18,8 @@ $categories_list      = isset( $categories_list ) && is_array( $categories_list 
 $developers_list      = isset( $developers_list ) && is_array( $developers_list ) ? $developers_list : array();
 $publishers_list      = isset( $publishers_list ) && is_array( $publishers_list ) ? $publishers_list : array();
 $platforms_list       = isset( $platforms_list ) && is_array( $platforms_list ) ? $platforms_list : array();
+$scores_list          = isset( $scores_list ) && is_array( $scores_list ) ? $scores_list : array();
+$scores_meta          = isset( $scores_meta ) && is_array( $scores_meta ) ? $scores_meta : array();
 $years_list           = isset( $years_list ) && is_array( $years_list ) ? $years_list : array();
 $years_meta           = isset( $years_meta ) && is_array( $years_meta ) ? $years_meta : array();
 $availability_options = is_array( $availability_options ) ? $availability_options : array();
@@ -41,8 +43,9 @@ $has_developer_filter    = ! empty( $filters_enabled['developer'] ) && ! empty( 
 $has_publisher_filter    = ! empty( $filters_enabled['publisher'] ) && ! empty( $publishers_list );
 $has_availability_filter = ! empty( $filters_enabled['availability'] );
 $has_year_filter         = ! empty( $filters_enabled['year'] ) && ! empty( $years_list );
+$has_score_filter        = ! empty( $filters_enabled['score'] ) && ! empty( $scores_list );
 $has_search_filter       = ! empty( $filters_enabled['search'] );
-$has_filters             = $has_category_filter || $has_platform_filter || $has_developer_filter || $has_publisher_filter || $has_availability_filter || $has_year_filter || $has_search_filter;
+$has_filters             = $has_category_filter || $has_platform_filter || $has_developer_filter || $has_publisher_filter || $has_availability_filter || $has_year_filter || $has_score_filter || $has_search_filter;
 $letter_active           = isset( $current_filters['letter'] ) ? $current_filters['letter'] : '';
 $category_active         = isset( $current_filters['category'] ) ? $current_filters['category'] : '';
 $platform_active         = isset( $current_filters['platform'] ) ? $current_filters['platform'] : '';
@@ -50,6 +53,7 @@ $developer_active        = isset( $current_filters['developer'] ) ? $current_fil
 $publisher_active        = isset( $current_filters['publisher'] ) ? $current_filters['publisher'] : '';
 $availability_active     = isset( $current_filters['availability'] ) ? $current_filters['availability'] : '';
 $year_active             = isset( $current_filters['year'] ) ? $current_filters['year'] : '';
+$score_active            = isset( $current_filters['score'] ) ? $current_filters['score'] : '';
 $search_active           = isset( $current_filters['search'] ) ? $current_filters['search'] : '';
 $request_keys            = is_array( $request_keys ) ? $request_keys : array();
 $namespaced_keys         = array(
@@ -62,6 +66,7 @@ $namespaced_keys         = array(
     'publisher'    => isset( $request_keys['publisher'] ) ? $request_keys['publisher'] : 'publisher',
     'availability' => isset( $request_keys['availability'] ) ? $request_keys['availability'] : 'availability',
     'year'         => isset( $request_keys['year'] ) ? $request_keys['year'] : 'year',
+    'score'        => isset( $request_keys['score'] ) ? $request_keys['score'] : 'score',
     'search'       => isset( $request_keys['search'] ) ? $request_keys['search'] : 'search',
     'paged'        => isset( $request_keys['paged'] ) ? $request_keys['paged'] : 'paged',
 );
@@ -84,6 +89,7 @@ $filter_values = array(
     'publisher'    => $publisher_active,
     'availability' => $availability_active,
     'year'         => $year_active,
+    'score'        => $score_active,
     'search'       => $search_active,
 );
 
@@ -489,6 +495,56 @@ $reset_url = remove_query_arg( array_values( $namespaced_keys ), '' );
                                 <?php else : ?>
                                     <span class="screen-reader-text" id="<?php echo esc_attr( $container_id ); ?>-year-hint">
                                         <?php esc_html_e( 'Sélectionnez une année pour filtrer les résultats.', 'notation-jlg' ); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ( $has_score_filter ) : ?>
+                            <div class="jlg-ge-score">
+                                <label for="<?php echo esc_attr( $container_id ); ?>-score">
+                                    <?php esc_html_e( 'Filtrer par note minimale', 'notation-jlg' ); ?>
+                                </label>
+                                <select
+                                    id="<?php echo esc_attr( $container_id ); ?>-score"
+                                    name="<?php echo esc_attr( $namespaced_keys['score'] ); ?>"
+                                    data-role="score"
+                                    aria-describedby="<?php echo esc_attr( $container_id ); ?>-score-hint"
+                                >
+                                    <option value="">
+                                        <?php esc_html_e( 'Toutes les notes', 'notation-jlg' ); ?>
+                                    </option>
+                                    <?php foreach ( $scores_list as $score_option ) : ?>
+                                        <?php
+                                        $value = isset( $score_option['value'] ) ? (string) $score_option['value'] : '';
+                                        $label = isset( $score_option['label'] ) ? $score_option['label'] : $value;
+                                        ?>
+                                        <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $score_active, $value ); ?>>
+                                            <?php echo esc_html( $label ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php
+                                $score_max_display = isset( $scores_meta['max'] ) && is_numeric( $scores_meta['max'] ) ? (float) $scores_meta['max'] : null;
+                                $score_precision   = isset( $scores_meta['precision'] ) ? (int) $scores_meta['precision'] : 0;
+                                if ( $score_max_display !== null ) :
+                                    $score_decimals = $score_precision > 0 ? $score_precision : 0;
+                                    if ( $score_decimals > 0 && abs( $score_max_display - round( $score_max_display ) ) < 0.01 ) {
+                                        $score_decimals = 0;
+                                    }
+                                    $score_hint_value = number_format_i18n( $score_max_display, $score_decimals );
+                                    ?>
+                                    <p class="jlg-ge-score__hint" id="<?php echo esc_attr( $container_id ); ?>-score-hint">
+                                        <?php
+                                        printf(
+                                            esc_html__( 'Échelle actuelle : /%s', 'notation-jlg' ),
+                                            $score_hint_value
+                                        );
+                                        ?>
+                                    </p>
+                                <?php else : ?>
+                                    <span class="screen-reader-text" id="<?php echo esc_attr( $container_id ); ?>-score-hint">
+                                        <?php esc_html_e( 'Sélectionnez un minimum pour filtrer les notes.', 'notation-jlg' ); ?>
                                     </span>
                                 <?php endif; ?>
                             </div>

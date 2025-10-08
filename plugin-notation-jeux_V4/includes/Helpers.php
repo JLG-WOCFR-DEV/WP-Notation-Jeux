@@ -23,8 +23,8 @@ class Helpers {
     public const REVIEW_STATUS_LAST_PATCH_META_KEY = '_jlg_last_patch_date';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
-    private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search' );
-    private const GAME_EXPLORER_DEFAULT_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'search' );
+    private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'score', 'search' );
+    private const GAME_EXPLORER_DEFAULT_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'score', 'search' );
     private const PLATFORM_TAG_OPTION                  = 'jlg_platform_tag_map';
     private const LEGACY_CATEGORY_SUFFIXES             = array( 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6' );
 

@@ -510,6 +510,54 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertStringNotContainsString('Beta Strike', $response['html'] ?? '');
     }
 
+    public function test_handle_game_explorer_sort_filters_by_min_score(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the score filter.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for the score filter.', '2023-01-05 11:30:00');
+
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.6,
+            '_jlg_cover_image_url' => 'https://example.com/alpha-score.jpg',
+            '_jlg_date_sortie'     => '2023-02-14',
+            '_jlg_developpeur'     => 'Studio Alpha',
+            '_jlg_editeur'         => 'Publisher A',
+            '_jlg_plateformes'     => ['PC', 'PlayStation 5'],
+        ]);
+
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.4,
+            '_jlg_cover_image_url' => 'https://example.com/beta-score.jpg',
+            '_jlg_date_sortie'     => '2022-11-10',
+            '_jlg_developpeur'     => 'Studio Beta',
+            '_jlg_editeur'         => 'Publisher B',
+            '_jlg_plateformes'     => ['PC'],
+        ]);
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'score-filter',
+            'posts_per_page' => '6',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'score'          => '8',
+            'paged'          => '1',
+        ]);
+
+        $this->assertArrayHasKey('state', $response);
+        $this->assertSame('8', $response['state']['score'] ?? null);
+        $this->assertSame(1, $response['state']['total_items'] ?? 0);
+        $this->assertArrayHasKey('config', $response);
+        $this->assertSame('8', $response['config']['state']['score'] ?? null);
+        $this->assertSame(10, $response['config']['meta']['scores']['max'] ?? null);
+        $this->assertStringContainsString('Alpha Quest', $response['html'] ?? '');
+        $this->assertStringNotContainsString('Beta Strike', $response['html'] ?? '');
+    }
+
     public function test_handle_game_explorer_sort_supports_accent_insensitive_search(): void
     {
         $this->configureOptions();

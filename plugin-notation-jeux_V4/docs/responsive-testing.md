@@ -31,6 +31,7 @@ Pour vérifier l'interaction mobile du Game Explorer (`[jlg_game_explorer]`) :
 3. Cliquez sur le bouton : un panneau coulissant doit apparaître depuis le bas de l'écran, avec un fond semi-transparent masquant l'arrière-plan.
 4. Modifiez un filtre (catégorie, plateforme, studio, éditeur, disponibilité ou recherche) puis validez. Le panneau doit se refermer automatiquement, les résultats se mettre à jour et le focus clavier passer sur le premier élément des résultats.
 5. Testez le bouton « Réinitialiser » : il doit fermer le panneau, remettre les filtres par défaut et replacer le focus sur les résultats.
+6. Utilisez le nouveau champ « Note minimale » pour sélectionner plusieurs seuils (ex. ≥ 8) et confirmez que seuls les tests correspondants restent visibles, que la valeur sélectionnée est persistée dans l’URL et que le panneau mobile se referme après validation.
 
 ## Carte verdict du bloc tout-en-un
 
