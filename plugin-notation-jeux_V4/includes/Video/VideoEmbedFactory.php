@@ -9,6 +9,10 @@ use JLG\Notation\Video\Providers\VideoEmbedProviderInterface;
 use JLG\Notation\Video\Providers\VimeoProvider;
 use JLG\Notation\Video\Providers\YouTubeProvider;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 class VideoEmbedFactory {
 
     private static $providers = null;
@@ -90,12 +94,26 @@ class VideoEmbedFactory {
     }
 
     private static function bootstrap_providers(): array {
-        return array(
+        $providers = array(
             new YouTubeProvider(),
             new VimeoProvider(),
             new TwitchProvider(),
             new DailymotionProvider(),
         );
+
+        /**
+         * Filters the list of video embed providers registered by the factory.
+         *
+         * This allows third-party integrations to provide their own implementation
+         * of {@see VideoEmbedProviderInterface} without altering the core plugin.
+         *
+         * @since 4.x.x
+         *
+         * @param VideoEmbedProviderInterface[] $providers Array of provider instances.
+         */
+        $filtered_providers = apply_filters( 'jlg_video_embed_providers', $providers );
+
+        return is_array( $filtered_providers ) ? $filtered_providers : $providers;
     }
 
     private static function get_video_fallback_message( $provider_label = '' ) {

@@ -2,6 +2,10 @@
 
 namespace JLG\Notation\Video\Providers;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 interface VideoEmbedProviderInterface {
 
     public function get_slug(): string;
