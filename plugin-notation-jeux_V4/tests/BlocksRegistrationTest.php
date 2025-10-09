@@ -167,9 +167,12 @@ class BlocksRegistrationTest extends TestCase
             'scoreLayout'   => 'circle',
             'showAnimations' => false,
             'accentColor'   => '#ABCDEF',
+            'testPlatforms' => 'PC',
+            'testBuild'     => '1.0.0',
+            'validationStatus' => 'needs_retest',
         ]);
 
-        $expected_shortcode = '[bloc_notation_jeu post_id="42" score_layout="circle" animations="non" accent_color="#abcdef"]';
+        $expected_shortcode = '[bloc_notation_jeu post_id="42" score_layout="circle" test_platforms="PC" test_build="1.0.0" validation_status="needs_retest" animations="non" accent_color="#abcdef"]';
 
         $this->assertSame($expected_shortcode, $GLOBALS['jlg_test_last_shortcode']);
         $this->assertSame('[rendered]' . $expected_shortcode, $result);

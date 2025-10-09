@@ -402,6 +402,27 @@ class Blocks {
             }
         }
 
+        if ( isset( $attributes['testPlatforms'] ) && is_string( $attributes['testPlatforms'] ) ) {
+            $platforms = sanitize_text_field( $attributes['testPlatforms'] );
+            if ( $platforms !== '' ) {
+                $atts['test_platforms'] = $platforms;
+            }
+        }
+
+        if ( isset( $attributes['testBuild'] ) && is_string( $attributes['testBuild'] ) ) {
+            $build = sanitize_text_field( $attributes['testBuild'] );
+            if ( $build !== '' ) {
+                $atts['test_build'] = $build;
+            }
+        }
+
+        if ( isset( $attributes['validationStatus'] ) && is_string( $attributes['validationStatus'] ) ) {
+            $status = sanitize_key( $attributes['validationStatus'] );
+            if ( in_array( $status, array( 'in_review', 'needs_retest', 'validated', 'none' ), true ) && 'none' !== $status ) {
+                $atts['validation_status'] = $status;
+            }
+        }
+
         if ( array_key_exists( 'showAnimations', $attributes ) ) {
             $is_enabled         = (bool) $attributes['showAnimations'];
             $atts['animations'] = $is_enabled ? 'oui' : 'non';
