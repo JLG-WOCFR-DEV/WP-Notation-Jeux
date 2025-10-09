@@ -17,14 +17,59 @@ if ( ! defined( 'ABSPATH' ) ) {
 class FormRenderer {
     private static $option_name = 'notation_jlg_settings';
 
+    public static function compile_input_attributes( $args, array $extra = array() ) {
+        $attributes = array();
+
+        if ( isset( $args['input_attrs'] ) && is_array( $args['input_attrs'] ) ) {
+            $attributes = $args['input_attrs'];
+        }
+
+        if ( ! empty( $extra ) ) {
+            $attributes = array_merge( $attributes, $extra );
+        }
+
+        $compiled = '';
+
+        foreach ( $attributes as $attribute => $value ) {
+            $attribute = trim( (string) $attribute );
+
+            if ( $attribute === '' ) {
+                continue;
+            }
+
+            if ( is_bool( $value ) ) {
+                if ( $value ) {
+                    $compiled .= sprintf( ' %s', esc_attr( $attribute ) );
+                }
+
+                continue;
+            }
+
+            if ( $value === '' || $value === null ) {
+                continue;
+            }
+
+            $compiled .= sprintf( ' %s="%s"', esc_attr( $attribute ), esc_attr( (string) $value ) );
+        }
+
+        return $compiled;
+    }
+
     public static function text_field( $args ) {
-        $options = Helpers::get_plugin_options();
+        $options    = Helpers::get_plugin_options();
+        $attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id'          => $args['id'] ?? '',
+                'placeholder' => $args['placeholder'] ?? '',
+            )
+        );
         printf(
-            '<input type="text" class="regular-text" name="%s[%s]" value="%s" placeholder="%s" />',
+            '<input type="text" class="regular-text" name="%s[%s]" value="%s"%s />',
             esc_attr( self::$option_name ),
             esc_attr( $args['id'] ),
             esc_attr( $options[ $args['id'] ] ?? '' ),
-            esc_attr( $args['placeholder'] ?? '' )
+            $attributes
         );
         self::render_description( $args );
     }
@@ -48,29 +93,43 @@ class FormRenderer {
         $default_attr_value                    = is_string( $default_value ) ? $default_value : '';
         $data_attributes['data-default-color'] = $default_attr_value;
 
-        $attributes = '';
+        $data_attributes_string = '';
         foreach ( $data_attributes as $attribute => $value ) {
-            $attributes .= sprintf( ' %s="%s"', esc_attr( $attribute ), esc_attr( $value ) );
+            $data_attributes_string .= sprintf( ' %s="%s"', esc_attr( $attribute ), esc_attr( $value ) );
         }
 
+        $compiled_attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id' => $field_id,
+            )
+        );
+
         printf(
-            '<input type="text" class="%s" name="%s[%s]" id="%s" value="%s"%s />',
+            '<input type="text" class="%s" name="%s[%s]" value="%s"%s%s />',
             esc_attr( implode( ' ', $classes ) ),
             esc_attr( self::$option_name ),
             esc_attr( $field_id ),
-            esc_attr( $field_id ),
             esc_attr( $current_value ),
-            $attributes
+            $compiled_attributes,
+            $data_attributes_string
         );
         self::render_description( $args );
     }
 
     public static function checkbox_field( $args ) {
-        $options = Helpers::get_plugin_options();
+        $options    = Helpers::get_plugin_options();
+        $attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id' => $args['id'] ?? '',
+            )
+        );
         printf(
-            '<input type="checkbox" name="%s[%s]" value="1" %s />',
+            '<input type="checkbox" name="%s[%s]" value="1"%s %s />',
             esc_attr( self::$option_name ),
             esc_attr( $args['id'] ),
+            $attributes,
             checked( 1, $options[ $args['id'] ] ?? 0, false )
         );
         self::render_description( $args );
@@ -132,7 +191,14 @@ class FormRenderer {
         $options = Helpers::get_plugin_options();
         $value   = $options[ $args['id'] ] ?? '';
 
-        printf( '<select name="%s[%s]">', esc_attr( self::$option_name ), esc_attr( $args['id'] ) );
+        $attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id' => $args['id'] ?? '',
+            )
+        );
+
+        printf( '<select name="%s[%s]"%s>', esc_attr( self::$option_name ), esc_attr( $args['id'] ), $attributes );
         foreach ( $args['options'] as $key => $label ) {
             printf(
                 '<option value="%s"%s>%s</option>',
@@ -227,12 +293,21 @@ class FormRenderer {
             $size = 12;
         }
 
+        $attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id'       => $field_id,
+                'multiple' => true,
+                'size'     => (int) $size,
+                'class'    => trim( ( $args['class'] ?? '' ) . ' regular-text' ),
+            )
+        );
+
         printf(
-            '<select name="%s[%s][]" id="%s" multiple="multiple" size="%d" class="regular-text">',
+            '<select name="%s[%s][]"%s>',
             esc_attr( self::$option_name ),
             esc_attr( $field_id ),
-            esc_attr( $field_id ),
-            (int) $size
+            $attributes
         );
 
         foreach ( $choices as $slug => $label ) {
@@ -250,29 +325,43 @@ class FormRenderer {
     }
 
     public static function number_field( $args ) {
-        $options = Helpers::get_plugin_options();
-        $min     = $args['min'] ?? 0;
-        $max     = $args['max'] ?? 100;
-        $step    = $args['step'] ?? 1;
+        $options    = Helpers::get_plugin_options();
+        $min        = $args['min'] ?? 0;
+        $max        = $args['max'] ?? 100;
+        $step       = $args['step'] ?? 1;
+        $attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id' => $args['id'] ?? '',
+            )
+        );
         printf(
-            '<input type="number" class="small-text" name="%s[%s]" value="%s" min="%s" max="%s" step="%s" />',
+            '<input type="number" class="small-text" name="%s[%s]" value="%s" min="%s" max="%s" step="%s"%s />',
             esc_attr( self::$option_name ),
             esc_attr( $args['id'] ),
             esc_attr( $options[ $args['id'] ] ?? $min ),
             esc_attr( $min ),
             esc_attr( $max ),
-            esc_attr( $step )
+            esc_attr( $step ),
+            $attributes
         );
         self::render_description( $args );
     }
 
     public static function textarea_field( $args ) {
-        $options = Helpers::get_plugin_options();
+        $options    = Helpers::get_plugin_options();
+        $attributes = self::compile_input_attributes(
+            $args,
+            array(
+                'id'          => $args['id'] ?? '',
+                'placeholder' => $args['placeholder'] ?? '',
+            )
+        );
         printf(
-            '<textarea name="%s[%s]" rows="10" cols="50" class="large-text code" placeholder="%s">%s</textarea>',
+            '<textarea name="%s[%s]" rows="10" cols="50" class="large-text code"%s>%s</textarea>',
             esc_attr( self::$option_name ),
             esc_attr( $args['id'] ),
-            esc_attr( $args['placeholder'] ?? '' ),
+            $attributes,
             esc_textarea( $options[ $args['id'] ] ?? '' )
         );
         self::render_description( $args );
