@@ -1,5 +1,5 @@
 (function () {
-    function activateTab(container, tab) {
+    function activateTab(container, tab, shouldFocus) {
         var tabs = Array.prototype.slice.call(container.querySelectorAll('.jlg-platform-breakdown__tab'));
         var panels = Array.prototype.slice.call(container.querySelectorAll('.jlg-platform-breakdown__panel'));
         if (!tab || tabs.length === 0 || panels.length === 0) {
@@ -25,7 +25,9 @@
             }
         });
 
-        tab.focus({ preventScroll: true });
+        if (shouldFocus) {
+            tab.focus({ preventScroll: true });
+        }
     }
 
     function handleKeydown(event, container) {
@@ -61,7 +63,7 @@
         }
 
         if (nextIndex !== currentIndex) {
-            activateTab(container, tabs[nextIndex]);
+            activateTab(container, tabs[nextIndex], true);
         }
     }
 
@@ -81,7 +83,7 @@
         Array.prototype.forEach.call(tabs, function (tab) {
             tab.addEventListener('click', function (event) {
                 event.preventDefault();
-                activateTab(container, tab);
+                activateTab(container, tab, true);
             });
 
             tab.addEventListener('keydown', function (event) {
