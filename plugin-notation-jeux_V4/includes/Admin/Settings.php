@@ -17,16 +17,147 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Settings {
 
-    private $option_name       = 'notation_jlg_settings';
-    private $field_constraints = array();
+    private $option_name         = 'notation_jlg_settings';
+    private $field_constraints   = array();
+    private $section_definitions = array();
+    private $field_dependencies  = array();
+    private $section_counter     = 0;
 
     public function __construct() {
         add_action( 'admin_init', array( $this, 'register_settings' ) );
     }
 
+    public function get_sections_overview() {
+        $sections = $this->section_definitions;
+
+        uasort(
+            $sections,
+            static function ( $a, $b ) {
+                $order_a = isset( $a['order'] ) ? (int) $a['order'] : 0;
+                $order_b = isset( $b['order'] ) ? (int) $b['order'] : 0;
+
+                if ( $order_a === $order_b ) {
+                    return 0;
+                }
+
+                return ( $order_a < $order_b ) ? -1 : 1;
+            }
+        );
+
+        return array_values( $sections );
+    }
+
+    public function get_field_dependencies() {
+        return array_values( $this->field_dependencies );
+    }
+
+    public function get_preview_snapshot() {
+        $options  = Helpers::get_plugin_options();
+        $defaults = Helpers::get_default_settings();
+
+        $fields = array(
+            'visual_theme',
+            'score_layout',
+            'text_glow_enabled',
+            'text_glow_color_mode',
+            'text_glow_custom_color',
+            'text_glow_intensity',
+            'circle_glow_enabled',
+            'circle_glow_color_mode',
+            'circle_glow_custom_color',
+            'circle_glow_intensity',
+            'circle_glow_pulse',
+            'circle_glow_speed',
+            'dark_bg_color',
+            'dark_bg_color_secondary',
+            'dark_text_color',
+            'dark_text_color_secondary',
+            'dark_border_color',
+            'light_bg_color',
+            'light_bg_color_secondary',
+            'light_text_color',
+            'light_text_color_secondary',
+            'light_border_color',
+            'score_gradient_1',
+            'score_gradient_2',
+            'color_low',
+            'color_mid',
+            'color_high',
+        );
+
+        $snapshot = array();
+
+        foreach ( $fields as $field ) {
+            if ( isset( $options[ $field ] ) ) {
+                $snapshot[ $field ] = $options[ $field ];
+            } elseif ( isset( $defaults[ $field ] ) ) {
+                $snapshot[ $field ] = $defaults[ $field ];
+            }
+        }
+
+        return $snapshot;
+    }
+
     public function register_settings() {
         register_setting( 'notation_jlg_page', $this->option_name, array( $this, 'sanitize_options' ) );
         $this->register_all_sections();
+    }
+
+    private function register_section( $section_id, $label, $icon = '', $summary = '', $callback = null ) {
+        $section_id = sanitize_key( $section_id );
+
+        if ( $section_id === '' ) {
+            return;
+        }
+
+        ++$this->section_counter;
+
+        $this->section_definitions[ $section_id ] = array(
+            'id'      => $section_id,
+            'title'   => $label,
+            'icon'    => $icon,
+            'summary' => $summary,
+            'order'   => $this->section_counter,
+        );
+
+        $title = sprintf(
+            /* translators: 1: section order, 2: section label */
+            _x( '%1$s. %2$s', 'Settings section heading', 'notation-jlg' ),
+            number_format_i18n( $this->section_counter ),
+            $label
+        );
+
+        add_settings_section( $section_id, $title, $callback, 'notation_jlg_page' );
+    }
+
+    private function add_field_dependency( $controller, $targets, array $config = array() ) {
+        $controller = sanitize_key( $controller );
+        $targets    = array_filter(
+            array_map(
+                'sanitize_key',
+                is_array( $targets ) ? $targets : array( $targets )
+            )
+        );
+
+        if ( $controller === '' || empty( $targets ) ) {
+            return;
+        }
+
+        $defaults = array(
+            'expected_value' => '1',
+            'comparison'     => 'equals',
+            'message'        => '',
+        );
+
+        $config = wp_parse_args( $config, $defaults );
+
+        $this->field_dependencies[] = array(
+            'controller'    => $controller,
+            'targets'       => $targets,
+            'expectedValue' => (string) $config['expected_value'],
+            'comparison'    => $config['comparison'],
+            'message'       => $config['message'],
+        );
     }
 
     public function sanitize_options( $input ) {
@@ -495,7 +626,12 @@ class Settings {
 
     private function register_all_sections() {
         // Section 1: Libellés
-        add_settings_section( 'jlg_labels', '1. 📝 Libellés des Catégories', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_labels',
+            __( 'Libellés des catégories', 'notation-jlg' ),
+            '📝',
+            __( 'Ajustez les intitulés et la pondération de vos critères de test.', 'notation-jlg' )
+        );
         add_settings_field(
             'rating_categories',
             __( 'Catégories de notation', 'notation-jlg' ),
@@ -510,13 +646,14 @@ class Settings {
         );
 
         // Section 2: Contenus
-        add_settings_section(
+        $this->register_section(
             'jlg_content',
-            '2. 📚 Contenus',
+            __( 'Contenus', 'notation-jlg' ),
+            '📚',
+            __( 'Choisissez les types de contenus WordPress compatibles avec la notation.', 'notation-jlg' ),
             function () {
                 echo '<p class="description">' . esc_html__( 'Sélectionnez les types de contenus qui peuvent utiliser les notations du plugin.', 'notation-jlg' ) . '</p>';
-            },
-            'notation_jlg_page'
+            }
         );
         add_settings_field(
             'allowed_post_types',
@@ -532,8 +669,13 @@ class Settings {
             )
         );
 
-        // Section 3: Présentation de la Note Globale
-        add_settings_section( 'jlg_layout', '3. 🎨 Présentation de la Note Globale', null, 'notation_jlg_page' );
+        // Section 3: Présentation de la note globale
+        $this->register_section(
+            'jlg_layout',
+            __( 'Présentation de la note globale', 'notation-jlg' ),
+            '🎨',
+            __( 'Définissez le barème et la façon dont la note principale est affichée.', 'notation-jlg' )
+        );
         $score_max_field_args = array(
             'id'   => 'score_max',
             'type' => 'number',
@@ -619,7 +761,12 @@ class Settings {
         );
 
         // Section 4: Couleurs & Thèmes
-        add_settings_section( 'jlg_colors', '4. 🌈 Couleurs & Thèmes', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_colors',
+            __( 'Couleurs et thèmes', 'notation-jlg' ),
+            '🌈',
+            __( 'Paramétrez les palettes clair/sombre et les couleurs sémantiques.', 'notation-jlg' )
+        );
         add_settings_field(
             'visual_theme',
             'Thème Visuel Principal',
@@ -706,7 +853,12 @@ class Settings {
         }
 
         // Section 5: Effet Glow/Neon (Mode Texte)
-        add_settings_section( 'jlg_glow_text', '5. ✨ Effet Neon - Mode Texte', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_glow_text',
+            __( 'Effet néon – Mode texte', 'notation-jlg' ),
+            '✨',
+            __( 'Activez et personnalisez le halo autour de la note en version texte.', 'notation-jlg' )
+        );
         add_settings_field(
             'text_glow_enabled',
             'Activer l\'effet Neon',
@@ -791,8 +943,38 @@ class Settings {
         );
         $this->store_field_constraints( $text_glow_speed_args );
 
+        $this->add_field_dependency(
+            'text_glow_enabled',
+            array( 'text_glow_color_mode', 'text_glow_custom_color', 'text_glow_intensity', 'text_glow_pulse', 'text_glow_speed' ),
+            array(
+                'message' => __( 'Activez l’effet néon en mode texte pour modifier ces réglages.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'text_glow_color_mode',
+            array( 'text_glow_custom_color' ),
+            array(
+                'expected_value' => 'custom',
+                'message'        => __( 'Sélectionnez « Couleur fixe » pour personnaliser ce paramètre.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'text_glow_pulse',
+            array( 'text_glow_speed' ),
+            array(
+                'message' => __( 'Activez la pulsation pour ajuster sa vitesse.', 'notation-jlg' ),
+            )
+        );
+
         // Section 6: Effet Glow/Neon (Mode Cercle)
-        add_settings_section( 'jlg_glow_circle', '6. ✨ Effet Neon - Mode Cercle', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_glow_circle',
+            __( 'Effet néon – Mode cercle', 'notation-jlg' ),
+            '💡',
+            __( 'Paramétrez le halo dynamique du score circulaire.', 'notation-jlg' )
+        );
         add_settings_field(
             'circle_glow_enabled',
             'Activer l\'effet Neon',
@@ -876,8 +1058,38 @@ class Settings {
         );
         $this->store_field_constraints( $circle_glow_speed_args );
 
+        $this->add_field_dependency(
+            'circle_glow_enabled',
+            array( 'circle_glow_color_mode', 'circle_glow_custom_color', 'circle_glow_intensity', 'circle_glow_pulse', 'circle_glow_speed' ),
+            array(
+                'message' => __( 'Activez l’effet néon en mode cercle pour modifier ces réglages.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'circle_glow_color_mode',
+            array( 'circle_glow_custom_color' ),
+            array(
+                'expected_value' => 'custom',
+                'message'        => __( 'Sélectionnez « Couleur fixe » pour personnaliser ce paramètre.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'circle_glow_pulse',
+            array( 'circle_glow_speed' ),
+            array(
+                'message' => __( 'Activez la pulsation pour ajuster sa vitesse.', 'notation-jlg' ),
+            )
+        );
+
         // Section 7: Modules
-        add_settings_section( 'jlg_modules', '7. 🧩 Modules', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_modules',
+            __( 'Modules', 'notation-jlg' ),
+            '🧩',
+            __( 'Activez les fonctionnalités additionnelles (votes, badges, animations…).', 'notation-jlg' )
+        );
         $module_fields = array(
             'user_rating_enabled'                 => 'Notation utilisateurs',
             'rating_badge_enabled'                => 'Badge « Coup de cœur »',
@@ -969,8 +1181,37 @@ class Settings {
             )
         );
 
+        $this->add_field_dependency(
+            'rating_badge_enabled',
+            array( 'rating_badge_threshold' ),
+            array(
+                'message' => __( 'Activez le badge « Coup de cœur » pour définir son seuil.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'review_status_auto_finalize_enabled',
+            array( 'review_status_auto_finalize_days' ),
+            array(
+                'message' => __( 'Activez la finalisation automatique pour ajuster le délai.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'related_guides_enabled',
+            array( 'related_guides_limit', 'related_guides_taxonomies' ),
+            array(
+                'message' => __( 'Activez les guides associés pour configurer leurs options.', 'notation-jlg' ),
+            )
+        );
+
         // Section 8: Modules - Tagline
-        add_settings_section( 'jlg_tagline_section', '8. 💬 Module Tagline', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_tagline_section',
+            __( 'Module Tagline', 'notation-jlg' ),
+            '💬',
+            __( 'Personnalisez l’accroche éditoriale affichée sous la note.', 'notation-jlg' )
+        );
         $tagline_font_size_args = array(
 			'id'   => 'tagline_font_size',
 			'type' => 'number',
@@ -1009,8 +1250,21 @@ class Settings {
 			)
         );
 
+        $this->add_field_dependency(
+            'tagline_enabled',
+            array( 'tagline_font_size', 'tagline_bg_color', 'tagline_text_color' ),
+            array(
+                'message' => __( 'Activez le module Tagline dans l’onglet « Modules » pour accéder à ces options.', 'notation-jlg' ),
+            )
+        );
+
         // Section 9: Modules - Notation Utilisateurs
-        add_settings_section( 'jlg_user_rating_section', '9. ⭐ Module Notation Utilisateurs', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_user_rating_section',
+            __( 'Module notation utilisateurs', 'notation-jlg' ),
+            '⭐',
+            __( 'Réglez la palette et le comportement du module dédié aux lecteurs.', 'notation-jlg' )
+        );
         add_settings_field(
             'user_rating_title_color',
             'Couleur du titre',
@@ -1057,8 +1311,21 @@ class Settings {
 			)
         );
 
+        $this->add_field_dependency(
+            'user_rating_enabled',
+            array( 'user_rating_title_color', 'user_rating_text_color', 'user_rating_star_color', 'user_rating_requires_login' ),
+            array(
+                'message' => __( 'Activez la notation utilisateurs pour ajuster ces préférences.', 'notation-jlg' ),
+            )
+        );
+
         // Section 10: Tableau Récapitulatif
-        add_settings_section( 'jlg_table', '10. 📊 Tableau Récapitulatif', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_table',
+            __( 'Tableau récapitulatif', 'notation-jlg' ),
+            '📊',
+            __( 'Ajustez les colonnes et le style du tableau comparatif.', 'notation-jlg' )
+        );
         add_settings_field(
             'table_header_bg_color',
             'Fond de l\'en-tête',
@@ -1129,6 +1396,14 @@ class Settings {
                 'desc'              => 'Utilisez le sélecteur WordPress ou saisissez "transparent" pour désactiver la couleur alternée.',
             )
         );
+
+        $this->add_field_dependency(
+            'table_zebra_striping',
+            array( 'table_zebra_bg_color' ),
+            array(
+                'message' => __( 'Activez l’alternance de couleurs pour personnaliser la teinte associée.', 'notation-jlg' ),
+            )
+        );
         add_settings_field(
             'table_border_style',
             'Style des bordures',
@@ -1162,7 +1437,12 @@ class Settings {
         $this->store_field_constraints( $table_border_width_args );
 
         // Section 11: Style des Vignettes
-        add_settings_section( 'jlg_thumbnail_section', '11. 🖼️ Style des Vignettes', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_thumbnail_section',
+            __( 'Style des vignettes', 'notation-jlg' ),
+            '🖼️',
+            __( 'Définissez la présentation des visuels associés aux jeux.', 'notation-jlg' )
+        );
         add_settings_field(
             'thumb_text_color',
             'Couleur du texte',
@@ -1223,7 +1503,12 @@ class Settings {
         $this->store_field_constraints( $thumb_border_radius_args );
 
         // Section 12: CSS Personnalisé
-        add_settings_section( 'jlg_custom', '12. 🎨 CSS Personnalisé', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_custom',
+            __( 'CSS personnalisé', 'notation-jlg' ),
+            '🎨',
+            __( 'Injectez vos styles additionnels tout en conservant les mises à jour.', 'notation-jlg' )
+        );
         add_settings_field(
             'custom_css',
             'Votre CSS',
@@ -1238,7 +1523,12 @@ class Settings {
         );
 
         // Section 13: SEO
-        add_settings_section( 'jlg_seo_section', '13. 🔍 SEO', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_seo_section',
+            __( 'SEO', 'notation-jlg' ),
+            '🔍',
+            __( 'Générez des métadonnées enrichies et gardez les rich snippets cohérents.', 'notation-jlg' )
+        );
         add_settings_field(
             'seo_schema_enabled',
             'Activer le schéma de notation (JSON-LD)',
@@ -1253,7 +1543,12 @@ class Settings {
         );
 
         // Section 14: API
-        add_settings_section( 'jlg_api_section', '14. 🌐 API', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_api_section',
+            __( 'API', 'notation-jlg' ),
+            '🌐',
+            __( 'Gérez l’intégration RAWG et vérifiez la connectivité.', 'notation-jlg' )
+        );
         add_settings_field(
             'rawg_api_key',
             'Clé API RAWG.io',
@@ -1268,7 +1563,12 @@ class Settings {
         );
 
         // Section 15: Debug
-        add_settings_section( 'jlg_debug_section', '15. 🔧 Debug', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_debug_section',
+            __( 'Diagnostic', 'notation-jlg' ),
+            '🔧',
+            __( 'Outils de purge et d’analyse pour fiabiliser l’installation.', 'notation-jlg' )
+        );
         add_settings_field(
             'debug_mode_enabled',
             'Activer le mode debug',
@@ -1286,7 +1586,12 @@ class Settings {
         add_settings_field( 'debug_current_options', 'Options actuelles', array( $this, 'render_debug_info' ), 'notation_jlg_page', 'jlg_debug_section' );
 
         // Section 16: Game Explorer
-        add_settings_section( 'jlg_game_explorer', '16. 🧭 Game Explorer', null, 'notation_jlg_page' );
+        $this->register_section(
+            'jlg_game_explorer',
+            __( 'Game Explorer', 'notation-jlg' ),
+            '🧭',
+            __( 'Configurez les filtres, la pagination et la mise en page du listing de jeux.', 'notation-jlg' )
+        );
 
         $game_explorer_columns_args = array(
 			'id'   => 'game_explorer_columns',

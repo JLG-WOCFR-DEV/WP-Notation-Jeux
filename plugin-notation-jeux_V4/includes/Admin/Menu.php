@@ -97,10 +97,28 @@ class Menu {
     }
 
     private function get_settings_tab_content() {
+        $sections_overview = array();
+        $preview_snapshot  = array();
+
+        $core_instance = Core::get_instance();
+        if ( $core_instance ) {
+            $settings_component = $core_instance->get_component( 'settings' );
+
+            if ( $settings_component && method_exists( $settings_component, 'get_sections_overview' ) ) {
+                $sections_overview = $settings_component->get_sections_overview();
+            }
+
+            if ( $settings_component && method_exists( $settings_component, 'get_preview_snapshot' ) ) {
+                $preview_snapshot = $settings_component->get_preview_snapshot();
+            }
+        }
+
         return TemplateLoader::get_admin_template(
             'tabs/settings',
             array(
-				'settings_page' => 'notation_jlg_page',
+				'settings_page'     => 'notation_jlg_page',
+				'sections_overview' => $sections_overview,
+				'preview_snapshot'  => $preview_snapshot,
 			)
         );
     }

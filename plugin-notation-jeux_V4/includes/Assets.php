@@ -2,6 +2,8 @@
 
 namespace JLG\Notation;
 
+use JLG\Notation\Admin\Core;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -60,6 +62,48 @@ class Assets {
             array( 'wp-color-picker' ),
             $version,
             true
+        );
+
+        $sections_overview  = array();
+        $field_dependencies = array();
+        $preview_snapshot   = array();
+
+        $core_instance = Core::get_instance();
+        if ( $core_instance ) {
+            $settings_component = $core_instance->get_component( 'settings' );
+
+            if ( $settings_component && method_exists( $settings_component, 'get_sections_overview' ) ) {
+                $sections_overview = $settings_component->get_sections_overview();
+            }
+
+            if ( $settings_component && method_exists( $settings_component, 'get_field_dependencies' ) ) {
+                $field_dependencies = $settings_component->get_field_dependencies();
+            }
+
+            if ( $settings_component && method_exists( $settings_component, 'get_preview_snapshot' ) ) {
+                $preview_snapshot = $settings_component->get_preview_snapshot();
+            }
+        }
+
+        wp_enqueue_script(
+            'jlg-admin-settings',
+            JLG_NOTATION_PLUGIN_URL . 'assets/js/admin-settings.js',
+            array(),
+            $version,
+            true
+        );
+
+        wp_localize_script(
+            'jlg-admin-settings',
+            'jlgAdminSettingsData',
+            array(
+				'sections'     => $sections_overview,
+				'dependencies' => $field_dependencies,
+				'preview'      => $preview_snapshot,
+				'i18n'         => array(
+					'dependencyInactive' => __( 'Activez l’option associée pour modifier ce réglage.', 'notation-jlg' ),
+				),
+			)
         );
 
         $active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'reglages';
