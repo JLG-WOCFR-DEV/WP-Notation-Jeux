@@ -6,6 +6,8 @@
             return;
         }
 
+        var shouldFocus = options && options.focus === true;
+
         tabs.forEach(function (item) {
             var controls = item.getAttribute('data-target-panel');
             var target = controls ? container.querySelector('#' + controls) : null;
@@ -78,7 +80,7 @@
         }
 
         var activeTab = container.querySelector('.jlg-platform-breakdown__tab.is-active') || tabs[0];
-        activateTab(container, activeTab);
+        activateTab(container, activeTab, { focus: false });
 
         Array.prototype.forEach.call(tabs, function (tab) {
             tab.addEventListener('click', function (event) {
