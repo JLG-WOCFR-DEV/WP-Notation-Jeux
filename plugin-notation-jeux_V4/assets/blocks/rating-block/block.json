@@ -64,6 +64,19 @@
       "type": "string",
       "default": "inherit",
       "enum": ["inherit", "signature", "minimal", "editorial"]
+    },
+    "testPlatforms": {
+      "type": "string",
+      "default": ""
+    },
+    "testBuild": {
+      "type": "string",
+      "default": ""
+    },
+    "validationStatus": {
+      "type": "string",
+      "default": "none",
+      "enum": ["none", "in_review", "needs_retest", "validated"]
     }
   },
   "editorScript": "notation-jlg-rating-block-editor",

@@ -331,6 +331,64 @@ class ShortcodeRatingBlockRenderTest extends TestCase
         $this->assertMatchesRegularExpression('/<time[^>]+datetime="[^"]+"/', $output);
     }
 
+    public function test_render_outputs_test_context_panel(): void
+    {
+        $post_id = 1601;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 8.6,
+            'graphismes' => 8.9,
+        ]);
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id'           => (string) $post_id,
+            'test_platforms'    => 'PC, PS5',
+            'test_build'        => 'Patch 1.02',
+            'validation_status' => 'needs_retest',
+        ]);
+
+        $this->assertStringContainsString('Contexte du test', $output, 'Context heading should be rendered.');
+        $this->assertStringContainsString('PC, PS5', $output, 'Platform list should be present.');
+        $this->assertStringContainsString('Patch 1.02', $output, 'Build information should be displayed.');
+        $this->assertStringContainsString('Re-test planifié', $output, 'Validation status label should surface.');
+        $this->assertStringContainsString('review-box-jlg__context--tone-alert', $output, 'Alert tone class should be set.');
+        $this->assertStringContainsString('considérez ce verdict comme provisoire', $output, 'Status message should be rendered.');
+    }
+
+    public function test_render_displays_editor_context_reminder_when_missing_context(): void
+    {
+        $post_id = 1602;
+        $this->seedPost($post_id);
+        $this->seedRatings($post_id, [
+            'gameplay'   => 8.0,
+            'graphismes' => 7.8,
+        ]);
+
+        $previous_capability = $GLOBALS['jlg_test_current_user_can'] ?? null;
+        $GLOBALS['jlg_test_current_user_can'] = static function ($capability, $target_post_id = null) use ($post_id) {
+            if ($capability === 'edit_post') {
+                return (int) $target_post_id === $post_id;
+            }
+
+            return false;
+        };
+
+        $shortcode = new \JLG\Notation\Shortcodes\RatingBlock();
+        $output    = $shortcode->render([
+            'post_id' => (string) $post_id,
+        ]);
+
+        $this->assertStringContainsString('Contexte de test', $output, 'Editor reminder should mention the missing context.');
+        $this->assertStringContainsString('plateformes, build et statut de validation', $output);
+
+        if ($previous_capability !== null) {
+            $GLOBALS['jlg_test_current_user_can'] = $previous_capability;
+        } else {
+            unset($GLOBALS['jlg_test_current_user_can']);
+        }
+    }
+
     public function test_render_hides_verdict_when_forced_off(): void
     {
         $post_id = 1321;

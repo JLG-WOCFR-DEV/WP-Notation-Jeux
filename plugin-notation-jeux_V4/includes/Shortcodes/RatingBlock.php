@@ -31,6 +31,9 @@ class RatingBlock {
                 'verdict_cta_label'  => '',
                 'verdict_cta_url'    => '',
                 'visual_preset'      => '',
+                'test_platforms'     => '',
+                'test_build'         => '',
+                'validation_status'  => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -59,6 +62,12 @@ class RatingBlock {
         $preview_theme      = $this->normalize_preview_theme( $atts['preview_theme'] );
         $preview_animations = $this->normalize_preview_animations( $atts['preview_animations'] );
         $extra_classes      = array();
+
+        $context_payload = $this->build_test_context_payload(
+            $atts['test_platforms'],
+            $atts['test_build'],
+            $atts['validation_status']
+        );
 
         $visual_preset = isset( $options['visual_preset'] ) ? sanitize_key( (string) $options['visual_preset'] ) : 'signature';
         if ( ! in_array( $visual_preset, array( 'signature', 'minimal', 'editorial' ), true ) ) {
@@ -185,7 +194,10 @@ class RatingBlock {
                     $display_mode,
                     $extra_classes_string,
                     $animations_enabled,
-                    $theme_variables
+                    $theme_variables,
+                    $context_payload['has_values']
+                        ? $context_payload
+                        : $this->build_placeholder_test_context_payload()
                 );
 
                 Frontend::mark_shortcode_rendered( $shortcode_handle );
@@ -262,6 +274,7 @@ class RatingBlock {
         return Frontend::get_template_html(
             'shortcode-rating-block',
             array(
+                'post_id'                  => $post_id,
                 'options'                  => $options,
                 'average_score'            => $average_score,
                 'average_score_percentage' => $average_percentage,
@@ -284,11 +297,12 @@ class RatingBlock {
                 'related_guides_enabled'   => $related_guides_enabled,
                 'related_guides'           => $related_guides,
                 'verdict'                  => $verdict_data,
+                'test_context'             => $context_payload,
             )
         );
     }
 
-    private function build_editor_placeholder_context( WP_Post $post, $post_id, array $options, $score_max, $display_mode, $extra_classes = '', $animations_enabled = false, array $theme_variables = array() ) {
+    private function build_editor_placeholder_context( WP_Post $post, $post_id, array $options, $score_max, $display_mode, $extra_classes = '', $animations_enabled = false, array $theme_variables = array(), array $context_payload = array() ) {
         $resolved_score_max = is_numeric( $score_max ) && $score_max > 0
             ? (float) $score_max
             : (float) Helpers::get_score_max();
@@ -381,6 +395,14 @@ class RatingBlock {
             'permalink'     => '',
         );
 
+        $resolved_context = ! empty( $context_payload )
+            ? $context_payload
+            : $this->build_placeholder_test_context_payload();
+
+        if ( empty( $resolved_context['has_values'] ) ) {
+            $resolved_context = $this->build_placeholder_test_context_payload();
+        }
+
         return array(
             'post'                     => $post,
             'post_id'                  => $post_id,
@@ -408,6 +430,36 @@ class RatingBlock {
             'related_guides_enabled'   => $related_guides_enabled,
             'related_guides'           => $placeholder_guides,
             'verdict'                  => $placeholder_verdict,
+            'test_context'             => $resolved_context,
+        );
+    }
+
+    private function build_test_context_payload( $platforms, $build, $status, $is_placeholder = false ) {
+        $platforms_value = $this->sanitize_context_value( $platforms );
+        $build_value     = $this->sanitize_context_value( $build );
+        $normalized      = $this->normalize_validation_status( $status );
+        $catalog         = $this->get_validation_status_catalog();
+        $status_data     = isset( $catalog[ $normalized ] ) ? $catalog[ $normalized ] : $catalog['none'];
+
+        return array(
+            'platforms'          => $platforms_value,
+            'build'              => $build_value,
+            'status_key'         => $normalized,
+            'status_label'       => $status_data['label'],
+            'status_description' => $status_data['description'],
+            'status_tone'        => $status_data['tone'],
+            'has_values'         => $platforms_value !== '' || $build_value !== '' || 'none' !== $normalized,
+            'show_status'        => 'none' !== $normalized,
+            'is_placeholder'     => (bool) $is_placeholder,
+        );
+    }
+
+    private function build_placeholder_test_context_payload() {
+        return $this->build_test_context_payload(
+            __( 'PC (RTX 4080) & PS5', 'notation-jlg' ),
+            __( 'Version presse 1.0.2 – Day One', 'notation-jlg' ),
+            'in_review',
+            true
         );
     }
 
@@ -429,6 +481,71 @@ class RatingBlock {
         }
 
         return implode( ';', $rules );
+    }
+
+    private function sanitize_context_value( $value ) {
+        if ( is_string( $value ) ) {
+            $stripped = trim( wp_strip_all_tags( $value ) );
+            if ( $stripped === '' ) {
+                return '';
+            }
+
+            $normalized_breaks = preg_replace( '/[\r\n]+/', ', ', $stripped );
+            if ( is_string( $normalized_breaks ) ) {
+                $stripped = $normalized_breaks;
+            }
+
+            $single_space = preg_replace( '/\s{2,}/', ' ', $stripped );
+            if ( is_string( $single_space ) ) {
+                $stripped = $single_space;
+            }
+
+            return trim( $stripped );
+        }
+
+        if ( is_array( $value ) ) {
+            $normalized = array_filter( array_map( array( $this, 'sanitize_context_value' ), $value ) );
+
+            return implode( ', ', $normalized );
+        }
+
+        return '';
+    }
+
+    private function normalize_validation_status( $value ) {
+        if ( is_string( $value ) ) {
+            $key = sanitize_key( $value );
+            if ( $key !== '' && array_key_exists( $key, $this->get_validation_status_catalog() ) ) {
+                return $key;
+            }
+        }
+
+        return 'none';
+    }
+
+    private function get_validation_status_catalog() {
+        return array(
+            'none'         => array(
+                'label'       => '',
+                'description' => '',
+                'tone'        => 'neutral',
+            ),
+            'in_review'    => array(
+                'label'       => __( 'En cours de validation', 'notation-jlg' ),
+                'description' => __( 'La rédaction finalise ses vérifications : la note pourra évoluer une fois la version finale confirmée.', 'notation-jlg' ),
+                'tone'        => 'warning',
+            ),
+            'needs_retest' => array(
+                'label'       => __( 'Re-test planifié', 'notation-jlg' ),
+                'description' => __( 'Un nouveau passage est prévu sur une build corrective ; considérez ce verdict comme provisoire.', 'notation-jlg' ),
+                'tone'        => 'alert',
+            ),
+            'validated'    => array(
+                'label'       => __( 'Validé par la rédaction', 'notation-jlg' ),
+                'description' => __( 'Les conclusions ont été revérifiées sur la version finale accessible au public.', 'notation-jlg' ),
+                'tone'        => 'success',
+            ),
+        );
     }
 
     private function normalize_bool_attribute( $value ) {

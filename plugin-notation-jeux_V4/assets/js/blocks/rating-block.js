@@ -159,6 +159,40 @@
                     ),
                     createElement(
                         PanelBody,
+                        { title: __('Contexte de test', 'notation-jlg'), initialOpen: false },
+                        createElement(TextareaControl, {
+                            label: __('Plateformes couvertes', 'notation-jlg'),
+                            help: __('Listez les consoles/PC utilisés pour ce test afin d’éclairer les lecteurs.', 'notation-jlg'),
+                            value: attributes.testPlatforms || '',
+                            onChange: function (value) {
+                                setAttributes({ testPlatforms: value || '' });
+                            },
+                            rows: 2,
+                        }),
+                        createElement(TextControl, {
+                            label: __('Build ou version testée', 'notation-jlg'),
+                            help: __('Précisez la build, le patch ou l’édition vérifiée (ex. 1.0.2 Day One).', 'notation-jlg'),
+                            value: attributes.testBuild || '',
+                            onChange: function (value) {
+                                setAttributes({ testBuild: value || '' });
+                            },
+                        }),
+                        createElement(SelectControl, {
+                            label: __('Statut de validation', 'notation-jlg'),
+                            value: attributes.validationStatus || 'none',
+                            options: [
+                                { value: 'none', label: __('Non précisé', 'notation-jlg') },
+                                { value: 'in_review', label: __('En cours de validation', 'notation-jlg') },
+                                { value: 'needs_retest', label: __('Re-test planifié', 'notation-jlg') },
+                                { value: 'validated', label: __('Validé par la rédaction', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ validationStatus: value || 'none' });
+                            },
+                        })
+                    ),
+                    createElement(
+                        PanelBody,
                         { title: __('Carte verdict', 'notation-jlg'), initialOpen: false },
                         createElement(SelectControl, {
                             label: __('Affichage du verdict', 'notation-jlg'),
@@ -204,9 +238,8 @@
                 createElement(
                     'div',
                     blockProps,
-                    createElement(BlockPreview, {
-                        block: 'notation-jlg/rating-block',
-                        attributes: {
+                    (function () {
+                        var previewAttributes = {
                             postId: attributes.postId || 0,
                             scoreLayout: attributes.scoreLayout || 'text',
                             scoreDisplay: attributes.scoreDisplay || 'absolute',
@@ -214,14 +247,79 @@
                             verdictSummary: attributes.verdictSummary || '',
                             verdictCtaLabel: attributes.verdictCtaLabel || '',
                             verdictCtaUrl: attributes.verdictCtaUrl || '',
-                            showAnimations: typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
+                            showAnimations:
+                                typeof attributes.showAnimations === 'boolean' ? attributes.showAnimations : true,
                             accentColor: attributes.accentColor || '',
-                            previewTheme: attributes.previewTheme || 'auto',
                             previewAnimations: attributes.previewAnimations || 'inherit',
                             visualPreset: attributes.visualPreset || 'inherit',
-                        },
-                        label: __('Bloc de notation', 'notation-jlg'),
-                    })
+                            testPlatforms: attributes.testPlatforms || '',
+                            testBuild: attributes.testBuild || '',
+                            validationStatus: attributes.validationStatus || 'none',
+                        };
+
+                        var themeLabels = {
+                            auto: __('Mode automatique (site)', 'notation-jlg'),
+                            light: __('Skin clair', 'notation-jlg'),
+                            dark: __('Skin sombre', 'notation-jlg'),
+                        };
+
+                        var currentTheme = attributes.previewTheme || 'auto';
+                        var previewItems = [
+                            {
+                                theme: currentTheme,
+                                label:
+                                    currentTheme === 'auto'
+                                        ? themeLabels.auto
+                                        : __('Configuration du bloc', 'notation-jlg'),
+                            },
+                            { theme: 'light', label: themeLabels.light },
+                            { theme: 'dark', label: themeLabels.dark },
+                        ];
+
+                        var seenThemes = {};
+                        var previews = previewItems.reduce(function (output, item) {
+                            if (!item || !item.theme || seenThemes[item.theme]) {
+                                return output;
+                            }
+
+                            seenThemes[item.theme] = true;
+
+                            var itemAttributes = Object.assign({}, previewAttributes);
+                            if (item.theme === 'auto') {
+                                delete itemAttributes.previewTheme;
+                            } else {
+                                itemAttributes.previewTheme = item.theme;
+                            }
+
+                            output.push(
+                                createElement(
+                                    'div',
+                                    {
+                                        className: 'notation-jlg-rating-block-preview-grid__item',
+                                        key: item.theme,
+                                    },
+                                    createElement(
+                                        'div',
+                                        { className: 'notation-jlg-rating-block-preview-grid__label' },
+                                        item.label || ''
+                                    ),
+                                    createElement(BlockPreview, {
+                                        block: 'notation-jlg/rating-block',
+                                        attributes: itemAttributes,
+                                        label: __('Bloc de notation', 'notation-jlg'),
+                                    })
+                                )
+                            );
+
+                            return output;
+                        }, []);
+
+                        return createElement(
+                            'div',
+                            { className: 'notation-jlg-rating-block-preview-grid' },
+                            previews
+                        );
+                    })()
                 )
             );
         },

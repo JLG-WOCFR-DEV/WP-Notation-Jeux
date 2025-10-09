@@ -3332,6 +3332,7 @@ class Frontend {
                 'orderby'                  => '',
                 'order'                    => '',
                 'score_max'                => Helpers::get_score_max(),
+                'test_context'             => array(),
                 'colonnes'                 => array(),
                 'colonnes_disponibles'     => array(),
                 'error_message'            => '',

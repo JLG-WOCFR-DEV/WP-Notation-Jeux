@@ -83,9 +83,48 @@ $verdict_should_render    = $verdict_enabled && ( $verdict_has_summary || $verdi
 $should_display_status_banner = $review_status_enabled && $review_status_label !== '' && ! $verdict_should_render;
 $verdict_section_id           = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-verdict-' ) : 'jlg-verdict-' . uniqid();
 $verdict_summary_id           = $verdict_section_id . '-summary';
+$context_section_id           = function_exists( 'wp_unique_id' ) ? wp_unique_id( 'jlg-context-' ) : 'jlg-context-' . uniqid();
 $extra_classes_string         = isset( $extra_classes ) && is_string( $extra_classes ) ? trim( $extra_classes ) : '';
 $extra_classes_list           = $extra_classes_string !== '' ? preg_split( '/\s+/', $extra_classes_string ) : array();
 $wrapper_classes              = array_merge( array( 'review-box-jlg' ), is_array( $extra_classes_list ) ? $extra_classes_list : array() );
+
+$test_context_data      = isset( $test_context ) && is_array( $test_context ) ? $test_context : array();
+$context_platforms      = isset( $test_context_data['platforms'] ) ? (string) $test_context_data['platforms'] : '';
+$context_build          = isset( $test_context_data['build'] ) ? (string) $test_context_data['build'] : '';
+$context_status_label   = isset( $test_context_data['status_label'] ) ? (string) $test_context_data['status_label'] : '';
+$context_status_message = isset( $test_context_data['status_description'] ) ? (string) $test_context_data['status_description'] : '';
+$context_status_tone    = isset( $test_context_data['status_tone'] ) ? sanitize_key( (string) $test_context_data['status_tone'] ) : 'neutral';
+if ( $context_status_tone === '' ) {
+    $context_status_tone = 'neutral';
+}
+$context_has_platforms    = $context_platforms !== '';
+$context_has_build        = $context_build !== '';
+$context_has_status_label = ! empty( $test_context_data['show_status'] ) && $context_status_label !== '';
+$context_has_items        = $context_has_platforms || $context_has_build || $context_has_status_label;
+$context_should_render    = ! empty( $test_context_data['has_values'] );
+$context_classes          = array(
+    'review-box-jlg__context',
+    'review-box-jlg__context--tone-' . sanitize_html_class( $context_status_tone ),
+);
+if ( ! empty( $test_context_data['is_placeholder'] ) ) {
+    $context_classes[] = 'review-box-jlg__context--placeholder';
+}
+$context_classes = array_unique( array_filter( $context_classes ) );
+
+$resolved_post_id = isset( $post_id ) && is_numeric( $post_id ) ? (int) $post_id : 0;
+if ( $resolved_post_id <= 0 && isset( $post ) && $post instanceof WP_Post ) {
+    $resolved_post_id = (int) $post->ID;
+}
+$can_edit_context = false;
+if ( function_exists( 'current_user_can' ) ) {
+    $can_edit_context = $resolved_post_id > 0
+        ? current_user_can( 'edit_post', $resolved_post_id )
+        : current_user_can( 'edit_posts' );
+}
+$context_reminder_message = '';
+if ( $can_edit_context && ! $context_should_render ) {
+    $context_reminder_message = __( 'Ajoutez le panneau « Contexte de test » dans Gutenberg pour préciser plateformes, build et statut de validation.', 'notation-jlg' );
+}
 
 if ( $animations_on ) {
     $wrapper_classes[] = 'jlg-animate';
@@ -215,6 +254,43 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                     </span>
                 <?php endif; ?>
             </div>
+        <?php endif; ?>
+
+        <?php if ( $context_should_render ) : ?>
+            <section class="<?php echo esc_attr( implode( ' ', $context_classes ) ); ?>" aria-labelledby="<?php echo esc_attr( $context_section_id ); ?>">
+                <h3 id="<?php echo esc_attr( $context_section_id ); ?>" class="review-box-jlg__context-heading">
+                    <?php esc_html_e( 'Contexte du test', 'notation-jlg' ); ?>
+                </h3>
+                <?php if ( $context_has_items ) : ?>
+                    <dl class="review-box-jlg__context-list">
+                        <?php if ( $context_has_platforms ) : ?>
+                            <div class="review-box-jlg__context-item">
+                                <dt class="review-box-jlg__context-label"><?php esc_html_e( 'Plateformes', 'notation-jlg' ); ?></dt>
+                                <dd class="review-box-jlg__context-value"><?php echo esc_html( $context_platforms ); ?></dd>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ( $context_has_build ) : ?>
+                            <div class="review-box-jlg__context-item">
+                                <dt class="review-box-jlg__context-label"><?php esc_html_e( 'Build testée', 'notation-jlg' ); ?></dt>
+                                <dd class="review-box-jlg__context-value"><?php echo esc_html( $context_build ); ?></dd>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ( $context_has_status_label ) : ?>
+                            <div class="review-box-jlg__context-item">
+                                <dt class="review-box-jlg__context-label"><?php esc_html_e( 'Statut de validation', 'notation-jlg' ); ?></dt>
+                                <dd class="review-box-jlg__context-value"><?php echo esc_html( $context_status_label ); ?></dd>
+                            </div>
+                        <?php endif; ?>
+                    </dl>
+                <?php endif; ?>
+                <?php if ( $context_status_message !== '' ) : ?>
+                    <p class="review-box-jlg__context-message"><?php echo esc_html( $context_status_message ); ?></p>
+                <?php endif; ?>
+            </section>
+        <?php endif; ?>
+
+        <?php if ( $context_reminder_message !== '' ) : ?>
+            <p class="review-box-jlg__context-reminder"><?php echo esc_html( $context_reminder_message ); ?></p>
         <?php endif; ?>
 
         <?php if ( $should_display_status_banner ) : ?>
