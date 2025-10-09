@@ -106,7 +106,7 @@ Le plugin propose désormais une collection complète de blocs dynamiques pour l
   d'accent et le format du score (valeur absolue ou pourcentage) pour un rendu cohérent.
 - **Game Explorer** (`notation-jlg/game-explorer`) : définissez le tri initial, les filtres disponibles et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
-- **Score Insights** (`notation-jlg/score-insights`) : ajustez la période analysée, filtrez par plateforme et limitez le classement pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes) avec un indicateur de tendance comparant la moyenne actuelle à la période précédente et un label de consensus basé sur l'écart-type et la fourchette des notes.
+- **Score Insights** (`notation-jlg/score-insights`) : ajustez la période analysée, filtrez par plateforme et limitez le classement pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes) avec un indicateur de tendance comparant la moyenne actuelle à la période précédente, un label de consensus basé sur l'écart-type et la fourchette des notes, ainsi qu'un indice de confiance inspiré d'OpenCritic (limité/modéré/élevé) pour piloter vos priorités éditoriales.
 
 Chaque bloc repose sur le rendu PHP historique (shortcodes) et marque automatiquement l'exécution via
 `JLG_Frontend::mark_shortcode_rendered()` afin que les assets nécessaires soient chargés, y compris dans l'éditeur.

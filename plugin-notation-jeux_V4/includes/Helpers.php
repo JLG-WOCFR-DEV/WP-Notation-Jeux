@@ -3332,6 +3332,7 @@ class Helpers {
                 'deviation_label'     => '',
                 'range'               => array(),
                 'sample'              => $sample,
+                'confidence'          => isset( $sample['confidence'] ) ? $sample['confidence'] : array(),
             );
         }
 
@@ -3370,6 +3371,7 @@ class Helpers {
                     )
                 ),
                 'sample'              => $sample,
+                'confidence'          => isset( $sample['confidence'] ) ? $sample['confidence'] : array(),
             );
         }
 
@@ -3431,17 +3433,68 @@ class Helpers {
             ),
             'range'               => $range,
             'sample'              => $sample,
+            'confidence'          => isset( $sample['confidence'] ) ? $sample['confidence'] : array(),
         );
     }
 
     private static function build_consensus_sample_data( $count ) {
         $count = max( 0, (int) $count );
 
+        $thresholds = apply_filters(
+            'jlg_score_insights_confidence_thresholds',
+            array(
+                'medium' => 3,
+                'high'   => 6,
+            )
+        );
+
+        $medium_threshold = isset( $thresholds['medium'] ) ? max( 1, (int) $thresholds['medium'] ) : 3;
+        $high_threshold   = isset( $thresholds['high'] ) ? max( $medium_threshold + 1, (int) $thresholds['high'] ) : 6;
+
+        if ( $high_threshold <= $medium_threshold ) {
+            $high_threshold = $medium_threshold + 1;
+        }
+
+        $labels = apply_filters(
+            'jlg_score_insights_confidence_labels',
+            array(
+                'none'   => array(
+                    'label'   => __( 'Confiance indisponible', 'notation-jlg' ),
+                    'message' => __( 'Publiez des critiques supplémentaires pour activer cet indicateur.', 'notation-jlg' ),
+                ),
+                'low'    => array(
+                    'label'   => __( 'Confiance limitée', 'notation-jlg' ),
+                    'message' => __( 'Échantillon trop restreint : planifiez d’autres tests pour confirmer la tendance.', 'notation-jlg' ),
+                ),
+                'medium' => array(
+                    'label'   => __( 'Confiance modérée', 'notation-jlg' ),
+                    'message' => __( 'Les tendances se dessinent : poursuivez vos publications pour gagner en robustesse.', 'notation-jlg' ),
+                ),
+                'high'   => array(
+                    'label'   => __( 'Confiance élevée', 'notation-jlg' ),
+                    'message' => __( 'Échantillon solide : communiquez sereinement votre verdict.', 'notation-jlg' ),
+                ),
+            )
+        );
+
+        $level = 'none';
+
         if ( $count === 0 ) {
+            $confidence = self::prepare_confidence_payload( $level, $labels );
+
             return array(
-                'count' => 0,
-                'label' => __( 'Aucun test pris en compte', 'notation-jlg' ),
+                'count'      => 0,
+                'label'      => __( 'Aucun test pris en compte', 'notation-jlg' ),
+                'confidence' => $confidence,
             );
+        }
+
+        if ( $count < $medium_threshold ) {
+            $level = 'low';
+        } elseif ( $count < $high_threshold ) {
+            $level = 'medium';
+        } else {
+            $level = 'high';
         }
 
         $label = sprintf(
@@ -3450,8 +3503,32 @@ class Helpers {
         );
 
         return array(
-            'count' => $count,
-            'label' => $label,
+            'count'      => $count,
+            'label'      => $label,
+            'confidence' => self::prepare_confidence_payload( $level, $labels ),
+        );
+    }
+
+    private static function prepare_confidence_payload( $level, $labels ) {
+        $level = is_string( $level ) ? sanitize_key( $level ) : 'none';
+
+        if ( ! is_array( $labels ) ) {
+            $labels = array();
+        }
+
+        if ( ! isset( $labels[ $level ] ) || ! is_array( $labels[ $level ] ) ) {
+            $level = 'none';
+        }
+
+        $entry = isset( $labels[ $level ] ) && is_array( $labels[ $level ] ) ? $labels[ $level ] : array();
+
+        $label   = isset( $entry['label'] ) ? (string) $entry['label'] : '';
+        $message = isset( $entry['message'] ) ? (string) $entry['message'] : '';
+
+        return array(
+            'level'   => $level,
+            'label'   => $label,
+            'message' => $message,
         );
     }
 

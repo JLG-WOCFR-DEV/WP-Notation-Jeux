@@ -2509,3 +2509,39 @@ msgstr ""
 #: assets/js/blocks/user-rating.js:38
 msgid "Notation utilisateurs"
 msgstr ""
+
+#: includes/Helpers.php:3462
+msgid "Confiance indisponible"
+msgstr ""
+
+#: includes/Helpers.php:3463
+msgid "Publiez des critiques supplémentaires pour activer cet indicateur."
+msgstr ""
+
+#: includes/Helpers.php:3466
+msgid "Confiance limitée"
+msgstr ""
+
+#: includes/Helpers.php:3467
+msgid "Échantillon trop restreint : planifiez d’autres tests pour confirmer la tendance."
+msgstr ""
+
+#: includes/Helpers.php:3470
+msgid "Confiance modérée"
+msgstr ""
+
+#: includes/Helpers.php:3471
+msgid "Les tendances se dessinent : poursuivez vos publications pour gagner en robustesse."
+msgstr ""
+
+#: includes/Helpers.php:3474
+msgid "Confiance élevée"
+msgstr ""
+
+#: includes/Helpers.php:3475
+msgid "Échantillon solide : communiquez sereinement votre verdict."
+msgstr ""
+
+#: templates/shortcode-score-insights.php:202
+msgid "Indice de confiance"
+msgstr ""

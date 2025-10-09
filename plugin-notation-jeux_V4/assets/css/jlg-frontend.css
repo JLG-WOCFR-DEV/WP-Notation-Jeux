@@ -947,6 +947,54 @@
     color: var(--jlg-score-insights-text);
 }
 
+.jlg-score-insights__consensus-confidence {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.jlg-score-insights__consensus-confidence-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(15, 23, 42, 0.65);
+}
+
+.jlg-score-insights__confidence-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--jlg-score-insights-neutral);
+}
+
+.jlg-score-insights__confidence-chip--low {
+    background: rgba(220, 38, 38, 0.12);
+    color: var(--jlg-score-insights-negative);
+}
+
+.jlg-score-insights__confidence-chip--medium {
+    background: rgba(234, 179, 8, 0.16);
+    color: #b45309;
+}
+
+.jlg-score-insights__confidence-chip--high {
+    background: rgba(22, 163, 74, 0.12);
+    color: var(--jlg-score-insights-positive);
+}
+
+.jlg-score-insights__consensus-confidence-message {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--jlg-score-insights-text);
+}
+
 .jlg-score-insights__consensus-details {
     margin: 0;
     font-size: 0.8rem;

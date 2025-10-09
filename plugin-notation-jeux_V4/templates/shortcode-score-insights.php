@@ -23,28 +23,32 @@ $platform_label   = isset( $platform_label ) ? (string) $platform_label : '';
 $platform_slug    = isset( $platform_slug ) ? (string) $platform_slug : '';
 $platform_limit   = isset( $platform_limit ) ? intval( $platform_limit ) : 5;
 
-$total_reviews         = isset( $insights['total'] ) ? intval( $insights['total'] ) : 0;
-$mean_value            = $insights['mean']['formatted'] ?? null;
-$median_value          = $insights['median']['formatted'] ?? null;
-$distribution          = isset( $insights['distribution'] ) && is_array( $insights['distribution'] ) ? $insights['distribution'] : array();
-$rankings              = isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ? $insights['platform_rankings'] : array();
-$badges                = isset( $insights['divergence_badges'] ) && is_array( $insights['divergence_badges'] ) ? $insights['divergence_badges'] : array();
-$badge_threshold       = isset( $insights['badge_threshold'] ) ? (float) $insights['badge_threshold'] : 1.5;
-$trend                 = isset( $trend ) && is_array( $trend ) ? $trend : array();
-$trend_available       = ! empty( $trend['available'] );
-$trend_label           = isset( $trend['comparison_label'] ) ? (string) $trend['comparison_label'] : '';
-$trend_mean            = isset( $trend['mean'] ) && is_array( $trend['mean'] ) ? $trend['mean'] : array();
-$trend_delta           = isset( $trend_mean['delta_formatted'] ) ? (string) $trend_mean['delta_formatted'] : '';
-$trend_direction       = isset( $trend_mean['direction'] ) ? (string) $trend_mean['direction'] : 'stable';
-$trend_direction_label = isset( $trend_mean['direction_label'] ) ? (string) $trend_mean['direction_label'] : '';
-$trend_previous_mean   = isset( $trend_mean['previous_formatted'] ) ? (string) $trend_mean['previous_formatted'] : '';
-$trend_previous_total  = isset( $trend['previous_total_formatted'] ) ? (string) $trend['previous_total_formatted'] : '';
-$consensus             = isset( $insights['consensus'] ) && is_array( $insights['consensus'] ) ? $insights['consensus'] : array();
-$consensus_level       = isset( $consensus['level'] ) ? (string) $consensus['level'] : 'insufficient';
-$consensus_label       = isset( $consensus['level_label'] ) ? (string) $consensus['level_label'] : '';
-$consensus_message     = isset( $consensus['message'] ) ? (string) $consensus['message'] : '';
-$consensus_deviation   = isset( $consensus['deviation_label'] ) ? (string) $consensus['deviation_label'] : '';
-$consensus_sample      = '';
+$total_reviews                = isset( $insights['total'] ) ? intval( $insights['total'] ) : 0;
+$mean_value                   = $insights['mean']['formatted'] ?? null;
+$median_value                 = $insights['median']['formatted'] ?? null;
+$distribution                 = isset( $insights['distribution'] ) && is_array( $insights['distribution'] ) ? $insights['distribution'] : array();
+$rankings                     = isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ? $insights['platform_rankings'] : array();
+$badges                       = isset( $insights['divergence_badges'] ) && is_array( $insights['divergence_badges'] ) ? $insights['divergence_badges'] : array();
+$badge_threshold              = isset( $insights['badge_threshold'] ) ? (float) $insights['badge_threshold'] : 1.5;
+$trend                        = isset( $trend ) && is_array( $trend ) ? $trend : array();
+$trend_available              = ! empty( $trend['available'] );
+$trend_label                  = isset( $trend['comparison_label'] ) ? (string) $trend['comparison_label'] : '';
+$trend_mean                   = isset( $trend['mean'] ) && is_array( $trend['mean'] ) ? $trend['mean'] : array();
+$trend_delta                  = isset( $trend_mean['delta_formatted'] ) ? (string) $trend_mean['delta_formatted'] : '';
+$trend_direction              = isset( $trend_mean['direction'] ) ? (string) $trend_mean['direction'] : 'stable';
+$trend_direction_label        = isset( $trend_mean['direction_label'] ) ? (string) $trend_mean['direction_label'] : '';
+$trend_previous_mean          = isset( $trend_mean['previous_formatted'] ) ? (string) $trend_mean['previous_formatted'] : '';
+$trend_previous_total         = isset( $trend['previous_total_formatted'] ) ? (string) $trend['previous_total_formatted'] : '';
+$consensus                    = isset( $insights['consensus'] ) && is_array( $insights['consensus'] ) ? $insights['consensus'] : array();
+$consensus_level              = isset( $consensus['level'] ) ? (string) $consensus['level'] : 'insufficient';
+$consensus_label              = isset( $consensus['level_label'] ) ? (string) $consensus['level_label'] : '';
+$consensus_message            = isset( $consensus['message'] ) ? (string) $consensus['message'] : '';
+$consensus_deviation          = isset( $consensus['deviation_label'] ) ? (string) $consensus['deviation_label'] : '';
+$consensus_confidence         = isset( $consensus['confidence'] ) && is_array( $consensus['confidence'] ) ? $consensus['confidence'] : array();
+$consensus_confidence_label   = isset( $consensus_confidence['label'] ) ? (string) $consensus_confidence['label'] : '';
+$consensus_confidence_message = isset( $consensus_confidence['message'] ) ? (string) $consensus_confidence['message'] : '';
+$consensus_confidence_level   = isset( $consensus_confidence['level'] ) ? (string) $consensus_confidence['level'] : '';
+$consensus_sample             = '';
 if ( isset( $consensus['sample'] ) && is_array( $consensus['sample'] ) ) {
     $consensus_sample = isset( $consensus['sample']['label'] ) ? (string) $consensus['sample']['label'] : '';
 }
@@ -56,7 +60,12 @@ $consensus_chip_classes = array( 'jlg-score-insights__consensus-chip' );
 if ( $consensus_level !== '' ) {
     $consensus_chip_classes[] = 'jlg-score-insights__consensus-chip--' . sanitize_html_class( $consensus_level );
 }
-$consensus_chip_class = implode( ' ', array_map( 'sanitize_html_class', $consensus_chip_classes ) );
+$consensus_chip_class    = implode( ' ', array_map( 'sanitize_html_class', $consensus_chip_classes ) );
+$confidence_chip_classes = array( 'jlg-score-insights__confidence-chip' );
+if ( $consensus_confidence_level !== '' ) {
+    $confidence_chip_classes[] = 'jlg-score-insights__confidence-chip--' . sanitize_html_class( $consensus_confidence_level );
+}
+$confidence_chip_class = implode( ' ', array_map( 'sanitize_html_class', $confidence_chip_classes ) );
 
 $title = '';
 if ( ! empty( $atts['title'] ) ) {
@@ -186,6 +195,26 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
                         <p class="jlg-score-insights__consensus-sample">
                             <?php echo esc_html( $consensus_sample ); ?>
                         </p>
+                    <?php endif; ?>
+                    <?php if ( $consensus_confidence_label !== '' || $consensus_confidence_message !== '' ) : ?>
+                        <div class="jlg-score-insights__consensus-confidence" role="status">
+                            <span class="jlg-score-insights__consensus-confidence-title">
+                                <?php esc_html_e( 'Indice de confiance', 'notation-jlg' ); ?>
+                            </span>
+                            <?php if ( $consensus_confidence_label !== '' ) : ?>
+                                <span class="<?php echo esc_attr( $confidence_chip_class ); ?>" aria-hidden="true">
+                                    <?php echo esc_html( $consensus_confidence_label ); ?>
+                                </span>
+                                <span class="screen-reader-text">
+                                    <?php echo esc_html( $consensus_confidence_label ); ?>
+                                </span>
+                            <?php endif; ?>
+                            <?php if ( $consensus_confidence_message !== '' ) : ?>
+                                <span class="jlg-score-insights__consensus-confidence-message">
+                                    <?php echo esc_html( $consensus_confidence_message ); ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                     <?php if ( $consensus_message !== '' ) : ?>
                         <p class="jlg-score-insights__consensus-message">

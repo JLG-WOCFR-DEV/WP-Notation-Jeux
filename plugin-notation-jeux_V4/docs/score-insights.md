@@ -19,6 +19,8 @@ Un indicateur de tendance compare désormais la moyenne éditoriale de la pério
 
 Une section « Niveau de consensus » complète cette lecture en calculant l'écart-type des notes éditoriales et la fourchette min/max. Selon les seuils configurables (`jlg_score_insights_consensus_thresholds`), le module affiche un label (« Consensus fort », « Consensus partagé », « Avis divisés »), un message éditorial et des détails (écart-type formaté + amplitude des scores) pour aider la rédaction à prioriser ses revues. Le bloc indique également le volume de tests agrégés (« Basé sur N tests publiés » ou « Basé sur 1 test publié ») afin de contextualiser le niveau de confiance, à la manière des bandeaux statistiques d’OpenCritic.
 
+Cette mise à jour ajoute un **indice de confiance** directement inspiré du benchmark OpenCritic/IGN : en fonction du volume analysé, l’interface affiche un badge (« Confiance limitée/modérée/élevée ») et un message d’action (publier d’autres tests, communiquer sereinement, etc.). Les seuils par défaut (3 tests pour passer en confiance modérée, 6 pour confiance élevée) peuvent être ajustés via le filtre `jlg_score_insights_confidence_thresholds`. Les libellés et messages sont également filtrables (`jlg_score_insights_confidence_labels`) pour s’aligner sur votre ton éditorial.
+
 ## Bloc `notation-jlg/score-insights`
 
 Dans Gutenberg, le bloc reprend ces attributs :
@@ -34,4 +36,5 @@ Le bloc réutilise le shortcode côté serveur, garantissant la parité front/é
 - Pour analyser une période personnalisée, utilisez le filtre `jlg_score_insights_time_ranges` dans votre thème ou plugin compagnon et ajoutez une option dans le bloc via un script personnalisé si nécessaire.
 - Personnalisez les badges de divergence avec `jlg_score_insights_badge_threshold` (seuil en points) et `jlg_score_insights_badge_limit` (nombre maximum affiché) pour cadrer avec votre ligne éditoriale.
 - Ajustez les seuils du label de consensus via `jlg_score_insights_consensus_thresholds` si votre rédaction souhaite un niveau d'exigence différent (ex. consensus « fort » uniquement en dessous de 0,3 point d'écart-type).
+- Modifiez les seuils de l'indice de confiance avec `jlg_score_insights_confidence_thresholds` (entiers) et adaptez les messages affichés via `jlg_score_insights_confidence_labels`.
 - Pensez à compléter `docs/responsive-testing.md` si vous introduisez de nouvelles variations visuelles autour de ce module.
