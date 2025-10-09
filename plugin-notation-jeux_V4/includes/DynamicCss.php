@@ -201,6 +201,32 @@ class DynamicCss {
             }
         }
 
+        $visual_preset = isset( $options['visual_preset'] ) ? sanitize_key( (string) $options['visual_preset'] ) : 'signature';
+
+        switch ( $visual_preset ) {
+            case 'minimal':
+                $score_gradient_1   = $this->sanitize_color_value( $score_gradient_1 !== '' ? $score_gradient_1 : '#475569' );
+                $score_gradient_2   = $this->sanitize_color_value( $score_gradient_2 !== '' ? $score_gradient_2 : '#1e293b' );
+                $color_high         = $this->sanitize_color_value( $color_high !== '' ? $color_high : '#2563eb' );
+                $color_low          = $this->sanitize_color_value( $color_low !== '' ? $color_low : '#1f2937' );
+                $tagline_bg_color   = $tagline_bg_color !== '' ? $tagline_bg_color : $bg_color;
+                $tagline_text_color = $tagline_text_color !== '' ? $tagline_text_color : $main_text_color;
+                $border_color       = $border_color !== '' ? $border_color : $this->sanitize_color_value( Helpers::adjust_hex_brightness( $main_text_color, -40 ) );
+                break;
+            case 'editorial':
+                $score_gradient_1   = $this->sanitize_color_value( $score_gradient_1 !== '' ? $score_gradient_1 : '#f97316' );
+                $score_gradient_2   = $this->sanitize_color_value( $score_gradient_2 !== '' ? $score_gradient_2 : '#ef4444' );
+                $color_high         = $this->sanitize_color_value( $color_high !== '' ? $color_high : '#f97316' );
+                $color_low          = $this->sanitize_color_value( $color_low !== '' ? $color_low : '#dc2626' );
+                $tagline_bg_color   = $this->sanitize_color_value( $tagline_bg_color !== '' ? $tagline_bg_color : '#111827' );
+                $tagline_text_color = $tagline_text_color !== '' ? $tagline_text_color : '#f8fafc';
+                $border_color       = $this->sanitize_color_value( $border_color !== '' ? $border_color : '#f97316' );
+                break;
+            default:
+                // Signature preset keeps user values.
+                break;
+        }
+
         if ( $bar_bg_color === '' ) {
             $bar_bg_color = $bg_color_secondary;
         }

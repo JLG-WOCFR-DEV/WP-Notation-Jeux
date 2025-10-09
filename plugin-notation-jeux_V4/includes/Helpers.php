@@ -1562,6 +1562,7 @@ class Helpers {
         self::$default_settings_cache = array(
             // Options générales
             'visual_theme'                       => 'dark',
+            'visual_preset'                      => 'signature',
             'score_layout'                       => 'text',
             'score_max'                          => 10,
             'enable_animations'                  => 1,

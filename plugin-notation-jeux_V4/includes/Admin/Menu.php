@@ -61,11 +61,12 @@ class Menu {
 
     private function get_tabs() {
         return array(
-            'reglages'       => __( '⚙️ Réglages', 'notation-jlg' ),
-            'articles_notes' => __( '📊 Articles Notés', 'notation-jlg' ),
-            'plateformes'    => __( '🎮 Plateformes', 'notation-jlg' ),
-            'shortcodes'     => __( '📝 Shortcodes', 'notation-jlg' ),
-            'tutoriels'      => __( '📚 Tutoriels', 'notation-jlg' ),
+            'reglages'       => __( 'Réglages', 'notation-jlg' ),
+            'articles_notes' => __( 'Articles notés', 'notation-jlg' ),
+            'plateformes'    => __( 'Plateformes', 'notation-jlg' ),
+            'shortcodes'     => __( 'Shortcodes', 'notation-jlg' ),
+            'tutoriels'      => __( 'Tutoriels', 'notation-jlg' ),
+            'diagnostics'    => __( 'Diagnostics', 'notation-jlg' ),
         );
     }
 
@@ -90,6 +91,8 @@ class Menu {
                 return $this->get_shortcodes_tab_content();
             case 'tutoriels':
                 return $this->get_tutorials_tab_content();
+            case 'diagnostics':
+                return $this->get_diagnostics_tab_content();
             case 'reglages':
             default:
                 return $this->get_settings_tab_content();
@@ -116,10 +119,53 @@ class Menu {
         return TemplateLoader::get_admin_template(
             'tabs/settings',
             array(
-				'settings_page'     => 'notation_jlg_page',
-				'sections_overview' => $sections_overview,
-				'preview_snapshot'  => $preview_snapshot,
-			)
+                'settings_page'     => 'notation_jlg_page',
+                'sections_overview' => $sections_overview,
+                'preview_snapshot'  => $preview_snapshot,
+            )
+        );
+    }
+
+    private function get_diagnostics_tab_content() {
+        $metrics      = array();
+        $rawg_status  = array(
+            'configured' => false,
+            'masked_key' => '',
+        );
+        $ajax_action  = 'jlg_diagnostics_rawg_ping';
+        $reset_action = 'jlg_reset_notation_metrics';
+
+        $core_instance = Core::get_instance();
+
+        if ( $core_instance ) {
+            $diagnostics = $core_instance->get_component( 'diagnostics' );
+
+            if ( $diagnostics && method_exists( $diagnostics, 'get_metrics' ) ) {
+                $metrics = $diagnostics->get_metrics();
+            }
+
+            if ( $diagnostics && method_exists( $diagnostics, 'get_rawg_status' ) ) {
+                $rawg_status = $diagnostics->get_rawg_status();
+            }
+
+            if ( $diagnostics && method_exists( $diagnostics, 'get_rawg_ping_action' ) ) {
+                $ajax_action = $diagnostics->get_rawg_ping_action();
+            }
+
+            if ( $diagnostics && method_exists( $diagnostics, 'get_reset_metrics_action' ) ) {
+                $reset_action = $diagnostics->get_reset_metrics_action();
+            }
+        }
+
+        return TemplateLoader::get_admin_template(
+            'tabs/diagnostics',
+            array(
+                'metrics'      => $metrics,
+                'rawg_status'  => $rawg_status,
+                'ajax_action'  => $ajax_action,
+                'reset_action' => $reset_action,
+                'nonce'        => wp_create_nonce( $ajax_action ),
+            )
         );
     }
 
@@ -133,10 +179,10 @@ class Menu {
             return TemplateLoader::get_admin_template(
                 'tabs/posts-list',
                 array(
-					'has_rated_posts' => false,
-					'empty_state'     => $empty_state,
-					'insights'        => Helpers::get_posts_score_insights( array() ),
-				)
+                    'has_rated_posts' => false,
+                    'empty_state'     => $empty_state,
+                    'insights'        => Helpers::get_posts_score_insights( array() ),
+                )
             );
         }
 
@@ -182,8 +228,8 @@ class Menu {
                 $categories = get_the_category( $post_id );
                 $cat_names  = array_map(
                     function ( $cat ) {
-						return $cat->name;
-					},
+                        return $cat->name;
+                    },
                     $categories
                 );
 
@@ -233,37 +279,37 @@ class Menu {
         return TemplateLoader::get_admin_template(
             'tabs/posts-list',
             array(
-				'has_rated_posts'    => true,
-				'empty_state'        => $empty_state,
-				'stats'              => array(
-					'total_items'   => $total_items,
-					'current_page'  => $current_page,
-					'total_pages'   => $total_pages,
-					'display_count' => count( $posts ),
-				),
-				'insights'           => Helpers::get_posts_score_insights( $rated_posts ),
-				'columns'            => $this->get_sortable_columns( $orderby, $order ),
-				'posts'              => $posts,
-				'pagination'         => $pagination,
-				'print_button_label' => __( '🖨️ Imprimer cette liste', 'notation-jlg' ),
-			)
+                'has_rated_posts'    => true,
+                'empty_state'        => $empty_state,
+                'stats'              => array(
+                    'total_items'   => $total_items,
+                    'current_page'  => $current_page,
+                    'total_pages'   => $total_pages,
+                    'display_count' => count( $posts ),
+                ),
+                'insights'           => Helpers::get_posts_score_insights( $rated_posts ),
+                'columns'            => $this->get_sortable_columns( $orderby, $order ),
+                'posts'              => $posts,
+                'pagination'         => $pagination,
+                'print_button_label' => __( '🖨️ Imprimer cette liste', 'notation-jlg' ),
+            )
         );
     }
 
     private function get_sortable_columns( $current_orderby, $current_order ) {
         $columns = array(
             array(
-				'label' => __( 'Titre', 'notation-jlg' ),
-				'key'   => 'title',
-			),
+                'label' => __( 'Titre', 'notation-jlg' ),
+                'key'   => 'title',
+            ),
             array(
-				'label' => __( 'Date', 'notation-jlg' ),
-				'key'   => 'date',
-			),
+                'label' => __( 'Date', 'notation-jlg' ),
+                'key'   => 'date',
+            ),
             array(
-				'label' => __( 'Note', 'notation-jlg' ),
-				'key'   => 'score',
-			),
+                'label' => __( 'Note', 'notation-jlg' ),
+                'key'   => 'score',
+            ),
         );
 
         $results = array();

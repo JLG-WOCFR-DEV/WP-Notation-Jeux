@@ -61,6 +61,26 @@
     transition: box-shadow .3s ease, transform .3s ease;
 }
 
+.review-box-jlg.review-box-jlg--preset-minimal {
+    --jlg-surface-shadow: none;
+    border-radius: 14px;
+    box-shadow: none;
+    background-image: none;
+}
+
+.review-box-jlg.review-box-jlg--preset-minimal::before {
+    display: none;
+}
+
+.review-box-jlg.review-box-jlg--preset-editorial {
+    border-left: 6px solid var(--jlg-score-gradient-1, #f97316);
+    box-shadow: 0 28px 46px -32px rgba(15, 23, 42, 0.6);
+}
+
+.review-box-jlg.review-box-jlg--preset-editorial::before {
+    opacity: 0.26;
+}
+
 .review-box-jlg::before {
     content: "";
     position: absolute;

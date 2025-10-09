@@ -102,6 +102,19 @@
                             },
                         }),
                         createElement(SelectControl, {
+                            label: __('Preset visuel', 'notation-jlg'),
+                            value: attributes.visualPreset || 'inherit',
+                            options: [
+                                { value: 'inherit', label: __('Suivre les réglages globaux', 'notation-jlg') },
+                                { value: 'signature', label: __('Signature – Dégradé dynamique', 'notation-jlg') },
+                                { value: 'minimal', label: __('Minimal – Interface épurée', 'notation-jlg') },
+                                { value: 'editorial', label: __('Éditorial – Contraste fort', 'notation-jlg') },
+                            ],
+                            onChange: function (value) {
+                                setAttributes({ visualPreset: value || 'inherit' });
+                            },
+                        }),
+                        createElement(SelectControl, {
                             label: __('Affichage du score', 'notation-jlg'),
                             value: attributes.scoreDisplay || 'absolute',
                             options: [
@@ -205,6 +218,7 @@
                             accentColor: attributes.accentColor || '',
                             previewTheme: attributes.previewTheme || 'auto',
                             previewAnimations: attributes.previewAnimations || 'inherit',
+                            visualPreset: attributes.visualPreset || 'inherit',
                         },
                         label: __('Bloc de notation', 'notation-jlg'),
                     })

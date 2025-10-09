@@ -59,6 +59,11 @@
       "type": "string",
       "default": "inherit",
       "enum": ["inherit", "enabled", "disabled"]
+    },
+    "visualPreset": {
+      "type": "string",
+      "default": "inherit",
+      "enum": ["inherit", "signature", "minimal", "editorial"]
     }
   },
   "editorScript": "notation-jlg-rating-block-editor",

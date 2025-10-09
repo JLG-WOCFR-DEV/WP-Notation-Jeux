@@ -7,6 +7,7 @@ use JLG\Notation\Admin\Menu;
 use JLG\Notation\Admin\Metaboxes;
 use JLG\Notation\Admin\Platforms;
 use JLG\Notation\Admin\Settings;
+use JLG\Notation\Admin\Diagnostics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,6 +19,7 @@ class Core {
     private $metaboxes;
     private $settings;
     private $platforms;
+    private $diagnostics;
 
     public static function get_instance() {
         if ( self::$instance === null ) {
@@ -51,6 +53,10 @@ class Core {
         if ( class_exists( Platforms::class ) ) {
             $this->platforms = Platforms::get_instance();
         }
+
+        if ( class_exists( Diagnostics::class ) ) {
+            $this->diagnostics = new Diagnostics();
+        }
     }
 
     public function get_component( $component_name ) {
@@ -63,6 +69,8 @@ class Core {
                 return $this->settings;
             case 'platforms':
                 return $this->platforms;
+            case 'diagnostics':
+                return $this->diagnostics;
             default:
                 return null;
         }
