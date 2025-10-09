@@ -1224,7 +1224,7 @@ if (!function_exists('sanitize_key')) {
         }
 
         $key = strtolower($key);
-        $key = preg_replace('/[^a-z0-9_]/', '', $key);
+        $key = preg_replace('/[^a-z0-9_\-]/', '', $key);
 
         return (string) $key;
     }
@@ -2111,6 +2111,20 @@ if (!function_exists('get_queried_object_id')) {
     function get_queried_object_id()
     {
         return isset($GLOBALS['jlg_test_current_post_id']) ? (int) $GLOBALS['jlg_test_current_post_id'] : 0;
+    }
+}
+
+if (!function_exists('metadata_exists')) {
+    function metadata_exists($meta_type, $object_id, $meta_key)
+    {
+        if ($meta_type !== 'post') {
+            return false;
+        }
+
+        $meta = $GLOBALS['jlg_test_meta'] ?? [];
+        $object_id = (int) $object_id;
+
+        return isset($meta[$object_id]) && array_key_exists($meta_key, $meta[$object_id]);
     }
 }
 

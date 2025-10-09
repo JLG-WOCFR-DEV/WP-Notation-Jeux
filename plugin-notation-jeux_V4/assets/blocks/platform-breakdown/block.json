@@ -1,0 +1,36 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/platform-breakdown",
+  "title": "Comparatif plateformes",
+  "category": "widgets",
+  "icon": "controls-repeat",
+  "description": "Compare les performances et recommandations par plateforme pour un test donné.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "html": false
+  },
+  "attributes": {
+    "postId": {
+      "type": "integer",
+      "default": 0
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "showBestBadge": {
+      "type": "boolean",
+      "default": true
+    },
+    "highlightBadgeLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "emptyMessage": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "notation-jlg-platform-breakdown-editor",
+  "editorStyle": "notation-jlg-block-editor"
+}

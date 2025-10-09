@@ -32,7 +32,7 @@ class HelpersReviewStatusTest extends TestCase
             return '  Draft-Proposed ';
         });
 
-        $this->assertSame('draftproposed', \JLG\Notation\Helpers::get_default_review_status_slug());
+        $this->assertSame('draft-proposed', \JLG\Notation\Helpers::get_default_review_status_slug());
     }
 
     public function test_default_review_status_slug_falls_back_to_final_when_filter_empty(): void

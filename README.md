@@ -22,6 +22,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
   - `notation-jlg/all-in-one` pour activer/désactiver chaque sous-composant (taglines, verdict, vidéo, points forts/faibles) et personnaliser style, titres et couleur d’accent sans sacrifier l’accessibilité clavier.
   - `notation-jlg/game-info`, `notation-jlg/pros-cons`, `notation-jlg/tagline`, `notation-jlg/user-rating` pour afficher automatiquement les métadonnées saisies.
   - `notation-jlg/summary-display`, `notation-jlg/game-explorer`, `notation-jlg/score-insights` pour proposer tableau, explorateur filtrable et tableau de bord analytique directement depuis Gutenberg.
+  - `notation-jlg/platform-breakdown` pour restituer le comparatif multi-plateformes avec navigation en onglets, badge « Meilleure expérience » configurable, titre personnalisé et message de fallback lorsque la metabox est vide.
 - **Widget « Derniers tests »** : activé automatiquement, il peut être ajouté depuis *Apparence > Widgets* grâce au registre `JLG_Latest_Reviews_Widget`.
 - **Game Explorer & Score Insights** : `[jlg_game_explorer]` propose une navigation filtrable accessible (GET), un nouveau filtre « Note minimale » pour isoler les tests les mieux notés, des panneaux responsives et un focus géré ; `[jlg_score_insights]` calcule moyenne/médiane, histogramme, podium plateformes, indicateur de tendance et label de consensus (écart-type + fourchette) sur une période configurée. Le consensus mentionne désormais explicitement le volume analysé (« Basé sur N tests publiés ») pour calquer la transparence d’IGN ou OpenCritic.
 - **Presets visuels** : sélectionnez directement depuis l’onglet Réglages ou le bloc Gutenberg l’un des trois styles prêts à l’emploi (« Signature », « Minimal », « Éditorial ») pour appliquer en un clic palettes, ombres et bordures cohérentes avec vos chartes.
@@ -42,6 +43,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 
 - **Nouvelle metabox dédiée** : la section « Détails du test » accueille un comparatif par plateforme permettant de saisir performance/mode, recommandation éditoriale et badge « Meilleure expérience ». Chaque ligne peut recevoir un libellé personnalisé pour distinguer les éditions spéciales ou configurations PC.
 - **Shortcode `[jlg_platform_breakdown]`** : restitue ces informations sous forme de tableau accessible (badge, colonnes filtrables, structure responsive). Le rendu reprend automatiquement le libellé des plateformes enregistrées dans l’onglet *Notation – JLG > Plateformes* et propose un message de repli configurable lorsqu’aucune donnée n’est renseignée.
+- **Bloc Gutenberg `notation-jlg/platform-breakdown`** : propose le même rendu tabulé directement dans l’éditeur, préremplit l’ID du test courant, expose titre/badge/message vide comme attributs et conserve la parité front/aperçu REST.
 
 ## Ressources développeur
 - **Composer** : `composer.json` définit PHP >=7.4 et fournit les scripts `composer test`, `composer cs`, `composer cs-fix` pour lancer PHPUnit et PHPCS (WPCS).
@@ -76,7 +78,6 @@ Bonne contribution ! Pensez à suivre les scripts Composer avant toute PR et à
 - **Exports & intégrations partenaires** : ajouter une commande WP-CLI et un flux JSON dédié aux partenariats médias/affiliation (résumé, verdict, liens CTA configurables) pour faciliter la syndication de la note sur d’autres plateformes et newsletters sans ressaisie.
 - **Mode rédaction collaborative en temps réel** : fournir une interface multi-utilisateurs (WebSocket) permettant aux membres d’une rédaction de compléter les catégories de notation, points forts/faibles et taglines simultanément tout en conservant un historique de contributions pour les chefs de rubrique.
 - **Tableau de bord analytics éditorial** : proposer un panneau synthétique côté administration affichant progression des tests, couverture par plateforme/genre, suivi des délais entre publication et mise à jour, ainsi que des alertes sur les jeux nécessitant une révision du verdict.
-- **Bloc Gutenberg « Comparatif plateformes »** : livrer un bloc `notation-jlg/platform-breakdown` qui préremplit l’ID de l’article en mode éditeur, expose titre/message vide/badge comme attributs et restitue la même grille que le shortcode tout en restant fonctionnel dans les aperçus REST.
 
 ## Audit de la documentation – 14 octobre 2025
 
