@@ -100,6 +100,9 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame('Notes entre 7.5 et 9.2 (écart de 1.7 point(s)).', $consensus['range']['label']);
         $this->assertSame(3, $consensus['sample']['count']);
         $this->assertSame('Basé sur 3 tests publiés', $consensus['sample']['label']);
+        $this->assertSame('medium', $consensus['confidence']['level']);
+        $this->assertSame('Confiance modérée', $consensus['confidence']['label']);
+        $this->assertStringContainsString('Les tendances se dessinent', $consensus['confidence']['message']);
 
         $largest_gap = $insights['divergence_badges'][0];
         $this->assertSame(202, $largest_gap['post_id']);
@@ -136,6 +139,8 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame('Aucun test', $insights['consensus']['level_label']);
         $this->assertSame(0, $insights['consensus']['sample']['count']);
         $this->assertSame('Aucun test pris en compte', $insights['consensus']['sample']['label']);
+        $this->assertSame('none', $insights['consensus']['confidence']['level']);
+        $this->assertSame('Confiance indisponible', $insights['consensus']['confidence']['label']);
 
         $distribution_total = array_sum(array_map(static function ($bucket) {
             return $bucket['count'];
@@ -166,7 +171,40 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame('Notes entre 7.0 et 7.0 (écart de 0.0 point(s)).', $insights['consensus']['range']['label']);
         $this->assertSame(1, $insights['consensus']['sample']['count']);
         $this->assertSame('Basé sur 1 test publié', $insights['consensus']['sample']['label']);
+        $this->assertSame('low', $insights['consensus']['confidence']['level']);
+        $this->assertSame('Confiance limitée', $insights['consensus']['confidence']['label']);
 
         remove_filter('jlg_score_insights_badge_threshold', $callback);
+    }
+
+    public function test_confidence_threshold_filter_adjusts_level(): void
+    {
+        $threshold_filter = static function () {
+            return array(
+                'medium' => 2,
+                'high'   => 4,
+            );
+        };
+
+        add_filter('jlg_score_insights_confidence_thresholds', $threshold_filter);
+
+        $post_ids = [11, 12, 13, 14];
+
+        foreach ($post_ids as $index => $post_id) {
+            $score = 7.0 + ($index * 0.2);
+            $GLOBALS['jlg_test_meta'][$post_id] = [
+                '_jlg_average_score'     => (string) $score,
+                '_jlg_user_rating_avg'   => '7.0',
+                '_jlg_user_rating_count' => '10',
+            ];
+        }
+
+        $insights = \JLG\Notation\Helpers::get_posts_score_insights($post_ids);
+
+        $this->assertSame(4, $insights['consensus']['sample']['count']);
+        $this->assertSame('high', $insights['consensus']['confidence']['level']);
+        $this->assertSame('Confiance élevée', $insights['consensus']['confidence']['label']);
+
+        remove_filter('jlg_score_insights_confidence_thresholds', $threshold_filter);
     }
 }

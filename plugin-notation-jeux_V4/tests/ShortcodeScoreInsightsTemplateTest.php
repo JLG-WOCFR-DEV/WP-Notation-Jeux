@@ -43,9 +43,19 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
                 'sample' => array(
                     'count' => 5,
                     'label' => 'Basé sur 5 tests publiés',
+                    'confidence' => array(
+                        'level' => 'high',
+                        'label' => 'Confiance élevée',
+                        'message' => 'Échantillon solide : communiquez sereinement votre verdict.',
+                    ),
                 ),
                 'range' => array(
                     'label' => 'Notes entre 8,0 et 8,5 (écart de 0,5 point(s)).',
+                ),
+                'confidence' => array(
+                    'level' => 'high',
+                    'label' => 'Confiance élevée',
+                    'message' => 'Échantillon solide : communiquez sereinement votre verdict.',
                 ),
             ),
         );
@@ -83,5 +93,8 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
         $this->assertMatchesRegularExpression('/jlg-score-insights__consensus-chip--high/', $output, 'Consensus chip should reflect level class.');
         $this->assertStringContainsString('Écart-type : 0,3', $output, 'Consensus deviation label should be printed.');
         $this->assertStringContainsString('Basé sur 5 tests publiés', $output, 'Consensus sample size should be rendered.');
+        $this->assertStringContainsString('Indice de confiance', $output, 'Confidence title should be present.');
+        $this->assertMatchesRegularExpression('/jlg-score-insights__confidence-chip--high/', $output, 'Confidence chip should reflect level class.');
+        $this->assertStringContainsString('Échantillon solide : communiquez sereinement votre verdict.', $output, 'Confidence message should be rendered.');
     }
 }
