@@ -1,10 +1,12 @@
 (function () {
-    function activateTab(container, tab) {
+    function activateTab(container, tab, options) {
         var tabs = Array.prototype.slice.call(container.querySelectorAll('.jlg-platform-breakdown__tab'));
         var panels = Array.prototype.slice.call(container.querySelectorAll('.jlg-platform-breakdown__panel'));
         if (!tab || tabs.length === 0 || panels.length === 0) {
             return;
         }
+
+        var shouldFocus = options && options.focus === true;
 
         tabs.forEach(function (item) {
             var controls = item.getAttribute('data-target-panel');
@@ -25,7 +27,9 @@
             }
         });
 
-        tab.focus({ preventScroll: true });
+        if (shouldFocus) {
+            tab.focus({ preventScroll: true });
+        }
     }
 
     function handleKeydown(event, container) {
@@ -61,7 +65,7 @@
         }
 
         if (nextIndex !== currentIndex) {
-            activateTab(container, tabs[nextIndex]);
+            activateTab(container, tabs[nextIndex], { focus: true });
         }
     }
 
@@ -76,12 +80,12 @@
         }
 
         var activeTab = container.querySelector('.jlg-platform-breakdown__tab.is-active') || tabs[0];
-        activateTab(container, activeTab);
+        activateTab(container, activeTab, { focus: false });
 
         Array.prototype.forEach.call(tabs, function (tab) {
             tab.addEventListener('click', function (event) {
                 event.preventDefault();
-                activateTab(container, tab);
+                activateTab(container, tab, { focus: true });
             });
 
             tab.addEventListener('keydown', function (event) {
