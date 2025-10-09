@@ -17,6 +17,7 @@ use JLG\Notation\Shortcodes\ScoreInsights;
 use JLG\Notation\Shortcodes\SummaryDisplay;
 use JLG\Notation\Shortcodes\Tagline;
 use JLG\Notation\Shortcodes\UserRating;
+use JLG\Notation\Shortcodes\PlatformBreakdown;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -125,6 +126,7 @@ class Frontend {
             ScoreInsights::class,
             AllInOne::class,
             GameExplorer::class,
+            PlatformBreakdown::class,
         );
 
         $errors = array();
@@ -179,6 +181,7 @@ class Frontend {
             'bloc_notation_complet',
             'jlg_game_explorer',
             'jlg_score_insights',
+            'jlg_platform_breakdown',
         );
     }
 
@@ -295,6 +298,7 @@ class Frontend {
             '_jlg_tagline_fr',
             '_jlg_tagline_en',
             '_jlg_user_rating_avg',
+            '_jlg_platform_breakdown_entries',
         );
 
         foreach ( Helpers::get_rating_category_definitions() as $definition ) {
@@ -444,6 +448,16 @@ class Frontend {
             $game_explorer_shortcode_used = $this->content_has_specific_shortcode( $post_content, 'jlg_game_explorer' );
         }
 
+        $platform_breakdown_shortcode_used = self::has_rendered_shortcode( 'jlg_platform_breakdown' );
+        if ( ! $platform_breakdown_shortcode_used ) {
+            $platform_breakdown_shortcode_used = $this->content_has_specific_shortcode( $post_content, 'jlg_platform_breakdown' );
+        }
+
+        $platform_breakdown_meta_used = false;
+        if ( ! $platform_breakdown_shortcode_used && $post_id > 0 && function_exists( 'metadata_exists' ) ) {
+            $platform_breakdown_meta_used = metadata_exists( 'post', $post_id, '_jlg_platform_breakdown_entries' );
+        }
+
         $should_enqueue_summary_script       = $summary_shortcode_used || $summary_ajax;
         $should_enqueue_game_explorer_script = $game_explorer_shortcode_used || $game_explorer_ajax;
         $should_enqueue_game_explorer_assets = $should_enqueue_game_explorer_script || $game_explorer_ajax;
@@ -569,6 +583,20 @@ class Frontend {
 					),
 				)
             );
+        }
+
+        if ( $platform_breakdown_shortcode_used || $platform_breakdown_meta_used ) {
+            if ( ! wp_script_is( 'jlg-platform-breakdown', 'registered' ) ) {
+                wp_register_script(
+                    'jlg-platform-breakdown',
+                    JLG_NOTATION_PLUGIN_URL . 'assets/js/platform-breakdown.js',
+                    array(),
+                    JLG_NOTATION_VERSION,
+                    true
+                );
+            }
+
+            wp_enqueue_script( 'jlg-platform-breakdown' );
         }
 
         if ( $should_enqueue_game_explorer_script && ! wp_script_is( 'jlg-game-explorer', 'enqueued' ) ) {
@@ -3311,6 +3339,12 @@ class Frontend {
                 'table_id'                 => '',
                 'widget_args'              => array(),
                 'title'                    => '',
+                'entries'                  => array(),
+                'has_entries'              => false,
+                'show_best_badge'          => false,
+                'highlight_badge_label'    => '',
+                'empty_message'            => '',
+                'active_index'             => 0,
                 'latest_reviews'           => null,
                 'post_id'                  => null,
                 'avg_rating'               => null,

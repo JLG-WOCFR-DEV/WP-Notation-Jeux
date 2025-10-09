@@ -68,6 +68,7 @@ Accédez à l'onglet **Plateformes** depuis le menu d'administration **Notation 
 
 * La metabox **Détails du test** propose une grille « Comparatif plateformes » pour détailler performance/mode, recommandation éditoriale et marquage « Meilleure expérience » plateforme par plateforme. Chaque ligne accepte un libellé personnalisé afin de distinguer éditions spéciales ou configurations PC.
 * Le shortcode `[jlg_platform_breakdown]` restitue ces informations dans un tableau accessible : badge mis en avant, colonnes lisibles sur mobile grâce aux libellés `data-label` et message personnalisable lorsqu’aucune donnée n’est disponible.
+* Le bloc Gutenberg `notation-jlg/platform-breakdown` offre le même rendu tabulé dans l’éditeur : navigation en onglets, badge « Meilleure expérience », titre et message vide configurables, parité complète avec l’aperçu REST.
 
 = Shortcodes disponibles =
 
@@ -110,6 +111,7 @@ Le plugin expose neuf blocs dynamiques prêts à l'emploi :
 * **Game Explorer** (`notation-jlg/game-explorer`) — configurez le tri initial, les filtres proposés et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
 * **Score Insights** (`notation-jlg/score-insights`) — sélectionnez la période analysée, filtrez par plateforme et limitez le nombre de plateformes listées pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes) accompagnée d'un indicateur de tendance vs la période précédente et d'un label de consensus (écart-type + fourchette des notes). Le panneau affiche aussi le volume agrégé (« Basé sur N tests publiés ») pour s’aligner sur les benchmarks IGN/OpenCritic.
+* **Comparatif plateformes** (`notation-jlg/platform-breakdown`) — affiche le comparatif multi-plateformes configuré dans la metabox, avec badge « Meilleure expérience » optionnel, message de fallback et titre personnalisable directement depuis la barre latérale de Gutenberg.
  
 
 Chaque bloc délègue le rendu à la logique PHP historique (shortcodes) tout en appelant `JLG_Frontend::mark_shortcode_rendered()`
@@ -185,7 +187,6 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 * **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
 * **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
 * **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
-* **Bloc Gutenberg « Comparatif plateformes »** : développer un bloc `notation-jlg/platform-breakdown` qui présélectionne l’article courant dans l’éditeur, expose titre/message vide/badge en attributs et reflète fidèlement le rendu front, y compris dans les aperçus REST.
 
 == Audit de la documentation – 14 octobre 2025 ==
 

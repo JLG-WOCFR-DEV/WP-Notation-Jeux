@@ -5,6 +5,7 @@ namespace JLG\Notation;
 use JLG\Notation\Helpers;
 use JLG\Notation\Frontend;
 use JLG\Notation\Utils\Validator;
+use JLG\Notation\Shortcodes\PlatformBreakdown;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -38,59 +39,65 @@ class Blocks {
      * @var array<string, array<string, mixed>>
      */
     private $blocks = array(
-        'rating-block'    => array(
+        'rating-block'       => array(
             'name'      => 'notation-jlg/rating-block',
             'shortcode' => 'bloc_notation_jeu',
             'script'    => 'notation-jlg-rating-block-editor',
             'callback'  => 'render_rating_block',
         ),
-        'pros-cons'       => array(
+        'pros-cons'          => array(
             'name'      => 'notation-jlg/pros-cons',
             'shortcode' => 'jlg_points_forts_faibles',
             'script'    => 'notation-jlg-pros-cons-editor',
             'callback'  => 'render_pros_cons_block',
         ),
-        'tagline'         => array(
+        'tagline'            => array(
             'name'      => 'notation-jlg/tagline',
             'shortcode' => 'tagline_notation_jlg',
             'script'    => 'notation-jlg-tagline-editor',
             'callback'  => 'render_tagline_block',
         ),
-        'game-info'       => array(
+        'game-info'          => array(
             'name'      => 'notation-jlg/game-info',
             'shortcode' => 'jlg_fiche_technique',
             'script'    => 'notation-jlg-game-info-editor',
             'callback'  => 'render_game_info_block',
         ),
-        'user-rating'     => array(
+        'user-rating'        => array(
             'name'      => 'notation-jlg/user-rating',
             'shortcode' => 'notation_utilisateurs_jlg',
             'script'    => 'notation-jlg-user-rating-editor',
             'callback'  => 'render_user_rating_block',
         ),
-        'summary-display' => array(
+        'summary-display'    => array(
             'name'      => 'notation-jlg/summary-display',
             'shortcode' => 'jlg_tableau_recap',
             'script'    => 'notation-jlg-summary-display-editor',
             'callback'  => 'render_summary_display_block',
         ),
-        'all-in-one'      => array(
+        'all-in-one'         => array(
             'name'      => 'notation-jlg/all-in-one',
             'shortcode' => 'jlg_bloc_complet',
             'script'    => 'notation-jlg-all-in-one-editor',
             'callback'  => 'render_all_in_one_block',
         ),
-        'game-explorer'   => array(
+        'game-explorer'      => array(
             'name'      => 'notation-jlg/game-explorer',
             'shortcode' => 'jlg_game_explorer',
             'script'    => 'notation-jlg-game-explorer-editor',
             'callback'  => 'render_game_explorer_block',
         ),
-        'score-insights'  => array(
+        'score-insights'     => array(
             'name'      => 'notation-jlg/score-insights',
             'shortcode' => 'jlg_score_insights',
             'script'    => 'notation-jlg-score-insights-editor',
             'callback'  => 'render_score_insights_block',
+        ),
+        'platform-breakdown' => array(
+            'name'      => 'notation-jlg/platform-breakdown',
+            'shortcode' => 'jlg_platform_breakdown',
+            'script'    => 'notation-jlg-platform-breakdown-editor',
+            'callback'  => 'render_platform_breakdown_block',
         ),
     );
 
@@ -475,6 +482,46 @@ class Blocks {
         unset( $attributes );
 
         return $this->render_shortcode( 'notation_utilisateurs_jlg' );
+    }
+
+    public function render_platform_breakdown_block( $attributes ) {
+        $attributes = is_array( $attributes ) ? $attributes : array();
+
+        $defaults = array(
+            'postId'              => 0,
+            'title'               => '',
+            'showBestBadge'       => true,
+            'highlightBadgeLabel' => '',
+            'emptyMessage'        => __( 'Aucun comparatif plateforme pour le moment.', 'notation-jlg' ),
+        );
+
+        $attributes = wp_parse_args( $attributes, $defaults );
+
+        $post_id = isset( $attributes['postId'] ) ? absint( $attributes['postId'] ) : 0;
+        if ( $post_id <= 0 ) {
+            $current_id = get_the_ID();
+            if ( $current_id ) {
+                $post_id = absint( $current_id );
+            }
+        }
+
+        $context = PlatformBreakdown::build_view_context(
+            $post_id,
+            array(
+                'title'                 => isset( $attributes['title'] ) ? (string) $attributes['title'] : '',
+                'show_best_badge'       => ! empty( $attributes['showBestBadge'] ),
+                'highlight_badge_label' => isset( $attributes['highlightBadgeLabel'] ) ? (string) $attributes['highlightBadgeLabel'] : '',
+                'empty_message'         => isset( $attributes['emptyMessage'] ) ? (string) $attributes['emptyMessage'] : '',
+            )
+        );
+
+        if ( empty( $context['has_entries'] ) && $context['empty_message'] === '' ) {
+            return '';
+        }
+
+        Frontend::mark_shortcode_rendered( PlatformBreakdown::SHORTCODE );
+
+        return Frontend::get_template_html( 'shortcode-platform-breakdown', $context );
     }
 
     public function render_summary_display_block( $attributes ) {

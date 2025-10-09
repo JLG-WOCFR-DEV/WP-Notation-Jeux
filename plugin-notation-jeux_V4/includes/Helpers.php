@@ -2816,6 +2816,121 @@ class Helpers {
         return $labels;
     }
 
+    public static function get_platform_breakdown_for_post( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return array();
+        }
+
+        $raw_entries = get_post_meta( $post_id, '_jlg_platform_breakdown_entries', true );
+        if ( ! is_array( $raw_entries ) ) {
+            $raw_entries = array();
+        }
+
+        $registered = self::get_registered_platform_labels();
+        $normalized = array();
+        $used_ids   = array();
+
+        foreach ( $raw_entries as $index => $entry ) {
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+
+            $platform_key = isset( $entry['platform'] ) ? sanitize_key( $entry['platform'] ) : '';
+            if ( $platform_key !== '' && ! isset( $registered[ $platform_key ] ) ) {
+                $platform_key = '';
+            }
+
+            $custom_label = isset( $entry['custom_label'] ) ? sanitize_text_field( $entry['custom_label'] ) : '';
+            if ( function_exists( 'mb_substr' ) ) {
+                $custom_label = mb_substr( $custom_label, 0, 120 );
+            } else {
+                $custom_label = substr( $custom_label, 0, 120 );
+            }
+            $custom_label = trim( $custom_label );
+
+            $label = $custom_label !== '' ? $custom_label : ( $platform_key !== '' ? $registered[ $platform_key ] : '' );
+            if ( $label === '' ) {
+                continue;
+            }
+
+            $performance = isset( $entry['performance'] ) ? sanitize_text_field( $entry['performance'] ) : '';
+            if ( function_exists( 'mb_substr' ) ) {
+                $performance = mb_substr( $performance, 0, 160 );
+            } else {
+                $performance = substr( $performance, 0, 160 );
+            }
+            $performance = trim( $performance );
+
+            $comment = isset( $entry['comment'] ) ? sanitize_textarea_field( $entry['comment'] ) : '';
+            if ( function_exists( 'mb_substr' ) ) {
+                $comment = mb_substr( $comment, 0, 300 );
+            } else {
+                $comment = substr( $comment, 0, 300 );
+            }
+            $comment = trim( $comment );
+
+            $identifier = $platform_key !== '' ? $platform_key : 'custom-' . $index;
+            if ( isset( $used_ids[ $identifier ] ) ) {
+                $identifier .= '-' . ( $index + 1 );
+            }
+            $used_ids[ $identifier ] = true;
+
+            $normalized[] = array(
+                'id'           => $identifier,
+                'platform'     => $platform_key,
+                'label'        => $label,
+                'custom_label' => $custom_label,
+                'performance'  => $performance,
+                'comment'      => $comment,
+                'is_best'      => ! empty( $entry['is_best'] ),
+            );
+        }
+
+        $normalized = apply_filters( 'jlg_platform_breakdown_entries', $normalized, $post_id );
+
+        if ( ! is_array( $normalized ) ) {
+            return array();
+        }
+
+        return array_values(
+            array_filter(
+                $normalized,
+                static function ( $entry ) {
+                    return is_array( $entry ) && isset( $entry['label'] ) && $entry['label'] !== '';
+                }
+            )
+        );
+    }
+
+    public static function get_platform_breakdown_badge_label( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return _x( 'Meilleure expérience', 'Default highlight badge label', 'notation-jlg' );
+        }
+
+        $raw_label = get_post_meta( $post_id, '_jlg_platform_breakdown_highlight_label', true );
+        if ( ! is_string( $raw_label ) ) {
+            $raw_label = '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            $raw_label = mb_substr( $raw_label, 0, 80 );
+        } else {
+            $raw_label = substr( $raw_label, 0, 80 );
+        }
+
+        $raw_label = trim( sanitize_text_field( $raw_label ) );
+
+        if ( $raw_label === '' ) {
+            return _x( 'Meilleure expérience', 'Default highlight badge label', 'notation-jlg' );
+        }
+
+        return $raw_label;
+    }
+
     /**
      * Calcule des statistiques globales sur les notes attribuées aux articles.
      *

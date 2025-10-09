@@ -300,7 +300,86 @@ class Metaboxes {
         }
         echo '</div>';
 
+        // Comparatif plateformes
+        $breakdown_entries = get_post_meta( $post->ID, '_jlg_platform_breakdown_entries', true );
+        $breakdown_entries = is_array( $breakdown_entries ) ? array_values( $breakdown_entries ) : array();
+        $highlight_label   = get_post_meta( $post->ID, '_jlg_platform_breakdown_highlight_label', true );
+        $highlight_label   = is_string( $highlight_label ) ? $highlight_label : '';
+
+        $registered_platforms = Helpers::get_registered_platform_labels();
+        $default_badge_label  = _x( 'Meilleure expérience', 'Default highlight badge label', 'notation-jlg' );
+
+        echo '<h3>' . esc_html__( '⚙️ Comparatif plateformes', 'notation-jlg' ) . '</h3>';
+        echo '<p class="description" style="margin:5px 0 15px;">' . esc_html__( 'Renseignez jusqu’à quatre plateformes avec leurs performances et un commentaire synthétique. Cochez la meilleure expérience pour afficher le badge dans le comparatif.', 'notation-jlg' ) . '</p>';
+
+        echo '<div class="jlg-platform-breakdown-metabox" style="display:grid; gap:16px;">';
+
+        $max_entries = 4;
+        for ( $index = 0; $index < $max_entries; $index++ ) {
+            $entry           = isset( $breakdown_entries[ $index ] ) && is_array( $breakdown_entries[ $index ] ) ? $breakdown_entries[ $index ] : array();
+            $platform_value  = isset( $entry['platform'] ) ? sanitize_key( $entry['platform'] ) : '';
+            $custom_label    = isset( $entry['custom_label'] ) ? (string) $entry['custom_label'] : '';
+            $performance     = isset( $entry['performance'] ) ? (string) $entry['performance'] : '';
+            $comment         = isset( $entry['comment'] ) ? (string) $entry['comment'] : '';
+            $is_best_checked = ! empty( $entry['is_best'] );
+
+            $field_prefix = 'jlg_platform_breakdown[' . $index . ']';
+
+            echo '<fieldset style="border:1px solid #dcdcde; padding:15px; border-radius:6px;">';
+            printf( '<legend style="font-weight:600;">%s #%d</legend>', esc_html__( 'Plateforme', 'notation-jlg' ), $index + 1 );
+
+            echo '<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;">';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_platform' ) . '"><strong>' . esc_html__( 'Plateforme enregistrée', 'notation-jlg' ) . '</strong></label>';
+            echo '<select id="' . esc_attr( $field_prefix . '_platform' ) . '" name="' . esc_attr( $field_prefix ) . '[platform]" style="width:100%;">';
+            echo '<option value="">' . esc_html__( 'Sélectionner…', 'notation-jlg' ) . '</option>';
+            foreach ( $registered_platforms as $slug => $label ) {
+                $selected_attr = selected( $platform_value, $slug, false );
+                echo '<option value="' . esc_attr( $slug ) . '"' . $selected_attr . '>' . esc_html( $label ) . '</option>';
+            }
+            echo '</select>';
+            echo '<p class="description" style="margin:4px 0 0;">' . esc_html__( 'Laissez vide et renseignez un libellé personnalisé pour une plateforme ponctuelle.', 'notation-jlg' ) . '</p>';
+            echo '</div>';
+
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_custom_label' ) . '"><strong>' . esc_html__( 'Libellé personnalisé', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_custom_label' ) . '" name="' . esc_attr( $field_prefix ) . '[custom_label]" value="' . esc_attr( $custom_label ) . '" style="width:100%;" maxlength="120">';
+            echo '<p class="description" style="margin:4px 0 0;">' . esc_html__( 'Optionnel. Exemple : « PlayStation 5 (Mode Performance) ».', 'notation-jlg' ) . '</p>';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:12px;">';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_performance' ) . '"><strong>' . esc_html__( 'Performance / mode', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_performance' ) . '" name="' . esc_attr( $field_prefix ) . '[performance]" value="' . esc_attr( $performance ) . '" style="width:100%;" maxlength="160" placeholder="60 fps en 4K, DLSS équilibré…">';
+            echo '</div>';
+
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_comment' ) . '"><strong>' . esc_html__( 'Commentaire', 'notation-jlg' ) . '</strong></label>';
+            echo '<textarea id="' . esc_attr( $field_prefix . '_comment' ) . '" name="' . esc_attr( $field_prefix ) . '[comment]" rows="3" style="width:100%;" maxlength="300" placeholder="Stabilité parfaite, compatibilité HDR…">' . esc_textarea( $comment ) . '</textarea>';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<label style="display:inline-flex; align-items:center; gap:8px; margin-top:12px;">';
+            echo '<input type="checkbox" name="' . esc_attr( $field_prefix ) . '[is_best]" value="1" ' . checked( $is_best_checked, true, false ) . '> ';
+            echo esc_html__( 'Mettre en avant cette plateforme comme meilleure expérience', 'notation-jlg' );
+            echo '</label>';
+
+            echo '</fieldset>';
+        }
+
+        echo '<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;">';
+        echo '<div>';
+        echo '<label for="jlg_platform_breakdown_highlight_label"><strong>' . esc_html__( 'Libellé du badge', 'notation-jlg' ) . '</strong></label>';
+        echo '<input type="text" id="jlg_platform_breakdown_highlight_label" name="jlg_platform_breakdown_highlight_label" value="' . esc_attr( $highlight_label ) . '" style="width:100%;" maxlength="80" placeholder="' . esc_attr( $default_badge_label ) . '">';
+        echo '<p class="description" style="margin:4px 0 0;">' . esc_html__( 'Laissez vide pour utiliser le libellé par défaut.', 'notation-jlg' ) . '</p>';
+        echo '</div>';
+        echo '</div>';
+
+        echo '</div>';
+
         // Taglines
+
         echo '<h3>' . esc_html__( '💬 Taglines & CTA', 'notation-jlg' ) . '</h3>';
         echo '<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">';
         echo '<div>';
@@ -668,7 +747,86 @@ class Metaboxes {
             } else {
                 delete_post_meta( $post_id, '_jlg_plateformes' );
             }
-        }
+
+            // Comparatif plateformes (données structurées)
+            if ( isset( $_POST['jlg_platform_breakdown'] ) && is_array( $_POST['jlg_platform_breakdown'] ) ) {
+                $raw_entries        = wp_unslash( $_POST['jlg_platform_breakdown'] );
+                $raw_entries        = is_array( $raw_entries ) ? $raw_entries : array();
+                $registered_options = Helpers::get_registered_platform_labels();
+                $allowed_slugs      = array_keys( $registered_options );
+                $normalized_entries = array();
+
+                foreach ( $raw_entries as $raw_entry ) {
+                    if ( ! is_array( $raw_entry ) ) {
+                        continue;
+                    }
+
+                    $platform_key = isset( $raw_entry['platform'] ) ? sanitize_key( $raw_entry['platform'] ) : '';
+                    if ( $platform_key !== '' && ! in_array( $platform_key, $allowed_slugs, true ) ) {
+                        $platform_key = '';
+                    }
+
+                    $custom_label = isset( $raw_entry['custom_label'] ) ? sanitize_text_field( wp_unslash( $raw_entry['custom_label'] ) ) : '';
+                    if ( function_exists( 'mb_substr' ) ) {
+                        $custom_label = mb_substr( $custom_label, 0, 120 );
+                    } else {
+                        $custom_label = substr( $custom_label, 0, 120 );
+                    }
+                    $custom_label = trim( $custom_label );
+
+                    $performance = isset( $raw_entry['performance'] ) ? sanitize_text_field( wp_unslash( $raw_entry['performance'] ) ) : '';
+                    if ( function_exists( 'mb_substr' ) ) {
+                        $performance = mb_substr( $performance, 0, 160 );
+                    } else {
+                        $performance = substr( $performance, 0, 160 );
+                    }
+                    $performance = trim( $performance );
+
+                    $comment = isset( $raw_entry['comment'] ) ? sanitize_textarea_field( wp_unslash( $raw_entry['comment'] ) ) : '';
+                    if ( function_exists( 'mb_substr' ) ) {
+                        $comment = mb_substr( $comment, 0, 300 );
+                    } else {
+                        $comment = substr( $comment, 0, 300 );
+                    }
+                    $comment = trim( $comment );
+
+                    $has_label = ( $platform_key !== '' && isset( $registered_options[ $platform_key ] ) ) || $custom_label !== '';
+                    if ( ! $has_label && $performance === '' && $comment === '' ) {
+                        continue;
+                    }
+
+                    $normalized_entries[] = array(
+                        'platform'     => $platform_key,
+                        'custom_label' => $custom_label,
+                        'performance'  => $performance,
+                        'comment'      => $comment,
+                        'is_best'      => ! empty( $raw_entry['is_best'] ),
+                    );
+                }
+
+                if ( ! empty( $normalized_entries ) ) {
+                    update_post_meta( $post_id, '_jlg_platform_breakdown_entries', $normalized_entries );
+                } else {
+                    delete_post_meta( $post_id, '_jlg_platform_breakdown_entries' );
+                }
+            } else {
+                delete_post_meta( $post_id, '_jlg_platform_breakdown_entries' );
+            }
+
+            $badge_label_input = isset( $_POST['jlg_platform_breakdown_highlight_label'] ) ? sanitize_text_field( wp_unslash( $_POST['jlg_platform_breakdown_highlight_label'] ) ) : '';
+            if ( function_exists( 'mb_substr' ) ) {
+                $badge_label_input = mb_substr( $badge_label_input, 0, 80 );
+            } else {
+                $badge_label_input = substr( $badge_label_input, 0, 80 );
+            }
+            $badge_label_input = trim( $badge_label_input );
+
+            if ( $badge_label_input === '' ) {
+                delete_post_meta( $post_id, '_jlg_platform_breakdown_highlight_label' );
+            } else {
+                update_post_meta( $post_id, '_jlg_platform_breakdown_highlight_label', $badge_label_input );
+            }
+		}
 
         if ( ! empty( $validation_errors ) ) {
             set_transient( $this->get_error_transient_key(), $validation_errors, MINUTE_IN_SECONDS );
