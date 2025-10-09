@@ -7,7 +7,7 @@ use JLG\Notation\Helpers;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+    exit;
 }
 
 class RatingBlock {
@@ -30,6 +30,7 @@ class RatingBlock {
                 'verdict_summary'    => '',
                 'verdict_cta_label'  => '',
                 'verdict_cta_url'    => '',
+                'visual_preset'      => '',
             ),
             $atts,
             'bloc_notation_jeu'
@@ -58,6 +59,19 @@ class RatingBlock {
         $preview_theme      = $this->normalize_preview_theme( $atts['preview_theme'] );
         $preview_animations = $this->normalize_preview_animations( $atts['preview_animations'] );
         $extra_classes      = array();
+
+        $visual_preset = isset( $options['visual_preset'] ) ? sanitize_key( (string) $options['visual_preset'] ) : 'signature';
+        if ( ! in_array( $visual_preset, array( 'signature', 'minimal', 'editorial' ), true ) ) {
+            $visual_preset = 'signature';
+        }
+
+        $visual_preset_override = is_string( $atts['visual_preset'] ) ? sanitize_key( $atts['visual_preset'] ) : '';
+        if ( in_array( $visual_preset_override, array( 'signature', 'minimal', 'editorial' ), true ) ) {
+            $visual_preset            = $visual_preset_override;
+            $options['visual_preset'] = $visual_preset;
+        }
+
+        $extra_classes[] = 'review-box-jlg--preset-' . $visual_preset;
 
         $score_layout = is_string( $atts['score_layout'] ) ? sanitize_key( $atts['score_layout'] ) : '';
         if ( in_array( $score_layout, array( 'text', 'circle' ), true ) ) {

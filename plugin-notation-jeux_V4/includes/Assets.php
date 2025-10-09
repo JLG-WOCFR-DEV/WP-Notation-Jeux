@@ -97,16 +97,31 @@ class Assets {
             'jlg-admin-settings',
             'jlgAdminSettingsData',
             array(
-				'sections'     => $sections_overview,
-				'dependencies' => $field_dependencies,
-				'preview'      => $preview_snapshot,
-				'i18n'         => array(
-					'dependencyInactive' => __( 'Activez l’option associée pour modifier ce réglage.', 'notation-jlg' ),
-				),
-			)
+                'sections'     => $sections_overview,
+                'dependencies' => $field_dependencies,
+                'preview'      => $preview_snapshot,
+                'i18n'         => array(
+                    'dependencyInactive' => __( 'Activez l’option associée pour modifier ce réglage.', 'notation-jlg' ),
+                    'filterNoResult'     => __( 'Aucun réglage ne correspond à votre recherche.', 'notation-jlg' ),
+                    'contrastExcellent'  => __( 'Contraste AAA : lecture optimale', 'notation-jlg' ),
+                    'contrastGood'       => __( 'Contraste AA : conforme aux recommandations', 'notation-jlg' ),
+                    'contrastWarning'    => __( 'Contraste limite : privilégiez une taille de police élevée', 'notation-jlg' ),
+                    'contrastFail'       => __( 'Contraste insuffisant : ajustez vos couleurs', 'notation-jlg' ),
+                ),
+            )
         );
 
         $active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'reglages';
+
+        if ( $active_tab === 'diagnostics' ) {
+            wp_enqueue_script(
+                'jlg-admin-diagnostics',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/admin-diagnostics.js',
+                array(),
+                $version,
+                true
+            );
+        }
 
         if ( $active_tab !== 'plateformes' ) {
             return;
@@ -124,25 +139,25 @@ class Assets {
             $handle,
             'jlgPlatformsOrder',
             array(
-				'listSelector'     => '#platforms-list',
-				'positionSelector' => '.jlg-platform-position',
-				'handleSelector'   => '.jlg-sort-handle',
-				'rowSelector'      => 'tr[data-key]',
-				'inputSelector'    => 'input[name="platform_order[]"]',
-				'placeholderClass' => 'jlg-sortable-placeholder',
-			)
+                'listSelector'     => '#platforms-list',
+                'positionSelector' => '.jlg-platform-position',
+                'handleSelector'   => '.jlg-sort-handle',
+                'rowSelector'      => 'tr[data-key]',
+                'inputSelector'    => 'input[name="platform_order[]"]',
+                'placeholderClass' => 'jlg-sortable-placeholder',
+            )
         );
 
         wp_localize_script(
             $handle,
             'jlgPlatformsOrderL10n',
             array(
-				'confirmReset'  => esc_html__( 'Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?', 'notation-jlg' ),
-				'confirmDelete' => esc_html__( 'Êtes-vous sûr de vouloir supprimer la plateforme "%s" ?', 'notation-jlg' ),
-				'nonce'         => wp_create_nonce( 'jlg_platform_action' ),
-				'nonceField'    => 'jlg_platform_nonce',
-				'actionField'   => 'jlg_platform_action',
-				'deleteAction'  => 'delete',
+                'confirmReset'  => esc_html__( 'Êtes-vous sûr de vouloir réinitialiser toutes les plateformes ?', 'notation-jlg' ),
+                'confirmDelete' => esc_html__( 'Êtes-vous sûr de vouloir supprimer la plateforme "%s" ?', 'notation-jlg' ),
+                'nonce'         => wp_create_nonce( 'jlg_platform_action' ),
+                'nonceField'    => 'jlg_platform_nonce',
+                'actionField'   => 'jlg_platform_action',
+                'deleteAction'  => 'delete',
 			)
         );
 

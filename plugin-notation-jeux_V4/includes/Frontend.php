@@ -6,6 +6,8 @@ use Exception;
 use WP_Post;
 use WP_Query;
 use JLG\Notation\Helpers;
+use JLG\Notation\StyleCache;
+use JLG\Notation\Telemetry;
 use JLG\Notation\Shortcodes\AllInOne;
 use JLG\Notation\Shortcodes\GameExplorer;
 use JLG\Notation\Shortcodes\GameInfo;
@@ -22,8 +24,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Frontend {
 
-    public const FRONTEND_STYLE_HANDLE      = 'jlg-frontend';
-    public const GAME_EXPLORER_STYLE_HANDLE = 'jlg-game-explorer';
+    public const FRONTEND_STYLE_HANDLE         = 'jlg-frontend';
+    public const FRONTEND_DYNAMIC_STYLE_HANDLE = 'jlg-frontend-theme';
+    public const GAME_EXPLORER_STYLE_HANDLE    = 'jlg-game-explorer';
+    public const GAME_EXPLORER_DYNAMIC_HANDLE  = 'jlg-game-explorer-theme';
 
     private const USER_RATING_MAX_STORED_VOTES     = 250;
     private const USER_RATING_RETENTION_DAYS       = 180;
@@ -399,7 +403,20 @@ class Frontend {
 
         $inline_css = DynamicCss::build_frontend_css( $options, $palette, $average_score );
 
-        wp_add_inline_style( self::FRONTEND_STYLE_HANDLE, $inline_css );
+        $dynamic_stylesheet = StyleCache::ensure_stylesheet( 'frontend-theme', $inline_css );
+
+        if ( $dynamic_stylesheet ) {
+            wp_register_style(
+                self::FRONTEND_DYNAMIC_STYLE_HANDLE,
+                $dynamic_stylesheet['url'],
+                array( self::FRONTEND_STYLE_HANDLE ),
+                $dynamic_stylesheet['version']
+            );
+
+            wp_enqueue_style( self::FRONTEND_DYNAMIC_STYLE_HANDLE );
+        } else {
+            wp_add_inline_style( self::FRONTEND_STYLE_HANDLE, $inline_css );
+        }
 
         if ( ! wp_style_is( self::GAME_EXPLORER_STYLE_HANDLE, 'registered' ) ) {
             wp_register_style(
@@ -438,7 +455,20 @@ class Frontend {
                 $game_explorer_css = $this->build_game_explorer_css( $options, $palette );
 
                 if ( ! empty( $game_explorer_css ) ) {
-                    wp_add_inline_style( self::GAME_EXPLORER_STYLE_HANDLE, $game_explorer_css );
+                    $game_explorer_stylesheet = StyleCache::ensure_stylesheet( 'game-explorer', $game_explorer_css );
+
+                    if ( $game_explorer_stylesheet ) {
+                        wp_register_style(
+                            self::GAME_EXPLORER_DYNAMIC_HANDLE,
+                            $game_explorer_stylesheet['url'],
+                            array( self::GAME_EXPLORER_STYLE_HANDLE ),
+                            $game_explorer_stylesheet['version']
+                        );
+
+                        wp_enqueue_style( self::GAME_EXPLORER_DYNAMIC_HANDLE );
+                    } else {
+                        wp_add_inline_style( self::GAME_EXPLORER_STYLE_HANDLE, $game_explorer_css );
+                    }
                 }
             }
         }
@@ -2169,12 +2199,38 @@ class Frontend {
     }
 
     public function handle_game_explorer_sort() {
+        $request_start = microtime( true );
+
         if ( ! check_ajax_referer( 'jlg_game_explorer', 'nonce', false ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
+            $message = esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' );
+
+            Telemetry::record_event(
+                'game_explorer',
+                array(
+                    'duration' => microtime( true ) - $request_start,
+                    'status'   => 'error',
+                    'message'  => $message,
+                    'context'  => array( 'reason' => 'nonce' ),
+                )
+            );
+
+            wp_send_json_error( array( 'message' => $message ), 403 );
         }
 
         if ( ! class_exists( GameExplorer::class ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' ) ), 500 );
+            $message = esc_html__( 'Le shortcode requis est indisponible.', 'notation-jlg' );
+
+            Telemetry::record_event(
+                'game_explorer',
+                array(
+                    'duration' => microtime( true ) - $request_start,
+                    'status'   => 'error',
+                    'message'  => $message,
+                    'context'  => array( 'reason' => 'missing_shortcode' ),
+                )
+            );
+
+            wp_send_json_error( array( 'message' => $message ), 500 );
         }
 
         $default_atts = GameExplorer::get_default_atts();
@@ -2211,9 +2267,7 @@ class Frontend {
 
         $context = GameExplorer::get_render_context( $atts, $raw_request );
 
-        $state = array(
-            'orderby'      => $context['sort_key'] ?? 'date',
-            'order'        => $context['sort_order'] ?? 'DESC',
+        $filters_context = array(
             'letter'       => $context['current_filters']['letter'] ?? '',
             'category'     => $context['current_filters']['category'] ?? '',
             'platform'     => $context['current_filters']['platform'] ?? '',
@@ -2223,12 +2277,44 @@ class Frontend {
             'year'         => $context['current_filters']['year'] ?? '',
             'score'        => $context['current_filters']['score'] ?? '',
             'search'       => $context['current_filters']['search'] ?? '',
+        );
+
+        $state = array(
+            'orderby'      => $context['sort_key'] ?? 'date',
+            'order'        => $context['sort_order'] ?? 'DESC',
+            'letter'       => $filters_context['letter'],
+            'category'     => $filters_context['category'],
+            'platform'     => $filters_context['platform'],
+            'developer'    => $filters_context['developer'],
+            'publisher'    => $filters_context['publisher'],
+            'availability' => $filters_context['availability'],
+            'year'         => $filters_context['year'],
+            'score'        => $filters_context['score'],
+            'search'       => $filters_context['search'],
             'paged'        => $context['pagination']['current'] ?? 1,
             'total_pages'  => $context['pagination']['total'] ?? 0,
             'total_items'  => $context['total_items'] ?? 0,
         );
 
         if ( ! empty( $context['error'] ) && ! empty( $context['message'] ) ) {
+            $message = wp_strip_all_tags( (string) $context['message'] );
+
+            Telemetry::record_event(
+                'game_explorer',
+                array(
+                    'duration' => microtime( true ) - $request_start,
+                    'status'   => 'error',
+                    'message'  => $message,
+                    'context'  => array_merge(
+                        $filters_context,
+                        array(
+                            'reason'      => 'empty_response',
+                            'total_items' => $state['total_items'],
+                        )
+                    ),
+                )
+            );
+
             wp_send_json_success(
                 array(
                     'html'   => $context['message'],
@@ -2239,6 +2325,22 @@ class Frontend {
         }
 
         $html = self::get_template_html( 'game-explorer-fragment', $context );
+
+        Telemetry::record_event(
+            'game_explorer',
+            array(
+                'duration' => microtime( true ) - $request_start,
+                'status'   => 'success',
+                'context'  => array_merge(
+                    $filters_context,
+                    array(
+                        'reason'      => 'ok',
+                        'total_items' => $state['total_items'],
+                        'paged'       => $state['paged'],
+                    )
+                ),
+            )
+        );
 
         wp_send_json_success(
             array(

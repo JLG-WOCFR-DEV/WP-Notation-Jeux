@@ -25,6 +25,8 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **Notation utilisateurs** : votes AJAX, histogramme accessible rafraîchi en direct, verrouillage anti double clic et option *Connexion obligatoire avant le vote*.
 * **Tableau récapitulatif & Game Explorer** : vues triables/filtrables avec navigation accessible sans JavaScript et panneaux responsives.
 * **Score Insights** : tableau de bord statistique (moyenne, médiane, histogramme, plateformes dominantes) filtrable par période et plateforme, agrémenté d'un indicateur de tendance comparant la moyenne à la période précédente, d'un label de consensus basé sur l'écart-type et d'un compteur de tests (« Basé sur N tests publiés ») pour contextualiser la fiabilité de l'échantillon.
+* **Presets visuels** : appliquez instantanément l’un des styles fournis (Signature, Minimal, Éditorial) depuis les réglages ou le bloc Gutenberg pour harmoniser palettes, ombres et bordures.
+* **Onglet Diagnostics** : surveillez la latence des flux (Game Explorer, RAWG, votes lecteurs), réinitialisez les métriques et testez la connexion RAWG directement depuis l’administration.
 * **Nom de jeu personnalisé** : remplace le titre WordPress dans tableaux, widgets et données structurées.
 * **Widget « Derniers tests »** : met en avant vos dernières reviews notées.
 * **Intégration vidéo enrichie** : détection automatique YouTube, Vimeo, Twitch, Dailymotion pour un embed conforme.

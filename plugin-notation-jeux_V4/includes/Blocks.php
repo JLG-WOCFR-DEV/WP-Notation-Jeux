@@ -421,6 +421,13 @@ class Blocks {
             }
         }
 
+        if ( isset( $attributes['visualPreset'] ) && is_string( $attributes['visualPreset'] ) ) {
+            $preset = sanitize_key( $attributes['visualPreset'] );
+            if ( in_array( $preset, array( 'inherit', 'signature', 'minimal', 'editorial' ), true ) && 'inherit' !== $preset ) {
+                $atts['visual_preset'] = $preset;
+            }
+        }
+
         if ( class_exists( Frontend::class ) ) {
             Frontend::mark_shortcode_rendered( 'bloc_notation_jeu' );
         }

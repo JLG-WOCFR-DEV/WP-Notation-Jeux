@@ -186,7 +186,7 @@ class ShortcodeAllInOneRenderTest extends TestCase
         ]);
 
         $this->assertNotSame('', $output);
-        $this->assertStringContainsString('class="review-box-jlg jlg-animate"', $output);
+        $this->assertStringContainsString('class="review-box-jlg review-box-jlg--preset-signature jlg-animate"', $output);
     }
 
     public function test_render_includes_review_video_when_configured(): void

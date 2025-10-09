@@ -72,6 +72,7 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
                         <span class="jlg-theme-preview__badge" data-preview-theme-indicator><?php esc_html_e('Thème sombre actif', 'notation-jlg'); ?></span>
                         <span class="jlg-theme-preview__hint"><?php esc_html_e('Les gradients et halos reflètent vos réglages actuels.', 'notation-jlg'); ?></span>
                     </footer>
+                    <p class="jlg-theme-preview__contrast" data-preview-contrast aria-live="polite"></p>
                 </div>
             </div>
         </section>
@@ -80,6 +81,22 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
     <div class="jlg-settings-main">
         <h2 class="jlg-settings-title"><?php esc_html_e('Configuration du plugin', 'notation-jlg'); ?></h2>
         <p class="jlg-settings-subtitle"><?php esc_html_e('Personnalisez l’apparence et le comportement du système de notation.', 'notation-jlg'); ?></p>
+
+        <div class="jlg-settings-toolbar" role="region" aria-label="<?php esc_attr_e('Outils de navigation dans les réglages', 'notation-jlg'); ?>">
+            <label class="jlg-settings-toolbar__search">
+                <span class="screen-reader-text"><?php esc_html_e('Rechercher un réglage', 'notation-jlg'); ?></span>
+                <input
+                    type="search"
+                    placeholder="<?php esc_attr_e('Filtrer par mot-clé…', 'notation-jlg'); ?>"
+                    data-settings-filter
+                />
+            </label>
+            <div class="jlg-settings-toolbar__actions" role="group" aria-label="<?php esc_attr_e('Affichage des sections', 'notation-jlg'); ?>">
+                <button type="button" class="button button-secondary" data-collapse-all><?php esc_html_e('Tout replier', 'notation-jlg'); ?></button>
+                <button type="button" class="button button-secondary" data-expand-all><?php esc_html_e('Tout déplier', 'notation-jlg'); ?></button>
+            </div>
+            <p class="jlg-settings-toolbar__empty" data-filter-empty hidden></p>
+        </div>
 
         <form action="options.php" method="post" class="jlg-settings-form">
             <?php if (! empty($settings_page)) : ?>

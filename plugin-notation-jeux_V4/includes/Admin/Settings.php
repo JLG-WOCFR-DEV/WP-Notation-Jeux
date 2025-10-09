@@ -57,6 +57,7 @@ class Settings {
 
         $fields = array(
             'visual_theme',
+            'visual_preset',
             'score_layout',
             'text_glow_enabled',
             'text_glow_color_mode',
@@ -172,6 +173,7 @@ class Settings {
         // Ces champs doivent être traités spécialement pour conserver leur valeur
         $select_fields = array(
             'visual_theme'                 => array( 'dark', 'light' ),
+            'visual_preset'                => array( 'signature', 'minimal', 'editorial' ),
             'score_layout'                 => array( 'text', 'circle' ),
             'text_glow_color_mode'         => array( 'dynamic', 'custom' ),
             'circle_glow_color_mode'       => array( 'dynamic', 'custom' ),
@@ -693,6 +695,24 @@ class Settings {
             $score_max_field_args
         );
         $this->store_field_constraints( $score_max_field_args );
+
+        add_settings_field(
+            'visual_preset',
+            __( 'Preset visuel', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_layout',
+            array(
+                'id'      => 'visual_preset',
+                'type'    => 'select',
+                'options' => array(
+                    'signature' => __( 'Signature (dégradé dynamique)', 'notation-jlg' ),
+                    'minimal'   => __( 'Minimal (interfaces sobres)', 'notation-jlg' ),
+                    'editorial' => __( 'Éditorial (contraste élevé)', 'notation-jlg' ),
+                ),
+                'desc'    => __( 'Applique instantanément une combinaison de couleurs et d’espacements.', 'notation-jlg' ),
+            )
+        );
 
         add_settings_field(
             'score_layout',
