@@ -25,56 +25,73 @@
 - Gestion du statut "Updated" visible dès la hero card avec lien vers changelog ; notre statut auto est puissant mais la surface front manque d’un micro-composant pour afficher l’historique.
 
 ## Recommandations stratégiques
-### Plan d’action priorisé (0-6 mois)
+### Roadmap de développement priorisée (0-6 mois)
 
-| Priorité | Fenêtre cible | Livrables clés | Impact attendu |
+| Priorité | Fenêtre cible | Objectif produit | Mesure de succès |
 | --- | --- | --- | --- |
-| **P0 – Critique** | 0-1 mois | Mode Simple/Expert refondu, bloc "Notation express", feedback dynamique d’état | Adoption accrue par les rédactions pressées, parité UX avec IGN/OpenCritic |
-| **P1 – Maîtrise** | 1-3 mois | CTA verdict configurables, variants de cartes, monitoring de santé des données | Conversion affiliée améliorée, cohérence UI renforcée, diminution du temps de diagnostic |
-| **P2 – Excellence** | 3-6 mois | Kit de design tokens, mode dégradé front, checklist voix-off & mode haute lisibilité | Expérience éditoriale premium, conformité accessibilité, résilience accrue |
+| **P0 – Critique** | 0-1 mois | Simplifier la configuration initiale et garantir un feedback instantané | Temps de mise en ligne d’une critique <5 min, taux d’usage du mode Essentiel >70 % |
+| **P1 – Maîtrise** | 1-3 mois | Augmenter la conversion et la cohérence visuelle | +20 % de clics CTA verdict, dette de design réduite (tokens unifiés) |
+| **P2 – Excellence** | 3-6 mois | Offrir une expérience premium résiliente et accessible | Score Lighthouse Accessibilité ≥95, MTTR incidents front <30 min |
 
-### Détail par priorité
+### Backlog codé par priorité
 
 #### P0 – Critique : sécuriser l’adoption immédiate
+
+**User story principale** – En tant que rédacteur pressé, je veux configurer une critique complète en quelques minutes sans fouiller tous les réglages afin de respecter ma deadline.
+
 1. **Organisation Simple vs Expert**
-   - Implémenter une vue "Essentiel" dans l’onglet Réglages activant par défaut note globale, pros/cons, verdict et statut review, avec aperçu instantané.
-   - Ajouter un basculement "Afficher les réglages experts" qui révèle les paramètres fins (animations, gradients, réglages RAWG).
-   - Créer un rapport d’audit UX post-déploiement (10 rédacteurs test) pour confirmer la réduction du temps de configuration (<5 min).
-2. **Bloc Gutenberg "Notation express"**
-   - Concevoir un bloc regroupant note + pros/cons + verdict, préconfiguré selon les meilleures pratiques IGN.
-   - Prévoir dans Inspector des presets visuels (clair/sombre) et des avertissements en cas d’absence de champs critiques.
-   - Couvrir par des tests E2E (render + sauvegarde) afin d’assurer la parité éditeur/front.
+   - Implémenter `src/Admin/Settings/SimpleExpertController.php` gérant deux onglets : « Essentiel » et « Expert ». Le contrôleur doit charger les options existantes via `SettingsRepository` et ne persister que les options visibles en mode Essentiel.
+   - Ajouter un composant React dans `assets/js/admin/settings-simple-mode.js` qui rend les champs critiques (note globale, pros/cons, verdict, statut review) et un toggle `Afficher les réglages experts` (sauvegardé en meta utilisateur pour retenir le dernier état).
+   - Étendre `templates/admin/settings-general.php` avec un `<section aria-labelledby="settings-simple">` et inclure un aperçu live via `wp.data.select( 'core/editor' )` pour réduire les aller-retours.
+   - QA : scénario Cypress `tests/e2e/settings-simple-mode.spec.js` couvrant activation, sauvegarde, bascule Expert, et temps moyen mesuré via instrumentation (`performance.mark`).
+2. **Bloc Gutenberg « Notation express »**
+   - Créer `assets/js/blocks/notation-express/edit.js` et `save.js` pour regrouper note + pros/cons + verdict. S’appuyer sur les hooks existants (`useNotationFields`) afin de partager la logique avec le bloc verdict.
+   - Définir dans `block.json` des presets `style` (clair/sombre) et ajouter des validations synchrones (message d’erreur si champs critiques manquants). Prévoir un `supports.inserter` forcé à `true`.
+   - Implémenter le rendu serveur dans `src/Blocks/NotationExpressBlock.php` en réutilisant `VerdictPresenter`. Couvrir par des tests PHPUnit (`tests/Blocks/NotationExpressBlockTest.php`) et un test de snapshot éditeur via `@wordpress/scripts`.
 3. **Feedback dynamique & accessibilité immédiate**
-   - Intégrer un composant toast/alert (`role="status"`) pour Game Explorer et Score Insights indiquant les résultats filtrés et les mises à jour.
-   - Ajouter des ancres "Aller à" et revoir l’ordre `tabindex` pour permettre une navigation clavier fluide.
-   - Déployer un petit script de télémétrie (anonyme) pour vérifier l’usage des interactions clavier et itérer rapidement.
+   - Introduire un module JS partagé `assets/js/utils/aria-status.js` exportant `announceUpdate(message)` avec un `<div role="status" aria-live="polite">` injecté côté front et admin.
+   - Brancher ce module dans `Game Explorer` (`assets/js/front/game-explorer.js`) et `Score Insights` (`assets/js/front/score-insights.js`) pour annoncer les résultats filtrés et erreurs API.
+   - Mettre à jour `templates/shortcodes/game-explorer.php` pour inclure des ancres `href="#results"` et réordonner les `tabindex`. Ajouter des tests de navigation clavier via Playwright (`tests/e2e/accessibility-feedback.spec.js`).
+   - Instrumenter un script de télémétrie anonyme (`assets/js/utils/telemetry.js`) enregistrant les interactions clavier (événements `keyup`, `focus`) et envoyant une requête `wp-json/notation/v1/telemetry`. Créer un endpoint minimal dans `src/Rest/TelemetryController.php` stockant les compteurs (option transitoire). Respecter le RGPD (pas de données personnelles, consentement via opt-in settings).
 
 #### P1 – Maîtrise : augmenter la valeur commerciale et la robustesse
+
+**User story principale** – En tant que responsable monétisation, je veux optimiser la carte verdict pour augmenter les clics affiliés et disposer d’une interface cohérente.
+
 1. **Carte verdict premium**
-   - Ajouter des CTA personnalisables (texte, URL, icône, ARIA-label) avec prévisualisation live et fallback texte-only.
-   - Permettre l’insertion de badges de disponibilité (plateforme, version testée) synchronisés avec RAWG.
+   - Étendre `assets/js/blocks/verdict/edit.js` avec un panneau `InspectorControls` dédié aux CTA : textes localisés (`__`), URL validée (`wp.url`), icône choisie via `@wordpress/components` `<IconPicker>`, et champ `ariaLabel`.
+   - Mettre à jour `src/Blocks/VerdictBlock.php` pour rendre un `<nav>` contenant les CTA, avec gestion fallback (texte-only) et badges synchronisés à partir des métadonnées RAWG (utiliser `RawgGameRepository`).
+   - Tests : PHPUnit pour vérifier la présence des CTA et badges (`tests/Blocks/VerdictBlockTest.php`) + test E2E Playwright pour vérifier le clic (événement `data-layer`).
 2. **Variants de carte & design cohérent**
-   - Définir trois variants (compacte, détaillée, multi-colonne) sélectionnables dans l’inspector avec description d’usage.
-   - Introduire un registre de tokens (couleurs, radius, ombres, espacements) partagé entre front et Gutenberg via SCSS/CSS custom properties.
+   - Créer un registre de design tokens `assets/styles/tokens.scss` compilé en CSS custom properties (`:root`). Brancher les variables dans `assets/css/blocks-verdict.css` et `blocks-editor.css`.
+   - Ajouter trois variants dans `block.json` (`style` presets) avec prévisualisation via `BlockPreview`. Documenter l’usage dans `docs/design-system/variants.md`.
+   - Mettre en place un script de vérification (`npm run tokens:lint`) qui s’assure que chaque token est documenté. Ajouter un test Jest simple pour vérifier la présence des classes variant.
 3. **Monitoring & fiabilité**
-   - Construire un dashboard santé : statut API RAWG, erreurs de cron, latence votes lecteurs, avec notifications email/slack.
-   - Écrire des tests de résilience simulant indisponibilité API pour garantir des messages fallback élégants.
+   - Développer `src/Admin/Monitoring/DashboardController.php` affichant le statut API, cron et latence votes. Récupérer les données via des services `RawgHealthCheck`, `CronHealthCheck`, `VotesHealthCheck`.
+   - Configurer des notifications email/Slack via `wp_mail` et un webhook configurable (option `notation_monitoring_webhook`).
+   - Écrire des tests de résilience dans `tests/Integration/HealthCheckTest.php` simulant indisponibilité API (`WP_Error`). Vérifier l’affichage de messages fallback.
 
 #### P2 – Excellence : différenciation éditoriale et accessibilité avancée
-1. **Mode dégradé contrôlé**
-   - Introduire un mode front "Données temporaires indisponibles" qui affiche une version simplifiée des blocs sans casser la mise en page.
-   - Documenter le comportement dans les guides QA et prévoir un toggle de test dans les réglages.
-2. **Design system industrialisé**
-   - Publier un design kit (Figma + docs) avec tokens synchronisés et checklists de contribution.
-   - Ajouter un mode "édition print" sans animations pour export PDF.
-3. **Accessibilité éditoriale renforcée**
-   - Rédiger une checklist voix-off pour les rédacteurs et la synthèse vocale.
-   - Déployer un mode haute lisibilité (typo renforcée, interlignage accru, désactivation des effets néon) activable globalement ou par shortcode.
 
-## Prochaines étapes
-1. Formaliser les spécifications détaillées du mode Simple/Expert et du bloc "Notation express" (wireframes, matrice d’autorisations, tests utilisateurs internes).
-2. Planifier un sprint dédié aux feedbacks dynamiques et au monitoring minimal (alertes API + toasts) pour sécuriser la parité avec les apps pro.
-3. Lancer la conception du kit de design tokens et aligner les équipes (dev + design) sur la gouvernance.
-4. Préparer les tests QA (automatisés + manuels) couvrant mode dégradé, CTA verdict et variants de carte.
-5. Mettre à jour la documentation utilisateur avec la checklist accessibilité, les presets de blocs et le protocole de monitoring.
+**User story principale** – En tant que chef de rédaction, je veux garantir une continuité de service et un confort de lecture avancé même lors d’incidents.
+
+1. **Mode dégradé contrôlé**
+   - Implémenter un flag global `notation_degraded_mode` stocké via `SettingsRepository`. Lorsqu’il est actif, `src/Presentation/ViewModels` doit servir des composants simplifiés (note + résumé statique) et désactiver les appels API.
+   - Ajouter un toggle dans l’admin avec prévisualisation (panel `DangerZone`). Documenter le flux dans `docs/operations/degraded-mode.md`.
+   - Créer des tests `tests/Integration/DegradedModeTest.php` vérifiant la continuité du rendu et les logs (`wc_get_logger`).
+2. **Design system industrialisé**
+   - Synchroniser les tokens vers Figma via un export JSON (`npm run tokens:export`). Conserver la source de vérité dans `assets/styles/tokens.json`.
+   - Ajouter un mode « édition print » : stylesheet `assets/css/print.css` chargée conditionnellement (`wp_enqueue_style` avec `media="print"`). Assurer l’absence d’animations (`prefers-reduced-motion`).
+   - Documenter la gouvernance design dans `docs/design-system/README.md` (process de contribution, naming, revues).
+3. **Accessibilité éditoriale renforcée**
+   - Rédiger `docs/accessibilite/checklist-voix-off.md` couvrant la narration audio et le paramétrage de synthèse vocale.
+   - Développer un mode haute lisibilité : option `notation_high_legibility` ajoutant une classe `notation--high-legibility` sur le wrapper, ajustant typo/interlignage (`assets/css/high-legibility.css`).
+   - Ajouter des tests Lighthouse automatisés (`npm run lighthouse`) sur un storybook ou site de démonstration, avec seuil ≥95.
+
+## Prochaines étapes opérationnelles
+1. Finaliser les spécifications détaillées du mode Simple/Expert et du bloc « Notation express » (wireframes, matrice d’autorisations, protocoles de tests utilisateurs).
+2. Séquencer les développements P0 en tickets Jira (ou équivalent) et allouer une itération complète incluant QA automatisée et manuelle.
+3. Lancer l’intégration continue dédiée aux bundles JS/CSS (build + lint + tests Playwright) avant d’attaquer P1.
+4. Préparer le comité design pour valider les tokens communs et les variants de cartes avant implémentation.
+5. Mettre à jour la documentation utilisateur avec la checklist accessibilité, les presets de blocs et le protocole de monitoring dès la fin du palier P1.
 
