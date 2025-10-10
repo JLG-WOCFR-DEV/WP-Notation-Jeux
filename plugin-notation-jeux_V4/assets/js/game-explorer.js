@@ -3,6 +3,8 @@
     const ajaxUrl = l10n.ajaxUrl || window.ajaxurl || '';
     const nonce = l10n.nonce || '';
     const strings = l10n.strings || {};
+    const announcer = typeof window !== 'undefined' ? window.jlgLiveAnnouncer : null;
+    const hasAnnouncer = announcer && typeof announcer.announce === 'function';
     const DEFAULT_LOADING_TEXT = 'Chargement…';
     const DEFAULT_SCORE_MAX = 100;
 
@@ -477,6 +479,50 @@
         return null;
     }
 
+    function formatResultsMessage(total) {
+        if (total === 0) {
+            if (typeof strings.resultsUpdatedZero === 'string' && strings.resultsUpdatedZero !== '') {
+                return strings.resultsUpdatedZero;
+            }
+            return (strings.resultsUpdatedPlural || '%d résultats mis à jour').replace('%d', '0');
+        }
+
+        if (total === 1) {
+            return (strings.resultsUpdatedSingular || '%d résultat mis à jour').replace('%d', '1');
+        }
+
+        const template = strings.resultsUpdatedPlural || '%d résultats mis à jour';
+        return template.replace('%d', String(total));
+    }
+
+    function announceResults(container, total) {
+        if (!hasAnnouncer || !container) {
+            return;
+        }
+
+        if (typeof total !== 'number' || !Number.isFinite(total)) {
+            return;
+        }
+
+        const normalizedTotal = Math.max(0, Math.round(total));
+        const message = formatResultsMessage(normalizedTotal);
+        if (!message) {
+            return;
+        }
+
+        const last = container.getAttribute('data-last-announced-total');
+        if (last !== null && parseInt(last, 10) === normalizedTotal) {
+            return;
+        }
+
+        container.setAttribute('data-last-announced-total', String(normalizedTotal));
+
+        announcer.announce(message, {
+            context: 'game-explorer',
+            id: container.id || null,
+        });
+    }
+
     function updateCount(container, state) {
         const node = container.querySelector('.jlg-ge-count');
         if (!node) {
@@ -490,6 +536,7 @@
 
         node.textContent = template.replace('%d', total);
         container.dataset.totalItems = String(total);
+        announceResults(container, total);
     }
 
     function updateActiveFilters(container, config, refs) {
@@ -973,6 +1020,13 @@
                     const errorMessage = strings.genericError || 'Une erreur est survenue.';
                     refs.resultsNode.innerHTML = '<p>' + errorMessage + '</p>';
                     setResultsBusyState(refs.resultsNode, false);
+                }
+                if (hasAnnouncer) {
+                    const errorMessage = strings.genericError || 'Une erreur est survenue.';
+                    announcer.announce(errorMessage, {
+                        context: 'game-explorer',
+                        id: container.id || null,
+                    });
                 }
             })
             .finally(() => {

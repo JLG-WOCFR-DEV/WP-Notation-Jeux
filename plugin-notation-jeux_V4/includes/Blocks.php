@@ -818,6 +818,10 @@ class Blocks {
             }
         }
 
+        if ( class_exists( Frontend::class ) ) {
+            Frontend::mark_shortcode_rendered( 'jlg_score_insights' );
+        }
+
         return $this->render_shortcode( 'jlg_score_insights', $atts );
     }
 }

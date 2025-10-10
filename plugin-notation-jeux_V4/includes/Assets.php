@@ -241,19 +241,45 @@ class Assets {
             'jlg-game-explorer',
             'jlgGameExplorerL10n',
             function () {
-				return array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'jlg_game_explorer' ),
-					'strings' => array(
-						'loading'       => esc_html__( 'Chargement des jeux...', 'notation-jlg' ),
-						'noResults'     => esc_html__( 'Aucun jeu ne correspond à votre sélection.', 'notation-jlg' ),
-						'reset'         => esc_html__( 'Réinitialiser les filtres', 'notation-jlg' ),
-						'genericError'  => esc_html__( 'Impossible de charger les jeux pour le moment.', 'notation-jlg' ),
-						'countSingular' => esc_html__( '%d jeu', 'notation-jlg' ),
-						'countPlural'   => esc_html__( '%d jeux', 'notation-jlg' ),
-					),
-				);
-			}
+                return array(
+                    'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                    'nonce'   => wp_create_nonce( 'jlg_game_explorer' ),
+                    'strings' => array(
+                        'loading'                => esc_html__( 'Chargement des jeux...', 'notation-jlg' ),
+                        'noResults'              => esc_html__( 'Aucun jeu ne correspond à votre sélection.', 'notation-jlg' ),
+                        'reset'                  => esc_html__( 'Réinitialiser les filtres', 'notation-jlg' ),
+                        'genericError'           => esc_html__( 'Impossible de charger les jeux pour le moment.', 'notation-jlg' ),
+                        'countSingular'          => esc_html__( '%d jeu', 'notation-jlg' ),
+                        'countPlural'            => esc_html__( '%d jeux', 'notation-jlg' ),
+                        'resultsUpdatedSingular' => esc_html__( '%d résultat mis à jour', 'notation-jlg' ),
+                        'resultsUpdatedPlural'   => esc_html__( '%d résultats mis à jour', 'notation-jlg' ),
+                        'resultsUpdatedZero'     => esc_html__( 'Aucun résultat disponible', 'notation-jlg' ),
+                    ),
+                );
+            }
+        );
+
+        $this->register_localization(
+            'jlg-live-announcer',
+            'jlgLiveAnnouncerL10n',
+            function () {
+                return array(
+                    'dismissLabel'          => esc_html__( 'Fermer la notification', 'notation-jlg' ),
+                    'hideAnnouncementLabel' => esc_html__( 'Notification masquée', 'notation-jlg' ),
+                );
+            }
+        );
+
+        $this->register_localization(
+            'jlg-score-insights',
+            'jlgScoreInsightsL10n',
+            function () {
+                return array(
+                    'updatedSingular' => esc_html__( 'Score Insights mis à jour — %d test analysé', 'notation-jlg' ),
+                    'updatedPlural'   => esc_html__( 'Score Insights mis à jour — %d tests analysés', 'notation-jlg' ),
+                    'updatedZero'     => esc_html__( 'Score Insights mis à jour — aucun test disponible', 'notation-jlg' ),
+                );
+            }
         );
     }
 }
