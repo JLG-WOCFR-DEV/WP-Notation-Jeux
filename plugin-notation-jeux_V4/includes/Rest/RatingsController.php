@@ -122,7 +122,7 @@ class RatingsController {
 
             $delta_value = null;
             if ( $user_average !== null ) {
-                $delta_value = round( $user_average - $score, 1 );
+                $delta_value = round( $score - $user_average, 1 );
             }
 
             $histogram_raw = array();
@@ -476,7 +476,23 @@ class RatingsController {
         if ( class_exists( WP_Query::class ) ) {
             $query = new WP_Query( $query_args );
             if ( isset( $query->posts ) && is_array( $query->posts ) ) {
-                return $query->posts;
+                $filtered_posts = array();
+
+                foreach ( $query->posts as $post ) {
+                    if ( ! ( $post instanceof \WP_Post ) ) {
+                        continue;
+                    }
+
+                    if ( ! $this->passes_date_filters( $post, $params ) ) {
+                        continue;
+                    }
+
+                    $filtered_posts[] = $post;
+                }
+
+                if ( ! empty( $filtered_posts ) ) {
+                    return $filtered_posts;
+                }
             }
         }
 
@@ -676,7 +692,12 @@ class RatingsController {
                         if ( 'desc' === $order ) {
                             $result = -$result;
                         }
-                        return $result !== 0 ? $result : ( (int) $a['id'] <=> (int) $b['id'] );
+                        if ( 0 === $result ) {
+                            return 'desc' === $order
+                                ? ( (int) $b['id'] <=> (int) $a['id'] )
+                                : ( (int) $a['id'] <=> (int) $b['id'] );
+                        }
+                        return $result;
                     case 'user_votes':
                         $a_value = $a['user_votes'];
                         $b_value = $b['user_votes'];
@@ -705,7 +726,9 @@ class RatingsController {
                 }
 
                 if ( 0 === $result ) {
-                    return ( (int) $a['id'] ) <=> ( (int) $b['id'] );
+                    return 'desc' === $order
+                        ? ( (int) $b['id'] <=> (int) $a['id'] )
+                        : ( (int) $a['id'] <=> (int) $b['id'] );
                 }
 
                 return $result;
