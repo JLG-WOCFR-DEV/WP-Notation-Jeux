@@ -93,6 +93,33 @@
     transform: none;
 }
 
+.editor-styles-wrapper .jlg-score-insights__segments,
+.editor-styles-wrapper .jlg-score-insights__timeline,
+.editor-styles-wrapper .jlg-score-insights__sentiments {
+    border: 1px dashed rgba(148, 163, 184, 0.45);
+    border-radius: 12px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.03);
+}
+
+.editor-styles-wrapper .jlg-score-insights__segments-grid,
+.editor-styles-wrapper .jlg-score-insights__sentiments-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.editor-styles-wrapper .jlg-score-insights__segment-card,
+.editor-styles-wrapper .jlg-score-insights__sentiment-item {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.editor-styles-wrapper .jlg-score-insights__sparkline-chart {
+    max-width: 100%;
+}
+
 .wp-block-notation-jlg-rating-block .notation-jlg-rating-block-preview-grid {
     display: grid;
     gap: 1.5rem;
@@ -628,6 +655,80 @@
     background-color: var(--bar-color, var(--jlg-score-gradient-1));
     background-image: linear-gradient(90deg, var(--bar-color, var(--jlg-score-gradient-1)), var(--jlg-score-gradient-2, var(--bar-color, var(--jlg-score-gradient-1))));
     width: var(--rating-percent, 0%);
+}
+
+.editor-styles-wrapper .review-box-jlg__deals {
+    position: relative;
+    background-color: var(--jlg-bg-color-secondary, rgba(24, 24, 27, 0.35));
+    border-radius: 16px;
+    border: 1px solid var(--jlg-card-border);
+    padding: 20px 22px;
+    color: var(--jlg-secondary-text-color);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    margin-bottom: 18px;
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-item {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.06);
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-item--highlight {
+    border-color: var(--jlg-score-gradient-1, #2563eb);
+    background: linear-gradient(130deg, rgba(96, 165, 250, 0.18), rgba(192, 132, 252, 0.14));
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-retailer {
+    font-weight: 600;
+    color: var(--jlg-main-text-color);
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-price {
+    font-weight: 700;
+    color: var(--jlg-score-gradient-1, #2563eb);
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-availability {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--jlg-secondary-text-color);
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--jlg-score-gradient-1, #2563eb), var(--jlg-score-gradient-2, #7c3aed));
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.editor-styles-wrapper .review-box-jlg__deal-disclaimer {
+    margin: 16px 0 0;
+    font-size: 12px;
+    color: var(--jlg-secondary-text-color);
+    opacity: 0.85;
 }
 
 .editor-styles-wrapper .review-box-jlg__guides {

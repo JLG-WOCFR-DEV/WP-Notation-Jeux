@@ -10,6 +10,8 @@ class HelpersScoreInsightsAggregationTest extends TestCase
 
         $GLOBALS['jlg_test_meta'] = [];
         $GLOBALS['jlg_test_options'] = [];
+        $GLOBALS['jlg_test_posts'] = [];
+        $GLOBALS['jlg_test_permalinks'] = [];
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
@@ -18,7 +20,7 @@ class HelpersScoreInsightsAggregationTest extends TestCase
     {
         \JLG\Notation\Helpers::flush_plugin_options_cache();
 
-        unset($GLOBALS['jlg_test_meta'], $GLOBALS['jlg_test_options']);
+        unset($GLOBALS['jlg_test_meta'], $GLOBALS['jlg_test_options'], $GLOBALS['jlg_test_posts'], $GLOBALS['jlg_test_permalinks']);
 
         parent::tearDown();
     }
@@ -32,6 +34,7 @@ class HelpersScoreInsightsAggregationTest extends TestCase
             '_jlg_plateformes'       => ['PlayStation 5', 'PC'],
             '_jlg_user_rating_avg'   => '9.3',
             '_jlg_user_rating_count' => '86',
+            '_jlg_points_forts'      => "Immersion totale\nDirection artistique",
         ];
 
         $GLOBALS['jlg_test_meta'][202] = [
@@ -39,13 +42,39 @@ class HelpersScoreInsightsAggregationTest extends TestCase
             '_jlg_plateformes'       => 'PlayStation 5, Xbox Series X',
             '_jlg_user_rating_avg'   => '6.0',
             '_jlg_user_rating_count' => '120',
+            '_jlg_points_forts'      => "Immersion totale\nScénario prenant",
+            '_jlg_points_faibles'    => "Loadings longs\nBugs critiques",
         ];
 
         $GLOBALS['jlg_test_meta'][303] = [
             '_jlg_average_score'     => '7.5',
             '_jlg_user_rating_avg'   => '9.8',
             '_jlg_user_rating_count' => '54',
+            '_jlg_points_faibles'    => "Bugs critiques\nInterface confuse",
         ];
+
+        $GLOBALS['jlg_test_posts'][101] = (object) [
+            'ID'            => 101,
+            'post_title'    => 'Chronique PS5',
+            'post_date'     => '2025-01-10 10:00:00',
+            'post_date_gmt' => '2025-01-10 09:00:00',
+        ];
+        $GLOBALS['jlg_test_posts'][202] = (object) [
+            'ID'            => 202,
+            'post_title'    => 'Comparatif multi-plateformes',
+            'post_date'     => '2025-01-18 18:45:00',
+            'post_date_gmt' => '2025-01-18 17:45:00',
+        ];
+        $GLOBALS['jlg_test_posts'][303] = (object) [
+            'ID'            => 303,
+            'post_title'    => 'Review sans plateforme',
+            'post_date'     => '2025-02-05 09:30:00',
+            'post_date_gmt' => '2025-02-05 08:30:00',
+        ];
+
+        $GLOBALS['jlg_test_permalinks'][101] = 'https://example.com/tests/chronique-ps5';
+        $GLOBALS['jlg_test_permalinks'][202] = 'https://example.com/tests/comparatif-multi-plateformes';
+        $GLOBALS['jlg_test_permalinks'][303] = 'https://example.com/tests/review-sans-plateforme';
 
         $insights = \JLG\Notation\Helpers::get_posts_score_insights($post_ids);
 
@@ -123,6 +152,28 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame('+2.3', $positive_gap['delta_formatted']);
         $this->assertSame('9.8', $positive_gap['user_score_formatted']);
         $this->assertSame('7.5', $positive_gap['editorial_score_formatted']);
+
+        $segments = $insights['segments'];
+        $this->assertTrue($segments['available']);
+        $this->assertSame(3, $segments['editorial']['count']);
+        $this->assertSame('8.4', $segments['editorial']['average_formatted']);
+        $this->assertSame('7.9', $segments['readers']['average_formatted']);
+        $this->assertSame(260, $segments['readers']['votes']);
+        $this->assertSame(-0.5, $segments['delta']['value']);
+        $this->assertSame('-0.5', $segments['delta']['formatted']);
+        $this->assertSame('negative', $segments['delta']['direction']);
+
+        $timeline = $insights['timeline'];
+        $this->assertTrue($timeline['available']);
+        $this->assertCount(3, $timeline['points']);
+        $this->assertSame('January 10, 2025', $timeline['points'][0]['date_label']);
+        $this->assertNotSame('', $timeline['sparkline']['editorial_path']);
+
+        $sentiments = $insights['sentiments'];
+        $this->assertTrue($sentiments['available']);
+        $this->assertSame('Immersion totale', $sentiments['pros'][0]['label']);
+        $this->assertSame(2, $sentiments['pros'][0]['count']);
+        $this->assertSame('Bugs critiques', $sentiments['cons'][0]['label']);
     }
 
     public function test_returns_empty_summary_when_no_scores(): void

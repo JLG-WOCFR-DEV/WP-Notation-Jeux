@@ -59,6 +59,10 @@ $review_status_slug        = isset( $review_status_data['slug'] ) ? (string) $re
 $review_status_message     = isset( $review_status_data['description'] ) ? (string) $review_status_data['description'] : '';
 $related_guides_enabled    = ! empty( $related_guides_enabled );
 $related_guides_list       = isset( $related_guides ) && is_array( $related_guides ) ? $related_guides : array();
+$deals_enabled             = ! empty( $deals_enabled );
+$deals_list                = isset( $deals ) && is_array( $deals ) ? $deals : array();
+$deals_button_rel_value    = isset( $deals_button_rel ) ? trim( (string) $deals_button_rel ) : '';
+$deals_disclaimer_text     = isset( $deals_disclaimer ) ? trim( (string) $deals_disclaimer ) : '';
 
 $verdict_data             = isset( $verdict ) && is_array( $verdict ) ? $verdict : array();
 $verdict_enabled          = ! empty( $verdict_data['enabled'] );
@@ -475,6 +479,51 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <?php if ( $deals_enabled && ! empty( $deals_list ) ) : ?>
+            <aside class="review-box-jlg__deals" aria-label="<?php esc_attr_e( 'Deals & disponibilités', 'notation-jlg' ); ?>">
+                <h3 class="review-box-jlg__subtitle"><?php esc_html_e( 'Deals & disponibilités', 'notation-jlg' ); ?></h3>
+                <ul class="review-box-jlg__deal-list" role="list">
+                    <?php foreach ( $deals_list as $deal ) : ?>
+                        <?php
+                        $deal_retailer      = isset( $deal['retailer'] ) ? (string) $deal['retailer'] : '';
+                        $deal_price         = isset( $deal['price_display'] ) ? (string) $deal['price_display'] : '';
+                        $deal_availability  = isset( $deal['availability'] ) ? (string) $deal['availability'] : '';
+                        $deal_cta_label     = isset( $deal['cta_label'] ) ? (string) $deal['cta_label'] : '';
+                        $deal_url           = isset( $deal['url'] ) ? (string) $deal['url'] : '';
+                        $deal_highlight     = ! empty( $deal['is_best'] );
+                        $deal_item_classes  = array( 'review-box-jlg__deal-item' );
+                        if ( $deal_highlight ) {
+                            $deal_item_classes[] = 'review-box-jlg__deal-item--highlight';
+                        }
+                        $deal_item_class_attr = implode( ' ', array_map( 'sanitize_html_class', $deal_item_classes ) );
+                        ?>
+                        <li class="<?php echo esc_attr( $deal_item_class_attr ); ?>">
+                            <div class="review-box-jlg__deal-main">
+                                <span class="review-box-jlg__deal-retailer"><?php echo esc_html( $deal_retailer ); ?></span>
+                                <?php if ( $deal_price !== '' ) : ?>
+                                    <span class="review-box-jlg__deal-price"><?php echo esc_html( $deal_price ); ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ( $deal_availability !== '' ) : ?>
+                                <p class="review-box-jlg__deal-availability"><?php echo esc_html( $deal_availability ); ?></p>
+                            <?php endif; ?>
+                            <?php if ( $deal_url !== '' ) : ?>
+                                <?php
+                                $deal_rel = $deals_button_rel_value !== '' ? $deals_button_rel_value : '';
+                                ?>
+                                <a class="review-box-jlg__deal-button" href="<?php echo esc_url( $deal_url ); ?>"<?php echo $deal_rel !== '' ? ' rel="' . esc_attr( $deal_rel ) . '"' : ''; ?>>
+                                    <span><?php echo esc_html( $deal_cta_label !== '' ? $deal_cta_label : __( 'Voir l’offre', 'notation-jlg' ) ); ?></span>
+                                </a>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if ( $deals_disclaimer_text !== '' ) : ?>
+                    <p class="review-box-jlg__deal-disclaimer"><?php echo esc_html( $deals_disclaimer_text ); ?></p>
+                <?php endif; ?>
+            </aside>
+        <?php endif; ?>
 
         <?php if ( $related_guides_enabled && ! empty( $related_guides_list ) ) : ?>
             <aside class="review-box-jlg__guides">

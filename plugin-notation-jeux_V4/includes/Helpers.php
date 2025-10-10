@@ -1526,6 +1526,219 @@ class Helpers {
         return array_values( array_unique( array_filter( array_map( 'intval', $term_ids ) ) ) );
     }
 
+    public static function get_deals_for_post( $post_id, ?array $options = null ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return array();
+        }
+
+        if ( $options === null ) {
+            $options = self::get_plugin_options();
+        }
+
+        if ( empty( $options['deals_enabled'] ) ) {
+            return array();
+        }
+
+        $limit = isset( $options['deals_limit'] ) ? (int) $options['deals_limit'] : 3;
+        $limit = max( 1, min( 6, $limit ) );
+
+        /**
+         * Filtre le nombre maximum d'offres retournées.
+         *
+         * @param int   $limit   Nombre maximal de deals.
+         * @param int   $post_id Identifiant du post courant.
+         * @param array $options Options du plugin.
+         */
+        $limit = (int) apply_filters( 'jlg_deals_limit', $limit, $post_id, $options );
+        $limit = max( 1, min( 6, $limit ) );
+
+        $raw_entries = get_post_meta( $post_id, '_jlg_deals_entries', true );
+        if ( ! is_array( $raw_entries ) ) {
+            $raw_entries = array();
+        }
+
+        $normalized = array();
+
+        foreach ( $raw_entries as $index => $entry ) {
+            $normalized_entry = self::normalize_deal_entry( $entry, $index );
+
+            if ( $normalized_entry === null ) {
+                continue;
+            }
+
+            $normalized[] = $normalized_entry;
+        }
+
+        /**
+         * Filtre la liste des deals normalisés.
+         *
+         * @param array $normalized Deals normalisés.
+         * @param int   $post_id    Identifiant du post courant.
+         * @param array $options    Options du plugin.
+         */
+        $normalized = apply_filters( 'jlg_deals_entries', $normalized, $post_id, $options );
+        if ( ! is_array( $normalized ) ) {
+            $normalized = array();
+        }
+
+        foreach ( $normalized as $index => $deal ) {
+            $normalized[ $index ] = self::augment_deal_display_payload( $deal, $post_id, $options );
+        }
+
+        usort(
+            $normalized,
+            static function ( $a, $b ) {
+                $price_a = isset( $a['price_value'] ) && is_numeric( $a['price_value'] ) ? (float) $a['price_value'] : null;
+                $price_b = isset( $b['price_value'] ) && is_numeric( $b['price_value'] ) ? (float) $b['price_value'] : null;
+
+                if ( $price_a !== null && $price_b !== null ) {
+                    if ( abs( $price_a - $price_b ) > 0.0001 ) {
+                        return ( $price_a < $price_b ) ? -1 : 1;
+                    }
+                } elseif ( $price_a !== null ) {
+                    return -1;
+                } elseif ( $price_b !== null ) {
+                    return 1;
+                }
+
+                $label_a = isset( $a['retailer'] ) ? (string) $a['retailer'] : '';
+                $label_b = isset( $b['retailer'] ) ? (string) $b['retailer'] : '';
+
+                return strcmp( $label_a, $label_b );
+            }
+        );
+
+        if ( $limit < count( $normalized ) ) {
+            $normalized = array_slice( $normalized, 0, $limit );
+        }
+
+        return array_values( $normalized );
+    }
+
+    private static function normalize_deal_entry( $entry, $index ) {
+        if ( ! is_array( $entry ) ) {
+            return null;
+        }
+
+        $retailer = isset( $entry['retailer'] ) ? sanitize_text_field( $entry['retailer'] ) : '';
+        $retailer = self::truncate_string( $retailer, 80 );
+
+        if ( $retailer === '' ) {
+            return null;
+        }
+
+        $raw_url = isset( $entry['url'] ) ? (string) $entry['url'] : '';
+        $raw_url = trim( $raw_url );
+        $url     = '';
+
+        if ( $raw_url !== '' && Validator::is_valid_http_url( $raw_url ) ) {
+            $url = esc_url_raw( $raw_url );
+        }
+
+        if ( $url === '' ) {
+            return null;
+        }
+
+        $price_value = null;
+        if ( isset( $entry['price'] ) && $entry['price'] !== '' && is_numeric( $entry['price'] ) ) {
+            $price_value = round( (float) $entry['price'], 2 );
+        }
+
+        $currency = isset( $entry['currency'] ) ? strtoupper( sanitize_text_field( $entry['currency'] ) ) : '';
+        $currency = self::truncate_string( $currency, 6 );
+
+        $availability = isset( $entry['availability'] ) ? sanitize_text_field( $entry['availability'] ) : '';
+        $availability = self::truncate_string( $availability, 140 );
+
+        $cta_label = isset( $entry['cta_label'] ) ? sanitize_text_field( $entry['cta_label'] ) : '';
+        $cta_label = self::truncate_string( $cta_label, 60 );
+
+        $price_label = isset( $entry['price_label'] ) ? sanitize_text_field( $entry['price_label'] ) : '';
+        $price_label = self::truncate_string( $price_label, 80 );
+
+        return array(
+            'id'            => 'deal-' . ( $index + 1 ),
+            'retailer'      => $retailer,
+            'url'           => $url,
+            'price_value'   => $price_value,
+            'currency'      => $currency,
+            'availability'  => $availability,
+            'cta_label'     => $cta_label,
+            'price_label'   => $price_label,
+            'is_best'       => ! empty( $entry['highlight'] ),
+        );
+    }
+
+    private static function augment_deal_display_payload( array $deal, $post_id, array $options ) {
+        $price_value = isset( $deal['price_value'] ) && is_numeric( $deal['price_value'] )
+            ? (float) $deal['price_value']
+            : null;
+        $currency    = isset( $deal['currency'] ) ? (string) $deal['currency'] : '';
+        $price_label = isset( $deal['price_label'] ) ? (string) $deal['price_label'] : '';
+
+        if ( $price_label === '' && $price_value !== null ) {
+            $price_label = self::format_deal_price( $price_value, $currency );
+        }
+
+        /**
+         * Permet de personnaliser le libellé du prix affiché.
+         *
+         * @param string $price_label Libellé affiché.
+         * @param array  $deal        Données du deal.
+         * @param int    $post_id     Identifiant du post courant.
+         * @param array  $options     Options du plugin.
+         */
+        $price_label = (string) apply_filters( 'jlg_deal_price_display', $price_label, $deal, $post_id, $options );
+
+        $deal['price_display'] = $price_label;
+
+        if ( ! isset( $deal['cta_label'] ) || $deal['cta_label'] === '' ) {
+            $deal['cta_label'] = _x( 'Voir l’offre', 'Default CTA label for deals module', 'notation-jlg' );
+        }
+
+        return $deal;
+    }
+
+    private static function format_deal_price( $price_value, $currency ) {
+        if ( ! is_numeric( $price_value ) ) {
+            return '';
+        }
+
+        $price_value = (float) $price_value;
+        $decimals    = $price_value - floor( $price_value ) > 0 ? 2 : 0;
+        $formatted   = number_format_i18n( $price_value, $decimals );
+
+        $currency = is_string( $currency ) ? trim( $currency ) : '';
+
+        if ( $currency !== '' ) {
+            return sprintf( _x( '%1$s %2$s', 'Price with currency', 'notation-jlg' ), $formatted, $currency );
+        }
+
+        return $formatted;
+    }
+
+    private static function truncate_string( $value, $length ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $value = trim( $value );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            $value = mb_substr( $value, 0, (int) $length );
+        } else {
+            $value = substr( $value, 0, (int) $length );
+        }
+
+        return trim( $value );
+    }
+
     private static function normalize_score_candidate( $value ) {
         if ( is_array( $value ) ) {
             return null;
@@ -1575,6 +1788,10 @@ class Helpers {
             'related_guides_enabled'             => 0,
             'related_guides_limit'               => 4,
             'related_guides_taxonomies'          => 'guide,astuce,category,post_tag',
+            'deals_enabled'                      => 0,
+            'deals_limit'                        => 3,
+            'deals_button_rel'                   => 'sponsored noopener',
+            'deals_disclaimer'                   => __( 'Les liens vers les boutiques peuvent nous permettre de percevoir une commission.', 'notation-jlg' ),
 
             // Couleurs de Thème Sombre personnalisables
             'dark_bg_color'                      => $dark_defaults['bg_color'],
@@ -2974,11 +3191,17 @@ class Helpers {
             )
         );
 
-        $score_max       = max( 1, (float) self::get_score_max() );
-        $scores          = array();
-        $platforms       = array();
-        $badge_threshold = (float) apply_filters( 'jlg_score_insights_badge_threshold', 1.5 );
-        $badge_limit     = (int) apply_filters( 'jlg_score_insights_badge_limit', 4 );
+        $score_max           = max( 1, (float) self::get_score_max() );
+        $scores              = array();
+        $platforms           = array();
+        $badge_threshold     = (float) apply_filters( 'jlg_score_insights_badge_threshold', 1.5 );
+        $badge_limit         = (int) apply_filters( 'jlg_score_insights_badge_limit', 4 );
+        $reader_weighted_sum = 0.0;
+        $reader_total_votes  = 0;
+        $reader_samples      = 0;
+        $timeline_entries    = array();
+        $pros_counter        = array();
+        $cons_counter        = array();
 
         if ( $badge_threshold < 0 ) {
             $badge_threshold = 0.0;
@@ -3006,6 +3229,8 @@ class Helpers {
 
             $scores[] = $score;
 
+            $timestamp = self::resolve_post_timestamp_for_insights( $post_id );
+
             $user_rating_average_raw = get_post_meta( $post_id, '_jlg_user_rating_avg', true );
             $user_rating_average     = is_numeric( $user_rating_average_raw ) ? (float) $user_rating_average_raw : null;
             $user_rating_count       = (int) get_post_meta( $post_id, '_jlg_user_rating_count', true );
@@ -3013,6 +3238,10 @@ class Helpers {
             if ( $user_rating_average !== null && $user_rating_count > 0 ) {
                 $delta          = $user_rating_average - $score;
                 $absolute_delta = abs( $delta );
+
+                $reader_weighted_sum += $user_rating_average * $user_rating_count;
+                $reader_total_votes  += $user_rating_count;
+                ++$reader_samples;
 
                 if ( $absolute_delta >= $badge_threshold ) {
                     $editorial_score = round( $score, 1 );
@@ -3034,6 +3263,23 @@ class Helpers {
                     );
                 }
             }
+
+            if ( $timestamp !== null ) {
+                $timeline_entries[] = array(
+                    'post_id'             => $post_id,
+                    'timestamp'           => $timestamp,
+                    'editorial'           => round( $score, 1 ),
+                    'editorial_formatted' => number_format_i18n( $score, 1 ),
+                    'reader'              => $user_rating_average !== null ? round( $user_rating_average, 1 ) : null,
+                    'reader_formatted'    => $user_rating_average !== null ? number_format_i18n( $user_rating_average, 1 ) : '',
+                    'reader_votes'        => $user_rating_count,
+                    'permalink'           => get_permalink( $post_id ),
+                    'title'               => get_the_title( $post_id ),
+                );
+            }
+
+            self::accumulate_sentiment_lines( $pros_counter, get_post_meta( $post_id, '_jlg_points_forts', true ) );
+            self::accumulate_sentiment_lines( $cons_counter, get_post_meta( $post_id, '_jlg_points_faibles', true ) );
 
             $platform_meta = get_post_meta( $post_id, '_jlg_plateformes', true );
             $labels        = array();
@@ -3112,6 +3358,9 @@ class Helpers {
                 'divergence_badges' => array(),
                 'badge_threshold'   => $badge_threshold,
                 'consensus'         => self::build_consensus_summary( array() ),
+                'segments'          => self::build_segments_payload( null, null, 0, 0.0, 0, 0 ),
+                'timeline'          => self::build_timeline_payload( array(), $score_max ),
+                'sentiments'        => self::build_sentiments_payload( array(), array() ),
             );
         }
 
@@ -3202,6 +3451,9 @@ class Helpers {
             'divergence_badges' => $divergence_candidates,
             'badge_threshold'   => $badge_threshold,
             'consensus'         => self::build_consensus_summary( $scores ),
+            'segments'          => self::build_segments_payload( $mean_value, $median_value, $total_scores, $reader_weighted_sum, $reader_total_votes, $reader_samples ),
+            'timeline'          => self::build_timeline_payload( $timeline_entries, $score_max ),
+            'sentiments'        => self::build_sentiments_payload( $pros_counter, $cons_counter ),
         );
     }
 
@@ -3273,6 +3525,357 @@ class Helpers {
         }
 
         return array_values( $buckets );
+    }
+
+    private static function resolve_post_timestamp_for_insights( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return null;
+        }
+
+        $post_date_gmt = get_post_field( 'post_date_gmt', $post_id );
+        if ( is_string( $post_date_gmt ) && $post_date_gmt !== '' && $post_date_gmt !== '0000-00-00 00:00:00' ) {
+            $timestamp = strtotime( $post_date_gmt . ' GMT' );
+            if ( $timestamp !== false ) {
+                return (int) $timestamp;
+            }
+        }
+
+        $post_date = get_post_field( 'post_date', $post_id );
+        if ( is_string( $post_date ) && $post_date !== '' && $post_date !== '0000-00-00 00:00:00' ) {
+            $timestamp = strtotime( $post_date );
+            if ( $timestamp !== false ) {
+                return (int) $timestamp;
+            }
+        }
+
+        return null;
+    }
+
+    private static function build_segments_payload( $mean_value, $median_value, $total_scores, $reader_weighted_sum, $reader_total_votes, $reader_samples ) {
+        $editorial_available = is_numeric( $mean_value );
+        $reader_available    = $reader_total_votes > 0;
+
+        $editorial_average = $editorial_available ? round( (float) $mean_value, 1 ) : null;
+        $editorial_median  = is_numeric( $median_value ) ? round( (float) $median_value, 1 ) : null;
+        $reader_average    = $reader_available ? round( $reader_weighted_sum / $reader_total_votes, 1 ) : null;
+
+        $delta_value     = ( $editorial_average !== null && $reader_average !== null ) ? round( $reader_average - $editorial_average, 1 ) : null;
+        $delta_formatted = $delta_value !== null ? self::format_segment_delta( $delta_value ) : '';
+        $delta_direction = 'stable';
+
+        if ( $delta_value !== null ) {
+            if ( $delta_value > 0 ) {
+                $delta_direction = 'positive';
+            } elseif ( $delta_value < 0 ) {
+                $delta_direction = 'negative';
+            }
+        }
+
+        $payload = array(
+            'available' => $editorial_available || $reader_available,
+            'editorial' => array(
+                'average'           => $editorial_average,
+                'average_formatted' => $editorial_average !== null ? number_format_i18n( $editorial_average, 1 ) : '',
+                'median'            => $editorial_median,
+                'median_formatted'  => $editorial_median !== null ? number_format_i18n( $editorial_median, 1 ) : '',
+                'count'             => (int) $total_scores,
+            ),
+            'readers'   => array(
+                'average'           => $reader_average,
+                'average_formatted' => $reader_average !== null ? number_format_i18n( $reader_average, 1 ) : '',
+                'votes'             => (int) $reader_total_votes,
+                'sample'            => (int) $reader_samples,
+            ),
+            'delta'     => array(
+                'value'     => $delta_value,
+                'formatted' => $delta_formatted,
+                'direction' => $delta_direction,
+                'label'     => __( 'Écart lecteurs vs rédaction', 'notation-jlg' ),
+            ),
+        );
+
+        $payload = apply_filters( 'jlg_score_insights_segments', $payload, $mean_value, $reader_weighted_sum, $reader_total_votes );
+
+        if ( ! is_array( $payload ) ) {
+            return array(
+                'available' => false,
+                'editorial' => array(
+                    'average'           => null,
+                    'average_formatted' => '',
+                    'median'            => null,
+                    'median_formatted'  => '',
+                    'count'             => 0,
+                ),
+                'readers'   => array(
+                    'average'           => null,
+                    'average_formatted' => '',
+                    'votes'             => 0,
+                    'sample'            => 0,
+                ),
+                'delta'     => array(
+                    'value'     => null,
+                    'formatted' => '',
+                    'direction' => 'stable',
+                    'label'     => __( 'Écart lecteurs vs rédaction', 'notation-jlg' ),
+                ),
+            );
+        }
+
+        $editorial_average = isset( $payload['editorial']['average'] ) && is_numeric( $payload['editorial']['average'] )
+            ? (float) $payload['editorial']['average']
+            : null;
+        $editorial_count   = isset( $payload['editorial']['count'] ) ? (int) $payload['editorial']['count'] : 0;
+        $reader_average    = isset( $payload['readers']['average'] ) && is_numeric( $payload['readers']['average'] )
+            ? (float) $payload['readers']['average']
+            : null;
+        $reader_votes      = isset( $payload['readers']['votes'] ) ? (int) $payload['readers']['votes'] : 0;
+
+        $payload['editorial']['average'] = $editorial_average;
+        $payload['editorial']['count']   = $editorial_count;
+        $payload['readers']['average']   = $reader_average;
+        $payload['readers']['votes']     = $reader_votes;
+
+        $payload['available'] = ( $editorial_average !== null || $editorial_count > 0 )
+            || ( $reader_average !== null || $reader_votes > 0 );
+
+        return $payload;
+    }
+
+    private static function format_segment_delta( $value ) {
+        if ( ! is_numeric( $value ) ) {
+            return '';
+        }
+
+        $rounded = round( (float) $value, 1 );
+
+        if ( abs( $rounded ) < 0.05 ) {
+            return '±' . number_format_i18n( 0, 1 );
+        }
+
+        $formatted = number_format_i18n( abs( $rounded ), 1 );
+
+        return $rounded > 0 ? '+' . $formatted : '-' . $formatted;
+    }
+
+    private static function build_timeline_payload( array $entries, $score_max ) {
+        if ( empty( $entries ) ) {
+            return array(
+                'available' => false,
+                'points'    => array(),
+                'sparkline' => array(),
+            );
+        }
+
+        usort(
+            $entries,
+            static function ( $a, $b ) {
+                return ( $a['timestamp'] ?? 0 ) <=> ( $b['timestamp'] ?? 0 );
+            }
+        );
+
+        $date_format = get_option( 'date_format', 'F j, Y' );
+        $score_max   = max( 1.0, (float) $score_max );
+        $points      = array();
+
+        foreach ( $entries as $entry ) {
+            $timestamp = isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0;
+
+            if ( $timestamp <= 0 ) {
+                continue;
+            }
+
+            $editorial = isset( $entry['editorial'] ) && is_numeric( $entry['editorial'] ) ? (float) $entry['editorial'] : null;
+            $reader    = isset( $entry['reader'] ) && is_numeric( $entry['reader'] ) ? (float) $entry['reader'] : null;
+
+            $points[] = array(
+                'post_id'             => isset( $entry['post_id'] ) ? (int) $entry['post_id'] : 0,
+                'timestamp'           => $timestamp,
+                'date_label'          => date_i18n( $date_format, $timestamp ),
+                'editorial'           => $editorial,
+                'editorial_formatted' => $entry['editorial_formatted'] ?? ( $editorial !== null ? number_format_i18n( $editorial, 1 ) : '' ),
+                'reader'              => $reader,
+                'reader_formatted'    => $entry['reader_formatted'] ?? ( $reader !== null ? number_format_i18n( $reader, 1 ) : '' ),
+                'reader_votes'        => isset( $entry['reader_votes'] ) ? (int) $entry['reader_votes'] : 0,
+                'permalink'           => isset( $entry['permalink'] ) ? (string) $entry['permalink'] : '',
+                'title'               => isset( $entry['title'] ) ? (string) $entry['title'] : '',
+            );
+        }
+
+        if ( empty( $points ) ) {
+            return array(
+                'available' => false,
+                'points'    => array(),
+                'sparkline' => array(),
+            );
+        }
+
+        $sparkline = self::build_timeline_sparkline( $points, $score_max );
+
+        $payload = array(
+            'available' => count( $points ) >= 1,
+            'points'    => $points,
+            'sparkline' => $sparkline,
+        );
+
+        $payload = apply_filters( 'jlg_score_insights_timeline', $payload, $entries );
+
+        if ( ! is_array( $payload ) ) {
+            return array(
+                'available' => false,
+                'points'    => array(),
+                'sparkline' => array(),
+            );
+        }
+
+        return $payload;
+    }
+
+    private static function build_timeline_sparkline( array $points, $score_max ) {
+        if ( count( $points ) < 2 ) {
+            return array();
+        }
+
+        $width      = max( 160, ( count( $points ) - 1 ) * 32 );
+        $height     = 48;
+        $padding    = 4;
+        $usable_max = $height - ( 2 * $padding );
+
+        $editorial_segments = array();
+        $reader_segments    = array();
+
+        foreach ( $points as $index => $point ) {
+            $x = count( $points ) === 1 ? ( $width / 2 ) : ( $index * ( $width / ( count( $points ) - 1 ) ) );
+
+            if ( isset( $point['editorial'] ) && is_numeric( $point['editorial'] ) ) {
+                $editorial_segments[] = $x . ',' . self::project_score_on_axis( (float) $point['editorial'], $score_max, $height, $padding, $usable_max );
+            }
+
+            if ( isset( $point['reader'] ) && is_numeric( $point['reader'] ) ) {
+                $reader_segments[] = $x . ',' . self::project_score_on_axis( (float) $point['reader'], $score_max, $height, $padding, $usable_max );
+            }
+        }
+
+        return array(
+            'width'            => $width,
+            'height'           => $height,
+            'view_box'         => '0 0 ' . $width . ' ' . $height,
+            'editorial_path'   => ! empty( $editorial_segments ) ? 'M' . implode( ' L', $editorial_segments ) : '',
+            'reader_path'      => ! empty( $reader_segments ) ? 'M' . implode( ' L', $reader_segments ) : '',
+            'aria_label'       => __( 'Évolution des notes rédaction vs lecteurs', 'notation-jlg' ),
+            'editorial_label'  => __( 'Rédaction', 'notation-jlg' ),
+            'reader_label'     => __( 'Lecteurs', 'notation-jlg' ),
+            'y_min_label'      => number_format_i18n( 0, 0 ),
+            'y_max_label'      => number_format_i18n( $score_max, 0 ),
+        );
+    }
+
+    private static function project_score_on_axis( $score, $score_max, $height, $padding, $usable_max ) {
+        $score      = max( 0.0, (float) $score );
+        $normalized = min( 1.0, $score / max( 1.0, (float) $score_max ) );
+        $y          = $height - $padding - ( $normalized * $usable_max );
+
+        return round( $y, 2 );
+    }
+
+    private static function accumulate_sentiment_lines( array &$counter, $raw_value ) {
+        if ( ! is_string( $raw_value ) || trim( $raw_value ) === '' ) {
+            return;
+        }
+
+        $lines = preg_split( '/\r\n|\r|\n/', $raw_value );
+
+        foreach ( $lines as $line ) {
+            $line = wp_strip_all_tags( (string) $line );
+            $line = trim( preg_replace( '/\s+/', ' ', $line ) );
+
+            if ( $line === '' ) {
+                continue;
+            }
+
+            if ( function_exists( 'mb_substr' ) ) {
+                $line = mb_substr( $line, 0, 140 );
+            } else {
+                $line = substr( $line, 0, 140 );
+            }
+
+            $normalized_key = function_exists( 'mb_strtolower' ) ? mb_strtolower( $line, 'UTF-8' ) : strtolower( $line );
+
+            if ( ! isset( $counter[ $normalized_key ] ) ) {
+                $counter[ $normalized_key ] = array(
+                    'label' => $line,
+                    'count' => 0,
+                );
+            }
+
+            $counter[ $normalized_key ]['count']++;
+        }
+    }
+
+    private static function build_sentiments_payload( array $pros_counter, array $cons_counter ) {
+        $limit = (int) apply_filters( 'jlg_score_insights_sentiment_limit', 3 );
+
+        if ( $limit < 1 ) {
+            $limit = 1;
+        }
+
+        $pros = self::prepare_sentiment_top_list( $pros_counter, $limit );
+        $cons = self::prepare_sentiment_top_list( $cons_counter, $limit );
+
+        $payload = array(
+            'available' => ! empty( $pros ) || ! empty( $cons ),
+            'pros'      => $pros,
+            'cons'      => $cons,
+            'limit'     => $limit,
+        );
+
+        $payload = apply_filters( 'jlg_score_insights_sentiments', $payload, $pros_counter, $cons_counter );
+
+        if ( ! is_array( $payload ) ) {
+            return array(
+                'available' => false,
+                'pros'      => array(),
+                'cons'      => array(),
+                'limit'     => $limit,
+            );
+        }
+
+        return $payload;
+    }
+
+    private static function prepare_sentiment_top_list( array $counter, $limit ) {
+        if ( empty( $counter ) ) {
+            return array();
+        }
+
+        uasort(
+            $counter,
+            static function ( $a, $b ) {
+                $count_a = $a['count'] ?? 0;
+                $count_b = $b['count'] ?? 0;
+
+                if ( $count_a === $count_b ) {
+                    return strcmp( (string) ( $a['label'] ?? '' ), (string) ( $b['label'] ?? '' ) );
+                }
+
+                return $count_b <=> $count_a;
+            }
+        );
+
+        $top = array_slice( $counter, 0, $limit );
+
+        return array_values(
+            array_map(
+                static function ( $entry ) {
+                    return array(
+                        'label' => isset( $entry['label'] ) ? (string) $entry['label'] : '',
+                        'count' => isset( $entry['count'] ) ? (int) $entry['count'] : 0,
+                    );
+                },
+                $top
+            )
+        );
     }
 
     private static function format_signed_score_delta( $value ) {

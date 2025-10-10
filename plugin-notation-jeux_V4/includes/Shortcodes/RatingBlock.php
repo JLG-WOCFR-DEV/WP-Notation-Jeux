@@ -247,6 +247,13 @@ class RatingBlock {
         $related_guides         = $related_guides_enabled
             ? Helpers::get_related_guides_for_post( $post_id, $options )
             : array();
+        $deals_enabled          = ! empty( $options['deals_enabled'] );
+        $deals                  = $deals_enabled
+            ? Helpers::get_deals_for_post( $post_id, $options )
+            : array();
+        $deals_button_rel       = isset( $options['deals_button_rel'] ) ? sanitize_text_field( $options['deals_button_rel'] ) : '';
+        $deals_button_rel       = is_string( $deals_button_rel ) ? trim( $deals_button_rel ) : '';
+        $deals_disclaimer       = isset( $options['deals_disclaimer'] ) ? sanitize_textarea_field( $options['deals_disclaimer'] ) : '';
 
         $verdict_overrides = array( 'context' => 'rating-block' );
 
@@ -296,6 +303,10 @@ class RatingBlock {
                 'review_status'            => $review_status,
                 'related_guides_enabled'   => $related_guides_enabled,
                 'related_guides'           => $related_guides,
+                'deals_enabled'            => $deals_enabled,
+                'deals'                    => $deals,
+                'deals_button_rel'         => $deals_button_rel,
+                'deals_disclaimer'         => $deals_disclaimer,
                 'verdict'                  => $verdict_data,
                 'test_context'             => $context_payload,
             )
@@ -311,7 +322,9 @@ class RatingBlock {
             $resolved_score_max = 10.0;
         }
 
-        $placeholder_score      = round( $resolved_score_max / 2, 1 );
+        $deals_enabled      = ! empty( $options['deals_enabled'] );
+        $placeholder_deals  = array();
+        $placeholder_score  = round( $resolved_score_max / 2, 1 );
         $placeholder_percentage = max( 0, min( 100, ( $placeholder_score / $resolved_score_max ) * 100 ) );
 
         $category_scores      = array();
@@ -374,6 +387,29 @@ class RatingBlock {
             );
         }
 
+        if ( $deals_enabled ) {
+            $placeholder_deals = array(
+                array(
+                    'id'            => 'deal-1',
+                    'retailer'      => __( 'Boutique officielle', 'notation-jlg' ),
+                    'price_display' => __( '59,99 €', 'notation-jlg' ),
+                    'availability'  => __( 'En stock – livraison 48h', 'notation-jlg' ),
+                    'cta_label'     => _x( 'Voir l’offre', 'Default CTA label for deals module', 'notation-jlg' ),
+                    'url'           => '',
+                    'is_best'       => true,
+                ),
+                array(
+                    'id'            => 'deal-2',
+                    'retailer'      => __( 'Revendeur partenaire', 'notation-jlg' ),
+                    'price_display' => __( '54,99 €', 'notation-jlg' ),
+                    'availability'  => __( 'Stock limité', 'notation-jlg' ),
+                    'cta_label'     => _x( 'Voir l’offre', 'Default CTA label for deals module', 'notation-jlg' ),
+                    'url'           => '',
+                    'is_best'       => false,
+                ),
+            );
+        }
+
         $current_timestamp   = time();
         $placeholder_verdict = array(
             'enabled'       => ! empty( $options['verdict_module_enabled'] ),
@@ -429,6 +465,10 @@ class RatingBlock {
             'review_status'            => $review_status,
             'related_guides_enabled'   => $related_guides_enabled,
             'related_guides'           => $placeholder_guides,
+            'deals_enabled'            => $deals_enabled,
+            'deals'                    => $placeholder_deals,
+            'deals_button_rel'         => isset( $options['deals_button_rel'] ) ? sanitize_text_field( $options['deals_button_rel'] ) : '',
+            'deals_disclaimer'         => isset( $options['deals_disclaimer'] ) ? sanitize_textarea_field( $options['deals_disclaimer'] ) : '',
             'verdict'                  => $placeholder_verdict,
             'test_context'             => $resolved_context,
         );

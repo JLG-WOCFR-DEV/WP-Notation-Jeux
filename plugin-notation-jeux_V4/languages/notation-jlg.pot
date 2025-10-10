@@ -1293,8 +1293,16 @@ msgstr ""
 msgid "Notation JLG : Derniers Tests"
 msgstr ""
 
+#: includes/DealsWidget.php:25
+msgid "Notation JLG : Deals & disponibilités"
+msgstr ""
+
 #: includes/LatestReviewsWidget.php:20
 msgid "Affiche les derniers articles ayant reçu une note."
+msgstr ""
+
+#: includes/DealsWidget.php:27
+msgid "Affiche les offres affiliées configurées dans le module Deals."
 msgstr ""
 
 #: includes/LatestReviewsWidget.php:25
@@ -1307,8 +1315,17 @@ msgstr ""
 msgid "Aucun test trouvé."
 msgstr ""
 
+#: includes/DealsWidget.php:91
 #: includes/LatestReviewsWidget.php:67
 msgid "Titre :"
+msgstr ""
+
+#: includes/DealsWidget.php:96
+msgid "Afficher un message lorsque le module ne retourne aucune offre."
+msgstr ""
+
+#: includes/DealsWidget.php:99
+msgid "Message vide :"
 msgstr ""
 
 #: includes/LatestReviewsWidget.php:73
@@ -2545,3 +2562,17 @@ msgstr ""
 #: templates/shortcode-score-insights.php:202
 msgid "Indice de confiance"
 msgstr ""
+#: includes/DealsWidget.php:136
+msgid "Bonnes affaires"
+msgstr ""
+
+#: includes/DealsWidget.php:142
+msgid "Aucune offre disponible pour le moment."
+msgstr ""
+
+#: templates/shortcode-rating-block.php:485
+#: templates/shortcode-all-in-one.php:485
+#: templates/widget-deals.php:19
+msgid "Deals & disponibilités"
+msgstr ""
+

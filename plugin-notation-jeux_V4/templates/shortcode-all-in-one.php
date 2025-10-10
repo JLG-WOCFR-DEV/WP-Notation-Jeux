@@ -37,6 +37,10 @@ $data_attributes  = sprintf(
     esc_attr( $animations_enabled ? 'true' : 'false' ),
     esc_attr( $has_dual_tagline ? 'true' : 'false' )
 );
+$deals_enabled         = ! empty( $deals_enabled );
+$deals_list            = isset( $deals ) && is_array( $deals ) ? $deals : array();
+$deals_button_rel_attr = isset( $deals_button_rel ) ? trim( (string) $deals_button_rel ) : '';
+$deals_disclaimer_text = isset( $deals_disclaimer ) ? trim( (string) $deals_disclaimer ) : '';
 
 $verdict_data             = isset( $verdict ) && is_array( $verdict ) ? $verdict : array();
 $verdict_enabled          = ! empty( $verdict_data['enabled'] );
@@ -472,6 +476,48 @@ if ( $average_score_display !== '' ) {
                 <span><?php echo esc_html( $verdict_cta_label ); ?></span>
             </a>
         </p>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if ( $deals_enabled && ! empty( $deals_list ) ) : ?>
+    <section class="jlg-aio-deals" aria-label="<?php esc_attr_e( 'Deals & disponibilités', 'notation-jlg' ); ?>">
+        <h3 class="jlg-aio-deals__title"><?php esc_html_e( 'Deals & disponibilités', 'notation-jlg' ); ?></h3>
+        <ul class="jlg-aio-deals__list" role="list">
+            <?php foreach ( $deals_list as $deal ) : ?>
+                <?php
+                $deal_retailer      = isset( $deal['retailer'] ) ? (string) $deal['retailer'] : '';
+                $deal_price         = isset( $deal['price_display'] ) ? (string) $deal['price_display'] : '';
+                $deal_availability  = isset( $deal['availability'] ) ? (string) $deal['availability'] : '';
+                $deal_cta_label     = isset( $deal['cta_label'] ) ? (string) $deal['cta_label'] : '';
+                $deal_url           = isset( $deal['url'] ) ? (string) $deal['url'] : '';
+                $deal_highlight     = ! empty( $deal['is_best'] );
+                $deal_item_classes  = array( 'jlg-aio-deals__item' );
+                if ( $deal_highlight ) {
+                    $deal_item_classes[] = 'jlg-aio-deals__item--highlight';
+                }
+                $deal_item_class_attr = implode( ' ', array_map( 'sanitize_html_class', $deal_item_classes ) );
+                ?>
+                <li class="<?php echo esc_attr( $deal_item_class_attr ); ?>">
+                    <div class="jlg-aio-deals__header">
+                        <span class="jlg-aio-deals__retailer"><?php echo esc_html( $deal_retailer ); ?></span>
+                        <?php if ( $deal_price !== '' ) : ?>
+                            <span class="jlg-aio-deals__price"><?php echo esc_html( $deal_price ); ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ( $deal_availability !== '' ) : ?>
+                        <p class="jlg-aio-deals__availability"><?php echo esc_html( $deal_availability ); ?></p>
+                    <?php endif; ?>
+                    <?php if ( $deal_url !== '' ) : ?>
+                        <a class="jlg-aio-deals__button" href="<?php echo esc_url( $deal_url ); ?>"<?php echo $deals_button_rel_attr !== '' ? ' rel="' . esc_attr( $deals_button_rel_attr ) . '"' : ''; ?>>
+                            <span><?php echo esc_html( $deal_cta_label !== '' ? $deal_cta_label : __( 'Voir l’offre', 'notation-jlg' ) ); ?></span>
+                        </a>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php if ( $deals_disclaimer_text !== '' ) : ?>
+            <p class="jlg-aio-deals__disclaimer"><?php echo esc_html( $deals_disclaimer_text ); ?></p>
         <?php endif; ?>
     </section>
     <?php endif; ?>

@@ -28,10 +28,10 @@ Ce document décline les opportunités identifiées dans le benchmark du 5 octob
 ## Vague 2 – Monétisation & insights (S+8 à S+16)
 | Deliverable | Description | Estimation | Dépendances | KPI |
 | --- | --- | --- | --- | --- |
-| Widget Deals & disponibilités | Module optionnel (shortcode + widget) avec boutons affiliés triés. | 10 j | Champs répétables, design UI dédié | +12 % clics sortants. |
+| Widget Deals & disponibilités | Module optionnel (shortcode + widget) avec boutons affiliés triés. (✅ livré via le widget WordPress `JLG_Deals_Widget` et le module Deals des shortcodes) | 10 j | Champs répétables, design UI dédié | +12 % clics sortants. |
 | Segmentation Score Insights | Comparaison rédaction/lecteurs, sparkline, top sentiments. | 7 j | Nécessite Quick win badges | +10 % consultation onglet Insights. |
-| API REST `/jlg/v1/ratings` | Expose moyennes par jeu, distribution votes, filtrable par plateforme. | 6 j | Auth WP (nonce), doc swagger simple | 3 intégrations partenaires pilotes. |
-| Commande WP-CLI export CSV | `wp jlg export:ratings --from=2024-01-01` → CSV (notes, plateformes, badge). | 3 j | Endpoint REST ou requêtes directes | Utilisation mensuelle par équipes marketing. |
+| API REST `/jlg/v1/ratings` | Expose moyennes par jeu, distribution votes, filtrable par plateforme. (✅ livré via contrôleur REST `JLG\Notation\Rest\RatingsController` + tests unitaires `RestRatingsEndpointTest`) | 6 j | Auth WP (nonce), doc swagger simple | 3 intégrations partenaires pilotes. |
+| Commande WP-CLI export CSV | `wp jlg export:ratings --from=2024-01-01` → CSV (notes, plateformes, badge). (✅ livré via `JLG\\Notation\\CLI\\ExportRatingsCommand`) | 3 j | Endpoint REST ou requêtes directes | Utilisation mensuelle par équipes marketing. |
 
 ## Vague 3 – Extensions (S+16 et +)
 - **Intégration dynamique de deals** (API partenaires, alerte baisse de prix).

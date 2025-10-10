@@ -25,10 +25,12 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 * **Notation utilisateurs** : votes AJAX, histogramme accessible rafraîchi en direct, verrouillage anti double clic et option *Connexion obligatoire avant le vote*.
 * **Tableau récapitulatif & Game Explorer** : vues triables/filtrables avec navigation accessible sans JavaScript et panneaux responsives.
 * **Score Insights** : tableau de bord statistique (moyenne, médiane, histogramme, plateformes dominantes) filtrable par période et plateforme, agrémenté d'un indicateur de tendance comparant la moyenne à la période précédente, d'un label de consensus basé sur l'écart-type et d'un compteur de tests (« Basé sur N tests publiés ») pour contextualiser la fiabilité de l'échantillon. Un indice de confiance (limité/modéré/élevé) aide les rédactions à prioriser les prochaines publications.
+* **API REST partenaires** : l’endpoint `/jlg/v1/ratings` expose scores rédaction/lecteurs, histogrammes, statuts éditoriaux et plateformes pour chaque review avec pagination, filtres (`platform`, `search`, `status`, `from`, `to`, `orderby`) et agrégats globaux (voir la documentation `docs/rest-api-ratings.md`).
+* **Commande WP-CLI** : `wp jlg export:ratings` produit un CSV (colonnes note rédaction, moyenne lecteurs, delta, badge, plateformes) filtrable par statut, période, plateforme ou recherche (`--status`, `--from`, `--to`, `--platform`, `--search`).
 * **Presets visuels** : appliquez instantanément l’un des styles fournis (Signature, Minimal, Éditorial) depuis les réglages ou le bloc Gutenberg pour harmoniser palettes, ombres et bordures.
 * **Onglet Diagnostics** : surveillez la latence des flux (Game Explorer, RAWG, votes lecteurs), réinitialisez les métriques et testez la connexion RAWG directement depuis l’administration.
 * **Nom de jeu personnalisé** : remplace le titre WordPress dans tableaux, widgets et données structurées.
-* **Widget « Derniers tests »** : met en avant vos dernières reviews notées.
+* **Widgets « Derniers tests » & « Deals & disponibilités »** : mettez en avant vos dernières reviews notées et les offres affiliées configurées dans les metaboxes (tri par prix, CTA, disclaimer et attributs `rel` personnalisés).
 * **Intégration vidéo enrichie** : détection automatique YouTube, Vimeo, Twitch, Dailymotion pour un embed conforme.
 * **API RAWG** : remplissage automatique des informations de jeu avec validation (dates, PEGI, nom normalisé).
 * **SEO optimisé** : schema.org (JSON-LD) activable et métadonnées cohérentes.
@@ -184,7 +186,7 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 * **Assistant de configuration guidée** : mettre en place, dès l’activation, un onboarding en quatre étapes (types de contenus autorisés, modules à activer, import d’exemples, connexion RAWG) pour accélérer la prise en main et réduire les erreurs constatées lors des tests utilisateurs.
 * **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test avec des pondérations par catégorie, des annotations individuelles et un historique, puis générer automatiquement le verdict éditorial publié.
 * **Timeline de mises à jour du jeu** : ajouter un module optionnel à la fiche technique recensant les patchs majeurs et leurs impacts sur la note (delta, points forts/faibles révisés), synchronisable avec RAWG ou saisi manuellement pour suivre la vie du jeu.
-* **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
+* **Exports & intégrations partenaires** : étendre la commande WP-CLI (`wp jlg export:ratings`) et proposer un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
 * **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
 * **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
 
@@ -200,7 +202,7 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 3. Fiche technique et points forts/faibles
 4. Tableau récapitulatif des tests
 5. Réglages et personnalisation
-6. Widget derniers tests
+6. Widgets deals & derniers tests
 
 == Changelog ==
 
