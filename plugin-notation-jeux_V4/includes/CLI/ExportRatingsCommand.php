@@ -276,7 +276,7 @@ class ExportRatingsCommand {
         }
 
         $headers = array_keys( $rows[0] );
-        fputcsv( $handle, $headers, $delimiter, '"', '\\' );
+        fputcsv( $handle, $headers, $delimiter, '"', '\' );
 
         $written = 0;
         foreach ( $rows as $row ) {
@@ -295,7 +295,7 @@ class ExportRatingsCommand {
                 $line[] = $value;
             }
 
-            fputcsv( $handle, $line, $delimiter, '"', '\\' );
+            fputcsv( $handle, $line, $delimiter, '"', '\' );
             ++$written;
         }
 
