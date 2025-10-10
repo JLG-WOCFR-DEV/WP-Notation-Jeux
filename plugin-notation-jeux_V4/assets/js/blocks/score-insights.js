@@ -21,6 +21,7 @@
     var createElement = wp.element.createElement;
     var Fragment = wp.element.Fragment;
     var BlockPreview = blocksHelpers.BlockPreview;
+    var useAnalyticsAttributeSetter = blocksHelpers.useAnalyticsAttributeSetter;
 
     var useBlockProps = typeof useBlockPropsHook === 'function'
         ? useBlockPropsHook
@@ -42,7 +43,10 @@
     registerBlockType('notation-jlg/score-insights', {
         edit: function (props) {
             var attributes = props.attributes || {};
-            var setAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var baseSetAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var setAttributes = useAnalyticsAttributeSetter
+                ? useAnalyticsAttributeSetter('notation-jlg/score-insights', attributes, baseSetAttributes)
+                : baseSetAttributes;
             var blockProps = useBlockProps({ className: 'notation-jlg-score-insights-block' });
 
             var safeLimit = typeof attributes.platformLimit === 'number' ? attributes.platformLimit : 5;

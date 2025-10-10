@@ -22,6 +22,7 @@
     var createElement = wp.element.createElement;
     var Fragment = wp.element.Fragment;
     var BlockPreview = blocksHelpers.BlockPreview;
+    var useAnalyticsAttributeSetter = blocksHelpers.useAnalyticsAttributeSetter;
 
     var useBlockProps = typeof useBlockPropsHook === 'function'
         ? useBlockPropsHook
@@ -67,7 +68,10 @@
     registerBlockType('notation-jlg/game-explorer', {
         edit: function (props) {
             var attributes = props.attributes || {};
-            var setAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var baseSetAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var setAttributes = useAnalyticsAttributeSetter
+                ? useAnalyticsAttributeSetter('notation-jlg/game-explorer', attributes, baseSetAttributes)
+                : baseSetAttributes;
             var filters = Array.isArray(attributes.filters) ? attributes.filters.slice() : ['letter', 'category', 'platform', 'availability'];
             var blockProps = useBlockProps({ className: 'notation-jlg-game-explorer-block' });
 

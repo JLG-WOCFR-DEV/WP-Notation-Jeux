@@ -8,7 +8,6 @@
     var useState = wp.element.useState;
     var useEffect = wp.element.useEffect;
     var useMemo = wp.element.useMemo;
-    var useEffect = wp.element.useEffect;
     var useRef = wp.element.useRef;
     var useSelect = wp.data.useSelect;
     var __ = wp.i18n.__;
@@ -16,6 +15,9 @@
     var SelectControl = wp.components.SelectControl;
     var Placeholder = wp.components.Placeholder;
     var Spinner = wp.components.Spinner;
+    var ButtonGroup = wp.components.ButtonGroup;
+    var Button = wp.components.Button;
+    var Tooltip = wp.components.Tooltip;
     var ServerSideRender = wp.serverSideRender;
     var decodeEntities = wp.htmlEntities && wp.htmlEntities.decodeEntities ? wp.htmlEntities.decodeEntities : function (value) {
         return value;
@@ -264,11 +266,122 @@
         });
     };
 
+    var deviceViewports = [
+        { id: 'desktop', label: __('Bureau', 'notation-jlg'), width: 1280, icon: 'desktop' },
+        { id: 'tablet', label: __('Tablette', 'notation-jlg'), width: 960, icon: 'tablet' },
+        { id: 'mobile', label: __('Mobile', 'notation-jlg'), width: 420, icon: 'smartphone' },
+    ];
+
+    var sendAnalyticsEvent = function sendAnalyticsEvent(eventName, payload) {
+        if (!eventName || typeof window === 'undefined') {
+            return;
+        }
+
+        var detail = {
+            event: eventName,
+            payload: payload || {},
+            timestamp: Date.now(),
+        };
+
+        try {
+            if (window.jlgAnalytics && typeof window.jlgAnalytics.track === 'function') {
+                window.jlgAnalytics.track(eventName, detail.payload);
+            }
+        } catch (error) {
+            // Silence tracking errors to avoid blocking the editor experience.
+        }
+
+        try {
+            if (Array.isArray(window.dataLayer)) {
+                window.dataLayer.push({
+                    event: eventName,
+                    payload: detail.payload,
+                    timestamp: detail.timestamp,
+                    source: 'notation-jlg-blocks',
+                });
+            }
+        } catch (error) {
+            // Ignore dataLayer issues silently.
+        }
+
+        if (typeof window.dispatchEvent === 'function' && typeof window.CustomEvent === 'function') {
+            try {
+                window.dispatchEvent(new window.CustomEvent('notationJLGAnalytics', { detail: detail }));
+            } catch (error) {
+                // Ignore CustomEvent incompatibilities.
+            }
+        }
+    };
+
+    var useAnalyticsAttributeSetter = function useAnalyticsAttributeSetter(blockName, attributes, setAttributes) {
+        var latestAttributesRef = useRef(attributes);
+
+        useEffect(
+            function () {
+                latestAttributesRef.current = attributes;
+            },
+            [attributes]
+        );
+
+        return useMemo(
+            function () {
+                if (typeof setAttributes !== 'function') {
+                    return function () {};
+                }
+
+                return function (nextAttributes) {
+                    var payload;
+
+                    if (nextAttributes && typeof nextAttributes === 'object') {
+                        var previousAttributes = latestAttributesRef.current || {};
+                        var changes = [];
+
+                        Object.keys(nextAttributes).forEach(function (key) {
+                            var nextValue = nextAttributes[key];
+                            var previousValue = previousAttributes ? previousAttributes[key] : undefined;
+
+                            if (previousValue !== nextValue) {
+                                changes.push({
+                                    attribute: key,
+                                    previous: previousValue,
+                                    next: nextValue,
+                                });
+                            }
+                        });
+
+                        if (changes.length) {
+                            payload = {
+                                block: blockName,
+                                changes: changes,
+                            };
+                            sendAnalyticsEvent('notation_jlg_block_attribute_update', payload);
+                        }
+                    }
+
+                    setAttributes(nextAttributes);
+                };
+            },
+            [blockName, setAttributes]
+        );
+    };
+
     var BlockPreview = function BlockPreview(props) {
         var blockName = props.block;
         var attributes = props.attributes || {};
         var label = props.label || __('Prévisualisation du bloc', 'notation-jlg');
         var containerRef = useRef(null);
+        var _useState3 = useState('desktop');
+        var device = _useState3[0];
+        var setDevice = _useState3[1];
+
+        var currentDevice = useMemo(
+            function () {
+                return deviceViewports.find(function (item) {
+                    return item.id === device;
+                }) || deviceViewports[0];
+            },
+            [device]
+        );
 
         if (!ServerSideRender) {
             return createElement(
@@ -305,10 +418,97 @@
             [blockName, JSON.stringify(attributes)]
         );
 
+        var handleDeviceChange = useMemo(
+            function () {
+                return function (nextDevice) {
+                    if (nextDevice === device) {
+                        return;
+                    }
+
+                    setDevice(nextDevice);
+                    sendAnalyticsEvent('notation_jlg_block_preview_device_change', {
+                        block: blockName,
+                        device: nextDevice,
+                    });
+                };
+            },
+            [device, blockName]
+        );
+
+        var ButtonsContainer = ButtonGroup
+            ? ButtonGroup
+            : function (props) {
+                  return createElement(
+                      'div',
+                      {
+                          className:
+                              typeof props === 'object' && props && props.className
+                                  ? props.className
+                                  : 'notation-jlg-block-preview__toolbar-group',
+                      },
+                      props && props.children
+                  );
+              };
+
+        var DeviceButton = Button
+            ? Button
+            : function (props) {
+                  return createElement(
+                      'button',
+                      {
+                          type: 'button',
+                          className:
+                              'notation-jlg-block-preview__button' + (props && props.isPressed ? ' is-active' : ''),
+                          onClick: props && props.onClick ? props.onClick : function () {},
+                          'aria-pressed': props && props['aria-pressed'],
+                      },
+                      props && props.label ? props.label : ''
+                  );
+              };
+
         return createElement(
             'div',
-            { className: 'notation-jlg-block-preview', ref: containerRef },
-            createElement(ServerSideRender, { block: blockName, attributes: attributes })
+            {
+                className: 'notation-jlg-block-preview',
+                ref: containerRef,
+                'data-device': currentDevice.id,
+                style: {
+                    '--jlg-preview-width': currentDevice && currentDevice.width ? currentDevice.width + 'px' : '100%',
+                },
+            },
+            createElement(
+                'div',
+                { className: 'notation-jlg-block-preview__toolbar' },
+                createElement(
+                    ButtonsContainer,
+                    null,
+                    deviceViewports.map(function (viewport) {
+                        var button = createElement(DeviceButton, {
+                            key: viewport.id,
+                            icon: viewport.icon,
+                            isPressed: viewport.id === currentDevice.id,
+                            onClick: function () {
+                                handleDeviceChange(viewport.id);
+                            },
+                            label: viewport.label,
+                            'aria-pressed': viewport.id === currentDevice.id,
+                        });
+
+                        return Tooltip
+                            ? createElement(
+                                  Tooltip,
+                                  { text: viewport.label, position: 'top' },
+                                  button
+                              )
+                            : button;
+                    })
+                )
+            ),
+            createElement(
+                'div',
+                { className: 'notation-jlg-block-preview__frame' },
+                createElement(ServerSideRender, { block: blockName, attributes: attributes })
+            )
         );
     };
 
@@ -316,4 +516,6 @@
     window.jlgBlocks.PostPicker = PostPicker;
     window.jlgBlocks.BlockPreview = BlockPreview;
     window.jlgBlocks.ensureDynamicPreviewReady = ensureDynamicPreviewReady;
+    window.jlgBlocks.useAnalyticsAttributeSetter = useAnalyticsAttributeSetter;
+    window.jlgBlocks.sendAnalyticsEvent = sendAnalyticsEvent;
 })(window.wp);

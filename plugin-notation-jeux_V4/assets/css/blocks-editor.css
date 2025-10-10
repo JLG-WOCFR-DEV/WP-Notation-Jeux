@@ -5,12 +5,54 @@
 .notation-jlg-block-preview {
     min-height: 120px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .notation-jlg-block-preview .components-placeholder {
     width: 100%;
+}
+
+.notation-jlg-block-preview__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.notation-jlg-block-preview__button {
+    border: 1px solid var(--wp-admin-theme-color, #2c3338);
+    background: transparent;
+    color: inherit;
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.notation-jlg-block-preview__button.is-active,
+.notation-jlg-block-preview__button:hover {
+    background: var(--wp-admin-theme-color, #2c3338);
+    color: #ffffff;
+}
+
+.notation-jlg-block-preview__frame {
+    width: min(100%, var(--jlg-preview-width, 100%));
+    margin: 0 auto;
+    transition: width 0.25s ease-in-out, max-width 0.25s ease-in-out;
+}
+
+.notation-jlg-block-preview[data-device='mobile'] .notation-jlg-block-preview__frame {
+    max-width: 420px;
+}
+
+.notation-jlg-block-preview[data-device='tablet'] .notation-jlg-block-preview__frame {
+    max-width: 960px;
+}
+
+.notation-jlg-block-preview[data-device='desktop'] .notation-jlg-block-preview__frame {
+    max-width: 1280px;
 }
 
 .editor-styles-wrapper .review-box-jlg {
