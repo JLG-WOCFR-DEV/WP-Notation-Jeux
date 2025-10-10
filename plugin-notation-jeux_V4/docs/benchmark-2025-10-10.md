@@ -1,18 +1,22 @@
-# Benchmark du 2025-10-10 – Consensus & Confiance des scores
+# Benchmark notation – 10 octobre 2025
 
-> _Mise à jour 2025-10-14 : ce document a été relu lors de l’audit des fichiers Markdown. Les actions détaillées sont centralisées dans [`documentation-audit-2025-10-14.md`](documentation-audit-2025-10-14.md)._
+## Périmètre
+- Plugin WP Notation Jeux v4 (endpoint REST, export CLI, agrégateur d'insights).
+- Références étudiées :
+  - **IGN Review Center** – focus sur filtres dynamiques, deltas éditorial vs lecteurs clairement signés, exports CSV avec tri multi critères.
+  - **OpenCritic** – timeline interactive et badges de divergence soulignant les écarts marquants entre moyenne presse et joueurs.
 
-| Solution | Comportement observé | Impact utilisateur | Opportunité d'amélioration |
+## Constats clés
+| Axe | IGN | OpenCritic | Plugin actuel |
 | --- | --- | --- | --- |
-| **Metacritic – Critic Reviews** | Affiche un label de consensus (« Generally Favorable », « Mixed », etc.) dérivé de l'écart entre les notes des critiques et expose le nombre de critiques pour donner un niveau de confiance. | Les rédactions comme les lecteurs comprennent en un coup d'œil si le verdict est homogène ou polarisé et peuvent décider s'il faut approfondir les écarts. | Ajouter un indicateur de consensus basé sur la dispersion des scores éditoriaux (écart-type + fourchette) pour donner le même niveau de lecture rapide. |
-| **OpenCritic – Badge « Strong/Mighty/Weak »** | Les agrégateurs de notes calculent un score de confiance en fonction de la variance entre critiques et affichent un badge coloré accompagné d'une explication textuelle. | Les équipes marketing identifient rapidement les jeux aux avis incertains et priorisent les contenus complémentaires (guides, mises à jour). | Fournir un message éditorial (texte et ARIA) qui explique la stabilité des scores et suggère les actions suivantes lorsqu'ils sont divergents. |
+| Filtres temporels | Filtres "From/To" toujours disponibles et respectés dans les exports | Timeline filtrable par période | REST `from/to` ignorait certains cas (WP_Query stub) → résultats incohérents |
+| Delta de notation | Deltas affichés comme avantage rédaction (positive = rédaction plus haute) | Affiche l'écart absolu avec signe cohérent | Delta REST calculé depuis lecteurs → signe inversé par rapport aux attentes front |
+| Export CSV | CSV fournit un fallback clair et échappe correctement les données | — | Export CLI n'indiquait pas le paramètre d'échappement → dépréciation PHP 8.4 |
+| Timeline | Timeline interactive toujours active, même avec objets légers | Timeline toujours affichée (fallback sur dates locales) | Agrégateur ignorait les objets non `WP_Post` → timeline marquée indisponible |
 
-## Décision
+## Opportunités priorisées
+1. **Aligner le signe du delta REST sur la lecture éditoriale** pour respecter les conventions observées chez IGN et les maquettes front.
+2. **Renforcer la robustesse des filtres temporels** (REST + timeline) pour éviter des listes trop verbeuses lors des exports comparatifs.
+3. **Durcir l’export CSV** en anticipant les changements de signature PHP 8.4 et en garantissant un format stable pour les équipes data.
 
-Étendre le module `jlg_score_insights` pour calculer l'écart-type des notes éditoriales et restituer :
-
-1. Un label de consensus (« Consensus fort », « Consensus partagé », « Avis divisés ») aligné sur les seuils observés chez Metacritic/OpenCritic.
-2. La fourchette des notes (min/max) afin de contextualiser les extrêmes et d'aider les rédactions à investiguer les cas atypiques.
-3. Un message accessible qui explique la situation aux lecteurs et suggère une action (ex. consulter les badges de divergence quand les avis sont divisés).
-
-Ces ajouts rapprochent notre module des standards pro tout en restant actionnables pour les équipes éditoriales.
+Ces ajustements rapprochent le plugin des standards pro identifiés et servent de base pour itérer sur la mise en forme front (badges et timeline).

@@ -3534,7 +3534,12 @@ class Helpers {
             return null;
         }
 
+        $post_object   = function_exists( 'get_post' ) ? get_post( $post_id ) : null;
+
         $post_date_gmt = get_post_field( 'post_date_gmt', $post_id );
+        if ( ( $post_date_gmt === '' || $post_date_gmt === null ) && $post_object ) {
+            $post_date_gmt = isset( $post_object->post_date_gmt ) ? (string) $post_object->post_date_gmt : '';
+        }
         if ( is_string( $post_date_gmt ) && $post_date_gmt !== '' && $post_date_gmt !== '0000-00-00 00:00:00' ) {
             $timestamp = strtotime( $post_date_gmt . ' GMT' );
             if ( $timestamp !== false ) {
@@ -3543,6 +3548,9 @@ class Helpers {
         }
 
         $post_date = get_post_field( 'post_date', $post_id );
+        if ( ( $post_date === '' || $post_date === null ) && $post_object ) {
+            $post_date = isset( $post_object->post_date ) ? (string) $post_object->post_date : '';
+        }
         if ( is_string( $post_date ) && $post_date !== '' && $post_date !== '0000-00-00 00:00:00' ) {
             $timestamp = strtotime( $post_date );
             if ( $timestamp !== false ) {
