@@ -101,6 +101,7 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
     aria-labelledby="<?php echo esc_attr( $heading_id ); ?>"
     aria-describedby="<?php echo esc_attr( $summary_id ); ?>"
     aria-live="polite"
+    data-total-reviews="<?php echo esc_attr( $total_reviews ); ?>"
 >
     <header class="jlg-score-insights__header">
         <h2 id="<?php echo esc_attr( $heading_id ); ?>" class="jlg-score-insights__title">

@@ -447,6 +447,17 @@ class Frontend {
         if ( ! $game_explorer_shortcode_used ) {
             $game_explorer_shortcode_used = $this->content_has_specific_shortcode( $post_content, 'jlg_game_explorer' );
         }
+        if ( ! $game_explorer_shortcode_used && function_exists( 'has_block' ) && $queried_object instanceof WP_Post ) {
+            $game_explorer_shortcode_used = has_block( 'notation-jlg/game-explorer', $queried_object );
+        }
+
+        $score_insights_shortcode_used = self::has_rendered_shortcode( 'jlg_score_insights' );
+        if ( ! $score_insights_shortcode_used ) {
+            $score_insights_shortcode_used = $this->content_has_specific_shortcode( $post_content, 'jlg_score_insights' );
+        }
+        if ( ! $score_insights_shortcode_used && function_exists( 'has_block' ) && $queried_object instanceof WP_Post ) {
+            $score_insights_shortcode_used = has_block( 'notation-jlg/score-insights', $queried_object );
+        }
 
         $platform_breakdown_shortcode_used = self::has_rendered_shortcode( 'jlg_platform_breakdown' );
         if ( ! $platform_breakdown_shortcode_used ) {
@@ -458,9 +469,10 @@ class Frontend {
             $platform_breakdown_meta_used = metadata_exists( 'post', $post_id, '_jlg_platform_breakdown_entries' );
         }
 
-        $should_enqueue_summary_script       = $summary_shortcode_used || $summary_ajax;
-        $should_enqueue_game_explorer_script = $game_explorer_shortcode_used || $game_explorer_ajax;
-        $should_enqueue_game_explorer_assets = $should_enqueue_game_explorer_script || $game_explorer_ajax;
+        $should_enqueue_summary_script        = $summary_shortcode_used || $summary_ajax;
+        $should_enqueue_game_explorer_script  = $game_explorer_shortcode_used || $game_explorer_ajax;
+        $should_enqueue_game_explorer_assets  = $should_enqueue_game_explorer_script || $game_explorer_ajax;
+        $should_enqueue_score_insights_script = $score_insights_shortcode_used;
 
         if ( $should_enqueue_game_explorer_assets ) {
             wp_enqueue_style( self::GAME_EXPLORER_STYLE_HANDLE );
@@ -599,18 +611,44 @@ class Frontend {
             wp_enqueue_script( 'jlg-platform-breakdown' );
         }
 
+        if ( ! wp_script_is( 'jlg-live-announcer', 'registered' ) ) {
+            wp_register_script(
+                'jlg-live-announcer',
+                JLG_NOTATION_PLUGIN_URL . 'assets/js/live-announcer.js',
+                array(),
+                JLG_NOTATION_VERSION,
+                true
+            );
+        }
+
         if ( $should_enqueue_game_explorer_script && ! wp_script_is( 'jlg-game-explorer', 'enqueued' ) ) {
             if ( ! wp_script_is( 'jlg-game-explorer', 'registered' ) ) {
                 wp_register_script(
                     'jlg-game-explorer',
                     JLG_NOTATION_PLUGIN_URL . 'assets/js/game-explorer.js',
-                    array(),
+                    array( 'jlg-live-announcer' ),
                     JLG_NOTATION_VERSION,
                     true
                 );
             }
 
+            wp_enqueue_script( 'jlg-live-announcer' );
             wp_enqueue_script( 'jlg-game-explorer' );
+        }
+
+        if ( $should_enqueue_score_insights_script && ! wp_script_is( 'jlg-score-insights', 'enqueued' ) ) {
+            if ( ! wp_script_is( 'jlg-score-insights', 'registered' ) ) {
+                wp_register_script(
+                    'jlg-score-insights',
+                    JLG_NOTATION_PLUGIN_URL . 'assets/js/score-insights.js',
+                    array( 'jlg-live-announcer' ),
+                    JLG_NOTATION_VERSION,
+                    true
+                );
+            }
+
+            wp_enqueue_script( 'jlg-live-announcer' );
+            wp_enqueue_script( 'jlg-score-insights' );
         }
     }
 
