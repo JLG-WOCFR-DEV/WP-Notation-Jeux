@@ -22,6 +22,7 @@
     var createElement = wp.element.createElement;
     var Fragment = wp.element.Fragment;
     var BlockPreview = blocksHelpers.BlockPreview;
+    var useAnalyticsAttributeSetter = blocksHelpers.useAnalyticsAttributeSetter;
 
     var useBlockProps = typeof useBlockPropsHook === 'function'
         ? useBlockPropsHook
@@ -44,7 +45,10 @@
     registerBlockType('notation-jlg/summary-display', {
         edit: function (props) {
             var attributes = props.attributes || {};
-            var setAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var baseSetAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var setAttributes = useAnalyticsAttributeSetter
+                ? useAnalyticsAttributeSetter('notation-jlg/summary-display', attributes, baseSetAttributes)
+                : baseSetAttributes;
             var columns = Array.isArray(attributes.columns) && attributes.columns.length
                 ? attributes.columns
                 : ['titre', 'date', 'note'];

@@ -21,6 +21,7 @@
     var Fragment = wp.element.Fragment;
     var PostPicker = blocksHelpers.PostPicker;
     var BlockPreview = blocksHelpers.BlockPreview;
+    var useAnalyticsAttributeSetter = blocksHelpers.useAnalyticsAttributeSetter;
 
     var useBlockProps = typeof useBlockPropsHook === 'function'
         ? useBlockPropsHook
@@ -45,7 +46,10 @@
     registerBlockType('notation-jlg/game-info', {
         edit: function (props) {
             var attributes = props.attributes || {};
-            var setAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var baseSetAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var setAttributes = useAnalyticsAttributeSetter
+                ? useAnalyticsAttributeSetter('notation-jlg/game-info', attributes, baseSetAttributes)
+                : baseSetAttributes;
             var fields = Array.isArray(attributes.fields) ? attributes.fields.slice() : [];
             if (!fields.length) {
                 fields = fieldOptions.map(function (option) {

@@ -22,6 +22,7 @@
     var createElement = wp.element.createElement;
     var PostPicker = blocksHelpers.PostPicker;
     var BlockPreview = blocksHelpers.BlockPreview;
+    var useAnalyticsAttributeSetter = blocksHelpers.useAnalyticsAttributeSetter;
 
     var useBlockProps = typeof useBlockPropsHook === 'function'
         ? useBlockPropsHook
@@ -36,7 +37,10 @@
     registerBlockType('notation-jlg/platform-breakdown', {
         edit: function (props) {
             var attributes = props.attributes || {};
-            var setAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var baseSetAttributes = typeof props.setAttributes === 'function' ? props.setAttributes : function () {};
+            var setAttributes = useAnalyticsAttributeSetter
+                ? useAnalyticsAttributeSetter('notation-jlg/platform-breakdown', attributes, baseSetAttributes)
+                : baseSetAttributes;
             var blockProps = useBlockProps({ className: 'jlg-platform-breakdown jlg-platform-breakdown--preview' });
 
             return createElement(
