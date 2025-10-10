@@ -103,6 +103,7 @@ final class JLG_Plugin_De_Notation_Main {
     private $admin                                 = null;
     private $assets                                = null;
     private $frontend                              = null;
+    private $rest                                  = null;
     private $blocks                                = null;
     private const MIGRATION_BATCH_SIZE             = 50;
     private const MIGRATION_SCAN_BATCH_SIZE        = 200;
@@ -169,13 +170,25 @@ final class JLG_Plugin_De_Notation_Main {
             $this->frontend = new \JLG\Notation\Frontend();
         }
 
-        // Widget
+        // Widgets
+        $widget_classes = array();
+
         if ( class_exists( \JLG\Notation\LatestReviewsWidget::class ) ) {
+            $widget_classes[] = \JLG\Notation\LatestReviewsWidget::class;
+        }
+
+        if ( class_exists( \JLG\Notation\DealsWidget::class ) ) {
+            $widget_classes[] = \JLG\Notation\DealsWidget::class;
+        }
+
+        if ( ! empty( $widget_classes ) ) {
             add_action(
                 'widgets_init',
-                function () {
-                                        register_widget( \JLG\Notation\LatestReviewsWidget::class );
-				}
+                static function () use ( $widget_classes ) {
+                    foreach ( $widget_classes as $widget_class ) {
+                        register_widget( $widget_class );
+                    }
+                }
             );
         }
 
@@ -187,6 +200,14 @@ final class JLG_Plugin_De_Notation_Main {
         // Admin
         if ( is_admin() && class_exists( \JLG\Notation\Admin\Core::class ) ) {
             $this->admin = \JLG\Notation\Admin\Core::get_instance();
+        }
+
+        if ( class_exists( \JLG\Notation\Rest\RatingsController::class ) ) {
+            $this->rest = new \JLG\Notation\Rest\RatingsController();
+        }
+
+        if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( \JLG\Notation\CLI\ExportRatingsCommand::class ) ) {
+            \JLG\Notation\CLI\ExportRatingsCommand::register();
         }
     }
 

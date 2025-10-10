@@ -209,6 +209,15 @@ class Metaboxes {
         $status_data        = Helpers::get_review_status_for_post( $post->ID );
         $status_definitions = Helpers::get_review_status_definitions();
         $status_slug        = isset( $status_data['slug'] ) ? $status_data['slug'] : Helpers::get_default_review_status_slug();
+        $deals_entries      = get_post_meta( $post->ID, '_jlg_deals_entries', true );
+        if ( ! is_array( $deals_entries ) ) {
+            $deals_entries = array();
+        }
+
+        $plugin_options    = Helpers::get_plugin_options();
+        $deals_enabled     = ! empty( $plugin_options['deals_enabled'] );
+        $deals_limit_field = isset( $plugin_options['deals_limit'] ) ? (int) $plugin_options['deals_limit'] : 3;
+        $deals_limit_field = max( 1, min( 6, $deals_limit_field ) );
 
         echo '<div class="jlg-metabox-details">';
 
@@ -377,6 +386,78 @@ class Metaboxes {
         echo '</div>';
 
         echo '</div>';
+
+        echo '<h3>' . esc_html__( '💸 Deals & disponibilités', 'notation-jlg' ) . '</h3>';
+        echo '<p class="description" style="margin:4px 0 12px;">' . esc_html__( 'Ajoutez vos offres affiliées ou liens vers les boutiques officielles. Les champs vides sont ignorés.', 'notation-jlg' ) . '</p>';
+
+        if ( ! $deals_enabled ) {
+            echo '<div class="notice notice-warning" style="padding:12px; margin:0 0 12px;">' . esc_html__( 'Le module deals est actuellement désactivé dans les réglages. Activez-le pour afficher les offres sur le front.', 'notation-jlg' ) . '</div>';
+        }
+
+        $deal_rows = max( 3, $deals_limit_field, count( $deals_entries ) );
+
+        for ( $index = 0; $index < $deal_rows; $index++ ) {
+            $entry        = $deals_entries[ $index ] ?? array();
+            $retailer     = isset( $entry['retailer'] ) ? (string) $entry['retailer'] : '';
+            $price        = isset( $entry['price'] ) ? (string) $entry['price'] : '';
+            $currency     = isset( $entry['currency'] ) ? (string) $entry['currency'] : '';
+            $availability = isset( $entry['availability'] ) ? (string) $entry['availability'] : '';
+            $cta_label    = isset( $entry['cta_label'] ) ? (string) $entry['cta_label'] : '';
+            $price_label  = isset( $entry['price_label'] ) ? (string) $entry['price_label'] : '';
+            $highlighted  = ! empty( $entry['highlight'] );
+            $url          = isset( $entry['url'] ) ? (string) $entry['url'] : '';
+
+            $field_prefix = 'jlg_deals[' . $index . ']';
+
+            echo '<fieldset style="border:1px solid #dcdcde; padding:15px; border-radius:6px; margin-bottom:15px;">';
+            printf( '<legend style="font-weight:600;">%s #%d</legend>', esc_html__( 'Offre', 'notation-jlg' ), $index + 1 );
+
+            echo '<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;">';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_retailer' ) . '"><strong>' . esc_html__( 'Revendeur', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_retailer' ) . '" name="' . esc_attr( $field_prefix ) . '[retailer]" value="' . esc_attr( $retailer ) . '" style="width:100%;" maxlength="80" placeholder="' . esc_attr__( 'Boutique officielle', 'notation-jlg' ) . '">';
+            echo '</div>';
+
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_url' ) . '"><strong>' . esc_html__( 'URL de l’offre', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="url" id="' . esc_attr( $field_prefix . '_url' ) . '" name="' . esc_attr( $field_prefix ) . '[url]" value="' . esc_attr( $url ) . '" style="width:100%;" placeholder="https://">';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:12px;">';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_price' ) . '"><strong>' . esc_html__( 'Prix', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="number" step="0.01" min="0" id="' . esc_attr( $field_prefix . '_price' ) . '" name="' . esc_attr( $field_prefix ) . '[price]" value="' . esc_attr( $price ) . '" style="width:100%;" placeholder="59.99">';
+            echo '</div>';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_currency' ) . '"><strong>' . esc_html__( 'Devise', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_currency' ) . '" name="' . esc_attr( $field_prefix ) . '[currency]" value="' . esc_attr( $currency ) . '" style="width:100%;" maxlength="6" placeholder="EUR">';
+            echo '</div>';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_price_label' ) . '"><strong>' . esc_html__( 'Libellé prix', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_price_label' ) . '" name="' . esc_attr( $field_prefix ) . '[price_label]" value="' . esc_attr( $price_label ) . '" style="width:100%;" maxlength="80" placeholder="' . esc_attr__( 'À partir de 59,99 €', 'notation-jlg' ) . '">';
+            echo '<p class="description" style="margin:4px 0 0;">' . esc_html__( 'Optionnel : remplace la valeur calculée automatiquement.', 'notation-jlg' ) . '</p>';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:12px;">';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_availability' ) . '"><strong>' . esc_html__( 'Disponibilité / note', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_availability' ) . '" name="' . esc_attr( $field_prefix ) . '[availability]" value="' . esc_attr( $availability ) . '" style="width:100%;" maxlength="140" placeholder="' . esc_attr__( 'En stock – livraison 48h', 'notation-jlg' ) . '">';
+            echo '</div>';
+            echo '<div>';
+            echo '<label for="' . esc_attr( $field_prefix . '_cta_label' ) . '"><strong>' . esc_html__( 'Libellé du bouton', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" id="' . esc_attr( $field_prefix . '_cta_label' ) . '" name="' . esc_attr( $field_prefix ) . '[cta_label]" value="' . esc_attr( $cta_label ) . '" style="width:100%;" maxlength="60" placeholder="' . esc_attr__( 'Voir l’offre', 'notation-jlg' ) . '">';
+            echo '</div>';
+            echo '</div>';
+
+            echo '<label style="display:inline-flex; align-items:center; gap:8px; margin-top:12px;">';
+            echo '<input type="checkbox" name="' . esc_attr( $field_prefix ) . '[highlight]" value="1" ' . checked( $highlighted, true, false ) . '> ';
+            echo esc_html__( 'Mettre en avant cette offre comme meilleure option', 'notation-jlg' );
+            echo '</label>';
+
+            echo '</fieldset>';
+        }
 
         // Taglines
 
@@ -826,10 +907,101 @@ class Metaboxes {
             } else {
                 update_post_meta( $post_id, '_jlg_platform_breakdown_highlight_label', $badge_label_input );
             }
-		}
+
+            if ( isset( $_POST['jlg_deals'] ) && is_array( $_POST['jlg_deals'] ) ) {
+                $raw_deals        = wp_unslash( $_POST['jlg_deals'] );
+                $raw_deals        = is_array( $raw_deals ) ? $raw_deals : array();
+                $normalized_deals = array();
+
+                foreach ( $raw_deals as $raw_deal ) {
+                    if ( ! is_array( $raw_deal ) ) {
+                        continue;
+                    }
+
+                    $retailer = isset( $raw_deal['retailer'] ) ? sanitize_text_field( wp_unslash( $raw_deal['retailer'] ) ) : '';
+                    $retailer = $this->truncate_string( $retailer, 80 );
+
+                    $url_input = isset( $raw_deal['url'] ) ? trim( (string) wp_unslash( $raw_deal['url'] ) ) : '';
+
+                    $price_input = isset( $raw_deal['price'] ) ? wp_unslash( $raw_deal['price'] ) : '';
+                    if ( is_string( $price_input ) ) {
+                        $price_input = str_replace( ',', '.', $price_input );
+                    }
+
+                    $price_value = '';
+                    if ( $price_input !== '' && is_numeric( $price_input ) ) {
+                        $price_value = number_format( round( (float) $price_input, 2 ), 2, '.', '' );
+                    }
+
+                    $currency     = isset( $raw_deal['currency'] ) ? sanitize_text_field( wp_unslash( $raw_deal['currency'] ) ) : '';
+                    $currency     = strtoupper( $this->truncate_string( $currency, 6 ) );
+                    $availability = isset( $raw_deal['availability'] ) ? sanitize_text_field( wp_unslash( $raw_deal['availability'] ) ) : '';
+                    $availability = $this->truncate_string( $availability, 140 );
+                    $cta_label    = isset( $raw_deal['cta_label'] ) ? sanitize_text_field( wp_unslash( $raw_deal['cta_label'] ) ) : '';
+                    $cta_label    = $this->truncate_string( $cta_label, 60 );
+                    $price_label  = isset( $raw_deal['price_label'] ) ? sanitize_text_field( wp_unslash( $raw_deal['price_label'] ) ) : '';
+                    $price_label  = $this->truncate_string( $price_label, 80 );
+
+                    $is_empty_row = $retailer === '' && $url_input === '' && $price_value === '' && $availability === '' && $cta_label === '' && $price_label === '';
+                    if ( $is_empty_row ) {
+                        continue;
+                    }
+
+                    if ( $retailer === '' || $url_input === '' ) {
+                        $validation_errors[] = __( 'Deals : renseignez un revendeur et une URL valide pour chaque offre.', 'notation-jlg' );
+                        continue;
+                    }
+
+                    if ( ! Validator::is_valid_http_url( $url_input ) ) {
+                        $validation_errors[] = sprintf( __( 'Deals : l’URL « %s » doit commencer par http ou https.', 'notation-jlg' ), $url_input );
+                        continue;
+                    }
+
+                    $normalized_deals[] = array(
+                        'retailer'     => $retailer,
+                        'url'          => esc_url_raw( $url_input ),
+                        'price'        => $price_value,
+                        'currency'     => $currency,
+                        'availability' => $availability,
+                        'cta_label'    => $cta_label,
+                        'price_label'  => $price_label,
+                        'highlight'    => ! empty( $raw_deal['highlight'] ) ? 1 : 0,
+                    );
+                }
+
+                if ( ! empty( $normalized_deals ) ) {
+                    update_post_meta( $post_id, '_jlg_deals_entries', $normalized_deals );
+                } else {
+                    delete_post_meta( $post_id, '_jlg_deals_entries' );
+                }
+            } else {
+                delete_post_meta( $post_id, '_jlg_deals_entries' );
+            }
+
+        }
 
         if ( ! empty( $validation_errors ) ) {
             set_transient( $this->get_error_transient_key(), $validation_errors, MINUTE_IN_SECONDS );
         }
+    }
+
+    private function truncate_string( $value, $length ) {
+        if ( ! is_string( $value ) ) {
+            return '';
+        }
+
+        $value = trim( $value );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            $value = mb_substr( $value, 0, (int) $length );
+        } else {
+            $value = substr( $value, 0, (int) $length );
+        }
+
+        return trim( $value );
     }
 }

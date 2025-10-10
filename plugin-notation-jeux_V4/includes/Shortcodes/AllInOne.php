@@ -210,6 +210,13 @@ class AllInOne {
         $palette              = Helpers::get_color_palette();
         $category_definitions = Helpers::get_rating_category_definitions();
         $defaults             = Helpers::get_default_settings();
+        $deals_enabled        = ! empty( $options['deals_enabled'] );
+        $deals                = $deals_enabled
+            ? Helpers::get_deals_for_post( $post_id, $options )
+            : array();
+        $deals_button_rel     = isset( $options['deals_button_rel'] ) ? sanitize_text_field( $options['deals_button_rel'] ) : '';
+        $deals_button_rel     = is_string( $deals_button_rel ) ? trim( $deals_button_rel ) : '';
+        $deals_disclaimer     = isset( $options['deals_disclaimer'] ) ? sanitize_textarea_field( $options['deals_disclaimer'] ) : '';
 
         // Couleur d'accent (utilise la couleur définie ou celle des options)
         $accent_color = $atts['couleur_accent'] ?: ( $options['score_gradient_1'] ?? '' );
@@ -497,10 +504,14 @@ class AllInOne {
 				'score_layout'             => $score_layout,
 				'animations_enabled'       => ! empty( $options['enable_animations'] ),
 				'score_max'                => $score_max_value,
-				'display_mode'             => $display_mode,
-				'display_verdict'          => $display_verdict,
-				'verdict'                  => $verdict_data,
-			)
+                                'display_mode'             => $display_mode,
+                                'display_verdict'          => $display_verdict,
+                                'verdict'                  => $verdict_data,
+                                'deals_enabled'            => $deals_enabled,
+                                'deals'                    => $deals,
+                                'deals_button_rel'         => $deals_button_rel,
+                                'deals_disclaimer'         => $deals_disclaimer,
+                        )
         );
     }
 

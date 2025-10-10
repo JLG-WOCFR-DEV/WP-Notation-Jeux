@@ -58,6 +58,74 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
                     'message' => 'Échantillon solide : communiquez sereinement votre verdict.',
                 ),
             ),
+            'segments' => array(
+                'available' => true,
+                'editorial' => array(
+                    'average_formatted' => '8,2',
+                    'median_formatted'  => '8,0',
+                    'count'             => 5,
+                ),
+                'readers'   => array(
+                    'average_formatted' => '7,8',
+                    'votes'             => 320,
+                    'sample'            => 4,
+                ),
+                'delta'     => array(
+                    'formatted' => '-0,4',
+                    'direction' => 'negative',
+                    'label'     => 'Écart lecteurs vs rédaction',
+                ),
+            ),
+            'timeline' => array(
+                'available' => true,
+                'points'    => array(
+                    array(
+                        'date_label'          => '12 mars 2025',
+                        'editorial_formatted' => '8,2',
+                        'reader_formatted'    => '7,8',
+                        'reader_votes'        => 120,
+                        'title'               => 'Test A',
+                        'permalink'           => 'https://example.com/a',
+                        'post_id'             => 11,
+                    ),
+                    array(
+                        'date_label'          => '22 mars 2025',
+                        'editorial_formatted' => '8,4',
+                        'reader_formatted'    => '8,0',
+                        'reader_votes'        => 90,
+                        'title'               => 'Test B',
+                        'permalink'           => '',
+                        'post_id'             => 12,
+                    ),
+                ),
+                'sparkline' => array(
+                    'editorial_path'  => 'M0,40 L80,20',
+                    'reader_path'     => 'M0,35 L80,25',
+                    'view_box'        => '0 0 120 48',
+                    'width'           => 120,
+                    'height'          => 48,
+                    'aria_label'      => 'Évolution des notes rédaction vs lecteurs',
+                    'editorial_label' => 'Rédaction',
+                    'reader_label'    => 'Lecteurs',
+                    'y_min_label'     => '0',
+                    'y_max_label'     => '10',
+                ),
+            ),
+            'sentiments' => array(
+                'available' => true,
+                'pros'      => array(
+                    array(
+                        'label' => 'Immersion totale',
+                        'count' => 2,
+                    ),
+                ),
+                'cons'      => array(
+                    array(
+                        'label' => 'Bugs critiques',
+                        'count' => 1,
+                    ),
+                ),
+            ),
         );
 
         $trend = array(
@@ -96,5 +164,9 @@ class ShortcodeScoreInsightsTemplateTest extends TestCase
         $this->assertStringContainsString('Indice de confiance', $output, 'Confidence title should be present.');
         $this->assertMatchesRegularExpression('/jlg-score-insights__confidence-chip--high/', $output, 'Confidence chip should reflect level class.');
         $this->assertStringContainsString('Échantillon solide : communiquez sereinement votre verdict.', $output, 'Confidence message should be rendered.');
+        $this->assertStringContainsString('Rédaction vs Lecteurs', $output, 'Segments heading should be displayed.');
+        $this->assertMatchesRegularExpression('/jlg-score-insights__segment-delta-value--negative/', $output, 'Segment delta should reflect direction.');
+        $this->assertStringContainsString('Évolution des scores', $output, 'Timeline heading should be rendered.');
+        $this->assertStringContainsString('Points les plus cités', $output, 'Sentiments heading should be rendered.');
     }
 }

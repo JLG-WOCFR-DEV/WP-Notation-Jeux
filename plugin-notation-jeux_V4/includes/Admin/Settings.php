@@ -1116,6 +1116,7 @@ class Settings {
             'review_status_enabled'               => 'Statut de review',
             'review_status_auto_finalize_enabled' => __( 'Finalisation auto du statut', 'notation-jlg' ),
             'related_guides_enabled'              => 'Guides associés',
+            'deals_enabled'                       => __( 'Deals & disponibilités', 'notation-jlg' ),
             'tagline_enabled'                     => 'Taglines bilingues',
             'seo_schema_enabled'                  => 'Schéma SEO (étoiles Google)',
             'enable_animations'                   => 'Animations des barres',
@@ -1201,6 +1202,53 @@ class Settings {
             )
         );
 
+        $deals_limit_args = array(
+            'id'   => 'deals_limit',
+            'type' => 'number',
+            'min'  => 1,
+            'max'  => 6,
+            'step' => 1,
+            'desc' => __( 'Nombre maximum d’offres affichées dans le module deals.', 'notation-jlg' ),
+        );
+        add_settings_field(
+            'deals_limit',
+            __( 'Nombre de deals', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            $deals_limit_args
+        );
+        $this->store_field_constraints( $deals_limit_args );
+
+        add_settings_field(
+            'deals_button_rel',
+            __( 'Attributs « rel » des liens', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            array(
+                'id'          => 'deals_button_rel',
+                'type'        => 'text',
+                'placeholder' => 'sponsored noopener',
+                'desc'        => __( 'Séparez les valeurs par un espace (ex. sponsored noopener).', 'notation-jlg' ),
+            )
+        );
+
+        add_settings_field(
+            'deals_disclaimer',
+            __( 'Message de transparence', 'notation-jlg' ),
+            array( $this, 'render_field' ),
+            'notation_jlg_page',
+            'jlg_modules',
+            array(
+                'id'          => 'deals_disclaimer',
+                'type'        => 'textarea',
+                'rows'        => 3,
+                'placeholder' => __( 'Les liens ci-dessous peuvent être affiliés.', 'notation-jlg' ),
+                'desc'        => __( 'Affiché sous la liste d’offres pour respecter les obligations de transparence.', 'notation-jlg' ),
+            )
+        );
+
         $this->add_field_dependency(
             'rating_badge_enabled',
             array( 'rating_badge_threshold' ),
@@ -1222,6 +1270,14 @@ class Settings {
             array( 'related_guides_limit', 'related_guides_taxonomies' ),
             array(
                 'message' => __( 'Activez les guides associés pour configurer leurs options.', 'notation-jlg' ),
+            )
+        );
+
+        $this->add_field_dependency(
+            'deals_enabled',
+            array( 'deals_limit', 'deals_button_rel', 'deals_disclaimer' ),
+            array(
+                'message' => __( 'Activez le module deals pour personnaliser ces réglages.', 'notation-jlg' ),
             )
         );
 

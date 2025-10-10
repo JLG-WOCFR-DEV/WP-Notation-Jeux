@@ -67,6 +67,41 @@ if ( $consensus_confidence_level !== '' ) {
 }
 $confidence_chip_class = implode( ' ', array_map( 'sanitize_html_class', $confidence_chip_classes ) );
 
+$segments                 = isset( $insights['segments'] ) && is_array( $insights['segments'] ) ? $insights['segments'] : array();
+$segments_available        = ! empty( $segments['available'] );
+$segment_editorial         = isset( $segments['editorial'] ) && is_array( $segments['editorial'] ) ? $segments['editorial'] : array();
+$segment_readers           = isset( $segments['readers'] ) && is_array( $segments['readers'] ) ? $segments['readers'] : array();
+$segment_delta             = isset( $segments['delta'] ) && is_array( $segments['delta'] ) ? $segments['delta'] : array();
+$segment_delta_value       = isset( $segment_delta['formatted'] ) ? (string) $segment_delta['formatted'] : '';
+$segment_delta_direction   = isset( $segment_delta['direction'] ) ? (string) $segment_delta['direction'] : 'stable';
+$segment_delta_label       = isset( $segment_delta['label'] ) ? (string) $segment_delta['label'] : '';
+$segment_editorial_mean    = isset( $segment_editorial['average_formatted'] ) ? (string) $segment_editorial['average_formatted'] : '';
+$segment_editorial_median  = isset( $segment_editorial['median_formatted'] ) ? (string) $segment_editorial['median_formatted'] : '';
+$segment_editorial_count   = isset( $segment_editorial['count'] ) ? (int) $segment_editorial['count'] : 0;
+$segment_readers_mean      = isset( $segment_readers['average_formatted'] ) ? (string) $segment_readers['average_formatted'] : '';
+$segment_readers_votes     = isset( $segment_readers['votes'] ) ? (int) $segment_readers['votes'] : 0;
+$segment_readers_sample    = isset( $segment_readers['sample'] ) ? (int) $segment_readers['sample'] : 0;
+
+$timeline_data       = isset( $insights['timeline'] ) && is_array( $insights['timeline'] ) ? $insights['timeline'] : array();
+$timeline_available  = ! empty( $timeline_data['available'] ) && ! empty( $timeline_data['points'] );
+$timeline_points     = isset( $timeline_data['points'] ) && is_array( $timeline_data['points'] ) ? $timeline_data['points'] : array();
+$sparkline_data      = isset( $timeline_data['sparkline'] ) && is_array( $timeline_data['sparkline'] ) ? $timeline_data['sparkline'] : array();
+$sparkline_view_box  = isset( $sparkline_data['view_box'] ) ? (string) $sparkline_data['view_box'] : '';
+$sparkline_width     = isset( $sparkline_data['width'] ) ? (int) $sparkline_data['width'] : 0;
+$sparkline_height    = isset( $sparkline_data['height'] ) ? (int) $sparkline_data['height'] : 0;
+$sparkline_editorial = isset( $sparkline_data['editorial_path'] ) ? (string) $sparkline_data['editorial_path'] : '';
+$sparkline_reader    = isset( $sparkline_data['reader_path'] ) ? (string) $sparkline_data['reader_path'] : '';
+$sparkline_aria      = isset( $sparkline_data['aria_label'] ) ? (string) $sparkline_data['aria_label'] : '';
+$sparkline_label_a   = isset( $sparkline_data['editorial_label'] ) ? (string) $sparkline_data['editorial_label'] : '';
+$sparkline_label_b   = isset( $sparkline_data['reader_label'] ) ? (string) $sparkline_data['reader_label'] : '';
+$sparkline_y_min     = isset( $sparkline_data['y_min_label'] ) ? (string) $sparkline_data['y_min_label'] : '';
+$sparkline_y_max     = isset( $sparkline_data['y_max_label'] ) ? (string) $sparkline_data['y_max_label'] : '';
+
+$sentiments           = isset( $insights['sentiments'] ) && is_array( $insights['sentiments'] ) ? $insights['sentiments'] : array();
+$sentiments_available = ! empty( $sentiments['available'] );
+$sentiments_pros      = isset( $sentiments['pros'] ) && is_array( $sentiments['pros'] ) ? $sentiments['pros'] : array();
+$sentiments_cons      = isset( $sentiments['cons'] ) && is_array( $sentiments['cons'] ) ? $sentiments['cons'] : array();
+
 $title = '';
 if ( ! empty( $atts['title'] ) ) {
     $title = sanitize_text_field( $atts['title'] );
@@ -78,6 +113,9 @@ $summary_id   = $section_id . '-summary';
 $histogram_id = $section_id . '-histogram';
 $platforms_id = $section_id . '-platforms';
 $badges_id    = $section_id . '-divergences';
+$segments_id  = $section_id . '-segments';
+$timeline_id  = $section_id . '-timeline';
+$sentiments_id = $section_id . '-sentiments';
 
 $time_summary_parts = array();
 if ( $time_range_label !== '' ) {
@@ -126,6 +164,167 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
         </p>
     <?php else : ?>
         <div class="jlg-score-insights__grid">
+            <?php if ( $segments_available ) : ?>
+                <section class="jlg-score-insights__segments" id="<?php echo esc_attr( $segments_id ); ?>" aria-labelledby="<?php echo esc_attr( $segments_id ); ?>-title">
+                    <h3 id="<?php echo esc_attr( $segments_id ); ?>-title" class="jlg-score-insights__subtitle">
+                        <?php esc_html_e( 'Rédaction vs Lecteurs', 'notation-jlg' ); ?>
+                    </h3>
+                    <div class="jlg-score-insights__segments-grid" role="group" aria-label="<?php esc_attr_e( 'Comparaison des notes rédaction et lecteurs', 'notation-jlg' ); ?>">
+                        <article class="jlg-score-insights__segment-card jlg-score-insights__segment-card--editorial">
+                            <h4 class="jlg-score-insights__segment-title"><?php esc_html_e( 'Rédaction', 'notation-jlg' ); ?></h4>
+                            <p class="jlg-score-insights__segment-value">
+                                <?php echo $segment_editorial_mean !== '' ? esc_html( $segment_editorial_mean ) : '&mdash;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                            </p>
+                            <p class="jlg-score-insights__segment-meta">
+                                <?php
+                                echo esc_html(
+                                    sprintf(
+                                        /* translators: 1: formatted median, 2: number of editorial reviews. */
+                                        __( 'Médiane %1$s · %2$s tests', 'notation-jlg' ),
+                                        $segment_editorial_median !== '' ? $segment_editorial_median : __( 'N/A', 'notation-jlg' ),
+                                        number_format_i18n( $segment_editorial_count )
+                                    )
+                                );
+                                ?>
+                            </p>
+                        </article>
+                        <article class="jlg-score-insights__segment-card jlg-score-insights__segment-card--readers">
+                            <h4 class="jlg-score-insights__segment-title"><?php esc_html_e( 'Lecteurs', 'notation-jlg' ); ?></h4>
+                            <p class="jlg-score-insights__segment-value">
+                                <?php echo $segment_readers_mean !== '' ? esc_html( $segment_readers_mean ) : '&mdash;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                            </p>
+                            <p class="jlg-score-insights__segment-meta">
+                                <?php
+                                echo esc_html(
+                                    sprintf(
+                                        /* translators: 1: number of reader votes, 2: number of posts with reader votes. */
+                                        _n( '%1$s vote lecteur · %2$s test', '%1$s votes lecteurs · %2$s tests', $segment_readers_sample, 'notation-jlg' ),
+                                        number_format_i18n( $segment_readers_votes ),
+                                        number_format_i18n( $segment_readers_sample )
+                                    )
+                                );
+                                ?>
+                            </p>
+                        </article>
+                        <article class="jlg-score-insights__segment-card jlg-score-insights__segment-card--delta">
+                            <h4 class="jlg-score-insights__segment-title">
+                                <?php echo esc_html( $segment_delta_label !== '' ? $segment_delta_label : __( 'Écart lecteurs vs rédaction', 'notation-jlg' ) ); ?>
+                            </h4>
+                            <?php
+                            $delta_classes = array( 'jlg-score-insights__segment-delta-value' );
+                            if ( $segment_delta_direction !== '' ) {
+                                $delta_classes[] = 'jlg-score-insights__segment-delta-value--' . sanitize_html_class( $segment_delta_direction );
+                            }
+                            $delta_class_attr = implode( ' ', array_map( 'sanitize_html_class', $delta_classes ) );
+                            ?>
+                            <p class="<?php echo esc_attr( $delta_class_attr ); ?>">
+                                <?php echo $segment_delta_value !== '' ? esc_html( $segment_delta_value ) : '&mdash;'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                            </p>
+                            <p class="jlg-score-insights__segment-meta">
+                                <?php
+                                echo esc_html(
+                                    sprintf(
+                                        /* translators: 1: editorial average, 2: reader average. */
+                                        __( 'Rédaction %1$s · Lecteurs %2$s', 'notation-jlg' ),
+                                        $segment_editorial_mean !== '' ? $segment_editorial_mean : __( 'N/A', 'notation-jlg' ),
+                                        $segment_readers_mean !== '' ? $segment_readers_mean : __( 'N/A', 'notation-jlg' )
+                                    )
+                                );
+                                ?>
+                            </p>
+                        </article>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if ( $timeline_available ) : ?>
+                <section class="jlg-score-insights__timeline" id="<?php echo esc_attr( $timeline_id ); ?>" aria-labelledby="<?php echo esc_attr( $timeline_id ); ?>-title">
+                    <h3 id="<?php echo esc_attr( $timeline_id ); ?>-title" class="jlg-score-insights__subtitle"><?php esc_html_e( 'Évolution des scores', 'notation-jlg' ); ?></h3>
+                    <?php if ( ( $sparkline_editorial !== '' || $sparkline_reader !== '' ) && $sparkline_view_box !== '' ) : ?>
+                        <figure class="jlg-score-insights__sparkline" role="img" aria-label="<?php echo esc_attr( $sparkline_aria ); ?>">
+                            <svg
+                                class="jlg-score-insights__sparkline-chart"
+                                viewBox="<?php echo esc_attr( $sparkline_view_box ); ?>"
+                                <?php echo $sparkline_width > 0 ? 'width="' . esc_attr( $sparkline_width ) . '"' : ''; ?>
+                                <?php echo $sparkline_height > 0 ? 'height="' . esc_attr( $sparkline_height ) . '"' : ''; ?>
+                            >
+                                <?php if ( $sparkline_editorial !== '' ) : ?>
+                                    <path class="jlg-score-insights__sparkline-path jlg-score-insights__sparkline-path--editorial" d="<?php echo esc_attr( $sparkline_editorial ); ?>" />
+                                <?php endif; ?>
+                                <?php if ( $sparkline_reader !== '' ) : ?>
+                                    <path class="jlg-score-insights__sparkline-path jlg-score-insights__sparkline-path--readers" d="<?php echo esc_attr( $sparkline_reader ); ?>" />
+                                <?php endif; ?>
+                            </svg>
+                            <figcaption class="jlg-score-insights__sparkline-caption">
+                                <?php if ( $sparkline_label_a !== '' ) : ?>
+                                    <span class="jlg-score-insights__sparkline-legend jlg-score-insights__sparkline-legend--editorial"><?php echo esc_html( $sparkline_label_a ); ?></span>
+                                <?php endif; ?>
+                                <?php if ( $sparkline_label_b !== '' ) : ?>
+                                    <span class="jlg-score-insights__sparkline-legend jlg-score-insights__sparkline-legend--readers"><?php echo esc_html( $sparkline_label_b ); ?></span>
+                                <?php endif; ?>
+                                <?php if ( $sparkline_y_min !== '' || $sparkline_y_max !== '' ) : ?>
+                                    <span class="jlg-score-insights__sparkline-range">
+                                        <?php
+                                        echo esc_html(
+                                            sprintf(
+                                                /* translators: 1: minimal score label, 2: maximal score label. */
+                                                __( 'Bornes : %1$s – %2$s', 'notation-jlg' ),
+                                                $sparkline_y_min !== '' ? $sparkline_y_min : __( '0', 'notation-jlg' ),
+                                                $sparkline_y_max !== '' ? $sparkline_y_max : __( '10', 'notation-jlg' )
+                                            )
+                                        );
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+                            </figcaption>
+                        </figure>
+                    <?php endif; ?>
+                    <ol class="jlg-score-insights__timeline-list">
+                        <?php foreach ( $timeline_points as $point ) { ?>
+                            <?php
+                            $point_date      = isset( $point['date_label'] ) ? (string) $point['date_label'] : '';
+                            $point_editorial = isset( $point['editorial_formatted'] ) ? (string) $point['editorial_formatted'] : '';
+                            $point_reader    = isset( $point['reader_formatted'] ) ? (string) $point['reader_formatted'] : '';
+                            $point_votes     = isset( $point['reader_votes'] ) ? (int) $point['reader_votes'] : 0;
+                            $point_title     = isset( $point['title'] ) ? (string) $point['title'] : '';
+                            $point_permalink = isset( $point['permalink'] ) ? (string) $point['permalink'] : '';
+                            $point_post_id   = isset( $point['post_id'] ) ? (int) $point['post_id'] : 0;
+                            $reader_summary  = $point_reader !== ''
+                                ? sprintf(
+                                    /* translators: 1: formatted reader score, 2: reader votes count. */
+                                    _n( 'Lecteurs %1$s (%2$s vote)', 'Lecteurs %1$s (%2$s votes)', $point_votes, 'notation-jlg' ),
+                                    $point_reader,
+                                    number_format_i18n( $point_votes )
+                                )
+                                : __( 'Lecteurs N/A', 'notation-jlg' );
+                            ?>
+                            <li class="jlg-score-insights__timeline-item">
+                                <div class="jlg-score-insights__timeline-date"><?php echo esc_html( $point_date ); ?></div>
+                                <div class="jlg-score-insights__timeline-scores">
+                                    <span class="jlg-score-insights__timeline-score jlg-score-insights__timeline-score--editorial">
+                                        <?php echo esc_html( sprintf( __( 'Rédaction %s', 'notation-jlg' ), $point_editorial !== '' ? $point_editorial : __( 'N/A', 'notation-jlg' ) ) ); ?>
+                                    </span>
+                                    <span class="jlg-score-insights__timeline-score jlg-score-insights__timeline-score--readers">
+                                        <?php echo esc_html( $reader_summary ); ?>
+                                    </span>
+                                </div>
+                                <?php if ( $point_title !== '' ) : ?>
+                                    <?php if ( $point_permalink !== '' ) : ?>
+                                        <a class="jlg-score-insights__timeline-link" href="<?php echo esc_url( $point_permalink ); ?>"<?php echo $point_post_id > 0 ? ' data-post-id="' . esc_attr( $point_post_id ) . '"' : ''; ?>>
+                                            <?php echo esc_html( $point_title ); ?>
+                                        </a>
+                                    <?php else : ?>
+                                        <span class="jlg-score-insights__timeline-link"<?php echo $point_post_id > 0 ? ' data-post-id="' . esc_attr( $point_post_id ) . '"' : ''; ?>>
+                                            <?php echo esc_html( $point_title ); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </li>
+                        <?php } ?>
+                    </ol>
+                </section>
+            <?php endif; ?>
+
             <div class="jlg-score-insights__stats" aria-live="polite">
                 <h3 class="jlg-score-insights__subtitle">
                     <?php esc_html_e( 'Tendance centrale', 'notation-jlg' ); ?>
@@ -409,6 +608,50 @@ $time_summary_text = implode( ' · ', $time_summary_parts );
                     </ol>
                 <?php endif; ?>
             </div>
+
+            <?php if ( $sentiments_available && ( ! empty( $sentiments_pros ) || ! empty( $sentiments_cons ) ) ) : ?>
+                <section class="jlg-score-insights__sentiments" id="<?php echo esc_attr( $sentiments_id ); ?>" aria-labelledby="<?php echo esc_attr( $sentiments_id ); ?>-title">
+                    <h3 id="<?php echo esc_attr( $sentiments_id ); ?>-title" class="jlg-score-insights__subtitle"><?php esc_html_e( 'Points les plus cités', 'notation-jlg' ); ?></h3>
+                    <div class="jlg-score-insights__sentiments-grid">
+                        <?php if ( ! empty( $sentiments_pros ) ) : ?>
+                            <div class="jlg-score-insights__sentiment-column jlg-score-insights__sentiment-column--pros">
+                                <h4 class="jlg-score-insights__sentiment-title"><?php esc_html_e( 'Points forts', 'notation-jlg' ); ?></h4>
+                                <ol class="jlg-score-insights__sentiment-list">
+                                    <?php foreach ( $sentiments_pros as $index => $entry ) { ?>
+                                        <?php
+                                        $label = isset( $entry['label'] ) ? (string) $entry['label'] : '';
+                                        $count = isset( $entry['count'] ) ? (int) $entry['count'] : 0;
+                                        ?>
+                                        <li class="jlg-score-insights__sentiment-item">
+                                            <span class="jlg-score-insights__sentiment-rank" aria-hidden="true"><?php echo esc_html( number_format_i18n( $index + 1 ) ); ?></span>
+                                            <span class="jlg-score-insights__sentiment-label"><?php echo esc_html( $label ); ?></span>
+                                            <span class="jlg-score-insights__sentiment-count"><?php echo esc_html( sprintf( _n( '%s mention', '%s mentions', $count, 'notation-jlg' ), number_format_i18n( $count ) ) ); ?></span>
+                                        </li>
+                                    <?php } ?>
+                                </ol>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ( ! empty( $sentiments_cons ) ) : ?>
+                            <div class="jlg-score-insights__sentiment-column jlg-score-insights__sentiment-column--cons">
+                                <h4 class="jlg-score-insights__sentiment-title"><?php esc_html_e( 'Points faibles', 'notation-jlg' ); ?></h4>
+                                <ol class="jlg-score-insights__sentiment-list">
+                                    <?php foreach ( $sentiments_cons as $index => $entry ) { ?>
+                                        <?php
+                                        $label = isset( $entry['label'] ) ? (string) $entry['label'] : '';
+                                        $count = isset( $entry['count'] ) ? (int) $entry['count'] : 0;
+                                        ?>
+                                        <li class="jlg-score-insights__sentiment-item">
+                                            <span class="jlg-score-insights__sentiment-rank" aria-hidden="true"><?php echo esc_html( number_format_i18n( $index + 1 ) ); ?></span>
+                                            <span class="jlg-score-insights__sentiment-label"><?php echo esc_html( $label ); ?></span>
+                                            <span class="jlg-score-insights__sentiment-count"><?php echo esc_html( sprintf( _n( '%s mention', '%s mentions', $count, 'notation-jlg' ), number_format_i18n( $count ) ) ); ?></span>
+                                        </li>
+                                    <?php } ?>
+                                </ol>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 </section>

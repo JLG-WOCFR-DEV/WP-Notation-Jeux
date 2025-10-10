@@ -27,9 +27,11 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 - **Badge coup de cœur** : Activez un badge éditorial lorsque la note dépasse un seuil configurable et affichez en parallèle la moyenne des lecteurs ainsi que l'écart avec la rédaction
 - **Sous-bloc verdict éditorial** : Résumez l’avis de la rédaction (résumé court, statut, date de mise à jour) et proposez un CTA vers la review complète directement dans le bloc tout-en-un
 - **Automatisation du statut** : Programmez un retour automatique en « Version finale » via le cron `jlg_review_status_auto_finalize`, déclenché X jours après le dernier patch vérifié, et écoutez le hook `jlg_review_status_transition` pour tracer les bascules
+- **API REST partenaires** : Consommez l’endpoint `/jlg/v1/ratings` pour récupérer les notes rédaction/lecteurs, histogrammes, statuts éditoriaux, plateformes et badges de divergence avec pagination et filtres (`platform`, `search`, `status`, `from`, `to`, `orderby`). Voir [`docs/rest-api-ratings.md`](docs/rest-api-ratings.md).
+- **Commande WP-CLI** : Générez un export CSV via `wp jlg export:ratings` (filtres `--status`, `--from`, `--to`, `--platform`, `--search`) pour partager notes rédaction/lecteurs, delta, badges et plateformes avec vos équipes marketing.
 - **Tableau récapitulatif** : Vue d'ensemble de tous vos tests avec tri et filtrage
 - **Nom de jeu personnalisé** : Remplacez le titre WordPress dans les tableaux, widgets et données structurées
-- **Widget** : Affichez vos derniers tests notés
+- **Widgets** : Affichez vos derniers tests notés et un encart « Deals & disponibilités » reprenant les offres affiliées configurées dans les metaboxes (tri prix, CTA, disclaimer et attributs `rel` personnalisés).
 - **Intégration vidéo enrichie** : Les helpers détectent désormais automatiquement YouTube, Vimeo, Twitch et Dailymotion pour générer un lecteur embarqué respectant les paramètres recommandés
 - **API RAWG** : Remplissage automatique des informations de jeu
 - **SEO optimisé** : Support schema.org pour les rich snippets Google
@@ -107,7 +109,7 @@ Le plugin propose désormais une collection complète de blocs dynamiques pour l
   d'accent et le format du score (valeur absolue ou pourcentage) pour un rendu cohérent.
 - **Game Explorer** (`notation-jlg/game-explorer`) : définissez le tri initial, les filtres disponibles et les paramètres de
   préfiltrage (catégorie, plateforme, lettre).
-- **Score Insights** (`notation-jlg/score-insights`) : ajustez la période analysée, filtrez par plateforme et limitez le classement pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes) avec un indicateur de tendance comparant la moyenne actuelle à la période précédente, un label de consensus basé sur l'écart-type et la fourchette des notes, ainsi qu'un indice de confiance inspiré d'OpenCritic (limité/modéré/élevé) pour piloter vos priorités éditoriales.
+- **Score Insights** (`notation-jlg/score-insights`) : ajustez la période analysée, filtrez par plateforme et limitez le classement pour générer une synthèse accessible (moyenne, médiane, histogramme, top plateformes) avec un indicateur de tendance comparant la moyenne actuelle à la période précédente, un label de consensus basé sur l'écart-type et la fourchette des notes, ainsi qu'un indice de confiance inspiré d'OpenCritic (limité/modéré/élevé) pour piloter vos priorités éditoriales. La nouvelle carte « Rédaction vs Lecteurs » affiche les moyennes éditoriales/lecteurs et l’écart associé, une timeline sparkline restitue l’évolution des notes par publication et la section « Points les plus cités » agrège automatiquement les points forts/faibles récurrents.
 
 Chaque bloc repose sur le rendu PHP historique (shortcodes) et marque automatiquement l'exécution via
 `JLG_Frontend::mark_shortcode_rendered()` afin que les assets nécessaires soient chargés, y compris dans l'éditeur.
@@ -175,7 +177,7 @@ Créez un compte gratuit sur [rawg.io/apidocs](https://rawg.io/apidocs) et copie
 - **Assistant de configuration guidée** : mettre en place, dès l’activation, un onboarding en quatre étapes (types de contenus autorisés, modules à activer, import d’exemples, connexion RAWG) pour accélérer la prise en main et réduire les erreurs constatées lors des tests utilisateurs.
 - **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test avec des pondérations par catégorie, des annotations individuelles et un historique, puis générer automatiquement le verdict éditorial publié.
 - **Timeline de mises à jour du jeu** : ajouter un module optionnel à la fiche technique recensant les patchs majeurs et leurs impacts sur la note (delta, points forts/faibles révisés), synchronisable avec RAWG ou saisi manuellement pour suivre la vie du jeu.
-- **Exports & intégrations partenaires** : fournir une commande WP-CLI et un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
+- **Exports & intégrations partenaires** : étendre la commande WP-CLI (`wp jlg export:ratings`) et proposer un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
 - **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.
 - **Tableau de bord analytics éditorial** : intégrer un panneau côté administration retraçant la progression des tests, la couverture par plateforme/genre, le délai entre publication et mises à jour ainsi que des alertes suggérant une révision du verdict.
 
@@ -191,7 +193,7 @@ Créez un compte gratuit sur [rawg.io/apidocs](https://rawg.io/apidocs) et copie
 3. Fiche technique et points forts/faibles
 4. Tableau récapitulatif des tests
 5. Réglages et personnalisation
-6. Widget derniers tests
+6. Widgets deals & derniers tests
 
 ## Changelog
 
