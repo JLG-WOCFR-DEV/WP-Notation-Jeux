@@ -21,6 +21,7 @@ Pour contrôler le nouveau bandeau de statut et la colonne des guides dans le bl
 3. Vérifiez que le bandeau de statut s'affiche au-dessus des catégories, que le libellé et le message complémentaire restent lisibles et qu'aucune troncature ne survient.
 4. Faites défiler jusqu'à la section des guides : la liste doit passer sous le bloc de notes, conserver des espacements suffisants et afficher les guides sans lien comme du texte simple.
 5. Placez le focus clavier successivement sur les liens de guides : assurez-vous que le focus est visible et que la navigation ne provoque pas de défilement inattendu.
+6. Repassez en largeur ≥ 1024 px : le corps du bloc doit se réorganiser en deux colonnes (catégories à gauche, deals/guides à droite). Vérifiez que la colonne latérale reste collée à l'écran lors du défilement (comportement `position: sticky`) sans masquer le contenu principal et qu'un espacement constant subsiste entre les deux panneaux.
 
 ## Game Explorer – Panneau de filtres mobile
 
