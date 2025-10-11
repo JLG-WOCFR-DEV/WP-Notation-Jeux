@@ -18,7 +18,7 @@ Le plugin Notation JLG est un système complet de notation spécialement conçu 
 
 = Fonctionnalités principales =
 
-* **Assistant de configuration guidée** : un onglet dédié propose quatre étapes (types de contenus, modules essentiels, preset visuel, intégrations + review de démonstration) pour être opérationnel en quelques minutes.
+* **Assistant de configuration multi-étapes** : déclenché automatiquement après l’activation, il guide la sélection des types de contenus notés, des modules essentiels, du preset visuel et de la clé RAWG. Un rappel apparaît tant que l’option `jlg_onboarding_completed` n’est pas validée et l’assistant reste accessible depuis `wp-admin/admin.php?page=jlg-notation-onboarding`.
 * **Système de notation flexible** : 6 catégories personnalisables avec barème ajustable (par défaut sur 10), badge « Coup de cœur » éditorial déclenché par seuil et indicateur de statut (brouillon, mise à jour, version finale).
 * **Statut éditorial & guides associés** : affichez en un coup d’œil l’état du test et proposez automatiquement une liste de guides liés configurables depuis les réglages.
 * **Multiples shortcodes** : bloc de notation, fiche technique, points forts/faibles, taglines bilingues, Game Explorer, Score Insights (tendance, consensus et indice de confiance) et tableau récapitulatif ; le bloc principal met en avant badge, moyenne lecteurs, écart rédaction, statut éditorial et guides liés lorsque les modules sont activés.
@@ -135,7 +135,7 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 
 == Documentation & feuille de route ==
 
-* Consultez le dossier `docs/` pour retrouver les benchmarks concurrents, la checklist responsive et les guides fonctionnels (Game Explorer, histogramme, Score Insights).
+* Consultez le dossier `docs/` pour retrouver les benchmarks concurrents, la checklist responsive, les guides fonctionnels (Game Explorer, histogramme, Score Insights) ainsi que le guide d’onboarding détaillé `docs/onboarding-checklist.md` pour valider chaque étape de la configuration.
 * Le sous-dossier `docs/product-roadmap/` regroupe la feuille de route détaillée (quick wins, comparateur plateformes, deals) avec estimations, KPIs et dépendances pour organiser les prochaines releases.
 
 == Installation ==
@@ -143,8 +143,8 @@ Ces points d'extension facilitent la conservation de vos surcharges lors des mis
 1. Téléchargez le plugin et décompressez l'archive
 2. Uploadez le dossier `plugin-notation-jeux` dans `/wp-content/plugins/`
 3. Activez le plugin depuis le menu 'Extensions' de WordPress
-4. Ouvrez l’onglet **Assistant** pour sélectionner les types de contenus autorisés, activer les modules essentiels, choisir un preset visuel et générer une review de démonstration personnalisable.
-5. Configurez le plugin dans 'Notation - JLG' > 'Réglages' (modules, finalisation automatique du statut et délai avant retour en version finale)
+4. Suivez l’assistant multi-étapes qui s’ouvre automatiquement pour définir les types de contenus autorisés, activer les modules essentiels, choisir un preset visuel et renseigner la clé RAWG (vous pourrez le relancer via `wp-admin/admin.php?page=jlg-notation-onboarding`).
+5. Configurez le plugin dans 'Notation - JLG' > 'Réglages' (modules, finalisation automatique du statut, délai avant retour en version finale et ajustements fins de la sélection de contenus)
 6. Créez votre premier test avec notation !
 
 == Tests manuels de sécurité CSS ==
@@ -185,7 +185,7 @@ Créez un compte gratuit sur rawg.io/apidocs et copiez votre clé dans les régl
 
 == Pistes d’amélioration proposées ==
 
-* **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test avec des pondérations par catégorie, des annotations individuelles et un historique, puis générer automatiquement le verdict éditorial publié.
+* **Optimisation de l’assistant** : instrumenter le parcours multi-étapes (statistiques de complétion, abandons par écran, tests A/B sur les messages) afin de détecter les frictions restantes et d’afficher des recommandations contextuelles (modules populaires, presets suggérés selon le thème actif).
 * **Timeline de mises à jour du jeu** : ajouter un module optionnel à la fiche technique recensant les patchs majeurs et leurs impacts sur la note (delta, points forts/faibles révisés), synchronisable avec RAWG ou saisi manuellement pour suivre la vie du jeu.
 * **Exports & intégrations partenaires** : étendre la commande WP-CLI (`wp jlg export:ratings`) et proposer un flux JSON orienté syndication (résumé, verdict, liens CTA configurables) afin de diffuser facilement la note vers des sites partenaires ou newsletters sans ressaisie.
 * **Mode rédaction collaborative en temps réel** : concevoir une interface multi-utilisateurs (WebSocket) afin que plusieurs rédacteurs puissent remplir les catégories, points forts/faibles et taglines simultanément, avec historisation des contributions pour validation éditoriale.

@@ -8,6 +8,7 @@ use JLG\Notation\Admin\Metaboxes;
 use JLG\Notation\Admin\Platforms;
 use JLG\Notation\Admin\Settings;
 use JLG\Notation\Admin\Diagnostics;
+use JLG\Notation\Admin\Onboarding\OnboardingController;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,6 +21,7 @@ class Core {
     private $settings;
     private $platforms;
     private $diagnostics;
+    private $onboarding;
 
     public static function get_instance() {
         if ( self::$instance === null ) {
@@ -57,6 +59,10 @@ class Core {
         if ( class_exists( Diagnostics::class ) ) {
             $this->diagnostics = new Diagnostics();
         }
+
+        if ( class_exists( OnboardingController::class ) ) {
+            $this->onboarding = new OnboardingController( defined( 'JLG_NOTATION_PLUGIN_BASENAME' ) ? JLG_NOTATION_PLUGIN_BASENAME : '' );
+        }
     }
 
     public function get_component( $component_name ) {
@@ -71,6 +77,8 @@ class Core {
                 return $this->platforms;
             case 'diagnostics':
                 return $this->diagnostics;
+            case 'onboarding':
+                return $this->onboarding;
             default:
                 return null;
         }
