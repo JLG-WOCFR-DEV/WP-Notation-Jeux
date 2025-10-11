@@ -149,7 +149,7 @@ class ExportRatingsCommand {
             ? $params['orderby']
             : 'date';
 
-        $order = strtolower( (string) $params['order'] );
+        $order           = strtolower( (string) $params['order'] );
         $params['order'] = in_array( $order, array( 'asc', 'desc' ), true ) ? $order : 'desc';
 
         $params['platform'] = sanitize_title( (string) $params['platform'] );
@@ -179,19 +179,19 @@ class ExportRatingsCommand {
     }
 
     private function map_item_to_row( array $item, array $badge ) {
-        $editorial_score = isset( $item['editorial']['score'] ) && is_numeric( $item['editorial']['score'] )
+        $editorial_score     = isset( $item['editorial']['score'] ) && is_numeric( $item['editorial']['score'] )
             ? (float) $item['editorial']['score']
             : null;
         $editorial_formatted = isset( $item['editorial']['formatted'] ) ? (string) $item['editorial']['formatted'] : '';
         $user_average        = isset( $item['readers']['average'] ) && is_numeric( $item['readers']['average'] )
             ? (float) $item['readers']['average']
             : null;
-        $user_formatted = isset( $item['readers']['formatted'] ) ? (string) $item['readers']['formatted'] : '';
-        $user_votes     = isset( $item['readers']['votes'] ) ? (int) $item['readers']['votes'] : 0;
-        $delta_value    = isset( $item['readers']['delta']['value'] ) && is_numeric( $item['readers']['delta']['value'] )
+        $user_formatted      = isset( $item['readers']['formatted'] ) ? (string) $item['readers']['formatted'] : '';
+        $user_votes          = isset( $item['readers']['votes'] ) ? (int) $item['readers']['votes'] : 0;
+        $delta_value         = isset( $item['readers']['delta']['value'] ) && is_numeric( $item['readers']['delta']['value'] )
             ? (float) $item['readers']['delta']['value']
             : null;
-        $delta_formatted = isset( $item['readers']['delta']['formatted'] ) ? (string) $item['readers']['delta']['formatted'] : '';
+        $delta_formatted     = isset( $item['readers']['delta']['formatted'] ) ? (string) $item['readers']['delta']['formatted'] : '';
 
         $platform_labels = array();
         $platform_slugs  = array();
@@ -269,14 +269,16 @@ class ExportRatingsCommand {
             }
         }
 
-        $handle = @fopen( $destination, 'w' );
+        $filesystem = $this->get_filesystem();
 
-        if ( ! $handle ) {
+        if ( ! $filesystem || ! is_object( $filesystem ) || ! method_exists( $filesystem, 'put_contents' ) ) {
             return false;
         }
 
         $headers = array_keys( $rows[0] );
-        fputcsv( $handle, $headers, $delimiter, '"', '\\' );
+        $temp    = new \SplTempFileObject();
+        $temp->setCsvControl( $delimiter, '"', '\\' );
+        $temp->fputcsv( $headers );
 
         $written = 0;
         foreach ( $rows as $row ) {
@@ -295,13 +297,68 @@ class ExportRatingsCommand {
                 $line[] = $value;
             }
 
-            fputcsv( $handle, $line, $delimiter, '"', '\\' );
+            $temp->fputcsv( $line );
             ++$written;
         }
 
-        fclose( $handle );
+        $temp->rewind();
+        $csv_content = '';
+        while ( ! $temp->eof() ) {
+            $line = $temp->fgets();
+
+            if ( $line === false ) {
+                break;
+            }
+
+            $csv_content .= $line;
+        }
+
+        $result = $filesystem->put_contents( $destination, $csv_content );
+
+        if ( false === $result ) {
+            return false;
+        }
 
         return $written;
+    }
+
+    private function get_filesystem() {
+        global $wp_filesystem;
+
+        if ( $wp_filesystem instanceof \WP_Filesystem_Base ) {
+            return $wp_filesystem;
+        }
+
+        if ( function_exists( 'WP_Filesystem' ) ) {
+            if ( WP_Filesystem() && $wp_filesystem instanceof \WP_Filesystem_Base ) {
+                return $wp_filesystem;
+            }
+        } else {
+            if ( defined( 'ABSPATH' ) ) {
+                $file = rtrim( ABSPATH, '/\\' ) . '/wp-admin/includes/file.php';
+
+                if ( file_exists( $file ) ) {
+                    require_once $file;
+                }
+            }
+
+            if ( function_exists( 'WP_Filesystem' ) && WP_Filesystem() && $wp_filesystem instanceof \WP_Filesystem_Base ) {
+                return $wp_filesystem;
+            }
+        }
+
+        if ( class_exists( '\WP_Filesystem_Direct' ) ) {
+            $wp_filesystem = new \WP_Filesystem_Direct( new \stdClass() );
+
+            return $wp_filesystem;
+        }
+
+        return new class() {
+            public function put_contents( $file, $contents ) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+                return file_put_contents( $file, $contents );
+            }
+        };
     }
 
     private function normalize_statuses( $value ) {

@@ -70,7 +70,9 @@ class OnboardingController {
         add_action( 'admin_post_' . self::FORM_ACTION, array( $this, 'handle_form_submission' ) );
     }
 
-    public function handle_plugin_activation( $plugin, $network_wide ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+    public function handle_plugin_activation( $plugin, $network_wide ) {
+        unset( $network_wide );
+
         if ( $this->plugin_basename === '' || $plugin !== $this->plugin_basename ) {
             return;
         }

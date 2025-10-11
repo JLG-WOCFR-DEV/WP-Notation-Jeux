@@ -504,14 +504,14 @@ class AllInOne {
 				'score_layout'             => $score_layout,
 				'animations_enabled'       => ! empty( $options['enable_animations'] ),
 				'score_max'                => $score_max_value,
-                                'display_mode'             => $display_mode,
-                                'display_verdict'          => $display_verdict,
-                                'verdict'                  => $verdict_data,
-                                'deals_enabled'            => $deals_enabled,
-                                'deals'                    => $deals,
-                                'deals_button_rel'         => $deals_button_rel,
-                                'deals_disclaimer'         => $deals_disclaimer,
-                        )
+				'display_mode'             => $display_mode,
+				'display_verdict'          => $display_verdict,
+				'verdict'                  => $verdict_data,
+				'deals_enabled'            => $deals_enabled,
+				'deals'                    => $deals,
+				'deals_button_rel'         => $deals_button_rel,
+				'deals_disclaimer'         => $deals_disclaimer,
+			)
         );
     }
 

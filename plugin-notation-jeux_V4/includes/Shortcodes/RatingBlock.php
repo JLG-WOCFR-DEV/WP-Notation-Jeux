@@ -322,9 +322,9 @@ class RatingBlock {
             $resolved_score_max = 10.0;
         }
 
-        $deals_enabled      = ! empty( $options['deals_enabled'] );
-        $placeholder_deals  = array();
-        $placeholder_score  = round( $resolved_score_max / 2, 1 );
+        $deals_enabled          = ! empty( $options['deals_enabled'] );
+        $placeholder_deals      = array();
+        $placeholder_score      = round( $resolved_score_max / 2, 1 );
         $placeholder_percentage = max( 0, min( 100, ( $placeholder_score / $resolved_score_max ) * 100 ) );
 
         $category_scores      = array();

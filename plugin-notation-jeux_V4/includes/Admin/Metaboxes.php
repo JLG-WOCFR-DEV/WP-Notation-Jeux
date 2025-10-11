@@ -977,9 +977,7 @@ class Metaboxes {
             } else {
                 delete_post_meta( $post_id, '_jlg_deals_entries' );
             }
-
         }
-
         if ( ! empty( $validation_errors ) ) {
             set_transient( $this->get_error_transient_key(), $validation_errors, MINUTE_IN_SECONDS );
         }

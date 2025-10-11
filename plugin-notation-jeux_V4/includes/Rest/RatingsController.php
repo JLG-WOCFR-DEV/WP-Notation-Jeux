@@ -50,7 +50,7 @@ class RatingsController {
         }
 
         $can_check_caps = function_exists( 'current_user_can' );
-        $is_logged_in    = function_exists( 'is_user_logged_in' ) ? is_user_logged_in() : false;
+        $is_logged_in   = function_exists( 'is_user_logged_in' ) ? is_user_logged_in() : false;
 
         if ( $can_check_caps && $is_logged_in && current_user_can( 'read' ) ) {
             return true;
@@ -141,27 +141,27 @@ class RatingsController {
             );
 
             $records[] = array(
-                'id'                    => $post_id,
-                'title'                 => $title,
-                'slug'                  => isset( $post->post_name ) ? sanitize_title( $post->post_name ) : sanitize_title( $title ),
-                'permalink'             => esc_url_raw( get_permalink( $post_id ) ),
-                'editorial_value'       => $score,
-                'editorial_formatted'   => isset( $score_data['formatted'] ) ? (string) $score_data['formatted'] : number_format_i18n( $score, 1 ),
-                'user_average'          => $user_average,
-                'user_formatted'        => $user_average !== null ? number_format_i18n( $user_average, 1 ) : '',
-                'user_votes'            => max( 0, $user_count ),
-                'delta_value'           => $delta_value,
-                'delta_formatted'       => $this->format_delta_label( $delta_value ),
-                'histogram'             => $histogram,
-                'platform_labels'       => $platform_labels,
-                'platform_payload'      => $platform_payload,
-                'platform_breakdown'    => $platform_matrix,
-                'review_status'         => $review_status,
-                'timestamps'            => $timestamps,
-                'score_percentage'      => $score_max > 0 ? round( ( $score / $score_max ) * 100, 1 ) : null,
-                'sort_timestamp'        => $timestamps['published']['timestamp'] ?? strtotime( $post->post_date_gmt ?? $post->post_date ?? 'now' ),
-                'searchable_platforms'  => $platform_labels,
-                'searchable_slug'       => isset( $post->post_name ) ? (string) $post->post_name : '',
+                'id'                   => $post_id,
+                'title'                => $title,
+                'slug'                 => isset( $post->post_name ) ? sanitize_title( $post->post_name ) : sanitize_title( $title ),
+                'permalink'            => esc_url_raw( get_permalink( $post_id ) ),
+                'editorial_value'      => $score,
+                'editorial_formatted'  => isset( $score_data['formatted'] ) ? (string) $score_data['formatted'] : number_format_i18n( $score, 1 ),
+                'user_average'         => $user_average,
+                'user_formatted'       => $user_average !== null ? number_format_i18n( $user_average, 1 ) : '',
+                'user_votes'           => max( 0, $user_count ),
+                'delta_value'          => $delta_value,
+                'delta_formatted'      => $this->format_delta_label( $delta_value ),
+                'histogram'            => $histogram,
+                'platform_labels'      => $platform_labels,
+                'platform_payload'     => $platform_payload,
+                'platform_breakdown'   => $platform_matrix,
+                'review_status'        => $review_status,
+                'timestamps'           => $timestamps,
+                'score_percentage'     => $score_max > 0 ? round( ( $score / $score_max ) * 100, 1 ) : null,
+                'sort_timestamp'       => $timestamps['published']['timestamp'] ?? strtotime( $post->post_date_gmt ?? $post->post_date ?? 'now' ),
+                'searchable_platforms' => $platform_labels,
+                'searchable_slug'      => isset( $post->post_name ) ? (string) $post->post_name : '',
             );
         }
 
@@ -197,17 +197,17 @@ class RatingsController {
 
             return rest_ensure_response(
                 array(
-                    'items'       => array(),
-                    'pagination'  => array(
+                    'items'        => array(),
+                    'pagination'   => array(
                         'total'       => 0,
                         'total_pages' => 0,
                         'per_page'    => $params['per_page'],
                         'page'        => 1,
                     ),
-                    'summary'     => $empty_summary,
-                    'filters'     => $this->expose_filters( $params ),
-                    'score_max'   => $score_max,
-                    'platforms'   => $registered,
+                    'summary'      => $empty_summary,
+                    'filters'      => $this->expose_filters( $params ),
+                    'score_max'    => $score_max,
+                    'platforms'    => $registered,
                     'generated_at' => gmdate( 'c', $this->current_gmt_timestamp() ),
                 )
             );
@@ -230,17 +230,17 @@ class RatingsController {
         $items = array();
         foreach ( $page_items as $record ) {
             $items[] = array(
-                'id'        => $record['id'],
-                'title'     => $record['title'],
-                'slug'      => $record['slug'],
-                'permalink' => $record['permalink'],
-                'editorial' => array(
-                    'score'       => $record['editorial_value'],
-                    'formatted'   => $record['editorial_formatted'],
-                    'percentage'  => $record['score_percentage'],
-                    'scale'       => $score_max,
+                'id'            => $record['id'],
+                'title'         => $record['title'],
+                'slug'          => $record['slug'],
+                'permalink'     => $record['permalink'],
+                'editorial'     => array(
+                    'score'      => $record['editorial_value'],
+                    'formatted'  => $record['editorial_formatted'],
+                    'percentage' => $record['score_percentage'],
+                    'scale'      => $score_max,
                 ),
-                'readers'   => array(
+                'readers'       => array(
                     'average'   => $record['user_average'],
                     'formatted' => $record['user_formatted'],
                     'votes'     => $record['user_votes'],
@@ -256,11 +256,11 @@ class RatingsController {
                     'items'     => $record['platform_payload'],
                     'breakdown' => $record['platform_breakdown'],
                 ),
-                'timestamps' => array(
+                'timestamps'    => array(
                     'published' => $record['timestamps']['published']['iso8601'] ?? '',
                     'modified'  => $record['timestamps']['modified']['iso8601'] ?? '',
                 ),
-                'links' => array(
+                'links'         => array(
                     'self' => $record['permalink'],
                 ),
             );
@@ -276,17 +276,17 @@ class RatingsController {
 
         return rest_ensure_response(
             array(
-                'items'      => $items,
-                'pagination' => array(
+                'items'        => $items,
+                'pagination'   => array(
                     'total'       => $total_items,
                     'total_pages' => $total_pages,
                     'per_page'    => $params['per_page'],
                     'page'        => $params['page'],
                 ),
-                'summary'     => $summary,
-                'filters'     => $this->expose_filters( $params ),
-                'score_max'   => $score_max,
-                'platforms'   => $registered,
+                'summary'      => $summary,
+                'filters'      => $this->expose_filters( $params ),
+                'score_max'    => $score_max,
+                'platforms'    => $registered,
                 'generated_at' => gmdate( 'c', $this->current_gmt_timestamp() ),
             )
         );
@@ -294,12 +294,12 @@ class RatingsController {
 
     private function get_collection_params() {
         return array(
-            'post_id' => array(
+            'post_id'  => array(
                 'description' => __( 'Identifiant de la review à retourner.', 'notation-jlg' ),
                 'type'        => 'integer',
                 'required'    => false,
             ),
-            'slug' => array(
+            'slug'     => array(
                 'description' => __( 'Slug de l’article ciblé.', 'notation-jlg' ),
                 'type'        => 'string',
                 'required'    => false,
@@ -309,22 +309,22 @@ class RatingsController {
                 'type'        => 'string',
                 'required'    => false,
             ),
-            'search' => array(
+            'search'   => array(
                 'description' => __( 'Filtre les résultats par titre ou slug.', 'notation-jlg' ),
                 'type'        => 'string',
                 'required'    => false,
             ),
-            'status' => array(
+            'status'   => array(
                 'description' => __( 'Limite les statuts de publication considérés (séparés par des virgules).', 'notation-jlg' ),
                 'type'        => 'string',
                 'required'    => false,
             ),
-            'from' => array(
+            'from'     => array(
                 'description' => __( 'Inclut uniquement les reviews publiées à partir de cette date (YYYY-MM-DD).', 'notation-jlg' ),
                 'type'        => 'string',
                 'required'    => false,
             ),
-            'to' => array(
+            'to'       => array(
                 'description' => __( 'Limite la période aux reviews publiées avant cette date (YYYY-MM-DD).', 'notation-jlg' ),
                 'type'        => 'string',
                 'required'    => false,
@@ -336,19 +336,19 @@ class RatingsController {
                 'minimum'     => 1,
                 'maximum'     => 50,
             ),
-            'page' => array(
+            'page'     => array(
                 'description' => __( 'Indice de pagination (1-indexé).', 'notation-jlg' ),
                 'type'        => 'integer',
                 'default'     => 1,
                 'minimum'     => 1,
             ),
-            'orderby' => array(
+            'orderby'  => array(
                 'description' => __( 'Champ utilisé pour le tri.', 'notation-jlg' ),
                 'type'        => 'string',
                 'default'     => 'date',
                 'enum'        => array( 'date', 'editorial', 'reader', 'title', 'user_votes' ),
             ),
-            'order' => array(
+            'order'    => array(
                 'description' => __( 'Ordre de tri.', 'notation-jlg' ),
                 'type'        => 'string',
                 'default'     => 'desc',
@@ -406,7 +406,7 @@ class RatingsController {
         return $params;
     }
 
-    private function extract_param( $request, $key, $default = null ) {
+    private function extract_param( $request, $key, $fallback = null ) {
         if ( is_object( $request ) ) {
             if ( method_exists( $request, 'get_param' ) ) {
                 $value = $request->get_param( $key );
@@ -429,7 +429,7 @@ class RatingsController {
             return $request[ $key ];
         }
 
-        return $default;
+        return $fallback;
     }
 
     private function collect_candidate_posts( array $params ) {
@@ -468,8 +468,8 @@ class RatingsController {
         }
 
         if ( ! empty( $date_query ) ) {
-            $date_query['inclusive'] = true;
-            $date_query['column']    = 'post_date_gmt';
+            $date_query['inclusive']  = true;
+            $date_query['column']     = 'post_date_gmt';
             $query_args['date_query'] = array( $date_query );
         }
 
@@ -575,7 +575,7 @@ class RatingsController {
     }
 
     private function get_post_platform_labels( $post_id ) {
-        $raw = get_post_meta( $post_id, '_jlg_plateformes', true );
+        $raw    = get_post_meta( $post_id, '_jlg_plateformes', true );
         $labels = array();
 
         if ( is_array( $raw ) ) {
@@ -639,8 +639,8 @@ class RatingsController {
 
         $is_gmt = true;
         if ( ! is_string( $value ) || $value === '' || $value === '0000-00-00 00:00:00' ) {
-            $field = $context === 'modified' ? 'post_modified' : 'post_date';
-            $value = get_post_field( $field, $post_id );
+            $field  = $context === 'modified' ? 'post_modified' : 'post_date';
+            $value  = get_post_field( $field, $post_id );
             $is_gmt = false;
         }
 
@@ -960,13 +960,16 @@ class RatingsController {
     }
 
     private function current_gmt_timestamp() {
-        if ( function_exists( 'current_time' ) ) {
-            $timestamp = current_time( 'timestamp', true );
-            if ( is_numeric( $timestamp ) ) {
-                return (int) $timestamp;
+        $timestamp = time();
+
+        if ( function_exists( 'apply_filters' ) ) {
+            $filtered = apply_filters( 'jlg_current_gmt_timestamp', $timestamp );
+
+            if ( is_numeric( $filtered ) ) {
+                return (int) $filtered;
             }
         }
 
-        return time();
+        return $timestamp;
     }
 }

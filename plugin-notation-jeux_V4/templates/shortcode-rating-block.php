@@ -486,13 +486,13 @@ if ( $display_mode === 'percent' && $average_percentage_display !== '' ) {
                 <ul class="review-box-jlg__deal-list" role="list">
                     <?php foreach ( $deals_list as $deal ) : ?>
                         <?php
-                        $deal_retailer      = isset( $deal['retailer'] ) ? (string) $deal['retailer'] : '';
-                        $deal_price         = isset( $deal['price_display'] ) ? (string) $deal['price_display'] : '';
-                        $deal_availability  = isset( $deal['availability'] ) ? (string) $deal['availability'] : '';
-                        $deal_cta_label     = isset( $deal['cta_label'] ) ? (string) $deal['cta_label'] : '';
-                        $deal_url           = isset( $deal['url'] ) ? (string) $deal['url'] : '';
-                        $deal_highlight     = ! empty( $deal['is_best'] );
-                        $deal_item_classes  = array( 'review-box-jlg__deal-item' );
+                        $deal_retailer     = isset( $deal['retailer'] ) ? (string) $deal['retailer'] : '';
+                        $deal_price        = isset( $deal['price_display'] ) ? (string) $deal['price_display'] : '';
+                        $deal_availability = isset( $deal['availability'] ) ? (string) $deal['availability'] : '';
+                        $deal_cta_label    = isset( $deal['cta_label'] ) ? (string) $deal['cta_label'] : '';
+                        $deal_url          = isset( $deal['url'] ) ? (string) $deal['url'] : '';
+                        $deal_highlight    = ! empty( $deal['is_best'] );
+                        $deal_item_classes = array( 'review-box-jlg__deal-item' );
                         if ( $deal_highlight ) {
                             $deal_item_classes[] = 'review-box-jlg__deal-item--highlight';
                         }
