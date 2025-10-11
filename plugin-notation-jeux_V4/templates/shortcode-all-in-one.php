@@ -24,15 +24,15 @@ if ( ! empty( $css_variables ) ) {
     $style_attribute = ' style="' . esc_attr( $css_variables ) . '"';
 }
 
-$has_tagline      = ( $atts['afficher_tagline'] === 'oui' && ( ! empty( $tagline_fr ) || ! empty( $tagline_en ) ) );
-$has_dual_tagline = ( ! empty( $tagline_fr ) && ! empty( $tagline_en ) );
-$show_rating      = ( $atts['afficher_notation'] === 'oui' && $average_score !== null );
-$show_points      = ( $atts['afficher_points'] === 'oui' && ( ! empty( $pros_list ) || ! empty( $cons_list ) ) );
-$category_scores  = isset( $category_scores ) && is_array( $category_scores ) ? $category_scores : array();
-$has_cta          = ( ! empty( $cta_label ) && ! empty( $cta_url ) );
-$cta_role_attr    = ! empty( $cta_role ) ? $cta_role : 'button';
-$cta_rel_attr     = isset( $cta_rel ) ? trim( (string) $cta_rel ) : '';
-$data_attributes  = sprintf(
+$has_tagline           = ( $atts['afficher_tagline'] === 'oui' && ( ! empty( $tagline_fr ) || ! empty( $tagline_en ) ) );
+$has_dual_tagline      = ( ! empty( $tagline_fr ) && ! empty( $tagline_en ) );
+$show_rating           = ( $atts['afficher_notation'] === 'oui' && $average_score !== null );
+$show_points           = ( $atts['afficher_points'] === 'oui' && ( ! empty( $pros_list ) || ! empty( $cons_list ) ) );
+$category_scores       = isset( $category_scores ) && is_array( $category_scores ) ? $category_scores : array();
+$has_cta               = ( ! empty( $cta_label ) && ! empty( $cta_url ) );
+$cta_role_attr         = ! empty( $cta_role ) ? $cta_role : 'button';
+$cta_rel_attr          = isset( $cta_rel ) ? trim( (string) $cta_rel ) : '';
+$data_attributes       = sprintf(
     ' data-animations-enabled="%s" data-has-multiple-taglines="%s"',
     esc_attr( $animations_enabled ? 'true' : 'false' ),
     esc_attr( $has_dual_tagline ? 'true' : 'false' )
@@ -486,13 +486,13 @@ if ( $average_score_display !== '' ) {
         <ul class="jlg-aio-deals__list" role="list">
             <?php foreach ( $deals_list as $deal ) : ?>
                 <?php
-                $deal_retailer      = isset( $deal['retailer'] ) ? (string) $deal['retailer'] : '';
-                $deal_price         = isset( $deal['price_display'] ) ? (string) $deal['price_display'] : '';
-                $deal_availability  = isset( $deal['availability'] ) ? (string) $deal['availability'] : '';
-                $deal_cta_label     = isset( $deal['cta_label'] ) ? (string) $deal['cta_label'] : '';
-                $deal_url           = isset( $deal['url'] ) ? (string) $deal['url'] : '';
-                $deal_highlight     = ! empty( $deal['is_best'] );
-                $deal_item_classes  = array( 'jlg-aio-deals__item' );
+                $deal_retailer     = isset( $deal['retailer'] ) ? (string) $deal['retailer'] : '';
+                $deal_price        = isset( $deal['price_display'] ) ? (string) $deal['price_display'] : '';
+                $deal_availability = isset( $deal['availability'] ) ? (string) $deal['availability'] : '';
+                $deal_cta_label    = isset( $deal['cta_label'] ) ? (string) $deal['cta_label'] : '';
+                $deal_url          = isset( $deal['url'] ) ? (string) $deal['url'] : '';
+                $deal_highlight    = ! empty( $deal['is_best'] );
+                $deal_item_classes = array( 'jlg-aio-deals__item' );
                 if ( $deal_highlight ) {
                     $deal_item_classes[] = 'jlg-aio-deals__item--highlight';
                 }

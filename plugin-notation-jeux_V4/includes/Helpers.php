@@ -1659,15 +1659,15 @@ class Helpers {
         $price_label = self::truncate_string( $price_label, 80 );
 
         return array(
-            'id'            => 'deal-' . ( $index + 1 ),
-            'retailer'      => $retailer,
-            'url'           => $url,
-            'price_value'   => $price_value,
-            'currency'      => $currency,
-            'availability'  => $availability,
-            'cta_label'     => $cta_label,
-            'price_label'   => $price_label,
-            'is_best'       => ! empty( $entry['highlight'] ),
+            'id'           => 'deal-' . ( $index + 1 ),
+            'retailer'     => $retailer,
+            'url'          => $url,
+            'price_value'  => $price_value,
+            'currency'     => $currency,
+            'availability' => $availability,
+            'cta_label'    => $cta_label,
+            'price_label'  => $price_label,
+            'is_best'      => ! empty( $entry['highlight'] ),
         );
     }
 
@@ -3534,7 +3534,7 @@ class Helpers {
             return null;
         }
 
-        $post_object   = function_exists( 'get_post' ) ? get_post( $post_id ) : null;
+        $post_object = function_exists( 'get_post' ) ? get_post( $post_id ) : null;
 
         $post_date_gmt = get_post_field( 'post_date_gmt', $post_id );
         if ( ( $post_date_gmt === '' || $post_date_gmt === null ) && $post_object ) {
@@ -3766,16 +3766,16 @@ class Helpers {
         }
 
         return array(
-            'width'            => $width,
-            'height'           => $height,
-            'view_box'         => '0 0 ' . $width . ' ' . $height,
-            'editorial_path'   => ! empty( $editorial_segments ) ? 'M' . implode( ' L', $editorial_segments ) : '',
-            'reader_path'      => ! empty( $reader_segments ) ? 'M' . implode( ' L', $reader_segments ) : '',
-            'aria_label'       => __( 'Évolution des notes rédaction vs lecteurs', 'notation-jlg' ),
-            'editorial_label'  => __( 'Rédaction', 'notation-jlg' ),
-            'reader_label'     => __( 'Lecteurs', 'notation-jlg' ),
-            'y_min_label'      => number_format_i18n( 0, 0 ),
-            'y_max_label'      => number_format_i18n( $score_max, 0 ),
+            'width'           => $width,
+            'height'          => $height,
+            'view_box'        => '0 0 ' . $width . ' ' . $height,
+            'editorial_path'  => ! empty( $editorial_segments ) ? 'M' . implode( ' L', $editorial_segments ) : '',
+            'reader_path'     => ! empty( $reader_segments ) ? 'M' . implode( ' L', $reader_segments ) : '',
+            'aria_label'      => __( 'Évolution des notes rédaction vs lecteurs', 'notation-jlg' ),
+            'editorial_label' => __( 'Rédaction', 'notation-jlg' ),
+            'reader_label'    => __( 'Lecteurs', 'notation-jlg' ),
+            'y_min_label'     => number_format_i18n( 0, 0 ),
+            'y_max_label'     => number_format_i18n( $score_max, 0 ),
         );
     }
 
@@ -3817,7 +3817,7 @@ class Helpers {
                 );
             }
 
-            $counter[ $normalized_key ]['count']++;
+            ++$counter[ $normalized_key ]['count'];
         }
     }
 

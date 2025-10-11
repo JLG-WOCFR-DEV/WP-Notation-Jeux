@@ -68,13 +68,13 @@ class DealsWidget extends WP_Widget {
         echo Frontend::get_template_html(
             'widget-deals',
             array(
-                'widget_args'            => $args,
-                'title'                  => $settings['title'],
-                'deals'                  => $deals,
-                'rel_attribute'          => $rel_attribute,
-                'disclaimer'             => $disclaimer,
-                'display_empty_message'  => $settings['display_empty_message'],
-                'empty_message'          => $settings['empty_message'],
+                'widget_args'           => $args,
+                'title'                 => $settings['title'],
+                'deals'                 => $deals,
+                'rel_attribute'         => $rel_attribute,
+                'disclaimer'            => $disclaimer,
+                'display_empty_message' => $settings['display_empty_message'],
+                'empty_message'         => $settings['empty_message'],
             )
         );
     }
@@ -139,12 +139,12 @@ class DealsWidget extends WP_Widget {
         $raw_display_empty = isset( $instance['display_empty_message'] ) ? $instance['display_empty_message'] : false;
         $display_empty     = ! empty( $raw_display_empty );
 
-        $raw_empty_message      = isset( $instance['empty_message'] ) && is_string( $instance['empty_message'] ) ? $instance['empty_message'] : '';
+        $raw_empty_message = isset( $instance['empty_message'] ) && is_string( $instance['empty_message'] ) ? $instance['empty_message'] : '';
         if ( $raw_empty_message !== '' ) {
             $raw_empty_message = wp_strip_all_tags( $raw_empty_message, false );
         }
-        $default_empty_message  = __( self::DEFAULT_EMPTY_MESSAGE, 'notation-jlg' );
-        $empty_message          = $raw_empty_message !== '' ? sanitize_textarea_field( $raw_empty_message ) : $default_empty_message;
+        $default_empty_message = __( self::DEFAULT_EMPTY_MESSAGE, 'notation-jlg' );
+        $empty_message         = $raw_empty_message !== '' ? sanitize_textarea_field( $raw_empty_message ) : $default_empty_message;
 
         return array(
             'title'                 => $title,

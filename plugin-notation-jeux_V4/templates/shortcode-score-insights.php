@@ -68,19 +68,19 @@ if ( $consensus_confidence_level !== '' ) {
 $confidence_chip_class = implode( ' ', array_map( 'sanitize_html_class', $confidence_chip_classes ) );
 
 $segments                 = isset( $insights['segments'] ) && is_array( $insights['segments'] ) ? $insights['segments'] : array();
-$segments_available        = ! empty( $segments['available'] );
-$segment_editorial         = isset( $segments['editorial'] ) && is_array( $segments['editorial'] ) ? $segments['editorial'] : array();
-$segment_readers           = isset( $segments['readers'] ) && is_array( $segments['readers'] ) ? $segments['readers'] : array();
-$segment_delta             = isset( $segments['delta'] ) && is_array( $segments['delta'] ) ? $segments['delta'] : array();
-$segment_delta_value       = isset( $segment_delta['formatted'] ) ? (string) $segment_delta['formatted'] : '';
-$segment_delta_direction   = isset( $segment_delta['direction'] ) ? (string) $segment_delta['direction'] : 'stable';
-$segment_delta_label       = isset( $segment_delta['label'] ) ? (string) $segment_delta['label'] : '';
-$segment_editorial_mean    = isset( $segment_editorial['average_formatted'] ) ? (string) $segment_editorial['average_formatted'] : '';
-$segment_editorial_median  = isset( $segment_editorial['median_formatted'] ) ? (string) $segment_editorial['median_formatted'] : '';
-$segment_editorial_count   = isset( $segment_editorial['count'] ) ? (int) $segment_editorial['count'] : 0;
-$segment_readers_mean      = isset( $segment_readers['average_formatted'] ) ? (string) $segment_readers['average_formatted'] : '';
-$segment_readers_votes     = isset( $segment_readers['votes'] ) ? (int) $segment_readers['votes'] : 0;
-$segment_readers_sample    = isset( $segment_readers['sample'] ) ? (int) $segment_readers['sample'] : 0;
+$segments_available       = ! empty( $segments['available'] );
+$segment_editorial        = isset( $segments['editorial'] ) && is_array( $segments['editorial'] ) ? $segments['editorial'] : array();
+$segment_readers          = isset( $segments['readers'] ) && is_array( $segments['readers'] ) ? $segments['readers'] : array();
+$segment_delta            = isset( $segments['delta'] ) && is_array( $segments['delta'] ) ? $segments['delta'] : array();
+$segment_delta_value      = isset( $segment_delta['formatted'] ) ? (string) $segment_delta['formatted'] : '';
+$segment_delta_direction  = isset( $segment_delta['direction'] ) ? (string) $segment_delta['direction'] : 'stable';
+$segment_delta_label      = isset( $segment_delta['label'] ) ? (string) $segment_delta['label'] : '';
+$segment_editorial_mean   = isset( $segment_editorial['average_formatted'] ) ? (string) $segment_editorial['average_formatted'] : '';
+$segment_editorial_median = isset( $segment_editorial['median_formatted'] ) ? (string) $segment_editorial['median_formatted'] : '';
+$segment_editorial_count  = isset( $segment_editorial['count'] ) ? (int) $segment_editorial['count'] : 0;
+$segment_readers_mean     = isset( $segment_readers['average_formatted'] ) ? (string) $segment_readers['average_formatted'] : '';
+$segment_readers_votes    = isset( $segment_readers['votes'] ) ? (int) $segment_readers['votes'] : 0;
+$segment_readers_sample   = isset( $segment_readers['sample'] ) ? (int) $segment_readers['sample'] : 0;
 
 $timeline_data       = isset( $insights['timeline'] ) && is_array( $insights['timeline'] ) ? $insights['timeline'] : array();
 $timeline_available  = ! empty( $timeline_data['available'] ) && ! empty( $timeline_data['points'] );
@@ -107,14 +107,14 @@ if ( ! empty( $atts['title'] ) ) {
     $title = sanitize_text_field( $atts['title'] );
 }
 
-$section_id   = 'jlg-score-insights-' . uniqid();
-$heading_id   = $section_id . '-title';
-$summary_id   = $section_id . '-summary';
-$histogram_id = $section_id . '-histogram';
-$platforms_id = $section_id . '-platforms';
-$badges_id    = $section_id . '-divergences';
-$segments_id  = $section_id . '-segments';
-$timeline_id  = $section_id . '-timeline';
+$section_id    = 'jlg-score-insights-' . uniqid();
+$heading_id    = $section_id . '-title';
+$summary_id    = $section_id . '-summary';
+$histogram_id  = $section_id . '-histogram';
+$platforms_id  = $section_id . '-platforms';
+$badges_id     = $section_id . '-divergences';
+$segments_id   = $section_id . '-segments';
+$timeline_id   = $section_id . '-timeline';
 $sentiments_id = $section_id . '-sentiments';
 
 $time_summary_parts = array();
