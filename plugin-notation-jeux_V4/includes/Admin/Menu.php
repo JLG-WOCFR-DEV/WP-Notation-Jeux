@@ -40,6 +40,16 @@ class Menu {
             wp_die( esc_html__( 'Accès refusé.', 'notation-jlg' ) );
         }
 
+        if ( ! get_option( 'jlg_onboarding_completed' ) ) {
+            $onboarding_url = add_query_arg( 'page', 'jlg-notation-onboarding', admin_url( 'admin.php' ) );
+            printf(
+                '<div class="notice notice-warning"><p>%1$s <a class="button button-primary" href="%2$s">%3$s</a></p></div>',
+                esc_html__( 'Terminez l’assistant de configuration pour débloquer toutes les options avancées.', 'notation-jlg' ),
+                esc_url( $onboarding_url ),
+                esc_html__( 'Reprendre l’onboarding', 'notation-jlg' )
+            );
+        }
+
         $tabs       = $this->get_tabs();
         $active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'reglages';
         if ( ! array_key_exists( $active_tab, $tabs ) ) {

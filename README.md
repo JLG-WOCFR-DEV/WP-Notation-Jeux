@@ -9,10 +9,11 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 
 ## Installation et configuration initiale
 1. **Installer le plugin** depuis ce dépôt (copier `plugin-notation-jeux_V4` dans `wp-content/plugins/`) puis l’activer depuis le menu *Extensions* de WordPress.
-2. **Remplir les metaboxes** dédiées aux notes et aux détails du test dans l’éditeur d’articles : les six catégories sont notées sur 10 et la metabox principale capture fiche technique, plateformes, taglines bilingues, points forts/faibles, etc.
-3. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels. La section *Contenus* permet désormais de sélectionner les types de publications (articles, CPT publics…) autorisés pour la notation ; au besoin, un développeur peut toujours compléter ou restreindre cette liste via le filtre PHP `jlg_rated_post_types`. Le module *Statut de review* propose un toggle « Finalisation auto du statut » ainsi qu’un champ « Délai avant finalisation » (en jours) pour laisser le cron `jlg_review_status_auto_finalize` ramener automatiquement les tests en « Version finale » après vérification des patchs.
-4. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
-5. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu.
+2. **Suivre l’assistant de configuration** déclenché automatiquement après l’activation : quatre étapes guident la sélection des types de contenus notables, l’activation des modules optionnels, le choix d’un preset visuel et l’ajout éventuel de la clé RAWG. Un rappel persiste tant que l’option `jlg_onboarding_completed` n’est pas validée et l’assistant reste accessible depuis l’URL `wp-admin/admin.php?page=jlg-notation-onboarding`.
+3. **Remplir les metaboxes** dédiées aux notes et aux détails du test dans l’éditeur d’articles : les six catégories sont notées sur 10 et la metabox principale capture fiche technique, plateformes, taglines bilingues, points forts/faibles, etc.
+4. **Configurer l’onglet Réglages** (`Notation – JLG > Réglages`) pour ajuster libellés, présentation de la note globale, thèmes clair/sombre, couleurs sémantiques, effets neon/pulsation et modules optionnels. La section *Contenus* reprend les choix effectués durant l’onboarding et peut être affinée à la main ; au besoin, un développeur peut toujours compléter ou restreindre cette liste via le filtre PHP `jlg_rated_post_types`. Le module *Statut de review* propose un toggle « Finalisation auto du statut » ainsi qu’un champ « Délai avant finalisation » (en jours) pour laisser le cron `jlg_review_status_auto_finalize` ramener automatiquement les tests en « Version finale » après vérification des patchs.
+5. **Gérer les plateformes** dans l’onglet dédié afin d’ajouter, trier, supprimer ou réinitialiser la liste proposée dans les metaboxes.
+6. **Saisir la clé RAWG (facultatif)** dans la section *API* des réglages pour activer le remplissage automatique des données de jeu si vous avez choisi de la renseigner plus tard.
 
 - **Shortcodes principaux** :
   - `[jlg_bloc_complet]` (alias `[bloc_notation_complet]`) pour afficher en une seule fois notation, points forts/faibles et tagline avec de nombreux attributs (`post_id`, `style`, `couleur_accent`, etc.).
@@ -56,7 +57,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
   - [`assets/`](plugin-notation-jeux_V4/assets) regroupe styles, scripts et images front/back.
   - [`includes/`](plugin-notation-jeux_V4/includes) contient le cœur PHP (helpers, frontend, admin, utils).
   - [`admin/templates/`](plugin-notation-jeux_V4/admin/templates) centralise les vues des onglets d’administration.
-- **Tests et documentation** : suite PHPUnit couvrant les helpers principaux, scénarios de benchmark dans [`docs/`](plugin-notation-jeux_V4/docs) (Game Explorer, histogramme, responsive, Score Insights) et checklist manuelle responsive maintenue.
+- **Tests et documentation** : suite PHPUnit couvrant les helpers principaux, scénarios de benchmark dans [`docs/`](plugin-notation-jeux_V4/docs) (Game Explorer, histogramme, responsive, Score Insights), checklist manuelle responsive maintenue et guide d’onboarding détaillé dans [`docs/onboarding-checklist.md`](docs/onboarding-checklist.md) pour valider chaque étape de la configuration guidée.
 - **Feuille de route produit** : le sous-dossier [`docs/product-roadmap/`](plugin-notation-jeux_V4/docs/product-roadmap) décline les lots priorisés (quick wins, comparateur plateformes, deals) et fournit estimations, KPIs et dépendances pour les prochaines releases.
 
 ## Intégration continue
@@ -74,7 +75,7 @@ Bonne contribution ! Pensez à suivre les scripts Composer avant toute PR et à
 
 ## Pistes d’amélioration proposées
 
-- **Assistant de configuration guidée** : proposer, dès l’activation, un onboarding en quatre étapes (types de contenus autorisés, choix des modules, import d’exemples, connexion RAWG) afin d’accélérer la mise en route et de réduire les erreurs de paramétrage constatées lors des tests utilisateurs.
+- **Optimisation de l’assistant** : instrumenter le parcours multi-étapes (statistiques de complétion, abandon par step, tests A/B sur les messages) pour identifier les points de friction restants et proposer des recommandations contextuelles (exemples de modules populaires, suggestion de presets selon le thème actif).
 - **Notation multi-contributeurs pondérée** : permettre à plusieurs rédacteurs d’évaluer un même test (pondération des catégories, annotations individuelles, historique des modifications) puis calculer automatiquement la note éditoriale publiée, à la manière des rédactions qui mettent en avant un verdict collectif.
 - **Timeline de mises à jour du jeu** : enrichir la fiche technique d’un module facultatif listant les patchs majeurs et leurs impacts sur le verdict (changement de note, mise à jour des points forts/faibles), synchronisable depuis RAWG ou saisi manuellement pour suivre la vie du jeu après publication.
 - **Exports & intégrations partenaires** : étendre la commande WP-CLI existante (`wp jlg export:ratings`) et proposer un flux JSON dédié aux partenariats médias/affiliation (résumé, verdict, liens CTA configurables) pour faciliter la syndication de la note sur d’autres plateformes et newsletters sans ressaisie.
