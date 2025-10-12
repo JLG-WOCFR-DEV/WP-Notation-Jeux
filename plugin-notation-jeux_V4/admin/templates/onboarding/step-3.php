@@ -2,8 +2,9 @@
 $presets        = isset( $variables['presets'] ) && is_array( $variables['presets'] ) ? $variables['presets'] : array();
 $current_preset = isset( $variables['current_preset'] ) ? sanitize_key( $variables['current_preset'] ) : 'signature';
 $current_theme  = isset( $variables['current_theme'] ) ? sanitize_key( $variables['current_theme'] ) : 'dark';
+$is_active      = ! empty( $variables['is_active'] );
 ?>
-<div class="jlg-onboarding-step" data-step="3">
+<div class="jlg-onboarding-step<?php echo $is_active ? ' is-active' : ''; ?>" data-step="3">
     <fieldset class="jlg-onboarding-fieldset">
         <legend><?php esc_html_e( 'Choisissez un préréglage visuel', 'notation-jlg' ); ?></legend>
         <p><?php esc_html_e( 'Sélectionnez une base graphique pour accélérer la mise en forme de vos widgets.', 'notation-jlg' ); ?></p>

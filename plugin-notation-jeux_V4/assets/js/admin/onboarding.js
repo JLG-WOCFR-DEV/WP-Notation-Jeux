@@ -41,6 +41,12 @@
         }
 
         var currentIndex = 0;
+        if (hiddenStepInput) {
+            var initialStep = parseInt(hiddenStepInput.value, 10);
+            if (!isNaN(initialStep) && initialStep >= 1 && initialStep <= steps.length) {
+                currentIndex = initialStep - 1;
+            }
+        }
 
         function setFeedback(message) {
             if (!feedback) {
@@ -201,22 +207,27 @@
         });
 
         var rawgSkip = form.querySelector('input[name="rawg_skip"]');
-        if (rawgSkip) {
-            rawgSkip.addEventListener('change', function () {
-                var rawgInput = form.querySelector('input[name="rawg_api_key"]');
-                if (!rawgInput) {
-                    return;
-                }
-                if (rawgSkip.checked) {
-                    rawgInput.setAttribute('aria-disabled', 'true');
-                    rawgInput.setAttribute('disabled', 'disabled');
-                } else {
-                    rawgInput.removeAttribute('aria-disabled');
-                    rawgInput.removeAttribute('disabled');
-                }
-            });
+        function syncRawgInputState() {
+            var rawgInput = form.querySelector('input[name="rawg_api_key"]');
+            if (!rawgInput) {
+                return;
+            }
+            if (rawgSkip && rawgSkip.checked) {
+                rawgInput.setAttribute('aria-disabled', 'true');
+                rawgInput.setAttribute('disabled', 'disabled');
+            } else {
+                rawgInput.removeAttribute('aria-disabled');
+                rawgInput.removeAttribute('disabled');
+            }
         }
 
-        goToStep(0);
+        if (rawgSkip) {
+            rawgSkip.addEventListener('change', function () {
+                syncRawgInputState();
+            });
+            syncRawgInputState();
+        }
+
+        goToStep(currentIndex);
     });
 })(window, document);

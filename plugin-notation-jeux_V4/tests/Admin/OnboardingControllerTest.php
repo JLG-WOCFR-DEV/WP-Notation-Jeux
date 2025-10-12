@@ -15,6 +15,7 @@ final class OnboardingControllerTest extends TestCase
         $GLOBALS['jlg_test_redirects']    = [];
         $GLOBALS['jlg_onboarding_errors'] = [];
         $GLOBALS['jlg_test_is_admin']     = true;
+        $GLOBALS['jlg_test_current_user_id'] = 1;
 
         $_POST    = [];
         $_GET     = [];
@@ -98,5 +99,69 @@ final class OnboardingControllerTest extends TestCase
         $this->assertNotEmpty($GLOBALS['jlg_test_redirects']);
         $redirect = $GLOBALS['jlg_test_redirects'][0];
         $this->assertStringContainsString('completed=1', $redirect['location']);
+    }
+
+    public function test_handle_form_submission_supports_rawg_opt_out(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        update_option('notation_jlg_settings', Helpers::get_default_settings());
+        update_option('jlg_onboarding_completed', 0);
+
+        $_POST = [
+            'jlg_onboarding_nonce' => wp_create_nonce('jlg_onboarding_save'),
+            'allowed_post_types'   => ['post'],
+            'modules'              => ['verdict_module_enabled'],
+            'visual_preset'        => 'signature',
+            'visual_theme'         => 'dark',
+            'rawg_api_key'         => '',
+            'rawg_skip'            => '1',
+        ];
+
+        $_REQUEST['action'] = 'jlg_onboarding_save';
+
+        $controller->handle_form_submission();
+
+        $savedOptions = get_option('notation_jlg_settings');
+        $this->assertSame('', $savedOptions['rawg_api_key']);
+        $this->assertSame(1, get_option('jlg_onboarding_completed'));
+        $this->assertEmpty(get_transient('jlg_onboarding_state_1'));
+        $this->assertEmpty(get_transient('jlg_onboarding_errors_1'));
+    }
+
+    public function test_handle_form_submission_persists_errors_when_rawg_key_missing(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        update_option('notation_jlg_settings', Helpers::get_default_settings());
+        update_option('jlg_onboarding_completed', 0);
+
+        $_POST = [
+            'jlg_onboarding_nonce' => wp_create_nonce('jlg_onboarding_save'),
+            'allowed_post_types'   => ['post'],
+            'modules'              => ['verdict_module_enabled'],
+            'visual_preset'        => 'signature',
+            'visual_theme'         => 'dark',
+            'rawg_api_key'         => '',
+        ];
+
+        $_REQUEST['action'] = 'jlg_onboarding_save';
+
+        $controller->handle_form_submission();
+
+        $errorTransient = get_transient('jlg_onboarding_errors_1');
+        $this->assertIsArray($errorTransient);
+        $this->assertSame(['La clé RAWG doit contenir au moins 10 caractères.'], $errorTransient);
+
+        $stateTransient = get_transient('jlg_onboarding_state_1');
+        $this->assertIsArray($stateTransient);
+        $this->assertSame(['post'], $stateTransient['allowed_post_types']);
+        $this->assertSame(['verdict_module_enabled'], $stateTransient['modules']);
+        $this->assertSame('signature', $stateTransient['visual_preset']);
+        $this->assertSame('dark', $stateTransient['visual_theme']);
+        $this->assertSame('', $stateTransient['rawg_api_key']);
+        $this->assertSame(0, $stateTransient['rawg_skip']);
+        $this->assertSame(4, $stateTransient['current_step']);
+        $this->assertSame(0, get_option('jlg_onboarding_completed'));
     }
 }
