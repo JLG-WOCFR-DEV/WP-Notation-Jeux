@@ -79,6 +79,15 @@ class Platforms {
     public function __construct() {
         // Important: Hook sur admin_init pour traiter les actions POST
         add_action( 'admin_init', array( $this, 'handle_platform_actions' ), 5 );
+
+        // Reporter le log de debug jusqu'à ce que WordPress ait chargé les traductions.
+        add_action( 'admin_init', array( $this, 'log_platforms_bootstrap' ), 20 );
+    }
+
+    /**
+     * Journalise un message d'initialisation une fois l'environnement admin prêt.
+     */
+    public function log_platforms_bootstrap() {
         $this->log_debug( '✅ Classe Platforms initialisée' );
     }
 
