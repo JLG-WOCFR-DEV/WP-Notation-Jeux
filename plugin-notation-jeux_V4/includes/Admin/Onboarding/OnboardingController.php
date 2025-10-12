@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class OnboardingController {
-    private const OPTION_COMPLETED   = 'jlg_onboarding_completed';
-    private const SETTINGS_OPTION    = 'notation_jlg_settings';
-    private const TRANSIENT_REDIRECT = 'jlg_onboarding_redirect';
-    private const FORM_ACTION        = 'jlg_onboarding_save';
-    private const PAGE_SLUG          = 'jlg-notation-onboarding';
+    private const OPTION_COMPLETED         = 'jlg_onboarding_completed';
+    private const SETTINGS_OPTION          = 'notation_jlg_settings';
+    private const TRANSIENT_REDIRECT       = 'jlg_onboarding_redirect';
+    private const FORM_ACTION              = 'jlg_onboarding_save';
+    private const PAGE_SLUG                = 'jlg-notation-onboarding';
+    private const ERRORS_TRANSIENT_PREFIX  = 'jlg_onboarding_errors_';
+    private const FORM_STATE_TRANSIENT_KEY = 'jlg_onboarding_state_';
 
     /**
      * Plugin basename utilisé pour détecter l'activation.
@@ -85,14 +87,20 @@ class OnboardingController {
     }
 
     public function register_onboarding_page() {
-        add_submenu_page(
-            null,
+        $hook_suffix = add_submenu_page(
+            'notation_jlg_settings',
             __( 'Assistant de démarrage Notation JLG', 'notation-jlg' ),
             __( 'Assistant Notation JLG', 'notation-jlg' ),
             'manage_options',
             self::PAGE_SLUG,
             array( $this, 'render_onboarding_page' )
         );
+
+        if ( function_exists( 'remove_submenu_page' ) ) {
+            remove_submenu_page( 'notation_jlg_settings', self::PAGE_SLUG );
+        }
+
+        return $hook_suffix;
     }
 
     public function maybe_redirect_to_onboarding() {
@@ -175,6 +183,12 @@ class OnboardingController {
         $modules              = $this->get_available_modules();
         $presets              = $this->get_visual_presets();
         $options              = Helpers::get_plugin_options();
+        $form_state           = $this->consume_form_state();
+
+        $selected_post_types = $options['allowed_post_types'] ?? array( 'post' );
+        if ( array_key_exists( 'allowed_post_types', $form_state ) ) {
+            $selected_post_types = $form_state['allowed_post_types'];
+        }
 
         $selected_modules = array();
         foreach ( $modules as $module ) {
@@ -184,11 +198,15 @@ class OnboardingController {
             }
         }
 
+        if ( array_key_exists( 'modules', $form_state ) ) {
+            $selected_modules = $form_state['modules'];
+        }
+
         $context = array(
             'page_title'           => __( 'Assistant de configuration Notation JLG', 'notation-jlg' ),
             'steps'                => $this->steps,
             'available_post_types' => $available_post_types,
-            'selected_post_types'  => $options['allowed_post_types'] ?? array( 'post' ),
+            'selected_post_types'  => $selected_post_types,
             'modules'              => $modules,
             'selected_modules'     => $selected_modules,
             'presets'              => $presets,
@@ -199,6 +217,21 @@ class OnboardingController {
             'completion_message'   => isset( $_GET['completed'] ) ? __( 'Configuration sauvegardée ! Vos réglages ont été appliqués.', 'notation-jlg' ) : '',
             'errors'               => $this->consume_errors(),
         );
+
+        if ( array_key_exists( 'visual_preset', $form_state ) && $form_state['visual_preset'] !== '' ) {
+            $context['current_preset'] = $form_state['visual_preset'];
+        }
+
+        if ( array_key_exists( 'visual_theme', $form_state ) ) {
+            $context['current_theme'] = $form_state['visual_theme'];
+        }
+
+        if ( array_key_exists( 'rawg_api_key', $form_state ) ) {
+            $context['rawg_api_key'] = $form_state['rawg_api_key'];
+        }
+
+        $context['rawg_skip']    = ! empty( $form_state['rawg_skip'] );
+        $context['current_step'] = $form_state['current_step'] ?? 1;
 
         echo '<div class="wrap jlg-onboarding-wrap">';
         echo '<h1>' . esc_html( $context['page_title'] ) . '</h1>';
@@ -237,41 +270,47 @@ class OnboardingController {
         $rawg_skip          = ! empty( $_POST['rawg_skip'] );
 
         $sanitized_post_types = $this->sanitize_post_types( $allowed_post_types );
+        $available_modules    = $this->get_available_modules();
+        $module_keys          = wp_list_pluck( $available_modules, 'option_key' );
+        $selected_modules     = array_values( array_intersect( $module_keys, array_map( 'sanitize_key', $modules ) ) );
+        $presets              = array_keys( $this->get_visual_presets() );
+        $theme                = in_array( $theme, array( 'dark', 'light' ), true ) ? $theme : 'dark';
+        $rawg_key             = trim( $rawg_key );
+
+        $form_state = array(
+            'allowed_post_types' => $sanitized_post_types,
+            'modules'            => $selected_modules,
+            'visual_preset'      => $preset,
+            'visual_theme'       => $theme,
+            'rawg_api_key'       => $rawg_skip ? '' : $rawg_key,
+            'rawg_skip'          => $rawg_skip ? 1 : 0,
+        );
+
         if ( empty( $sanitized_post_types ) ) {
             $this->register_error( __( 'Sélectionnez au moins un type de contenu valide.', 'notation-jlg' ) );
-            $this->redirect_back();
+            $this->redirect_back( $form_state, 1 );
             return;
         }
-
-        $available_modules = $this->get_available_modules();
-        $module_keys       = wp_list_pluck( $available_modules, 'option_key' );
-        $selected_modules  = array_values( array_intersect( $module_keys, array_map( 'sanitize_key', $modules ) ) );
 
         if ( empty( $selected_modules ) ) {
             $this->register_error( __( 'Choisissez au moins un module pour continuer.', 'notation-jlg' ) );
-            $this->redirect_back();
+            $this->redirect_back( $form_state, 2 );
             return;
         }
 
-        $presets = array_keys( $this->get_visual_presets() );
         if ( ! in_array( $preset, $presets, true ) ) {
             $this->register_error( __( 'Préréglage inconnu, veuillez en sélectionner un parmi la liste proposée.', 'notation-jlg' ) );
-            $this->redirect_back();
+            $this->redirect_back( $form_state, 3 );
             return;
         }
 
-        if ( ! in_array( $theme, array( 'dark', 'light' ), true ) ) {
-            $theme = 'dark';
+        if ( ! $rawg_skip && ( $rawg_key === '' || strlen( $rawg_key ) < 10 ) ) {
+            $this->register_error( __( 'La clé RAWG doit contenir au moins 10 caractères.', 'notation-jlg' ) );
+            $this->redirect_back( $form_state, 4 );
+            return;
         }
 
-        if ( ! $rawg_skip ) {
-            $rawg_key = trim( $rawg_key );
-            if ( $rawg_key === '' || strlen( $rawg_key ) < 10 ) {
-                $this->register_error( __( 'La clé RAWG doit contenir au moins 10 caractères.', 'notation-jlg' ) );
-                $this->redirect_back();
-                return;
-            }
-        } else {
+        if ( $rawg_skip ) {
             $rawg_key = '';
         }
 
@@ -290,6 +329,8 @@ class OnboardingController {
         Helpers::flush_plugin_options_cache();
         update_option( self::OPTION_COMPLETED, 1 );
         delete_transient( self::TRANSIENT_REDIRECT );
+        $this->clear_form_state();
+        $this->clear_errors();
 
         $redirect = add_query_arg(
             array(
@@ -324,9 +365,12 @@ class OnboardingController {
     }
 
     private function render_form( array $context ) {
+        $current_step = isset( $context['current_step'] ) ? (int) $context['current_step'] : 1;
+        $current_step = $this->normalize_step( $current_step );
+
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" id="jlg-onboarding-form" class="jlg-onboarding-form">';
         echo '<input type="hidden" name="action" value="' . esc_attr( self::FORM_ACTION ) . '" />';
-        echo '<input type="hidden" name="current_step" id="jlg-onboarding-current-step" value="1" />';
+        echo '<input type="hidden" name="current_step" id="jlg-onboarding-current-step" value="' . esc_attr( $current_step ) . '" />';
         wp_nonce_field( self::FORM_ACTION, 'jlg_onboarding_nonce' );
 
         echo '<div class="jlg-onboarding-feedback" role="alert" aria-live="assertive"></div>';
@@ -337,6 +381,7 @@ class OnboardingController {
             array(
                 'available_post_types' => $context['available_post_types'],
                 'selected_post_types'  => $context['selected_post_types'],
+                'is_active'            => $current_step === 1,
             )
         );
         echo TemplateLoader::get_admin_template(
@@ -344,6 +389,7 @@ class OnboardingController {
             array(
                 'modules'          => $context['modules'],
                 'selected_modules' => $context['selected_modules'],
+                'is_active'        => $current_step === 2,
             )
         );
         echo TemplateLoader::get_admin_template(
@@ -352,12 +398,15 @@ class OnboardingController {
                 'presets'        => $context['presets'],
                 'current_preset' => $context['current_preset'],
                 'current_theme'  => $context['current_theme'],
+                'is_active'      => $current_step === 3,
             )
         );
         echo TemplateLoader::get_admin_template(
             'onboarding/step-4',
             array(
                 'rawg_api_key' => $context['rawg_api_key'],
+                'rawg_skip'    => $context['rawg_skip'],
+                'is_active'    => $current_step === 4,
             )
         );
         echo '</div>';
@@ -479,30 +528,148 @@ class OnboardingController {
     }
 
     private function register_error( $message ) {
-        if ( ! isset( $GLOBALS['jlg_onboarding_errors'] ) ) {
-            $GLOBALS['jlg_onboarding_errors'] = array();
+        $message = sanitize_text_field( (string) $message );
+        if ( $message === '' ) {
+            return;
         }
 
-        $GLOBALS['jlg_onboarding_errors'][] = (string) $message;
+        $key    = $this->get_errors_transient_key();
+        $errors = get_transient( $key );
+
+        if ( ! is_array( $errors ) ) {
+            $errors = array();
+        }
+
+        $errors[] = $message;
+
+        set_transient( $key, $errors, MINUTE_IN_SECONDS );
     }
 
     private function consume_errors() {
-        if ( empty( $GLOBALS['jlg_onboarding_errors'] ) || ! is_array( $GLOBALS['jlg_onboarding_errors'] ) ) {
+        $key    = $this->get_errors_transient_key();
+        $errors = get_transient( $key );
+        delete_transient( $key );
+
+        if ( ! is_array( $errors ) ) {
             return array();
         }
 
-        $errors = $GLOBALS['jlg_onboarding_errors'];
-        unset( $GLOBALS['jlg_onboarding_errors'] );
+        $sanitized = array();
 
-        return array_map( 'sanitize_text_field', $errors );
+        foreach ( $errors as $error ) {
+            $message = sanitize_text_field( (string) $error );
+            if ( $message === '' ) {
+                continue;
+            }
+
+            $sanitized[] = $message;
+        }
+
+        return $sanitized;
     }
 
-    private function redirect_back() {
+    private function redirect_back( array $state = array(), $step = null ) {
+        if ( $step !== null ) {
+            $state['current_step'] = $this->normalize_step( (int) $step );
+        }
+
+        if ( ! empty( $state ) ) {
+            $this->store_form_state( $state );
+        }
+
         $redirect = add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
         wp_safe_redirect( $redirect );
 
         if ( ! defined( 'JLG_NOTATION_TEST_ENV' ) ) {
             exit;
         }
+    }
+
+    private function clear_form_state() {
+        delete_transient( $this->get_form_state_transient_key() );
+    }
+
+    private function clear_errors() {
+        delete_transient( $this->get_errors_transient_key() );
+    }
+
+    private function store_form_state( array $state ) {
+        $normalized = array(
+            'allowed_post_types' => $this->sanitize_post_types( $state['allowed_post_types'] ?? array() ),
+            'modules'            => $this->sanitize_modules( $state['modules'] ?? array() ),
+            'visual_preset'      => $this->sanitize_preset( $state['visual_preset'] ?? '' ),
+            'visual_theme'       => in_array( $state['visual_theme'] ?? 'dark', array( 'dark', 'light' ), true ) ? $state['visual_theme'] : 'dark',
+            'rawg_api_key'       => sanitize_text_field( $state['rawg_api_key'] ?? '' ),
+            'rawg_skip'          => ! empty( $state['rawg_skip'] ) ? 1 : 0,
+            'current_step'       => $this->normalize_step( $state['current_step'] ?? 1 ),
+        );
+
+        set_transient( $this->get_form_state_transient_key(), $normalized, MINUTE_IN_SECONDS );
+    }
+
+    private function consume_form_state() {
+        $key   = $this->get_form_state_transient_key();
+        $state = get_transient( $key );
+        delete_transient( $key );
+
+        if ( ! is_array( $state ) ) {
+            return array();
+        }
+
+        return array(
+            'allowed_post_types' => $this->sanitize_post_types( $state['allowed_post_types'] ?? array() ),
+            'modules'            => $this->sanitize_modules( $state['modules'] ?? array() ),
+            'visual_preset'      => $this->sanitize_preset( $state['visual_preset'] ?? '' ),
+            'visual_theme'       => in_array( $state['visual_theme'] ?? 'dark', array( 'dark', 'light' ), true ) ? $state['visual_theme'] : 'dark',
+            'rawg_api_key'       => sanitize_text_field( $state['rawg_api_key'] ?? '' ),
+            'rawg_skip'          => ! empty( $state['rawg_skip'] ) ? 1 : 0,
+            'current_step'       => $this->normalize_step( $state['current_step'] ?? 1 ),
+        );
+    }
+
+    private function sanitize_modules( array $modules ) {
+        $available   = $this->get_available_modules();
+        $module_keys = wp_list_pluck( $available, 'option_key' );
+
+        return array_values( array_intersect( $module_keys, array_map( 'sanitize_key', $modules ) ) );
+    }
+
+    private function sanitize_preset( $preset ) {
+        $preset  = sanitize_key( $preset );
+        $presets = array_keys( $this->get_visual_presets() );
+
+        if ( ! in_array( $preset, $presets, true ) ) {
+            return '';
+        }
+
+        return $preset;
+    }
+
+    private function normalize_step( $step ) {
+        $step = (int) $step;
+
+        if ( $step < 1 ) {
+            return 1;
+        }
+
+        $max = count( $this->steps );
+
+        if ( $step > $max ) {
+            return $max;
+        }
+
+        return $step;
+    }
+
+    private function get_errors_transient_key() {
+        $user_id = get_current_user_id();
+
+        return self::ERRORS_TRANSIENT_PREFIX . ( $user_id > 0 ? $user_id : 0 );
+    }
+
+    private function get_form_state_transient_key() {
+        $user_id = get_current_user_id();
+
+        return self::FORM_STATE_TRANSIENT_KEY . ( $user_id > 0 ? $user_id : 0 );
     }
 }

@@ -1,8 +1,9 @@
 <?php
 $modules          = isset( $variables['modules'] ) && is_array( $variables['modules'] ) ? $variables['modules'] : array();
 $selected_modules = isset( $variables['selected_modules'] ) && is_array( $variables['selected_modules'] ) ? array_map( 'sanitize_key', $variables['selected_modules'] ) : array();
+$is_active        = ! empty( $variables['is_active'] );
 ?>
-<div class="jlg-onboarding-step" data-step="2">
+<div class="jlg-onboarding-step<?php echo $is_active ? ' is-active' : ''; ?>" data-step="2">
     <fieldset class="jlg-onboarding-fieldset">
         <legend><?php esc_html_e( 'Activez les modules complémentaires', 'notation-jlg' ); ?></legend>
         <p><?php esc_html_e( 'Sélectionnez les fonctionnalités qui enrichiront vos dossiers de tests. Vous pourrez les modifier à tout moment.', 'notation-jlg' ); ?></p>
