@@ -33,37 +33,14 @@ class OnboardingController {
     /**
      * Définition des étapes affichées dans l'assistant.
      *
-     * @var array[]
+     * @var array[]|null
      */
-    private $steps = array();
+    private $steps = null;
 
     public function __construct( $plugin_basename = null ) {
         $this->plugin_basename = is_string( $plugin_basename ) && $plugin_basename !== ''
             ? $plugin_basename
             : ( defined( 'JLG_NOTATION_PLUGIN_BASENAME' ) ? JLG_NOTATION_PLUGIN_BASENAME : '' );
-
-        $this->steps = array(
-            array(
-                'id'          => 1,
-                'title'       => __( 'Types de contenus', 'notation-jlg' ),
-                'description' => __( 'Sélectionnez les contenus éligibles à la notation.', 'notation-jlg' ),
-            ),
-            array(
-                'id'          => 2,
-                'title'       => __( 'Modules recommandés', 'notation-jlg' ),
-                'description' => __( 'Activez les fonctionnalités qui accompagneront vos tests.', 'notation-jlg' ),
-            ),
-            array(
-                'id'          => 3,
-                'title'       => __( 'Préréglages visuels', 'notation-jlg' ),
-                'description' => __( 'Choisissez l’ambiance visuelle des widgets.', 'notation-jlg' ),
-            ),
-            array(
-                'id'          => 4,
-                'title'       => __( 'Connexion RAWG', 'notation-jlg' ),
-                'description' => __( 'Ajoutez votre clé API pour synchroniser les données éditeur.', 'notation-jlg' ),
-            ),
-        );
 
         add_action( 'activated_plugin', array( $this, 'handle_plugin_activation' ), 10, 2 );
         add_action( 'admin_menu', array( $this, 'register_onboarding_page' ) );
@@ -156,11 +133,13 @@ class OnboardingController {
 
         $modules = $this->get_available_modules();
 
+        $steps = $this->get_steps();
+
         wp_localize_script(
             $handle,
             'jlgOnboarding',
             array(
-                'stepCount' => count( $this->steps ),
+                'stepCount' => count( $steps ),
                 'i18n'      => array(
                     'selectPostType' => __( 'Sélectionnez au moins un type de contenu pour continuer.', 'notation-jlg' ),
                     'selectPreset'   => __( 'Choisissez un préréglage avant de continuer.', 'notation-jlg' ),
@@ -179,6 +158,7 @@ class OnboardingController {
             wp_die( esc_html__( 'Accès refusé.', 'notation-jlg' ) );
         }
 
+        $steps                = $this->get_steps();
         $available_post_types = $this->get_available_post_types();
         $modules              = $this->get_available_modules();
         $presets              = $this->get_visual_presets();
@@ -204,7 +184,7 @@ class OnboardingController {
 
         $context = array(
             'page_title'           => __( 'Assistant de configuration Notation JLG', 'notation-jlg' ),
-            'steps'                => $this->steps,
+            'steps'                => $steps,
             'available_post_types' => $available_post_types,
             'selected_post_types'  => $selected_post_types,
             'modules'              => $modules,
@@ -247,7 +227,7 @@ class OnboardingController {
                 esc_html( implode( ' ', $context['errors'] ) )
             );
         }
-        $this->render_progress_overview( $this->steps );
+        $this->render_progress_overview( $steps );
         $this->render_form( $context );
         echo '</div>';
     }
@@ -652,13 +632,42 @@ class OnboardingController {
             return 1;
         }
 
-        $max = count( $this->steps );
+        $max = count( $this->get_steps() );
 
         if ( $step > $max ) {
             return $max;
         }
 
         return $step;
+    }
+
+    private function get_steps() {
+        if ( $this->steps === null ) {
+            $this->steps = array(
+                array(
+                    'id'          => 1,
+                    'title'       => __( 'Types de contenus', 'notation-jlg' ),
+                    'description' => __( 'Sélectionnez les contenus éligibles à la notation.', 'notation-jlg' ),
+                ),
+                array(
+                    'id'          => 2,
+                    'title'       => __( 'Modules recommandés', 'notation-jlg' ),
+                    'description' => __( 'Activez les fonctionnalités qui accompagneront vos tests.', 'notation-jlg' ),
+                ),
+                array(
+                    'id'          => 3,
+                    'title'       => __( 'Préréglages visuels', 'notation-jlg' ),
+                    'description' => __( 'Choisissez l’ambiance visuelle des widgets.', 'notation-jlg' ),
+                ),
+                array(
+                    'id'          => 4,
+                    'title'       => __( 'Connexion RAWG', 'notation-jlg' ),
+                    'description' => __( 'Ajoutez votre clé API pour synchroniser les données éditeur.', 'notation-jlg' ),
+                ),
+            );
+        }
+
+        return $this->steps;
     }
 
     private function get_errors_transient_key() {
