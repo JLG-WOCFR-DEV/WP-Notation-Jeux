@@ -8,6 +8,7 @@
 
 namespace JLG\Notation\Admin;
 
+use JLG\Notation\Admin\Settings\SettingsRepository;
 use JLG\Notation\Helpers;
 use JLG\Notation\Utils\FormRenderer;
 
@@ -22,29 +23,36 @@ class Settings {
     private $section_definitions = array();
     private $field_dependencies  = array();
     private $section_counter     = 0;
+    private $repository;
 
     public function __construct() {
+        $this->repository = new SettingsRepository();
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
     }
 
     public function get_sections_overview() {
-        $sections = $this->section_definitions;
+        return $this->get_sorted_sections();
+    }
 
-        uasort(
-            $sections,
-            static function ( $a, $b ) {
-                $order_a = isset( $a['order'] ) ? (int) $a['order'] : 0;
-                $order_b = isset( $b['order'] ) ? (int) $b['order'] : 0;
+    public function get_section_panels() {
+        return $this->repository->build_panels_payload( $this->get_sorted_sections() );
+    }
 
-                if ( $order_a === $order_b ) {
-                    return 0;
-                }
+    public function get_settings_modes() {
+        return $this->repository->get_modes();
+    }
 
-                return ( $order_a < $order_b ) ? -1 : 1;
-            }
-        );
+    public function get_active_mode() {
+        return $this->repository->get_user_mode();
+    }
 
-        return array_values( $sections );
+    public function get_repository() {
+        return $this->repository;
+    }
+
+    public function get_serialized_options_for_mode( $mode ) {
+        return $this->repository->serialize_options_for_mode( $mode );
     }
 
     public function get_field_dependencies() {
@@ -104,6 +112,74 @@ class Settings {
         $this->register_all_sections();
     }
 
+    public function register_rest_routes() {
+        if ( ! function_exists( 'register_rest_route' ) ) {
+            return;
+        }
+
+        register_rest_route(
+            'notation-jlg/v1',
+            '/settings-mode',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'rest_get_settings_mode' ),
+                    'permission_callback' => array( $this, 'rest_permissions_check' ),
+                ),
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'rest_update_settings_mode' ),
+                    'permission_callback' => array( $this, 'rest_permissions_check' ),
+                    'args'                => array(
+                        'mode' => array(
+                            'type'              => 'string',
+                            'required'          => true,
+                            'sanitize_callback' => 'sanitize_key',
+                        ),
+                    ),
+                ),
+            )
+        );
+    }
+
+    public function rest_permissions_check() {
+        return current_user_can( 'manage_options' );
+    }
+
+    public function rest_get_settings_mode( $request ) {
+        unset( $request );
+
+        $mode = $this->repository->get_user_mode();
+
+        return rest_ensure_response(
+            array(
+                'mode'    => $mode,
+                'panels'  => $this->get_section_panels(),
+                'options' => $this->repository->serialize_options_for_mode( $mode ),
+            )
+        );
+    }
+
+    public function rest_update_settings_mode( $request ) {
+        $mode = '';
+
+        if ( $request instanceof \WP_REST_Request ) {
+            $mode = $request->get_param( 'mode' );
+        } elseif ( is_array( $request ) ) {
+            $mode = $request['mode'] ?? '';
+        }
+
+        $normalized = SettingsRepository::normalize_mode( $mode );
+        $this->repository->set_user_mode( $normalized );
+
+        return rest_ensure_response(
+            array(
+                'mode'   => $normalized,
+                'panels' => $this->get_section_panels(),
+            )
+        );
+    }
+
     private function register_section( $section_id, $label, $icon = '', $summary = '', $callback = null ) {
         $section_id = sanitize_key( $section_id );
 
@@ -129,6 +205,26 @@ class Settings {
         );
 
         add_settings_section( $section_id, $title, $callback, 'notation_jlg_page' );
+    }
+
+    private function get_sorted_sections() {
+        $sections = $this->section_definitions;
+
+        uasort(
+            $sections,
+            static function ( $a, $b ) {
+                $order_a = isset( $a['order'] ) ? (int) $a['order'] : 0;
+                $order_b = isset( $b['order'] ) ? (int) $b['order'] : 0;
+
+                if ( $order_a === $order_b ) {
+                    return 0;
+                }
+
+                return ( $order_a < $order_b ) ? -1 : 1;
+            }
+        );
+
+        return array_values( $sections );
     }
 
     private function add_field_dependency( $controller, $targets, array $config = array() ) {

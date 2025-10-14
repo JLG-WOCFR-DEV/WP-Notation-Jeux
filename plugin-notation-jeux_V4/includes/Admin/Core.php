@@ -73,6 +73,10 @@ class Core {
                 return $this->metaboxes;
             case 'settings':
                 return $this->settings;
+            case 'settings_repository':
+                return $this->settings && method_exists( $this->settings, 'get_repository' )
+                    ? $this->settings->get_repository()
+                    : null;
             case 'platforms':
                 return $this->platforms;
             case 'diagnostics':

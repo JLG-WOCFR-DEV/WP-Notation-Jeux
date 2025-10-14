@@ -6,6 +6,7 @@
 
 namespace JLG\Notation;
 
+use JLG\Notation\Admin\Settings\SettingsRepository;
 use JLG\Notation\Utils\Validator;
 use JLG\Notation\Video\VideoEmbedFactory;
 
@@ -21,6 +22,7 @@ class Helpers {
     public const REVIEW_STATUS_CRON_HOOK           = 'jlg_review_status_auto_finalize';
     public const REVIEW_STATUS_META_KEY            = '_jlg_review_status';
     public const REVIEW_STATUS_LAST_PATCH_META_KEY = '_jlg_last_patch_date';
+    public const SETTINGS_VIEW_MODE_META_KEY       = SettingsRepository::USER_META_KEY;
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'score', 'search' );
@@ -1909,6 +1911,82 @@ class Helpers {
         self::$options_cache['score_max'] = self::normalize_score_max( $score_max, self::$default_settings_cache['score_max'] ?? 10 );
 
         return self::$options_cache;
+    }
+
+    public static function seed_settings_view_mode( $mode = null ) {
+        if ( ! function_exists( 'get_users' ) || ! function_exists( 'update_user_meta' ) ) {
+            return 0;
+        }
+
+        $normalized_mode = SettingsRepository::normalize_mode(
+            $mode !== null ? $mode : SettingsRepository::get_default_mode()
+        );
+
+        $users   = get_users( array( 'fields' => array( 'ID' ) ) );
+        $updated = 0;
+
+        if ( ! is_array( $users ) ) {
+            return 0;
+        }
+
+        foreach ( $users as $user ) {
+            $user_id = 0;
+
+            if ( is_object( $user ) && isset( $user->ID ) ) {
+                $user_id = (int) $user->ID;
+            } elseif ( is_array( $user ) && isset( $user['ID'] ) ) {
+                $user_id = (int) $user['ID'];
+            } elseif ( is_numeric( $user ) ) {
+                $user_id = (int) $user;
+            }
+
+            if ( $user_id <= 0 ) {
+                continue;
+            }
+
+            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $normalized_mode );
+            ++$updated;
+        }
+
+        return $updated;
+    }
+
+    public static function rollback_settings_view_mode() {
+        if ( ! function_exists( 'get_users' ) || ! function_exists( 'delete_user_meta' ) ) {
+            if ( function_exists( 'delete_metadata' ) ) {
+                delete_metadata( 'user', 0, SettingsRepository::USER_META_KEY, '', true );
+            }
+
+            return 0;
+        }
+
+        $users   = get_users( array( 'fields' => array( 'ID' ) ) );
+        $removed = 0;
+
+        if ( ! is_array( $users ) ) {
+            return 0;
+        }
+
+        foreach ( $users as $user ) {
+            $user_id = 0;
+
+            if ( is_object( $user ) && isset( $user->ID ) ) {
+                $user_id = (int) $user->ID;
+            } elseif ( is_array( $user ) && isset( $user['ID'] ) ) {
+                $user_id = (int) $user['ID'];
+            } elseif ( is_numeric( $user ) ) {
+                $user_id = (int) $user;
+            }
+
+            if ( $user_id <= 0 ) {
+                continue;
+            }
+
+            delete_user_meta( $user_id, SettingsRepository::USER_META_KEY );
+            ++$removed;
+        }
+
+        return $removed;
     }
 
     public static function schedule_score_scale_migration( $old_max, $new_max ) {
