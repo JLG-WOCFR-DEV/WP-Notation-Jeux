@@ -165,6 +165,110 @@ jQuery(document).ready(function($) {
 
     initializeAriaStates();
 
+    var FEEDBACK_EVENT_NAMESPACE = 'notation.feedback';
+    var LIVE_REGION_ID = 'jlg-user-rating-live-region';
+
+    function announceFeedback(message, politeness) {
+        if (!message || typeof message !== 'string') {
+            return;
+        }
+
+        var level = politeness === 'assertive' ? 'assertive' : 'polite';
+        var announcer = typeof window !== 'undefined' ? window.jlgLiveAnnouncer : null;
+
+        if (announcer && typeof announcer.announce === 'function') {
+            announcer.announce(message, level);
+
+            return;
+        }
+
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        var liveRegion = document.getElementById(LIVE_REGION_ID);
+
+        if (!liveRegion) {
+            liveRegion = document.createElement('div');
+            liveRegion.id = LIVE_REGION_ID;
+            liveRegion.className = 'screen-reader-text';
+            liveRegion.setAttribute('role', 'status');
+            liveRegion.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(liveRegion);
+        }
+
+        liveRegion.setAttribute('aria-live', level);
+        liveRegion.textContent = message;
+    }
+
+    function extendDetailWithContext(detail, ratingBlock, rating, postId) {
+        var extended = {};
+        var key;
+
+        if (detail && typeof detail === 'object') {
+            for (key in detail) {
+                if (Object.prototype.hasOwnProperty.call(detail, key)) {
+                    extended[key] = detail[key];
+                }
+            }
+        }
+
+        if (typeof extended.postId === 'undefined') {
+            var fallbackPostId = postId;
+
+            if ((typeof fallbackPostId === 'undefined' || fallbackPostId === null) && ratingBlock && ratingBlock.length) {
+                fallbackPostId = ratingBlock.data('postId');
+            }
+
+            extended.postId = typeof fallbackPostId !== 'undefined' ? fallbackPostId : null;
+        }
+
+        if (typeof extended.rating === 'undefined') {
+            extended.rating = rating;
+        }
+
+        extended.timestamp = Date.now();
+
+        if (!extended.source) {
+            extended.source = 'user-rating';
+        }
+
+        if (ratingBlock && ratingBlock.length) {
+            var blockId = ratingBlock.attr('id');
+            if (blockId && typeof extended.blockId === 'undefined') {
+                extended.blockId = blockId;
+            }
+        }
+
+        return extended;
+    }
+
+    function dispatchFeedbackEvent(ratingBlock, eventType, detail) {
+        var target = (ratingBlock && ratingBlock.length && ratingBlock.get(0)) ? ratingBlock.get(0) : document;
+        var eventName = FEEDBACK_EVENT_NAMESPACE + '.' + eventType;
+        var eventDetail = extendDetailWithContext(
+            detail,
+            ratingBlock,
+            detail && typeof detail.rating !== 'undefined' ? detail.rating : undefined,
+            detail && typeof detail.postId !== 'undefined' ? detail.postId : undefined
+        );
+        var event;
+
+        if (typeof window !== 'undefined' && typeof window.CustomEvent === 'function') {
+            event = new CustomEvent(eventName, {
+                detail: eventDetail,
+                bubbles: true
+            });
+        } else if (typeof document !== 'undefined' && typeof document.createEvent === 'function') {
+            event = document.createEvent('CustomEvent');
+            event.initCustomEvent(eventName, true, true, eventDetail);
+        }
+
+        if (event) {
+            target.dispatchEvent(event);
+        }
+    }
+
     function getBreakdownContainer(ratingBlock) {
         return ratingBlock.find('.jlg-user-rating-breakdown');
     }
@@ -333,6 +437,13 @@ jQuery(document).ready(function($) {
                     }
 
                     ratingBlock.find('.jlg-rating-message').text(successMessage).show();
+                    announceFeedback(successMessage, 'polite');
+                    dispatchFeedbackEvent(ratingBlock, 'success', {
+                        rating: parseInt(rating, 10),
+                        postId: postId,
+                        feedbackCode: responseData.feedback_code || 'vote_recorded',
+                        message: successMessage
+                    });
 
                     updateRatingState(ratingBlock, parseInt(rating, 10));
                     ratingBlock.find('.jlg-user-star').removeClass('hover');
@@ -340,11 +451,27 @@ jQuery(document).ready(function($) {
                     if (responseData && responseData.requires_login) {
                         ratingBlock.addClass('requires-login');
                         showLoginRequiredMessage(ratingBlock);
+                        announceFeedback(loginRequiredMessage, 'assertive');
+                        dispatchFeedbackEvent(ratingBlock, 'error', {
+                            rating: parseInt(rating, 10),
+                            postId: postId,
+                            feedbackCode: responseData.feedback_code || 'login_required',
+                            message: loginRequiredMessage
+                        });
                     } else {
                         ratingBlock.find('.jlg-rating-message').text(errorMessage).show();
+                        announceFeedback(errorMessage, 'assertive');
+                        dispatchFeedbackEvent(ratingBlock, 'error', {
+                            rating: parseInt(rating, 10),
+                            postId: postId,
+                            feedbackCode: responseData && responseData.feedback_code ? responseData.feedback_code : 'server_error',
+                            message: errorMessage
+                        });
                     }
 
                     if (isAlreadyVotedMessage(errorMessage)) {
+                        ratingBlock.addClass('has-voted');
+                    } else if (responseData && responseData.feedback_code === 'already_voted') {
                         ratingBlock.addClass('has-voted');
                     } else {
                         ratingBlock.removeClass('has-voted');
@@ -358,8 +485,22 @@ jQuery(document).ready(function($) {
                 ratingBlock.removeClass('is-loading has-voted');
                 if (ratingBlock.hasClass('requires-login')) {
                     showLoginRequiredMessage(ratingBlock);
+                    announceFeedback(loginRequiredMessage, 'assertive');
+                    dispatchFeedbackEvent(ratingBlock, 'error', {
+                        rating: parseInt(star.data('value'), 10),
+                        postId: postId,
+                        feedbackCode: 'login_required',
+                        message: loginRequiredMessage
+                    });
                 } else {
                     ratingBlock.find('.jlg-rating-message').text(genericErrorMessage).show();
+                    announceFeedback(genericErrorMessage, 'assertive');
+                    dispatchFeedbackEvent(ratingBlock, 'error', {
+                        rating: parseInt(star.data('value'), 10),
+                        postId: postId,
+                        feedbackCode: 'network_error',
+                        message: genericErrorMessage
+                    });
                 }
                 updateRatingState(ratingBlock, null);
                 ratingBlock.find('.jlg-user-star').removeClass('hover');
