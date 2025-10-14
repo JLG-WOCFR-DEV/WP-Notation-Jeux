@@ -3033,6 +3033,40 @@ class Helpers {
         return $labels;
     }
 
+    private static function sanitize_platform_breakdown_text( $value, $max_length, $is_textarea = false ) {
+        if ( ! is_scalar( $value ) ) {
+            $value = '';
+        }
+
+        $value = (string) $value;
+
+        if ( $is_textarea ) {
+            $value = sanitize_textarea_field( $value );
+        } else {
+            $value = sanitize_text_field( $value );
+        }
+
+        $value = trim( $value );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'wp_strip_all_tags' ) ) {
+            $value = wp_strip_all_tags( $value );
+        }
+
+        if ( is_int( $max_length ) && $max_length > 0 ) {
+            if ( function_exists( 'mb_substr' ) ) {
+                $value = mb_substr( $value, 0, $max_length );
+            } else {
+                $value = substr( $value, 0, $max_length );
+            }
+        }
+
+        return trim( (string) $value );
+    }
+
     public static function get_platform_breakdown_for_post( $post_id ) {
         $post_id = (int) $post_id;
 
@@ -3059,34 +3093,18 @@ class Helpers {
                 $platform_key = '';
             }
 
-            $custom_label = isset( $entry['custom_label'] ) ? sanitize_text_field( $entry['custom_label'] ) : '';
-            if ( function_exists( 'mb_substr' ) ) {
-                $custom_label = mb_substr( $custom_label, 0, 120 );
-            } else {
-                $custom_label = substr( $custom_label, 0, 120 );
-            }
-            $custom_label = trim( $custom_label );
+            $custom_label = self::sanitize_platform_breakdown_text( $entry['custom_label'] ?? '', 120 );
 
-            $label = $custom_label !== '' ? $custom_label : ( $platform_key !== '' ? $registered[ $platform_key ] : '' );
+            $label = $custom_label !== ''
+                ? $custom_label
+                : ( $platform_key !== '' ? self::sanitize_platform_breakdown_text( $registered[ $platform_key ], 160 ) : '' );
             if ( $label === '' ) {
                 continue;
             }
 
-            $performance = isset( $entry['performance'] ) ? sanitize_text_field( $entry['performance'] ) : '';
-            if ( function_exists( 'mb_substr' ) ) {
-                $performance = mb_substr( $performance, 0, 160 );
-            } else {
-                $performance = substr( $performance, 0, 160 );
-            }
-            $performance = trim( $performance );
+            $performance = self::sanitize_platform_breakdown_text( $entry['performance'] ?? '', 160 );
 
-            $comment = isset( $entry['comment'] ) ? sanitize_textarea_field( $entry['comment'] ) : '';
-            if ( function_exists( 'mb_substr' ) ) {
-                $comment = mb_substr( $comment, 0, 300 );
-            } else {
-                $comment = substr( $comment, 0, 300 );
-            }
-            $comment = trim( $comment );
+            $comment = self::sanitize_platform_breakdown_text( $entry['comment'] ?? '', 300, true );
 
             $identifier = $platform_key !== '' ? $platform_key : 'custom-' . $index;
             if ( isset( $used_ids[ $identifier ] ) ) {
@@ -3111,9 +3129,59 @@ class Helpers {
             return array();
         }
 
+        $sanitized_entries     = array();
+        $used_ids_after_filter = array();
+
+        foreach ( $normalized as $index => $entry ) {
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+
+            $identifier = isset( $entry['id'] ) ? sanitize_key( $entry['id'] ) : '';
+            $platform   = isset( $entry['platform'] ) ? sanitize_key( $entry['platform'] ) : '';
+
+            if ( $platform !== '' && ! isset( $registered[ $platform ] ) ) {
+                $platform = '';
+            }
+
+            $custom_label = self::sanitize_platform_breakdown_text( $entry['custom_label'] ?? '', 120 );
+            $label        = self::sanitize_platform_breakdown_text( $entry['label'] ?? '', 160 );
+
+            if ( $label === '' ) {
+                if ( $custom_label !== '' ) {
+                    $label = $custom_label;
+                } elseif ( $platform !== '' ) {
+                    $label = self::sanitize_platform_breakdown_text( $registered[ $platform ], 160 );
+                }
+            }
+
+            if ( $identifier === '' ) {
+                $identifier = $platform !== '' ? $platform : 'custom-' . $index;
+            }
+
+            if ( isset( $used_ids_after_filter[ $identifier ] ) ) {
+                $identifier .= '-' . ( $index + 1 );
+            }
+
+            $used_ids_after_filter[ $identifier ] = true;
+
+            $performance = self::sanitize_platform_breakdown_text( $entry['performance'] ?? '', 160 );
+            $comment     = self::sanitize_platform_breakdown_text( $entry['comment'] ?? '', 300, true );
+
+            $sanitized_entries[] = array(
+                'id'           => $identifier,
+                'platform'     => $platform,
+                'label'        => $label,
+                'custom_label' => $custom_label,
+                'performance'  => $performance,
+                'comment'      => $comment,
+                'is_best'      => ! empty( $entry['is_best'] ),
+            );
+        }
+
         return array_values(
             array_filter(
-                $normalized,
+                $sanitized_entries,
                 static function ( $entry ) {
                     return is_array( $entry ) && isset( $entry['label'] ) && $entry['label'] !== '';
                 }
