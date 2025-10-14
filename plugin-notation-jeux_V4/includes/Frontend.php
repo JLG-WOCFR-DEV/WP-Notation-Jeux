@@ -1358,8 +1358,9 @@ class Frontend {
      * Gère la notation AJAX des utilisateurs
      */
     public function handle_user_rating() {
-        $cookie_name = 'jlg_user_rating_token';
-        $token       = '';
+        $request_started_at = microtime( true );
+        $cookie_name        = 'jlg_user_rating_token';
+        $token              = '';
 
         if ( isset( $_POST['token'] ) ) {
             $token = self::normalize_user_rating_token( wp_unslash( $_POST['token'] ) );
@@ -1369,45 +1370,121 @@ class Frontend {
             $token = self::normalize_user_rating_token( wp_unslash( $_COOKIE[ $cookie_name ] ) );
         }
 
+        $send_error = function ( $feedback_code, $message, $status_code, array $data = array(), array $context = array() ) use ( $request_started_at ) {
+            $payload = array_merge(
+                array(
+                    'message'       => $message,
+                    'feedback_code' => $feedback_code,
+                ),
+                $data
+            );
+
+            $telemetry_context = array_merge(
+                array(
+                    'feedback_code' => $feedback_code,
+                    'status_code'   => (int) $status_code,
+                ),
+                $context
+            );
+
+            Telemetry::record_event(
+                'user_rating',
+                array(
+                    'duration' => max( 0, microtime( true ) - $request_started_at ),
+                    'status'   => 'error',
+                    'message'  => $message,
+                    'context'  => $telemetry_context,
+                )
+            );
+
+            wp_send_json_error( $payload, $status_code );
+        };
+
+        $send_success = function ( $feedback_code, array $data = array(), array $context = array() ) use ( $request_started_at ) {
+            $payload = array_merge(
+                array(
+                    'feedback_code' => $feedback_code,
+                ),
+                $data
+            );
+
+            $telemetry_context = array_merge(
+                array(
+                    'feedback_code' => $feedback_code,
+                    'status_code'   => 200,
+                ),
+                $context
+            );
+
+            Telemetry::record_event(
+                'user_rating',
+                array(
+                    'duration' => max( 0, microtime( true ) - $request_started_at ),
+                    'status'   => 'success',
+                    'message'  => '',
+                    'context'  => $telemetry_context,
+                )
+            );
+
+            wp_send_json_success( $payload );
+        };
+
         if ( $token === '' ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Jeton de sécurité manquant ou invalide.', 'notation-jlg' ) ), 400 );
+            $message = esc_html__( 'Jeton de sécurité manquant ou invalide.', 'notation-jlg' );
+            $send_error( 'missing_token', $message, 400 );
+
+            return;
         }
 
         if ( ! check_ajax_referer( 'jlg_user_rating_nonce_' . $token, 'nonce', false ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' ) ), 403 );
-        }
+            $message = esc_html__( 'La vérification de sécurité a échoué.', 'notation-jlg' );
+            $send_error( 'nonce_verification_failed', $message, 403 );
 
-        $options = Helpers::get_plugin_options();
-
-        if ( empty( $options['user_rating_enabled'] ) ) {
-            wp_send_json_error(
-                array(
-					'message' => esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' ),
-                ),
-                403
-            );
-        }
-
-        if ( ! empty( $options['user_rating_requires_login'] ) && ! is_user_logged_in() ) {
-            wp_send_json_error(
-                array(
-                    'message'        => esc_html__( 'Connectez-vous pour voter.', 'notation-jlg' ),
-                    'requires_login' => true,
-                ),
-                401
-            );
+            return;
         }
 
         $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
 
+        $options = Helpers::get_plugin_options();
+
+        if ( empty( $options['user_rating_enabled'] ) ) {
+            $message = esc_html__( 'La notation des lecteurs est désactivée.', 'notation-jlg' );
+            $send_error( 'feature_disabled', $message, 403, array(), array( 'post_id' => $post_id ) );
+
+            return;
+        }
+
+        if ( ! empty( $options['user_rating_requires_login'] ) && ! is_user_logged_in() ) {
+            $message = esc_html__( 'Connectez-vous pour voter.', 'notation-jlg' );
+            $send_error(
+                'login_required',
+                $message,
+                401,
+                array(
+                    'requires_login' => true,
+                ),
+                array(
+                    'post_id' => $post_id,
+                )
+            );
+
+            return;
+        }
+
         if ( ! $post_id ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Données invalides.', 'notation-jlg' ) ), 400 );
+            $message = esc_html__( 'Données invalides.', 'notation-jlg' );
+            $send_error( 'invalid_payload', $message, 400, array(), array( 'post_id' => $post_id ) );
+
+            return;
         }
 
         $post = get_post( $post_id );
 
         if ( ! ( $post instanceof WP_Post ) || 'trash' === $post->post_status || 'publish' !== $post->post_status ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Article introuvable ou non disponible pour la notation.', 'notation-jlg' ) ), 404 );
+            $message = esc_html__( 'Article introuvable ou non disponible pour la notation.', 'notation-jlg' );
+            $send_error( 'post_unavailable', $message, 404, array(), array( 'post_id' => $post_id ) );
+
+            return;
         }
 
         $allows_user_rating = apply_filters(
@@ -1417,13 +1494,28 @@ class Frontend {
         );
 
         if ( ! $allows_user_rating ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'La notation des lecteurs est désactivée pour ce contenu.', 'notation-jlg' ) ), 403 );
+            $message = esc_html__( 'La notation des lecteurs est désactivée pour ce contenu.', 'notation-jlg' );
+            $send_error( 'content_disabled', $message, 403, array(), array( 'post_id' => $post_id ) );
+
+            return;
         }
 
         $rating = isset( $_POST['rating'] ) ? intval( $_POST['rating'] ) : 0;
 
         if ( $rating < 1 || $rating > 5 ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Données invalides.', 'notation-jlg' ) ), 422 );
+            $message = esc_html__( 'Données invalides.', 'notation-jlg' );
+            $send_error(
+                'invalid_payload',
+                $message,
+                422,
+                array(),
+                array(
+                    'post_id' => $post_id,
+                    'rating'  => $rating,
+                )
+            );
+
+            return;
         }
 
         $user_id    = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
@@ -1446,44 +1538,79 @@ class Frontend {
             }
         }
 
-        $token_hash = self::hash_user_rating_token( $token );
+        $token_hash       = self::hash_user_rating_token( $token );
+        $token_hash_short = $token_hash !== '' ? substr( $token_hash, 0, 12 ) : '';
 
         if ( self::is_user_rating_token_banned( $token_hash ) ) {
-            wp_send_json_error(
+            $message = esc_html__( 'Ce jeton a été bloqué par la rédaction.', 'notation-jlg' );
+            $send_error(
+                'token_banned',
+                $message,
+                403,
+                array(),
                 array(
-                    'message' => esc_html__( 'Ce jeton a été bloqué par la rédaction.', 'notation-jlg' ),
-                ),
-                403
+                    'post_id'    => $post_id,
+                    'token_hash' => $token_hash_short,
+                )
             );
+
+            return;
         }
 
         $ratings_meta = array();
         $ratings      = self::get_post_user_rating_tokens( $post_id, $ratings_meta );
 
         if ( isset( $ratings[ $token_hash ] ) ) {
-            wp_send_json_error( array( 'message' => esc_html__( 'Vous avez déjà voté !', 'notation-jlg' ) ), 409 );
+            $message = esc_html__( 'Vous avez déjà voté !', 'notation-jlg' );
+            $send_error(
+                'already_voted',
+                $message,
+                409,
+                array(),
+                array(
+                    'post_id'    => $post_id,
+                    'token_hash' => $token_hash_short,
+                )
+            );
+
+            return;
         }
 
         $throttle_check = $this->evaluate_user_rating_throttle( $post_id, $token_hash, $user_id, $user_ip_hash, $user_agent );
 
         if ( $ip_has_recent_vote ) {
-            wp_send_json_error(
+            $message = esc_html__( 'Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg' );
+            $send_error(
+                'duplicate_ip',
+                $message,
+                409,
+                array(),
                 array(
-                    'message' => esc_html__( 'Un vote depuis cette adresse IP a déjà été enregistré.', 'notation-jlg' ),
-                ),
-                409
+                    'post_id'      => $post_id,
+                    'user_ip_hash' => $user_ip_hash,
+                )
             );
+
+            return;
         }
 
         if ( ! $throttle_check['allowed'] ) {
             do_action( 'jlg_user_rating_vote_throttled', $post_id, $token_hash, $throttle_check['blocked_context'] ?? array() );
 
-            wp_send_json_error(
+            $message = esc_html__( 'Veuillez patienter avant de voter à nouveau.', 'notation-jlg' );
+            $send_error(
+                'throttled',
+                $message,
+                429,
+                array(),
                 array(
-                    'message' => esc_html__( 'Veuillez patienter avant de voter à nouveau.', 'notation-jlg' ),
-                ),
-                429
+                    'post_id'         => $post_id,
+                    'token_hash'      => $token_hash_short,
+                    'blocked_context' => $throttle_check['blocked_context'] ?? array(),
+                )
             );
+
+            return;
         }
 
         $weighting_context   = $this->determine_user_rating_weight( $token_hash, $user_id, $options, $ratings_meta );
@@ -1511,7 +1638,8 @@ class Frontend {
         update_post_meta( $post_id, '_jlg_user_rating_count', $ratings_count );
         self::update_user_rating_breakdown_meta( $post_id, $breakdown );
 
-        wp_send_json_success(
+        $send_success(
+            'vote_recorded',
             array(
                 'new_average'   => number_format_i18n( $new_average, 2 ),
                 'new_count'     => $ratings_count,
@@ -1519,6 +1647,14 @@ class Frontend {
                 'new_weight'    => $vote_weight,
                 'weight_total'  => $weight_total,
                 'weighted_sum'  => $weighted_sum,
+            ),
+            array(
+                'post_id'      => $post_id,
+                'rating'       => $rating,
+                'user_id'      => $user_id,
+                'vote_weight'  => $vote_weight,
+                'weight_total' => $weight_total,
+                'weighted_sum' => $weighted_sum,
             )
         );
     }

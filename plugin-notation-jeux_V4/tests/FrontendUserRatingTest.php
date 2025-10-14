@@ -26,8 +26,10 @@ class FrontendUserRatingTest extends TestCase
         delete_option('jlg_user_rating_reputation');
         delete_option('jlg_user_rating_banned_tokens');
         delete_option('jlg_user_rating_activity_log');
+        delete_option('jlg_notation_metrics_v1');
         \JLG\Notation\Helpers::flush_plugin_options_cache();
         unset($GLOBALS['jlg_test_is_user_logged_in']);
+        \JLG\Notation\Telemetry::reset_metrics();
     }
 
     public function test_handle_user_rating_rejects_unavailable_post(): void
@@ -788,5 +790,89 @@ class FrontendUserRatingTest extends TestCase
                 $property_reflection->setValue(null, $value);
             }
         }
+    }
+
+    public function test_handle_user_rating_records_success_feedback_and_telemetry(): void
+    {
+        $post_id = 9871;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.55';
+        $_POST = [
+            'token'   => str_repeat('c', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '5',
+        ];
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+            $this->assertIsArray($exception->data);
+            $this->assertSame('vote_recorded', $exception->data['feedback_code']);
+            $this->assertArrayHasKey('new_average', $exception->data);
+        }
+
+        $metrics = \JLG\Notation\Telemetry::get_metrics_summary();
+        $this->assertArrayHasKey('user_rating', $metrics);
+        $this->assertSame('success', $metrics['user_rating']['last_status']);
+        $this->assertSame('vote_recorded', $metrics['user_rating']['last_event']['context']['feedback_code']);
+        $this->assertSame($post_id, $metrics['user_rating']['last_event']['context']['post_id']);
+        $this->assertSame(200, $metrics['user_rating']['last_event']['context']['status_code']);
+    }
+
+    public function test_handle_user_rating_records_login_required_feedback(): void
+    {
+        $post_id = 4159;
+        $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+            'ID'           => $post_id,
+            'post_type'    => 'post',
+            'post_status'  => 'publish',
+            'post_content' => '[notation_utilisateurs_jlg]',
+        ]);
+
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.77';
+        $_POST = [
+            'token'   => str_repeat('d', 32),
+            'nonce'   => 'nonce',
+            'post_id' => (string) $post_id,
+            'rating'  => '4',
+        ];
+
+        update_option('notation_jlg_settings', [
+            'user_rating_enabled'        => 1,
+            'user_rating_requires_login' => 1,
+        ]);
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+        unset($GLOBALS['jlg_test_is_user_logged_in']);
+
+        $frontend = new \JLG\Notation\Frontend();
+
+        try {
+            $frontend->handle_user_rating();
+            $this->fail('Une réponse JSON devait être envoyée.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertFalse($exception->success);
+            $this->assertSame(401, $exception->status);
+            $this->assertSame('login_required', $exception->data['feedback_code']);
+            $this->assertArrayHasKey('requires_login', $exception->data);
+            $this->assertTrue($exception->data['requires_login']);
+        }
+
+        $metrics = \JLG\Notation\Telemetry::get_metrics_summary();
+        $this->assertArrayHasKey('user_rating', $metrics);
+        $this->assertSame('error', $metrics['user_rating']['last_status']);
+        $this->assertSame('login_required', $metrics['user_rating']['last_event']['context']['feedback_code']);
+        $this->assertSame(401, $metrics['user_rating']['last_event']['context']['status_code']);
+        $this->assertSame($post_id, $metrics['user_rating']['last_event']['context']['post_id']);
     }
 }
