@@ -47,6 +47,10 @@ if ( $delete_data ) {
     if ( class_exists( '\\JLG\\Notation\\Helpers' ) ) {
         $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();
 
+        if ( function_exists( 'delete_metadata' ) ) {
+            delete_metadata( 'user', 0, \JLG\Notation\Helpers::SETTINGS_VIEW_MODE_META_KEY, '', true );
+        }
+
         foreach ( $definitions as $definition ) {
             if ( ! empty( $definition['meta_key'] ) ) {
                 $category_meta_keys[] = (string) $definition['meta_key'];

@@ -2,6 +2,11 @@
     'use strict';
 
     var enhancedSections = [];
+    var panelsByMode = {};
+    var currentMode = '';
+    var restSettings = {};
+    var modeButtons = [];
+    var filterEvaluator = null;
 
     function parsePreviewSnapshot() {
         var script = document.getElementById('jlg-settings-preview-snapshot');
@@ -23,8 +28,12 @@
 
         return {
             sections: Array.isArray(fromWindow.sections) ? fromWindow.sections : [],
+            panels: typeof fromWindow.panels === 'object' && fromWindow.panels !== null ? fromWindow.panels : {},
             dependencies: Array.isArray(fromWindow.dependencies) ? fromWindow.dependencies : [],
             preview: preview,
+            modes: typeof fromWindow.modes === 'object' && fromWindow.modes !== null ? fromWindow.modes : {},
+            activeMode: typeof fromWindow.activeMode === 'string' ? fromWindow.activeMode : '',
+            rest: typeof fromWindow.rest === 'object' && fromWindow.rest !== null ? fromWindow.rest : {},
             i18n: fromWindow.i18n || {}
         };
     }
@@ -95,6 +104,7 @@
                 toggle: toggle,
                 heading: heading,
                 title: titleText,
+                id: ''
             });
         });
     }
@@ -130,6 +140,17 @@
             var anchorId = 'section-' + section.id;
             heading.id = anchorId;
             heading.classList.add('jlg-settings-heading');
+
+            var matched = enhancedSections.find(function (entry) {
+                return entry.heading === heading;
+            });
+
+            if (matched) {
+                matched.id = section.id;
+                if (matched.wrapper) {
+                    matched.wrapper.setAttribute('data-section-id', section.id);
+                }
+            }
         });
     }
 
@@ -205,6 +226,9 @@
         if (collapseAll) {
             collapseAll.addEventListener('click', function () {
                 enhancedSections.forEach(function (entry) {
+                    if (entry.wrapper && entry.wrapper.hasAttribute('hidden')) {
+                        return;
+                    }
                     setSectionCollapsed(entry.wrapper, true);
                 });
             });
@@ -213,6 +237,9 @@
         if (expandAll) {
             expandAll.addEventListener('click', function () {
                 enhancedSections.forEach(function (entry) {
+                    if (entry.wrapper && entry.wrapper.hasAttribute('hidden')) {
+                        return;
+                    }
                     setSectionCollapsed(entry.wrapper, false);
                 });
             });
@@ -226,12 +253,20 @@
         }
 
         var emptyState = document.querySelector('[data-filter-empty]');
-
-        input.addEventListener('input', function () {
+        var handler = function () {
             var query = (input.value || '').toLowerCase().trim();
             var matches = 0;
 
             enhancedSections.forEach(function (entry) {
+                if (!entry || !entry.wrapper) {
+                    return;
+                }
+
+                if (entry.wrapper.hasAttribute('hidden')) {
+                    entry.wrapper.classList.remove('is-filtered-out');
+                    return;
+                }
+
                 var searchIndex = entry.wrapper.getAttribute('data-search-index') || '';
                 var isMatch = query === '' || searchIndex.indexOf(query) !== -1;
 
@@ -254,7 +289,10 @@
             } else {
                 emptyState.hidden = true;
             }
-        });
+        };
+
+        input.addEventListener('input', handler);
+        filterEvaluator = handler;
     }
 
     function getControllerValue(controller) {
@@ -405,6 +443,158 @@
         return {
             evaluate: evaluate
         };
+    }
+
+    function buildPanelMap(panels) {
+        var map = {};
+
+        if (!panels || typeof panels !== 'object') {
+            return map;
+        }
+
+        Object.keys(panels).forEach(function (mode) {
+            var panel = panels[mode];
+            if (!panel || !Array.isArray(panel.sections)) {
+                return;
+            }
+
+            map[mode] = panel.sections.reduce(function (accumulator, section) {
+                if (section && section.id) {
+                    accumulator.push(section.id);
+                }
+                return accumulator;
+            }, []);
+        });
+
+        return map;
+    }
+
+    function applyMode(mode) {
+        if (!mode) {
+            return;
+        }
+
+        var allowedIds = panelsByMode[mode];
+
+        if (!Array.isArray(allowedIds)) {
+            allowedIds = [];
+        }
+
+        var allowAll = allowedIds.length === 0;
+        var allowedSet = new Set(allowedIds);
+
+        enhancedSections.forEach(function (entry) {
+            if (!entry || !entry.wrapper) {
+                return;
+            }
+
+            var sectionId = entry.id || entry.wrapper.getAttribute('data-section-id') || '';
+            var isAllowed = allowAll || allowedSet.has(sectionId);
+
+            if (isAllowed) {
+                entry.wrapper.removeAttribute('hidden');
+                entry.wrapper.classList.remove('is-mode-hidden');
+            } else {
+                entry.wrapper.setAttribute('hidden', 'hidden');
+                entry.wrapper.classList.add('is-mode-hidden');
+            }
+        });
+
+        var tocItems = document.querySelectorAll('.jlg-settings-toc__item');
+        Array.prototype.forEach.call(tocItems, function (item) {
+            if (!item) {
+                return;
+            }
+
+            var link = item.querySelector('.jlg-settings-toc__link');
+            var sectionId = link ? link.getAttribute('data-section-id') : '';
+            var isAllowed = allowAll || allowedSet.has(sectionId);
+
+            if (isAllowed) {
+                item.removeAttribute('hidden');
+            } else {
+                item.setAttribute('hidden', 'hidden');
+            }
+        });
+
+        modeButtons.forEach(function (button) {
+            if (!button) {
+                return;
+            }
+
+            var buttonMode = button.getAttribute('data-settings-mode');
+            var isActive = buttonMode === mode;
+
+            button.classList.toggle('button-primary', isActive);
+            button.classList.toggle('button-secondary', !isActive);
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        currentMode = mode;
+
+        if (typeof filterEvaluator === 'function') {
+            filterEvaluator();
+        }
+    }
+
+    function persistModePreference(mode) {
+        if (!restSettings || !restSettings.url || !window.wp || !window.wp.apiFetch) {
+            return Promise.resolve();
+        }
+
+        return window.wp.apiFetch({
+            url: restSettings.url,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': restSettings.nonce || ''
+            },
+            body: JSON.stringify({ mode: mode })
+        }).catch(function (error) {
+            console.warn('JLG Notation: unable to persist settings view mode', error);
+            return null;
+        });
+    }
+
+    function setupModeToggle(panels, activeMode, rest, modesMetadata) {
+        var container = document.querySelector('[data-settings-modes]');
+        panelsByMode = buildPanelMap(panels);
+        restSettings = rest || {};
+
+        if (!container) {
+            return;
+        }
+
+        modeButtons = Array.prototype.slice.call(container.querySelectorAll('[data-settings-mode]'));
+
+        if (!modeButtons.length) {
+            container.setAttribute('hidden', 'hidden');
+            return;
+        }
+
+        modeButtons.forEach(function (button) {
+            var mode = button.getAttribute('data-settings-mode');
+            var metadata = modesMetadata && modesMetadata[mode] ? modesMetadata[mode] : null;
+
+            if (metadata && metadata.description) {
+                button.setAttribute('title', metadata.description);
+            }
+
+            button.addEventListener('click', function () {
+                if (!mode || mode === currentMode) {
+                    return;
+                }
+
+                applyMode(mode);
+                persistModePreference(mode);
+            });
+        });
+
+        var fallbackMode = Object.keys(panelsByMode)[0] || 'expert';
+        var initialMode = panelsByMode[activeMode] ? activeMode : fallbackMode;
+
+        applyMode(initialMode);
     }
 
     function setupPreview(previewData, i18n) {
@@ -707,7 +897,11 @@
         assignSectionAnchors(data.sections || []);
         setupTocInteraction();
         setupToolbarButtons();
+        setupModeToggle(data.panels || {}, data.activeMode || '', data.rest || {}, data.modes || {});
         setupSearchFilter(data.i18n || {});
+        if (currentMode) {
+            applyMode(currentMode);
+        }
         createDependencyManager(data.dependencies || [], defaultMessage);
         setupPreview(data.preview || {}, data.i18n || {});
     });

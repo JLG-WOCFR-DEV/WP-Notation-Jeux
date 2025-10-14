@@ -158,6 +158,150 @@ if (!function_exists('get_current_user_id')) {
     }
 }
 
+if (!function_exists('get_user_meta')) {
+    function get_user_meta($user_id, $key, $single = false)
+    {
+        $user_id = (int) $user_id;
+
+        if (!isset($GLOBALS['jlg_test_user_meta'])) {
+            $GLOBALS['jlg_test_user_meta'] = [];
+        }
+
+        $value = $GLOBALS['jlg_test_user_meta'][$user_id][$key] ?? null;
+
+        if ($value === null) {
+            return $single ? '' : [];
+        }
+
+        if ($single) {
+            if (is_array($value)) {
+                return reset($value);
+            }
+
+            return $value;
+        }
+
+        return is_array($value) ? $value : [$value];
+    }
+}
+
+if (!function_exists('update_user_meta')) {
+    function update_user_meta($user_id, $key, $value)
+    {
+        $user_id = (int) $user_id;
+
+        if (!isset($GLOBALS['jlg_test_user_meta'])) {
+            $GLOBALS['jlg_test_user_meta'] = [];
+        }
+
+        if (!isset($GLOBALS['jlg_test_user_meta'][$user_id])) {
+            $GLOBALS['jlg_test_user_meta'][$user_id] = [];
+        }
+
+        $GLOBALS['jlg_test_user_meta'][$user_id][$key] = $value;
+
+        return true;
+    }
+}
+
+if (!function_exists('delete_user_meta')) {
+    function delete_user_meta($user_id, $key)
+    {
+        $user_id = (int) $user_id;
+
+        if (isset($GLOBALS['jlg_test_user_meta'][$user_id][$key])) {
+            unset($GLOBALS['jlg_test_user_meta'][$user_id][$key]);
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('delete_metadata')) {
+    function delete_metadata($type, $object_id, $meta_key, $meta_value = '', $delete_all = false)
+    {
+        unset($meta_value);
+
+        if ($type !== 'user') {
+            return true;
+        }
+
+        if (!isset($GLOBALS['jlg_test_user_meta'])) {
+            $GLOBALS['jlg_test_user_meta'] = [];
+        }
+
+        if ($delete_all) {
+            foreach ($GLOBALS['jlg_test_user_meta'] as $id => $meta) {
+                if (isset($meta[$meta_key])) {
+                    unset($GLOBALS['jlg_test_user_meta'][$id][$meta_key]);
+                }
+            }
+
+            return true;
+        }
+
+        $object_id = (int) $object_id;
+
+        if ($object_id > 0 && isset($GLOBALS['jlg_test_user_meta'][$object_id][$meta_key])) {
+            unset($GLOBALS['jlg_test_user_meta'][$object_id][$meta_key]);
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('get_users')) {
+    function get_users($args = [])
+    {
+        $users = $GLOBALS['jlg_test_users'] ?? [];
+
+        if (!is_array($users)) {
+            return [];
+        }
+
+        $fields = 'all';
+        if (is_array($args) && isset($args['fields'])) {
+            $fields = $args['fields'];
+        }
+
+        if ($fields === 'ID') {
+            return array_map(function ($user) {
+                if (is_object($user) && isset($user->ID)) {
+                    return (int) $user->ID;
+                }
+
+                if (is_array($user) && isset($user['ID'])) {
+                    return (int) $user['ID'];
+                }
+
+                return (int) $user;
+            }, $users);
+        }
+
+        if (is_array($fields)) {
+            return array_map(function ($user) use ($fields) {
+                $result = [];
+
+                foreach ($fields as $field) {
+                    if ($field === 'ID') {
+                        if (is_object($user) && isset($user->ID)) {
+                            $result['ID'] = (int) $user->ID;
+                        } elseif (is_array($user) && isset($user['ID'])) {
+                            $result['ID'] = (int) $user['ID'];
+                        } else {
+                            $result['ID'] = (int) $user;
+                        }
+                    }
+                }
+
+                return $result;
+            }, $users);
+        }
+
+        return $users;
+    }
+}
+
 if (!function_exists('doing_filter')) {
     /**
      * Minimal doing_filter stub so tests can emulate REST rendering context.
@@ -832,6 +976,16 @@ if (!function_exists('delete_transient')) {
     }
 }
 
+if (!function_exists('rest_url')) {
+    function rest_url($path = '', $scheme = 'rest') {
+        unset($scheme);
+
+        $path = ltrim((string) $path, '/');
+
+        return 'https://example.com/wp-json/' . $path;
+    }
+}
+
 if (!function_exists('register_rest_route')) {
     function register_rest_route($namespace, $route, $args = [], $override = false) {
         if (!isset($GLOBALS['jlg_test_rest_routes'])) {
@@ -909,6 +1063,15 @@ if (!function_exists('wp_list_pluck')) {
 
 if (!function_exists('__')) {
     function __($text, $domain = 'default') {
+        return (string) $text;
+    }
+}
+
+if (!function_exists('_x')) {
+    function _x($text, $context, $domain = 'default')
+    {
+        unset($context, $domain);
+
         return (string) $text;
     }
 }

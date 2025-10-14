@@ -3,6 +3,7 @@
 namespace JLG\Notation;
 
 use JLG\Notation\Admin\Core;
+use JLG\Notation\Admin\Settings\SettingsRepository;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -65,8 +66,11 @@ class Assets {
         );
 
         $sections_overview  = array();
+        $section_panels     = array();
+        $mode_definitions   = array();
         $field_dependencies = array();
         $preview_snapshot   = array();
+        $active_mode        = SettingsRepository::get_default_mode();
 
         $core_instance = Core::get_instance();
         if ( $core_instance ) {
@@ -74,6 +78,18 @@ class Assets {
 
             if ( $settings_component && method_exists( $settings_component, 'get_sections_overview' ) ) {
                 $sections_overview = $settings_component->get_sections_overview();
+            }
+
+            if ( $settings_component && method_exists( $settings_component, 'get_section_panels' ) ) {
+                $section_panels = $settings_component->get_section_panels();
+            }
+
+            if ( $settings_component && method_exists( $settings_component, 'get_settings_modes' ) ) {
+                $mode_definitions = $settings_component->get_settings_modes();
+            }
+
+            if ( $settings_component && method_exists( $settings_component, 'get_active_mode' ) ) {
+                $active_mode = $settings_component->get_active_mode();
             }
 
             if ( $settings_component && method_exists( $settings_component, 'get_field_dependencies' ) ) {
@@ -88,18 +104,30 @@ class Assets {
         wp_enqueue_script(
             'jlg-admin-settings',
             JLG_NOTATION_PLUGIN_URL . 'assets/js/admin-settings.js',
-            array(),
+            array( 'wp-api-fetch' ),
             $version,
             true
         );
+
+        $rest_endpoint = '';
+        if ( function_exists( 'rest_url' ) ) {
+            $rest_endpoint = rest_url( 'notation-jlg/v1/settings-mode' );
+        }
 
         wp_localize_script(
             'jlg-admin-settings',
             'jlgAdminSettingsData',
             array(
                 'sections'     => $sections_overview,
+                'panels'       => $section_panels,
+                'modes'        => $mode_definitions,
+                'activeMode'   => $active_mode,
                 'dependencies' => $field_dependencies,
                 'preview'      => $preview_snapshot,
+                'rest'         => array(
+                    'url'   => $rest_endpoint,
+                    'nonce' => wp_create_nonce( 'wp_rest' ),
+                ),
                 'i18n'         => array(
                     'dependencyInactive' => __( 'Activez l’option associée pour modifier ce réglage.', 'notation-jlg' ),
                     'filterNoResult'     => __( 'Aucun réglage ne correspond à votre recherche.', 'notation-jlg' ),

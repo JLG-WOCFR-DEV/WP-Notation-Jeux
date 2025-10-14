@@ -91,6 +91,11 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
                     data-settings-filter
                 />
             </label>
+            <div class="jlg-settings-toolbar__modes" role="group" aria-label="<?php esc_attr_e('Choisir le mode d’affichage des réglages', 'notation-jlg'); ?>" data-settings-modes>
+                <span class="screen-reader-text"><?php esc_html_e('Afficher uniquement les réglages essentiels ou l’ensemble des réglages.', 'notation-jlg'); ?></span>
+                <button type="button" class="button button-secondary" data-settings-mode="simple"><?php esc_html_e('Mode simple', 'notation-jlg'); ?></button>
+                <button type="button" class="button button-secondary" data-settings-mode="expert"><?php esc_html_e('Mode expert', 'notation-jlg'); ?></button>
+            </div>
             <div class="jlg-settings-toolbar__actions" role="group" aria-label="<?php esc_attr_e('Affichage des sections', 'notation-jlg'); ?>">
                 <button type="button" class="button button-secondary" data-collapse-all><?php esc_html_e('Tout replier', 'notation-jlg'); ?></button>
                 <button type="button" class="button button-secondary" data-expand-all><?php esc_html_e('Tout déplier', 'notation-jlg'); ?></button>
