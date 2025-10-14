@@ -1,0 +1,50 @@
+{
+  "apiVersion": 2,
+  "name": "notation-jlg/express-rating",
+  "title": "Notation express",
+  "category": "widgets",
+  "icon": "awards",
+  "description": "Affiche une carte de notation minimaliste avec badge et bouton CTA.",
+  "textdomain": "notation-jlg",
+  "supports": {
+    "align": ["wide", "full"],
+    "html": false
+  },
+  "attributes": {
+    "scoreValue": {
+      "type": "string",
+      "default": ""
+    },
+    "scoreMax": {
+      "type": "string",
+      "default": "10"
+    },
+    "showBadge": {
+      "type": "boolean",
+      "default": false
+    },
+    "badgeLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "ctaLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "ctaUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "ctaRel": {
+      "type": "string",
+      "default": ""
+    },
+    "ctaNewTab": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "notation-jlg-express-rating-editor",
+  "editorStyle": "notation-jlg-block-editor",
+  "style": "jlg-frontend"
+}

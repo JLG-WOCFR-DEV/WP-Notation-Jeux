@@ -203,4 +203,29 @@ class BlocksRegistrationTest extends TestCase
         $this->assertSame($expected_shortcode, $GLOBALS['jlg_test_last_shortcode']);
         $this->assertSame('[rendered]' . $expected_shortcode, $result);
     }
+
+    public function test_render_express_rating_block_maps_attributes(): void
+    {
+        $blocks = new \JLG\Notation\Blocks();
+
+        $GLOBALS['jlg_test_last_shortcode'] = null;
+
+        $result = $blocks->render_express_rating_block([
+            'scoreValue' => '9,5',
+            'scoreMax' => '20',
+            'showBadge' => true,
+            'badgeLabel' => 'Coup <strong>de</strong> cœur',
+            'ctaLabel' => 'Découvrir',
+            'ctaUrl' => 'https://example.com/review?ref=campaign',
+            'ctaRel' => 'sponsored',
+            'ctaNewTab' => true,
+            'className' => 'custom-class another',
+            'align' => 'wide',
+        ]);
+
+        $expected_shortcode = '[jlg_notation_express score="9,5" score_max="20" show_badge="oui" badge_label="Coup de cœur" cta_label="Découvrir" cta_url="https://example.com/review?ref=campaign" cta_rel="sponsored" cta_new_tab="oui" class="custom-class another alignwide"]';
+
+        $this->assertSame($expected_shortcode, $GLOBALS['jlg_test_last_shortcode']);
+        $this->assertSame('[rendered]' . $expected_shortcode, $result);
+    }
 }

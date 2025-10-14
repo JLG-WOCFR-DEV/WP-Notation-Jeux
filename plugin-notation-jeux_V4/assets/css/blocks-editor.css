@@ -187,6 +187,24 @@
     color: #1d2327;
 }
 
+.wp-block-notation-jlg-express-rating {
+    position: relative;
+}
+
+.wp-block-notation-jlg-express-rating .notation-jlg-express-rating {
+    margin: 24px auto;
+    max-width: 640px;
+}
+
+.wp-block-notation-jlg-express-rating .notation-jlg-express-rating__placeholder {
+    background: rgba(56, 189, 248, 0.12);
+    color: #0f172a;
+}
+
+.wp-block-notation-jlg-express-rating .notation-jlg-express-rating__cta {
+    box-shadow: none;
+}
+
 .editor-styles-wrapper .jlg-all-in-one-block.animate-in .jlg-aio-score-bar {
     width: var(--bar-width) !important;
 }
