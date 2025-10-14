@@ -18,6 +18,7 @@ use JLG\Notation\Shortcodes\SummaryDisplay;
 use JLG\Notation\Shortcodes\Tagline;
 use JLG\Notation\Shortcodes\UserRating;
 use JLG\Notation\Shortcodes\PlatformBreakdown;
+use JLG\Notation\Shortcodes\ExpressRating;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -127,6 +128,7 @@ class Frontend {
             AllInOne::class,
             GameExplorer::class,
             PlatformBreakdown::class,
+            ExpressRating::class,
         );
 
         $errors = array();

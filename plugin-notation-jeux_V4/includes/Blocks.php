@@ -6,6 +6,7 @@ use JLG\Notation\Helpers;
 use JLG\Notation\Frontend;
 use JLG\Notation\Utils\Validator;
 use JLG\Notation\Shortcodes\PlatformBreakdown;
+use JLG\Notation\Shortcodes\ExpressRating;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -98,6 +99,12 @@ class Blocks {
             'shortcode' => 'jlg_platform_breakdown',
             'script'    => 'notation-jlg-platform-breakdown-editor',
             'callback'  => 'render_platform_breakdown_block',
+        ),
+        'express-rating'     => array(
+            'name'      => 'notation-jlg/express-rating',
+            'shortcode' => ExpressRating::SHORTCODE,
+            'script'    => 'notation-jlg-express-rating-editor',
+            'callback'  => 'render_express_rating_block',
         ),
     );
 
@@ -543,6 +550,99 @@ class Blocks {
         Frontend::mark_shortcode_rendered( PlatformBreakdown::SHORTCODE );
 
         return Frontend::get_template_html( 'shortcode-platform-breakdown', $context );
+    }
+
+    public function render_express_rating_block( $attributes ) {
+        $atts = array();
+
+        if ( isset( $attributes['scoreValue'] ) ) {
+            $score_value = is_string( $attributes['scoreValue'] ) ? $attributes['scoreValue'] : (string) $attributes['scoreValue'];
+            $score_value = sanitize_text_field( $score_value );
+            if ( $score_value !== '' ) {
+                $atts['score'] = $score_value;
+            }
+        }
+
+        if ( isset( $attributes['scoreMax'] ) ) {
+            $score_max = is_string( $attributes['scoreMax'] ) ? $attributes['scoreMax'] : (string) $attributes['scoreMax'];
+            $score_max = sanitize_text_field( $score_max );
+            if ( $score_max !== '' ) {
+                $atts['score_max'] = $score_max;
+            }
+        }
+
+        if ( isset( $attributes['showBadge'] ) ) {
+            $atts['show_badge'] = (bool) $attributes['showBadge'];
+        }
+
+        if ( isset( $attributes['badgeLabel'] ) && is_string( $attributes['badgeLabel'] ) ) {
+            $label = sanitize_text_field( $attributes['badgeLabel'] );
+            $label = wp_strip_all_tags( $label );
+            if ( $label !== '' ) {
+                $atts['badge_label'] = $label;
+            }
+        }
+
+        if ( isset( $attributes['ctaLabel'] ) && is_string( $attributes['ctaLabel'] ) ) {
+            $cta_label = sanitize_text_field( $attributes['ctaLabel'] );
+            $cta_label = wp_strip_all_tags( $cta_label );
+            if ( $cta_label !== '' ) {
+                $atts['cta_label'] = $cta_label;
+            }
+        }
+
+        if ( isset( $attributes['ctaUrl'] ) && is_string( $attributes['ctaUrl'] ) ) {
+            $url = esc_url_raw( $attributes['ctaUrl'] );
+            if ( strpos( $url, '<' ) !== false || strpos( $url, '>' ) !== false ) {
+                $url = '';
+            }
+            if ( $url !== '' && Validator::is_valid_http_url( $url ) ) {
+                $atts['cta_url'] = $url;
+            }
+        }
+
+        if ( isset( $attributes['ctaRel'] ) && is_string( $attributes['ctaRel'] ) ) {
+            $rel = sanitize_text_field( $attributes['ctaRel'] );
+            if ( $rel !== '' ) {
+                $atts['cta_rel'] = $rel;
+            }
+        }
+
+        if ( isset( $attributes['ctaNewTab'] ) ) {
+            $atts['cta_new_tab'] = (bool) $attributes['ctaNewTab'];
+        }
+
+        $extra_classes = array();
+
+        if ( isset( $attributes['className'] ) && is_string( $attributes['className'] ) ) {
+            $class_names = preg_split( '/\s+/', $attributes['className'] );
+            if ( is_array( $class_names ) ) {
+                $extra_classes = array_merge( $extra_classes, $class_names );
+            }
+        }
+
+        if ( isset( $attributes['align'] ) && is_string( $attributes['align'] ) ) {
+            $extra_classes[] = 'align' . sanitize_key( $attributes['align'] );
+        }
+
+        if ( ! empty( $extra_classes ) ) {
+            $extra_classes = array_filter(
+                array_map(
+                    static function ( $class_name ) {
+                        $class_name = trim( (string) $class_name );
+
+                        return $class_name !== '' ? sanitize_html_class( $class_name ) : '';
+                    },
+                    $extra_classes
+                )
+            );
+
+            if ( ! empty( $extra_classes ) ) {
+                $atts['class'] = implode( ' ', $extra_classes );
+            }
+        }
+
+        return $this->render_shortcode( ExpressRating::SHORTCODE, $atts );
     }
 
     public function render_summary_display_block( $attributes ) {

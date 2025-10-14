@@ -42,3 +42,13 @@ Pour vérifier le rendu responsive de la carte verdict du shortcode/bloc `[jlg_b
 2. Affichez la page contenant le bloc tout-en-un sur un écran ≤ 768 px. Vérifiez que le statut reste lisible et que la date de mise à jour s’affiche sous forme de phrase.
 3. Réduisez à 320 px : le titre « Verdict de la rédaction » et le bouton doivent passer sur deux lignes sans chevauchement. Le focus clavier sur le bouton doit être visible.
 4. Agrandissez la fenêtre (>1024 px) et contrôlez que le résumé conserve une largeur raisonnable, que le statut ne se déforme pas et que le CTA aligne correctement son ombre portée.
+
+## Bloc « Notation express »
+
+Pour garantir la cohérence du nouveau bloc express (score, badge, CTA) :
+
+1. Insérez le bloc « Notation express » avec une note de 9.2/10, un badge « Coup de cœur » et un bouton affilié.
+2. En mode bureau (≥ 1280 px), vérifiez que le nombre, le badge et le CTA restent alignés sur une seule ligne, que la jauge progresse en douceur et que le focus clavier sur le bouton affiche un anneau visible.
+3. Passez à 768 px : le badge doit se repositionner sous la note sans casser l’espacement, la jauge conserve une largeur pleine et le CTA garde un padding confortable.
+4. À 360 px, contrôlez que la note reste lisible (taille de police ≥ 2.2 rem), que le message de placeholder apparaît si la note est vide et que le CTA s’étire en pleine largeur sans dépasser du conteneur.
+5. Activez `prefers-reduced-motion` via DevTools et confirmez que la jauge ne déclenche plus d’animation brusque tout en conservant le pourcentage statique.
