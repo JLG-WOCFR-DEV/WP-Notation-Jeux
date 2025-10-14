@@ -22,7 +22,7 @@ class Helpers {
     public const REVIEW_STATUS_CRON_HOOK           = 'jlg_review_status_auto_finalize';
     public const REVIEW_STATUS_META_KEY            = '_jlg_review_status';
     public const REVIEW_STATUS_LAST_PATCH_META_KEY = '_jlg_last_patch_date';
-    public const SETTINGS_VIEW_MODE_META_KEY       = SettingsRepository::USER_META_KEY;
+    public const SETTINGS_VIEW_MODE_META_KEY       = '_jlg_settings_view_mode';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'score', 'search' );
@@ -1944,7 +1944,7 @@ class Helpers {
                 continue;
             }
 
-            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $normalized_mode );
+            update_user_meta( $user_id, self::SETTINGS_VIEW_MODE_META_KEY, $normalized_mode );
             ++$updated;
         }
 
@@ -1954,7 +1954,7 @@ class Helpers {
     public static function rollback_settings_view_mode() {
         if ( ! function_exists( 'get_users' ) || ! function_exists( 'delete_user_meta' ) ) {
             if ( function_exists( 'delete_metadata' ) ) {
-                delete_metadata( 'user', 0, SettingsRepository::USER_META_KEY, '', true );
+                delete_metadata( 'user', 0, self::SETTINGS_VIEW_MODE_META_KEY, '', true );
             }
 
             return 0;
@@ -1982,7 +1982,7 @@ class Helpers {
                 continue;
             }
 
-            delete_user_meta( $user_id, SettingsRepository::USER_META_KEY );
+            delete_user_meta( $user_id, self::SETTINGS_VIEW_MODE_META_KEY );
             ++$removed;
         }
 
