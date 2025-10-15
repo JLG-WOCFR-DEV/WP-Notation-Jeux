@@ -47,6 +47,26 @@
     --jlg-glass-border: rgba(148, 163, 184, 0.25);
 }
 
+/*
+ * Fallback pour les contenus masqués accessibles.
+ * Plusieurs modules (notation lecteurs, annonces live, taglines) injectent des
+ * spans `screen-reader-text` ; nous reproduisons ici la définition WordPress
+ * standard afin d'éviter toute dépendance à un thème externe.
+ */
+.screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    white-space: nowrap;
+    word-wrap: normal !important;
+}
+
 .review-box-jlg {
     --jlg-surface-border: var(--jlg-border-color);
     --jlg-card-border: var(--jlg-border-color);
