@@ -19,6 +19,20 @@ delete_option( 'jlg_migration_v5_queue' );
 delete_option( 'jlg_migration_v5_scan_state' );
 delete_option( 'jlg_migration_v5_completed' );
 
+$helpers_file      = __DIR__ . '/includes/Helpers.php';
+$helpers_available = class_exists( '\\JLG\\Notation\\Helpers' );
+
+if ( ! $helpers_available && file_exists( $helpers_file ) ) {
+    require_once $helpers_file;
+    $helpers_available = class_exists( '\\JLG\\Notation\\Helpers' );
+}
+
+if ( $helpers_available ) {
+    \JLG\Notation\Helpers::rollback_settings_view_mode();
+} elseif ( function_exists( 'delete_metadata' ) ) {
+    delete_metadata( 'user', 0, '_jlg_settings_view_mode', '', true );
+}
+
 // Option pour vérifier si l'utilisateur veut supprimer les données
 $delete_data = get_option( 'jlg_notation_delete_data_on_uninstall', false );
 
@@ -36,20 +50,8 @@ if ( $delete_data ) {
     // Supprimer toutes les métadonnées des posts
     $category_meta_keys = array();
 
-    if ( ! class_exists( '\\JLG\\Notation\\Helpers' ) ) {
-        $helpers_file = __DIR__ . '/includes/Helpers.php';
-
-        if ( file_exists( $helpers_file ) ) {
-            require_once $helpers_file;
-        }
-    }
-
-    if ( class_exists( '\\JLG\\Notation\\Helpers' ) ) {
+    if ( $helpers_available ) {
         $definitions = \JLG\Notation\Helpers::get_rating_category_definitions();
-
-        if ( function_exists( 'delete_metadata' ) ) {
-            delete_metadata( 'user', 0, \JLG\Notation\Helpers::SETTINGS_VIEW_MODE_META_KEY, '', true );
-        }
 
         foreach ( $definitions as $definition ) {
             if ( ! empty( $definition['meta_key'] ) ) {

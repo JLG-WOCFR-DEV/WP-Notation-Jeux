@@ -8,6 +8,7 @@
 1. **Livraison progressive du mode Simple/Expert**
    - Découper le contrôleur et l'UI en sous-tâches (repository, REST, composant React) afin de livrer une V1 avec lecture seule des options critiques avant d'activer la persistance différenciée. Ajouter un test PHPUnit ciblant la sérialisation partielle du `SettingsRepository`.
    - Prévoir une tâche de migration pour stocker la préférence utilisateur (onglet par défaut) dans la table `usermeta` et un hook de nettoyage lors de la désinstallation (`uninstall.php`).
+   - ✅ Les préférences sont désormais initialisées lors de l'activation et pour chaque nouvel utilisateur, puis nettoyées à la désinstallation via `Helpers::seed_settings_view_mode()` / `ensure_user_settings_view_mode()` et `Helpers::rollback_settings_view_mode()`.【F:plugin-notation-jeux_V4/plugin-notation-jeux.php†L133-L174】【F:plugin-notation-jeux_V4/includes/Helpers.php†L1910-L1980】【F:plugin-notation-jeux_V4/uninstall.php†L17-L74】
 2. **Notation express & parité mobile**
    - Créer des maquettes responsive (small/medium) pour anticiper la densité d'informations et documenter les breakpoints dans `docs/responsive-testing.md`. Étendre les tests E2E pour couvrir l'insertion du bloc dans un article existant et la sauvegarde via clavier uniquement.
 3. **Feedback dynamique & télémétrie**
