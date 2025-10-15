@@ -1913,14 +1913,59 @@ class Helpers {
         return self::$options_cache;
     }
 
+    /**
+     * Ensure the settings view mode metadata exists for a given user without
+     * overriding a valid preference.
+     *
+     * @param int         $user_id User identifier.
+     * @param string|null $mode    Optional fallback mode when the meta is empty.
+     *
+     * @return bool Whether the user meta has been created or updated.
+     */
+    public static function ensure_user_settings_view_mode( $user_id, $mode = null ) {
+        if ( ! function_exists( 'get_user_meta' ) || ! function_exists( 'update_user_meta' ) ) {
+            return false;
+        }
+
+        $user_id = (int) $user_id;
+
+        if ( $user_id <= 0 ) {
+            return false;
+        }
+
+        $raw_value = get_user_meta( $user_id, SettingsRepository::USER_META_KEY, true );
+
+        if ( ! is_scalar( $raw_value ) ) {
+            $raw_value = '';
+        }
+
+        $raw_value       = (string) $raw_value;
+        $fallback_mode   = $mode !== null
+            ? SettingsRepository::normalize_mode( $mode )
+            : SettingsRepository::get_default_mode();
+        $normalized_meta = SettingsRepository::normalize_mode( $raw_value );
+
+        if ( $raw_value === '' ) {
+            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $fallback_mode );
+
+            return true;
+        }
+
+        if ( $raw_value !== $normalized_meta ) {
+            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $normalized_meta );
+
+            return true;
+        }
+
+        return false;
+    }
+
     public static function seed_settings_view_mode( $mode = null ) {
-        if ( ! function_exists( 'get_users' ) || ! function_exists( 'update_user_meta' ) ) {
+        if ( ! function_exists( 'get_users' ) ) {
             return 0;
         }
 
-        $normalized_mode = SettingsRepository::normalize_mode(
-            $mode !== null ? $mode : SettingsRepository::get_default_mode()
-        );
+        $fallback_mode = $mode !== null ? SettingsRepository::normalize_mode( $mode ) : null;
 
         $users   = get_users( array( 'fields' => array( 'ID' ) ) );
         $updated = 0;
@@ -1944,8 +1989,9 @@ class Helpers {
                 continue;
             }
 
-            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $normalized_mode );
-            ++$updated;
+            if ( self::ensure_user_settings_view_mode( $user_id, $fallback_mode ) ) {
+                ++$updated;
+            }
         }
 
         return $updated;

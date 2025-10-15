@@ -130,6 +130,7 @@ final class JLG_Plugin_De_Notation_Main {
         add_action( 'init', array( $this, 'ensure_migration_schedule' ) );
         register_activation_hook( __FILE__, array( $this, 'on_activation' ) );
         register_deactivation_hook( __FILE__, array( $this, 'on_deactivation' ) );
+        add_action( 'user_register', array( $this, 'seed_settings_view_mode_for_user' ), 20, 1 );
     }
 
     private function load_dependencies() {
@@ -223,6 +224,7 @@ final class JLG_Plugin_De_Notation_Main {
 
         if ( class_exists( \JLG\Notation\Helpers::class ) ) {
             \JLG\Notation\Helpers::migrate_legacy_rating_configuration();
+            \JLG\Notation\Helpers::seed_settings_view_mode();
         }
 
         if ( version_compare( $current_version, '5.0', '<' ) ) {
@@ -258,6 +260,19 @@ final class JLG_Plugin_De_Notation_Main {
         delete_option( 'jlg_migration_v5_completed' );
         delete_option( \JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION );
         delete_option( \JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION );
+    }
+
+    public function seed_settings_view_mode_for_user( $user_id ) {
+        $user_id = (int) $user_id;
+
+        if ( $user_id <= 0 || ! class_exists( \JLG\Notation\Helpers::class ) ) {
+            return;
+        }
+
+        \JLG\Notation\Helpers::ensure_user_settings_view_mode(
+            $user_id,
+            \JLG\Notation\Admin\Settings\SettingsRepository::get_default_mode()
+        );
     }
 
     private function queue_migration_from_v4() {
