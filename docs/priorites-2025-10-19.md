@@ -12,6 +12,7 @@
    - Créer des maquettes responsive (small/medium) pour anticiper la densité d'informations et documenter les breakpoints dans `docs/responsive-testing.md`. Étendre les tests E2E pour couvrir l'insertion du bloc dans un article existant et la sauvegarde via clavier uniquement.
 3. **Feedback dynamique & télémétrie**
    - Définir la convention de nommage des événements (`notation.feedback.updated`, `notation.feedback.error`) et la fréquence maximale d'envoi pour éviter la saturation réseau. Préparer un rapport hebdomadaire agrégé (JSON) stocké en option transitoire pour alimenter le futur dashboard monitoring.
+   - ✅ Les événements front respectent désormais cette convention avec un throttle de 500 ms, et `Telemetry::get_weekly_report_json()` fournit un rapport hebdomadaire mis en cache (`jlg_notation_weekly_report`).【F:plugin-notation-jeux_V4/assets/js/user-rating.js†L168-L520】【F:plugin-notation-jeux_V4/includes/Telemetry.php†L13-L323】
 
 ## Ajustements P1
 - **Carte verdict premium** : ajouter un critère d'acceptation sur les CTA multiples (jusqu'à 3) avec ordre personnalisable et fallback automatique en liste simple si JavaScript est désactivé.【F:docs/benchmark-2025-10-17.md†L79-L99】

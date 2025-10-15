@@ -166,6 +166,8 @@ jQuery(document).ready(function($) {
     initializeAriaStates();
 
     var FEEDBACK_EVENT_NAMESPACE = 'notation.feedback';
+    var FEEDBACK_EVENT_MIN_INTERVAL = 500;
+    var feedbackEventTimestamps = {};
     var LIVE_REGION_ID = 'jlg-user-rating-live-region';
 
     function announceFeedback(message, politeness) {
@@ -246,6 +248,24 @@ jQuery(document).ready(function($) {
     function dispatchFeedbackEvent(ratingBlock, eventType, detail) {
         var target = (ratingBlock && ratingBlock.length && ratingBlock.get(0)) ? ratingBlock.get(0) : document;
         var eventName = FEEDBACK_EVENT_NAMESPACE + '.' + eventType;
+        var throttleKey = eventName;
+
+        if (ratingBlock && ratingBlock.length) {
+            var widgetId = ratingBlock.attr('id');
+
+            if (widgetId) {
+                throttleKey += ':' + widgetId;
+            }
+        }
+
+        var now = Date.now();
+        var lastDispatch = feedbackEventTimestamps[throttleKey] || 0;
+
+        if (now - lastDispatch < FEEDBACK_EVENT_MIN_INTERVAL) {
+            return;
+        }
+
+        feedbackEventTimestamps[throttleKey] = now;
         var eventDetail = extendDetailWithContext(
             detail,
             ratingBlock,
@@ -438,7 +458,7 @@ jQuery(document).ready(function($) {
 
                     ratingBlock.find('.jlg-rating-message').text(successMessage).show();
                     announceFeedback(successMessage, 'polite');
-                    dispatchFeedbackEvent(ratingBlock, 'success', {
+                    dispatchFeedbackEvent(ratingBlock, 'updated', {
                         rating: parseInt(rating, 10),
                         postId: postId,
                         feedbackCode: responseData.feedback_code || 'vote_recorded',

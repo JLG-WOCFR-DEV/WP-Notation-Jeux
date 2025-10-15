@@ -11,8 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for critical AJAX flows (Game Explorer, RAWG connectivity checks, etc.).
  */
 class Telemetry {
-    private const OPTION_KEY  = 'jlg_notation_metrics_v1';
-    private const MAX_HISTORY = 25;
+    private const OPTION_KEY              = 'jlg_notation_metrics_v1';
+    private const WEEKLY_REPORT_TRANSIENT = 'jlg_notation_weekly_report';
+    private const MAX_HISTORY             = 25;
 
     /**
      * Record an event for the provided channel.
@@ -87,6 +88,10 @@ class Telemetry {
         }
 
         update_option( self::OPTION_KEY, $metrics, false );
+
+        if ( function_exists( 'delete_transient' ) ) {
+            delete_transient( self::WEEKLY_REPORT_TRANSIENT );
+        }
     }
 
     /**
@@ -141,6 +146,10 @@ class Telemetry {
      */
     public static function reset_metrics() {
         delete_option( self::OPTION_KEY );
+
+        if ( function_exists( 'delete_transient' ) ) {
+            delete_transient( self::WEEKLY_REPORT_TRANSIENT );
+        }
     }
 
     private static function get_default_channel_metrics() {
@@ -170,5 +179,176 @@ class Telemetry {
             'message'   => isset( $event['message'] ) ? wp_strip_all_tags( (string) $event['message'] ) : '',
             'context'   => isset( $event['context'] ) && is_array( $event['context'] ) ? $event['context'] : array(),
         );
+    }
+
+    /**
+     * Returns the aggregated weekly report for monitoring dashboards.
+     *
+     * @return array<string, mixed>
+     */
+    public static function get_weekly_report() {
+        $json = self::get_weekly_report_json();
+
+        $decoded = json_decode( $json, true );
+
+        return is_array( $decoded ) ? $decoded : array();
+    }
+
+    /**
+     * Returns the cached weekly report as a JSON payload.
+     *
+     * @return string
+     */
+    public static function get_weekly_report_json() {
+        $cached = function_exists( 'get_transient' ) ? get_transient( self::WEEKLY_REPORT_TRANSIENT ) : false;
+
+        if ( is_string( $cached ) && $cached !== '' ) {
+            return $cached;
+        }
+
+        $report = self::build_weekly_report();
+        $json   = wp_json_encode( $report );
+
+        if ( is_string( $json ) && function_exists( 'set_transient' ) ) {
+            set_transient( self::WEEKLY_REPORT_TRANSIENT, $json, self::get_week_in_seconds() );
+        }
+
+        return is_string( $json ) ? $json : wp_json_encode( array() );
+    }
+
+    /**
+     * Builds the weekly report structure before it gets cached.
+     *
+     * @return array<string, mixed>
+     */
+    private static function build_weekly_report() {
+        $summary   = self::get_metrics_summary();
+        $now       = time();
+        $window    = self::get_week_in_seconds();
+        $threshold = $now - $window;
+
+        $channels      = array();
+        $total_events  = 0;
+        $total_success = 0;
+        $total_errors  = 0;
+
+        foreach ( $summary as $channel => $data ) {
+            if ( ! is_array( $data ) ) {
+                continue;
+            }
+
+            $history = isset( $data['history'] ) && is_array( $data['history'] )
+                ? $data['history']
+                : array();
+
+            $recent_events    = 0;
+            $recent_success   = 0;
+            $recent_errors    = 0;
+            $recent_durations = array();
+            $feedback_codes   = array();
+
+            foreach ( $history as $event ) {
+                if ( ! is_array( $event ) ) {
+                    continue;
+                }
+
+                $timestamp = isset( $event['timestamp'] ) ? (int) $event['timestamp'] : 0;
+
+                if ( $timestamp < $threshold ) {
+                    continue;
+                }
+
+                ++$recent_events;
+
+                $status = isset( $event['status'] ) && $event['status'] === 'success' ? 'success' : 'error';
+
+                if ( $status === 'success' ) {
+                    ++$recent_success;
+                } else {
+                    ++$recent_errors;
+                }
+
+                $duration = isset( $event['duration'] ) ? (float) $event['duration'] : 0.0;
+
+                if ( $duration > 0 ) {
+                    $recent_durations[] = $duration;
+                }
+
+                if ( isset( $event['context'] ) && is_array( $event['context'] ) && isset( $event['context']['feedback_code'] ) ) {
+                    $feedback_code = sanitize_key( (string) $event['context']['feedback_code'] );
+
+                    if ( $feedback_code !== '' ) {
+                        if ( ! isset( $feedback_codes[ $feedback_code ] ) ) {
+                            $feedback_codes[ $feedback_code ] = 0;
+                        }
+
+                        ++$feedback_codes[ $feedback_code ];
+                    }
+                }
+            }
+
+            if ( ! empty( $feedback_codes ) ) {
+                arsort( $feedback_codes );
+            }
+
+            $average_duration = ! empty( $recent_durations )
+                ? array_sum( $recent_durations ) / count( $recent_durations )
+                : 0.0;
+
+            $max_duration = ! empty( $recent_durations ) ? max( $recent_durations ) : 0.0;
+
+            $success_rate = $recent_events > 0 ? $recent_success / $recent_events : 0.0;
+
+            $channels[ $channel ] = array(
+                'events'           => $recent_events,
+                'success'          => $recent_success,
+                'errors'           => $recent_errors,
+                'success_rate'     => $success_rate,
+                'average_duration' => $average_duration,
+                'max_duration'     => $max_duration,
+                'feedback_codes'   => $feedback_codes,
+                'last_status'      => isset( $data['last_status'] ) ? (string) $data['last_status'] : 'unknown',
+                'last_error'       => isset( $data['last_error'] ) ? (string) $data['last_error'] : '',
+                'last_event'       => isset( $data['last_event'] ) && is_array( $data['last_event'] ) ? $data['last_event'] : array(),
+            );
+
+            $total_events  += $recent_events;
+            $total_success += $recent_success;
+            $total_errors  += $recent_errors;
+        }
+
+        ksort( $channels );
+
+        return array(
+            'generated_at' => gmdate( 'c', $now ),
+            'range'        => array(
+                'start' => gmdate( 'c', $threshold ),
+                'end'   => gmdate( 'c', $now ),
+            ),
+            'totals'       => array(
+                'events'       => $total_events,
+                'success'      => $total_success,
+                'errors'       => $total_errors,
+                'success_rate' => $total_events > 0 ? $total_success / $total_events : 0.0,
+            ),
+            'channels'     => $channels,
+        );
+    }
+
+    /**
+     * Returns the week window in seconds with sensible fallbacks.
+     *
+     * @return int
+     */
+    private static function get_week_in_seconds() {
+        if ( defined( 'WEEK_IN_SECONDS' ) ) {
+            return (int) WEEK_IN_SECONDS;
+        }
+
+        if ( defined( 'DAY_IN_SECONDS' ) ) {
+            return (int) DAY_IN_SECONDS * 7;
+        }
+
+        return 7 * 24 * 60 * 60;
     }
 }
