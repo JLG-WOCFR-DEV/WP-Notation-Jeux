@@ -1025,6 +1025,56 @@ if (!function_exists('wp_parse_args')) {
     }
 }
 
+if (!class_exists('WP_CLI')) {
+    class WP_CLI
+    {
+        public static $commands = [];
+
+        public static function add_command($name, $callable)
+        {
+            self::$commands[$name] = $callable;
+        }
+
+        public static function success($message)
+        {
+            $GLOBALS['jlg_test_wp_cli_messages'] = [
+                'type'    => 'success',
+                'message' => (string) $message,
+            ];
+        }
+
+        public static function warning($message)
+        {
+            $GLOBALS['jlg_test_wp_cli_messages'] = [
+                'type'    => 'warning',
+                'message' => (string) $message,
+            ];
+        }
+
+        public static function error($message, $exit = true)
+        {
+            $GLOBALS['jlg_test_wp_cli_messages'] = [
+                'type'    => 'error',
+                'message' => (string) $message,
+                'exit'    => (bool) $exit,
+            ];
+
+            if ($exit) {
+                throw new \RuntimeException((string) $message);
+            }
+        }
+
+        public static function line($message)
+        {
+            if (!isset($GLOBALS['jlg_test_wp_cli_lines'])) {
+                $GLOBALS['jlg_test_wp_cli_lines'] = [];
+            }
+
+            $GLOBALS['jlg_test_wp_cli_lines'][] = (string) $message;
+        }
+    }
+}
+
 if (!function_exists('wp_list_pluck')) {
     function wp_list_pluck($input_list, $field, $index_key = null) {
         if (!is_array($input_list)) {

@@ -206,8 +206,14 @@ final class JLG_Plugin_De_Notation_Main {
             $this->rest = new \JLG\Notation\Rest\RatingsController();
         }
 
-        if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( \JLG\Notation\CLI\ExportRatingsCommand::class ) ) {
-            \JLG\Notation\CLI\ExportRatingsCommand::register();
+        if ( defined( 'WP_CLI' ) && WP_CLI ) {
+            if ( class_exists( \JLG\Notation\CLI\ExportRatingsCommand::class ) ) {
+                \JLG\Notation\CLI\ExportRatingsCommand::register();
+            }
+
+            if ( class_exists( \JLG\Notation\CLI\TelemetryCommand::class ) ) {
+                \JLG\Notation\CLI\TelemetryCommand::register();
+            }
         }
     }
 
