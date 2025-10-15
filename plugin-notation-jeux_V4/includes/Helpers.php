@@ -2783,6 +2783,8 @@ class Helpers {
 
     public static function clear_rated_post_ids_cache() {
         delete_transient( 'jlg_rated_post_ids_v1' );
+
+        do_action( 'jlg_rated_post_ids_cache_cleared' );
     }
 
     public static function adjust_hex_brightness( $hex, $steps ) {

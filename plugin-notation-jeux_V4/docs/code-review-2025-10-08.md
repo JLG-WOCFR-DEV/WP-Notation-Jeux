@@ -33,3 +33,9 @@
 4. **Docs** : compléter le guide front (`docs/responsive-testing.md`) avec un scénario widget + sidebar (desktop/mobile) pour vérifier l’accessibilité clavier.
 
 Ces éléments servent de base pour prioriser les prochains chantiers autour des widgets et garantir une expérience performante, extensible et testée.
+
+## Suivi 2025-10-18
+
+- ✅ Cache HTML court en place pour `LatestReviewsWidget` (transient 5 minutes + invalidation versionnée) avec hook `jlg_latest_reviews_widget_cache_flushed` exposé pour les scripts d’import.
+- ✅ `Helpers::clear_rated_post_ids_cache()` déclenche désormais l’action `jlg_rated_post_ids_cache_cleared`, documentant les points d’invalidation des IDs notés.
+- ✅ Couverture PHPUnit étendue (`LatestReviewsWidgetTest`, `HelpersRatingCacheTest`) et checklist responsive enrichie pour tracer le scénario sidebar/widget.
