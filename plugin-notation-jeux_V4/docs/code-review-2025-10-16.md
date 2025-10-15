@@ -25,3 +25,5 @@
 
 - Mettre à jour la roadmap (`docs/product-roadmap/2025-10-roadmap.md`) pour intégrer les chantiers ci-dessus et informer les équipes produit/QA.
 - Étendre la couverture de tests (`ShortcodePlatformBreakdownTest`) pour vérifier le comportement REST/Gutenberg et la sanitisation post-filtre.
+- ✅ 2025-10-17 : `resolve_target_post_id()` gère les rendus REST avec fallback sur le post global (`ShortcodePlatformBreakdownTest::test_render_in_rest_context_uses_global_post_when_available`).
+- ✅ 2025-10-17 : Les entrées filtrées sont désormais sécurisées via `wp_kses_post`, tronquées proprement et testées (`HelpersPlatformBreakdownTest`).

@@ -23,7 +23,7 @@ Ce document décline les opportunités identifiées dans le benchmark du 5 octob
 | Sous-bloc Verdict | Encapsule résumé, verdict, CTA vers review complète, statut et date de mise à jour. | Hiérarchie info, crédibilité | 6 j | Inclure toggle Gutenberg + attributs shortcode. |
 | Mode « Review en cours » automatisé | Cron qui vérifie les métadonnées `last_patch_date` et bascule statut → Final après X jours. (✅ livré via `jlg_review_status_auto_finalize` + hook `jlg_review_status_transition`) | Fraîcheur du contenu | 3 j | Ajouter tests unitaires + hook `jlg_review_status_transition`. |
 | Comparateur plateformes | Shortcode/bloc `jlg_platform_breakdown` avec colonnes performances, recommandations. | Guidance d'achat | 8 j | Requiert extension metabox plateformes + data structure. |
-| Bloc Gutenberg comparatif | Bloc `notation-jlg/platform-breakdown` consommant l'API interne, prévisualisation REST et options badge/titre/message vide alignées sur le shortcode. | Parité éditeur/front | 5 j | Corriger `resolve_target_post_id()` pour les aperçus et ajouter tests REST. |
+| Bloc Gutenberg comparatif | Bloc `notation-jlg/platform-breakdown` consommant l'API interne, prévisualisation REST et options badge/titre/message vide alignées sur le shortcode. | Parité éditeur/front | 5 j | ✅ Fallback REST + sanitisation post-filtre livrés (tests `ShortcodePlatformBreakdownTest`, `HelpersPlatformBreakdownTest`). À planifier : captures éditeur + guide QA. |
 
 ## Vague 2 – Monétisation & insights (S+8 à S+16)
 | Deliverable | Description | Estimation | Dépendances | KPI |
@@ -48,4 +48,4 @@ Ce document décline les opportunités identifiées dans le benchmark du 5 octob
 - Valider la feuille de route avec 2 rédactions partenaires et prioriser la Vague 1 pour la release 5.1.
 - Évaluer l'effort design pour les nouveaux modules (maquettes Figma, guidelines).
 - Planifier un benchmark de suivi en avril 2026 pour mesurer les gains face aux concurrents.
-- Durcir la sanitisation post-filtre du comparatif plateformes (`wp_kses_post` sur performance/commentaire) afin de sécuriser les intégrations partenaires.
+- Déployer la prévisualisation enrichie du bloc (captures clair/sombre, checklists QA) et documenter la procédure de validation manuel côté rédaction.

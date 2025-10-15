@@ -78,4 +78,39 @@ class ShortcodePlatformBreakdownTest extends TestCase
         $this->assertStringContainsString('jlg-platform-breakdown', $output);
         $this->assertStringContainsString('Aucune plateforme saisie.', $output);
     }
+
+    public function test_render_in_rest_context_uses_global_post_when_available(): void
+    {
+        $post_id = 444;
+        $post = new WP_Post([
+            'ID'          => $post_id,
+            'post_type'   => 'post',
+            'post_status' => 'publish',
+        ]);
+
+        $GLOBALS['jlg_test_posts'][$post_id] = $post;
+        $GLOBALS['jlg_test_meta'][$post_id] = [
+            '_jlg_platform_breakdown_entries' => [
+                [
+                    'platform'    => 'pc',
+                    'performance' => '4K60',
+                    'comment'     => 'Latence minimale',
+                    'is_best'     => true,
+                ],
+            ],
+        ];
+
+        $GLOBALS['post'] = $post;
+        $GLOBALS['jlg_test_current_post_id'] = 0;
+        $GLOBALS['jlg_test_rest_request'] = true;
+
+        $shortcode = new \JLG\Notation\Shortcodes\PlatformBreakdown();
+        $output = $shortcode->render();
+
+        unset($GLOBALS['jlg_test_rest_request'], $GLOBALS['post']);
+        $GLOBALS['jlg_test_current_post_id'] = 0;
+
+        $this->assertStringContainsString('jlg-platform-breakdown', $output);
+        $this->assertStringContainsString('Latence minimale', $output);
+    }
 }

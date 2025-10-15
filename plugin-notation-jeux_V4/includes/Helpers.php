@@ -2783,6 +2783,8 @@ class Helpers {
 
     public static function clear_rated_post_ids_cache() {
         delete_transient( 'jlg_rated_post_ids_v1' );
+
+        do_action( 'jlg_rated_post_ids_cache_cleared' );
     }
 
     public static function adjust_hex_brightness( $hex, $steps ) {
@@ -3145,6 +3147,69 @@ class Helpers {
         return trim( (string) $value );
     }
 
+    private static function sanitize_platform_breakdown_filtered_text( $value, $max_length, $allow_html = false ) {
+        if ( ! is_scalar( $value ) ) {
+            $value = '';
+        }
+
+        $value = (string) $value;
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        if ( $allow_html ) {
+            $allowed = '<a><abbr><acronym><b><br><cite><code><em><i><span><strong><p><ul><ol><li>';
+
+            $value = preg_replace( '#<script[^>]*>.*?</script>#is', '', $value );
+
+            if ( function_exists( 'wp_kses_post' ) ) {
+                $value = wp_kses_post( $value );
+            }
+
+            $value = strip_tags( $value, $allowed );
+        } else {
+            $value = sanitize_text_field( $value );
+        }
+
+        $value = trim( $value );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        $plain_text = wp_strip_all_tags( $value );
+        $plain_text = trim( $plain_text );
+
+        if ( $plain_text === '' ) {
+            return '';
+        }
+
+        if ( is_int( $max_length ) && $max_length > 0 ) {
+            $length_callback = function_exists( 'mb_strlen' ) ? 'mb_strlen' : 'strlen';
+            $substr_callback = function_exists( 'mb_substr' ) ? 'mb_substr' : 'substr';
+            $plain_length    = $length_callback( $plain_text );
+
+            if ( $plain_length > $max_length ) {
+                if ( function_exists( 'wp_html_excerpt' ) && $allow_html ) {
+                    $excerpt = wp_html_excerpt( $value, $max_length, '…' );
+                    $value   = trim( (string) $excerpt );
+                } else {
+                    $truncated = $substr_callback( $plain_text, 0, $max_length );
+                    $truncated = rtrim( $truncated );
+
+                    if ( $truncated === '' ) {
+                        return '';
+                    }
+
+                    $value = $truncated . '…';
+                }
+            }
+        }
+
+        return $value;
+    }
+
     public static function get_platform_breakdown_for_post( $post_id ) {
         $post_id = (int) $post_id;
 
@@ -3243,8 +3308,8 @@ class Helpers {
 
             $used_ids_after_filter[ $identifier ] = true;
 
-            $performance = self::sanitize_platform_breakdown_text( $entry['performance'] ?? '', 160 );
-            $comment     = self::sanitize_platform_breakdown_text( $entry['comment'] ?? '', 300, true );
+            $performance = self::sanitize_platform_breakdown_filtered_text( $entry['performance'] ?? '', 160, true );
+            $comment     = self::sanitize_platform_breakdown_filtered_text( $entry['comment'] ?? '', 300, true );
 
             $sanitized_entries[] = array(
                 'id'           => $identifier,

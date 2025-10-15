@@ -98,9 +98,48 @@ class HelpersPlatformBreakdownTest extends TestCase
         $this->assertSame('', $injected['platform']);
         $this->assertSame('PlayStation 5 Ultimate', $injected['label']);
         $this->assertSame('Console', $injected['custom_label']);
-        $this->assertSame('4K120', $injected['performance']);
-        $this->assertSame('Best on PS5', $injected['comment']);
+        $this->assertSame('<span>4K120</span>', $injected['performance']);
+        $this->assertSame('<p>Best on <a href="#">PS5</a></p>', $injected['comment']);
         $this->assertTrue($injected['is_best']);
+        $this->assertStringNotContainsString('<script', $injected['performance']);
+        $this->assertStringNotContainsString('<script', $injected['comment']);
+    }
+
+    public function test_filtered_entries_are_trimmed_when_too_long(): void
+    {
+        $post_id = 3333;
+        $GLOBALS['jlg_test_meta'][$post_id] = [
+            '_jlg_platform_breakdown_entries' => [
+                [
+                    'platform'    => 'pc',
+                    'performance' => '4K60',
+                    'comment'     => 'Baseline',
+                ],
+            ],
+        ];
+
+        add_filter(
+            'jlg_platform_breakdown_entries',
+            static function (array $entries): array {
+                $entries[0]['performance'] = '<strong>' . str_repeat('A', 220) . '</strong>';
+                $entries[0]['comment']     = '<p>' . str_repeat('Long text ', 80) . '</p>';
+
+                return $entries;
+            },
+            10,
+            2
+        );
+
+        $entries = \JLG\Notation\Helpers::get_platform_breakdown_for_post($post_id);
+
+        remove_all_filters('jlg_platform_breakdown_entries');
+
+        $this->assertCount(1, $entries);
+        $this->assertStringEndsWith('…', $entries[0]['performance']);
+        $this->assertStringEndsWith('…', $entries[0]['comment']);
+        $length_callback = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
+        $this->assertLessThanOrEqual(161, $length_callback(strip_tags($entries[0]['performance'])));
+        $this->assertLessThanOrEqual(301, $length_callback(strip_tags($entries[0]['comment'])));
     }
 
     public function test_badge_label_falls_back_to_default(): void

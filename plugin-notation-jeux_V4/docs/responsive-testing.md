@@ -12,6 +12,14 @@ Pour valider l'affichage responsive du tableau récapitulatif :
 
 En cas d'ajustements ultérieurs, répétez ce scénario pour garantir que l'expérience mobile reste optimale.
 
+## Widget « Derniers Tests » en sidebar
+
+1. Placez le widget « Notation JLG : Derniers Tests » dans une sidebar active puis affichez une page contenant cette zone sur desktop (≥ 1280 px).
+2. Vérifiez que le titre reprend bien la valeur configurée dans le widget et que la liste des tests reste limitée au nombre attendu (par défaut : 5) sans duplication lors du rafraîchissement.
+3. Réduisez la largeur à 768 px puis à 360 px : la liste doit conserver des espacements suffisants, les liens rester accessibles au toucher et la typographie rester lisible.
+4. Naviguez au clavier (Tab/Shift+Tab) depuis le contenu principal vers la sidebar : le focus doit suivre l'ordre logique, chaque lien doit afficher un état `:focus-visible` net et l'annonce d'absence de tests (« Aucun test trouvé ») doit être lisible si la liste est vide.
+5. Actualisez la page après avoir ajouté un nouveau test noté et vérifiez que le widget se met à jour après quelques minutes (cache court) ou immédiatement après purge manuelle via le hook `jlg_latest_reviews_widget_cache_flushed`.
+
 ## Bloc de notation – Statut éditorial et guides associés
 
 Pour contrôler le nouveau bandeau de statut et la colonne des guides dans le bloc `[jlg_rating_block]` :

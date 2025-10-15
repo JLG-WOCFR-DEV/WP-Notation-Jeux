@@ -291,9 +291,47 @@ class Assets {
             'jlg-live-announcer',
             'jlgLiveAnnouncerL10n',
             function () {
+                $default_duration = (int) apply_filters( 'jlg_live_announcer_default_duration', 4000 );
+                if ( $default_duration < 0 ) {
+                    $default_duration = 0;
+                }
+
+                $default_politeness = apply_filters( 'jlg_live_announcer_default_politeness', 'polite' );
+                $default_politeness = $default_politeness === 'assertive' ? 'assertive' : 'polite';
+
+                $config = array(
+                    'enabled'           => (bool) apply_filters( 'jlg_live_announcer_enabled', true ),
+                    'defaultDuration'   => $default_duration,
+                    'defaultPoliteness' => $default_politeness,
+                );
+
+                $config = apply_filters( 'jlg_live_announcer_config', $config );
+
+                if ( ! is_array( $config ) ) {
+                    $config = array(
+                        'enabled'           => true,
+                        'defaultDuration'   => $default_duration,
+                        'defaultPoliteness' => $default_politeness,
+                    );
+                } else {
+                    $config = wp_parse_args(
+                        $config,
+                        array(
+                            'enabled'           => true,
+                            'defaultDuration'   => $default_duration,
+                            'defaultPoliteness' => $default_politeness,
+                        )
+                    );
+
+                    $config['enabled']           = (bool) $config['enabled'];
+                    $config['defaultDuration']   = max( 0, (int) $config['defaultDuration'] );
+                    $config['defaultPoliteness'] = $config['defaultPoliteness'] === 'assertive' ? 'assertive' : 'polite';
+                }
+
                 return array(
                     'dismissLabel'          => esc_html__( 'Fermer la notification', 'notation-jlg' ),
                     'hideAnnouncementLabel' => esc_html__( 'Notification masquée', 'notation-jlg' ),
+                    'config'                => $config,
                 );
             }
         );

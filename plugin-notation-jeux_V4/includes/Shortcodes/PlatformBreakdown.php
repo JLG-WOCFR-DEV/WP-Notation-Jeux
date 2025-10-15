@@ -130,23 +130,29 @@ class PlatformBreakdown {
             return $post_id;
         }
 
+        if ( is_string( $post_id_attribute ) && strtolower( $post_id_attribute ) === 'current' ) {
+            $post_id_attribute = '';
+        }
+
         if ( $post_id_attribute !== '' && $post_id === 0 ) {
             return 0;
         }
 
-        $current_post_id = get_the_ID();
+        $current_post_id = $this->resolve_current_post_context();
         if ( ! $current_post_id ) {
             return 0;
         }
 
-        if ( $this->is_valid_target_post( $current_post_id, $allowed_types ) ) {
-            if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-                return $current_post_id;
-            }
+        if ( ! $this->is_valid_target_post( $current_post_id, $allowed_types ) ) {
+            return 0;
+        }
 
-            if ( ! function_exists( 'is_singular' ) || is_singular( $allowed_types ) ) {
-                return $current_post_id;
-            }
+        if ( $this->is_rest_request() ) {
+            return $current_post_id;
+        }
+
+        if ( ! function_exists( 'is_singular' ) || is_singular( $allowed_types ) ) {
+            return $current_post_id;
         }
 
         return 0;
@@ -168,5 +174,28 @@ class PlatformBreakdown {
         }
 
         return current_user_can( 'read_post', $post_id );
+    }
+
+    private function resolve_current_post_context() {
+        $post_id = get_the_ID();
+        if ( $post_id ) {
+            return (int) $post_id;
+        }
+
+        global $post;
+
+        if ( $post instanceof WP_Post && ! empty( $post->ID ) ) {
+            return (int) $post->ID;
+        }
+
+        return 0;
+    }
+
+    private function is_rest_request() {
+        if ( isset( $GLOBALS['jlg_test_rest_request'] ) ) {
+            return (bool) $GLOBALS['jlg_test_rest_request'];
+        }
+
+        return defined( 'REST_REQUEST' ) && REST_REQUEST;
     }
 }

@@ -86,10 +86,10 @@ $has_badge    = $show_best_badge && $has_entries && $highlight_badge_label !== '
                             <?php endif; ?>
                         </header>
                         <?php if ( $performance !== '' ) : ?>
-                            <p class="jlg-platform-breakdown__metric"><?php echo esc_html( $performance ); ?></p>
+                            <p class="jlg-platform-breakdown__metric"><?php echo wp_kses_post( $performance ); ?></p>
                         <?php endif; ?>
                         <?php if ( $comment !== '' ) : ?>
-                            <p class="jlg-platform-breakdown__comment"><?php echo esc_html( $comment ); ?></p>
+                            <p class="jlg-platform-breakdown__comment"><?php echo wp_kses_post( $comment ); ?></p>
                         <?php endif; ?>
                     </section>
                 <?php endforeach; ?>

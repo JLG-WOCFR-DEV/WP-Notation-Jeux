@@ -13,7 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class LatestReviewsWidget extends WP_Widget {
 
-    private const DEFAULT_POST_COUNT = 5;
+    private const DEFAULT_POST_COUNT   = 5;
+    private const CACHE_VERSION_OPTION = 'jlg_latest_reviews_widget_cache_version';
+    private const CACHE_KEY_PREFIX     = 'jlg_latest_reviews_';
+
+    private static $cache_version = null;
 
     public function __construct() {
         parent::__construct(
@@ -23,6 +27,15 @@ class LatestReviewsWidget extends WP_Widget {
                 'description' => __( 'Affiche les derniers articles ayant reçu une note.', 'notation-jlg' ),
             )
         );
+
+        add_action( 'save_post', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'deleted_post', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'trashed_post', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'switch_theme', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'add_option_notation_jlg_settings', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'update_option_notation_jlg_settings', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'delete_option_notation_jlg_settings', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
+        add_action( 'jlg_rated_post_ids_cache_cleared', array( __CLASS__, 'flush_widget_cache' ), 10, 0 );
     }
 
     public function widget( $args, $instance ) {
@@ -38,10 +51,20 @@ class LatestReviewsWidget extends WP_Widget {
             return;
         }
 
+        $cache_key = $this->get_widget_cache_key( $settings, $args, $allowed_post_types );
+        $cached    = $this->get_cached_widget_output( $cache_key );
+
+        if ( is_string( $cached ) ) {
+            echo $cached;
+            return;
+        }
+
         $rated_post_ids = Helpers::get_rated_post_ids();
 
         if ( empty( $rated_post_ids ) ) {
-            $this->render_empty_widget( $args, $title );
+            $html = $this->get_empty_widget_markup( $args, $title );
+            $this->store_widget_cache( $cache_key, $html );
+            echo $html;
             return;
         }
 
@@ -60,7 +83,7 @@ class LatestReviewsWidget extends WP_Widget {
 
         $latest_reviews = new WP_Query( $query_args );
 
-        echo Frontend::get_template_html(
+        $html = Frontend::get_template_html(
             'widget-latest-reviews',
             array(
                 'widget_args'    => $args,
@@ -68,6 +91,10 @@ class LatestReviewsWidget extends WP_Widget {
                 'latest_reviews' => $latest_reviews,
             )
         );
+
+        $this->store_widget_cache( $cache_key, $html );
+
+        echo $html;
     }
 
     public function form( $instance ) {
@@ -191,5 +218,94 @@ class LatestReviewsWidget extends WP_Widget {
 
         echo '<p>' . esc_html__( 'Aucun test trouvé.', 'notation-jlg' ) . '</p>';
         echo $args['after_widget'];
+    }
+
+    private function get_empty_widget_markup( $args, $title ) {
+        ob_start();
+        $this->render_empty_widget( $args, $title );
+
+        return ob_get_clean();
+    }
+
+    private function get_widget_cache_key( array $settings, array $widget_args, array $allowed_post_types ) {
+        $widget_id = isset( $widget_args['widget_id'] ) ? (string) $widget_args['widget_id'] : '';
+
+        $normalized_types = array_values( array_unique( array_filter( array_map( 'sanitize_key', $allowed_post_types ) ) ) );
+        sort( $normalized_types );
+
+        $hash_payload = array(
+            'widget'     => $widget_id,
+            'title'      => (string) $settings['title'],
+            'number'     => (int) $settings['number'],
+            'post_types' => $normalized_types,
+        );
+
+        $hash = md5( wp_json_encode( $hash_payload ) );
+
+        return self::CACHE_KEY_PREFIX . self::get_cache_version() . '_' . $hash;
+    }
+
+    private function get_cached_widget_output( $cache_key ) {
+        $cached = get_transient( $cache_key );
+
+        if ( $cached === false ) {
+            return null;
+        }
+
+        return is_string( $cached ) ? $cached : null;
+    }
+
+    private function store_widget_cache( $cache_key, $html ) {
+        $ttl = self::get_cache_ttl();
+
+        if ( $ttl <= 0 ) {
+            return;
+        }
+
+        set_transient( $cache_key, (string) $html, $ttl );
+    }
+
+    private static function get_cache_ttl() {
+        $default_ttl = 5 * ( defined( 'MINUTE_IN_SECONDS' ) ? MINUTE_IN_SECONDS : 60 );
+
+        $filtered_ttl = (int) apply_filters( 'jlg_latest_reviews_widget_cache_ttl', $default_ttl );
+
+        if ( $filtered_ttl < 0 ) {
+            return 0;
+        }
+
+        return $filtered_ttl;
+    }
+
+    private static function get_cache_version() {
+        if ( self::$cache_version !== null ) {
+            return self::$cache_version;
+        }
+
+        $version = get_option( self::CACHE_VERSION_OPTION, '' );
+
+        if ( ! is_string( $version ) || $version === '' ) {
+            $version = '1';
+            update_option( self::CACHE_VERSION_OPTION, $version, false );
+        }
+
+        self::$cache_version = $version;
+
+        return self::$cache_version;
+    }
+
+    private static function bump_cache_version() {
+        $current = self::get_cache_version();
+        $next    = (string) max( 1, (int) $current + 1 );
+
+        self::$cache_version = $next;
+
+        update_option( self::CACHE_VERSION_OPTION, $next, false );
+    }
+
+    public static function flush_widget_cache() {
+        self::bump_cache_version();
+
+        do_action( 'jlg_latest_reviews_widget_cache_flushed' );
     }
 }
