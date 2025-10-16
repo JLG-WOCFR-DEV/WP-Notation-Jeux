@@ -61,6 +61,53 @@ class MigrationScheduleTest extends TestCase
         $this->assertCount(0, $matches, sprintf('Did not expect hook "%s" to be scheduled.', $hook));
     }
 
+    /**
+     * @dataProvider provideEnsureMigrationScheduleScenarios
+     */
+    public function testEnsureMigrationScheduleCoversAllStates(?array $scanState, array $queue, bool $expectedScheduled): void
+    {
+        $plugin = $this->bootPlugin();
+
+        update_option('jlg_migration_v5_scan_state', $scanState);
+        update_option('jlg_migration_v5_queue', $queue);
+
+        $GLOBALS['jlg_test_scheduled_events'] = [];
+
+        $plugin->ensure_migration_schedule();
+
+        if ($expectedScheduled) {
+            $this->assertHookScheduled('jlg_process_v5_migration');
+        } else {
+            $this->assertHookNotScheduled('jlg_process_v5_migration');
+        }
+    }
+
+    public static function provideEnsureMigrationScheduleScenarios(): array
+    {
+        return [
+            'scan not complete' => [
+                ['last_post_id' => 0, 'complete' => false],
+                [],
+                true,
+            ],
+            'missing complete flag' => [
+                ['last_post_id' => 123],
+                [],
+                true,
+            ],
+            'queue contains work' => [
+                ['last_post_id' => 10, 'complete' => true],
+                [10],
+                true,
+            ],
+            'already complete' => [
+                ['last_post_id' => 500, 'complete' => true],
+                [],
+                false,
+            ],
+        ];
+    }
+
     public function testEnsureMigrationScheduleQueuesEventWhenScanIncomplete(): void
     {
         $plugin = $this->bootPlugin();

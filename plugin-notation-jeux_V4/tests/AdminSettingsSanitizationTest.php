@@ -6,10 +6,45 @@ class AdminSettingsSanitizationTest extends TestCase
 {
     private \JLG\Notation\Admin\Settings $settings;
 
+    private $originalWpdb;
+
     protected function setUp(): void
     {
+        parent::setUp();
+
+        $this->originalWpdb = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = new class() {
+            public $postmeta = 'wp_postmeta';
+            public $posts    = 'wp_posts';
+
+            public function prepare($query, ...$args)
+            {
+                unset($args);
+
+                return $query;
+            }
+
+            public function get_col($prepared)
+            {
+                unset($prepared);
+
+                return [];
+            }
+        };
+
         $this->settings = new \JLG\Notation\Admin\Settings();
         $this->settings->register_settings();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->originalWpdb === null) {
+            unset($GLOBALS['wpdb']);
+        } else {
+            $GLOBALS['wpdb'] = $this->originalWpdb;
+        }
+
+        parent::tearDown();
     }
 
     public function test_numeric_fields_are_bounded(): void
@@ -117,5 +152,93 @@ class AdminSettingsSanitizationTest extends TestCase
         } else {
             $GLOBALS['wpdb'] = $previous_wpdb;
         }
+    }
+
+    /**
+     * @dataProvider provideCheckboxInputs
+     */
+    public function test_checkbox_fields_are_normalized(string $field, $rawValue, int $expected): void
+    {
+        $input = [];
+
+        if ($rawValue !== null) {
+            $input[$field] = $rawValue;
+        }
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame($expected, $sanitized[$field]);
+    }
+
+    public static function provideCheckboxInputs(): array
+    {
+        return [
+            'enabled flag from string one' => ['text_glow_enabled', '1', 1],
+            'disabled with zero string' => ['enable_animations', '0', 0],
+            'missing value resets to zero' => ['circle_glow_pulse', null, 0],
+            'review status automation fallback' => ['review_status_auto_finalize_enabled', null, 0],
+        ];
+    }
+
+    /**
+     * @dataProvider provideEnumInputs
+     */
+    public function test_enum_fields_are_validated(string $field, $rawValue, string $expected): void
+    {
+        $input = [];
+
+        if ($rawValue !== null) {
+            $input[$field] = $rawValue;
+        }
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame($expected, $sanitized[$field]);
+    }
+
+    public static function provideEnumInputs(): array
+    {
+        return [
+            'visual preset invalid value' => ['visual_preset', 'fancy', 'signature'],
+            'score layout missing uses default' => ['score_layout', null, 'text'],
+            'game explorer score position coerced' => ['game_explorer_score_position', 'top-left', 'top-left'],
+        ];
+    }
+
+    public function test_related_taxonomies_are_sanitized(): void
+    {
+        $input = [
+            'related_guides_taxonomies' => 'Guide, astuce, invalid slug!',
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame('guide,astuce,invalidslug', $sanitized['related_guides_taxonomies']);
+    }
+
+    public function test_allowed_post_types_fall_back_to_defaults_when_invalid(): void
+    {
+        $input = [
+            'allowed_post_types' => ['<script>', ''],
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame(['post'], $sanitized['allowed_post_types']);
+    }
+
+    public function test_review_status_automation_days_are_clamped(): void
+    {
+        $sanitized = $this->settings->sanitize_options([
+            'review_status_auto_finalize_days' => 99,
+        ]);
+
+        $this->assertSame(60, $sanitized['review_status_auto_finalize_days']);
+
+        $sanitized = $this->settings->sanitize_options([
+            'review_status_auto_finalize_days' => 'not-a-number',
+        ]);
+
+        $this->assertSame(7, $sanitized['review_status_auto_finalize_days']);
     }
 }

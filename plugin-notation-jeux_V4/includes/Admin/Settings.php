@@ -262,166 +262,290 @@ class Settings {
             return Helpers::get_default_settings();
         }
 
-        $sanitized = array();
-        $defaults  = Helpers::get_default_settings();
+        $schema          = SettingsRepository::get_option_schema();
+        $defaults        = Helpers::get_default_settings();
+        $current_options = Helpers::get_plugin_options();
+        $sanitized       = array();
 
-        // IMPORTANT: Traiter d'abord les champs select pour les modes de couleur
-        // Ces champs doivent être traités spécialement pour conserver leur valeur
-        $select_fields = array(
-            'visual_theme'                 => array( 'dark', 'light' ),
-            'visual_preset'                => array( 'signature', 'minimal', 'editorial' ),
-            'score_layout'                 => array( 'text', 'circle' ),
-            'text_glow_color_mode'         => array( 'dynamic', 'custom' ),
-            'circle_glow_color_mode'       => array( 'dynamic', 'custom' ),
-            'table_border_style'           => array( 'none', 'horizontal', 'full' ),
-            'game_explorer_score_position' => Helpers::get_game_explorer_score_positions(),
-        );
-
-        foreach ( $select_fields as $field => $allowed_values ) {
-            if ( isset( $input[ $field ] ) ) {
-                $value = sanitize_key( wp_unslash( $input[ $field ] ) );
-
-                if ( in_array( $value, $allowed_values, true ) ) {
-                    $sanitized[ $field ] = $value;
-                    continue;
-                }
-            }
-
-            $sanitized[ $field ] = $defaults[ $field ] ?? '';
+        foreach ( $schema as $key => $definition ) {
+            $sanitized[ $key ] = $this->sanitize_field( $key, $definition, $input, $defaults, $current_options );
         }
 
-        $current_options    = Helpers::get_plugin_options();
-        $raw_categories     = isset( $input['rating_categories'] ) && is_array( $input['rating_categories'] )
-            ? $input['rating_categories']
-            : array();
-        $current_categories = isset( $current_options['rating_categories'] ) && is_array( $current_options['rating_categories'] )
-            ? $current_options['rating_categories']
-            : array();
-        $default_categories = isset( $defaults['rating_categories'] ) && is_array( $defaults['rating_categories'] )
-            ? $defaults['rating_categories']
-            : array();
-
-        $sanitized['rating_categories'] = $this->sanitize_rating_categories( $raw_categories, $default_categories, $current_categories );
-
-        $available_public_post_types = $this->get_public_post_type_slugs();
-        if ( isset( $input['allowed_post_types'] ) ) {
-            $raw_allowed_post_types = $input['allowed_post_types'];
-        } elseif ( isset( $current_options['allowed_post_types'] ) ) {
-            $raw_allowed_post_types = $current_options['allowed_post_types'];
-        } else {
-            $raw_allowed_post_types = $defaults['allowed_post_types'] ?? array();
-        }
-
-        $default_allowed_post_types = isset( $defaults['allowed_post_types'] ) && is_array( $defaults['allowed_post_types'] )
-            ? $defaults['allowed_post_types']
-            : array( 'post' );
-
-        $sanitized['allowed_post_types'] = $this->sanitize_allowed_post_types(
-            $raw_allowed_post_types,
-            $default_allowed_post_types,
-            $available_public_post_types
-        );
-
-        $default_filters = isset( $defaults['game_explorer_filters'] ) && is_array( $defaults['game_explorer_filters'] )
-            ? $defaults['game_explorer_filters']
-            : Helpers::get_default_game_explorer_filters();
-
-        $current_filters = isset( $current_options['game_explorer_filters'] )
-            ? $current_options['game_explorer_filters']
-            : $default_filters;
-
-        $raw_filters = $input['game_explorer_filters'] ?? null;
-
-        $sanitized['game_explorer_filters'] = $this->sanitize_game_explorer_filters(
-            $raw_filters,
-            $default_filters,
-            $current_filters
-        );
-
-        // Traiter les autres champs
         foreach ( $defaults as $key => $default_value ) {
-            // Skip les champs déjà traités
-            if ( array_key_exists( $key, $select_fields ) ) {
-                continue;
-            }
-
-            if ( $key === 'rating_categories' ) {
-                continue;
-            }
-
-            if ( $key === 'allowed_post_types' ) {
-                continue;
-            }
-
-            if ( $key === 'game_explorer_filters' ) {
-                continue;
-            }
-
-            if ( isset( $input[ $key ] ) ) {
-                $sanitized[ $key ] = $this->sanitize_option_value( $key, $input[ $key ], $default_value );
-            } else {
-                // Pour les checkboxes non cochées
-                if (
-                    strpos( $key, 'enabled' ) !== false ||
-                    strpos( $key, 'pulse' ) !== false ||
-                    strpos( $key, 'striping' ) !== false ||
-                    strpos( $key, 'enable_' ) === 0
-                ) {
-                    $sanitized[ $key ] = 0;
-                } else {
-                    $sanitized[ $key ] = $default_value;
-                }
+            if ( ! array_key_exists( $key, $sanitized ) ) {
+                $sanitized[ $key ] = $default_value;
             }
         }
 
-        $old_score_max = isset( $current_options['score_max'] )
-            ? Helpers::get_score_max( array( 'score_max' => $current_options['score_max'] ) )
-            : Helpers::get_default_settings()['score_max'];
-        $new_score_max = isset( $sanitized['score_max'] )
-            ? Helpers::get_score_max( array( 'score_max' => $sanitized['score_max'] ) )
-            : Helpers::get_default_settings()['score_max'];
-
-        if ( $old_score_max !== $new_score_max ) {
-            Helpers::schedule_score_scale_migration( $old_score_max, $new_score_max );
-        }
-
-        if ( isset( $sanitized['rating_badge_threshold'] ) ) {
-            $raw_threshold = isset( $input['rating_badge_threshold'] )
-                ? $input['rating_badge_threshold']
-                : $sanitized['rating_badge_threshold'];
-
-            if ( is_string( $raw_threshold ) ) {
-                $raw_threshold = trim( $raw_threshold );
-            }
-
-            $threshold = is_numeric( $raw_threshold )
-                ? (float) $raw_threshold
-                : ( is_numeric( $sanitized['rating_badge_threshold'] ) ? (float) $sanitized['rating_badge_threshold'] : 0.0 );
-
-            $threshold = max( 0.0, $threshold );
-
-            $score_max_reference = $new_score_max;
-
-            if ( ! is_numeric( $score_max_reference ) && isset( $sanitized['score_max'] ) ) {
-                $score_max_reference = Helpers::get_score_max( array( 'score_max' => $sanitized['score_max'] ) );
-            }
-
-            if ( is_numeric( $score_max_reference ) ) {
-                $threshold = min( $threshold, (float) $score_max_reference );
-            }
-
-            $step = isset( $this->field_constraints['rating_badge_threshold']['step'] )
-                ? (float) $this->field_constraints['rating_badge_threshold']['step']
-                : 0.1;
-
-            if ( $step > 0 ) {
-                $threshold = $this->round_to_step_precision( $threshold, $step );
-            }
-
-            $sanitized['rating_badge_threshold'] = $threshold;
-        }
+        $sanitized = $this->apply_post_processing( $sanitized, $input, $schema, $defaults, $current_options );
 
         Helpers::flush_plugin_options_cache();
+
+        return $sanitized;
+    }
+
+    private function sanitize_field( $key, array $definition, array $input, array $defaults, array $current_options ) {
+        $type          = $definition['type'] ?? 'text';
+        $default_value = $definition['default'] ?? ( $defaults[ $key ] ?? '' );
+        $raw_value     = array_key_exists( $key, $input ) ? $input[ $key ] : null;
+
+        switch ( $type ) {
+            case 'rating_categories':
+                $raw_categories     = is_array( $raw_value ) ? $raw_value : array();
+                $current_categories = isset( $current_options['rating_categories'] ) && is_array( $current_options['rating_categories'] )
+                    ? $current_options['rating_categories']
+                    : array();
+                $default_categories = is_array( $default_value ) ? $default_value : array();
+
+                $value = $this->sanitize_rating_categories( $raw_categories, $default_categories, $current_categories );
+                break;
+            case 'post_types':
+                $available_slugs = $this->get_public_post_type_slugs();
+                $raw_post_types  = $raw_value;
+
+                if ( $raw_post_types === null ) {
+                    if ( isset( $current_options['allowed_post_types'] ) ) {
+                        $raw_post_types = $current_options['allowed_post_types'];
+                    } else {
+                        $raw_post_types = $default_value;
+                    }
+                }
+
+                $default_post_types = is_array( $default_value ) ? $default_value : array( 'post' );
+
+                $value = $this->sanitize_allowed_post_types( $raw_post_types, $default_post_types, $available_slugs );
+                break;
+            case 'game_explorer_filters':
+                $default_filters = is_array( $default_value ) ? $default_value : Helpers::get_default_game_explorer_filters();
+                $current_filters = isset( $current_options['game_explorer_filters'] )
+                    ? $current_options['game_explorer_filters']
+                    : $default_filters;
+
+                $raw_filters = array_key_exists( $key, $input ) ? $raw_value : null;
+
+                $value = $this->sanitize_game_explorer_filters( $raw_filters, $default_filters, $current_filters );
+                break;
+            case 'checkbox':
+                $value = $this->sanitize_checkbox( $raw_value );
+                break;
+            case 'enum':
+                $choices = $definition['choices'] ?? array();
+                $value   = $this->sanitize_enum( $raw_value, $choices, $default_value );
+                break;
+            case 'number':
+                $value = $this->sanitize_number( $key, $raw_value, $default_value, $definition );
+                break;
+            case 'color':
+                $allow_transparent = ! empty( $definition['allow_transparent'] );
+                $value             = $this->sanitize_color( $raw_value, $default_value, $allow_transparent );
+                break;
+            case 'css':
+                $value = is_string( $raw_value ) ? wp_strip_all_tags( $raw_value ) : '';
+                break;
+            case 'csv':
+                $value = $this->sanitize_csv( $raw_value, $default_value );
+                break;
+            case 'text':
+            default:
+                $value = $this->sanitize_text( $raw_value, $default_value );
+                break;
+        }
+
+        if ( isset( $definition['sanitize_callback'] ) && is_callable( $definition['sanitize_callback'] ) ) {
+            $value = call_user_func( $definition['sanitize_callback'], $value );
+        }
+
+        return $value;
+    }
+
+    private function sanitize_checkbox( $value ) {
+        if ( is_array( $value ) ) {
+            $value = reset( $value );
+        }
+
+        return ! empty( $value ) ? 1 : 0;
+    }
+
+    private function sanitize_enum( $value, array $choices, $default_value ) {
+        $normalized_choices = array_map( 'sanitize_key', $choices );
+        $normalized_choices = array_values( array_unique( $normalized_choices ) );
+
+        $candidate = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
+
+        if ( in_array( $candidate, $normalized_choices, true ) ) {
+            return $candidate;
+        }
+
+        $default_value = is_scalar( $default_value ) ? sanitize_key( (string) $default_value ) : '';
+
+        if ( in_array( $default_value, $normalized_choices, true ) ) {
+            return $default_value;
+        }
+
+        return $normalized_choices[0] ?? '';
+    }
+
+    private function sanitize_number( $key, $value, $default_value, array $definition ) {
+        $constraints = array(
+            'min'  => $definition['min'] ?? null,
+            'max'  => $definition['max'] ?? null,
+            'step' => $definition['step'] ?? null,
+        );
+
+        if ( isset( $definition['cast'] ) ) {
+            $constraints['cast'] = $definition['cast'];
+        }
+
+        return $this->normalize_numeric_value( $key, $value, $default_value, $constraints );
+    }
+
+    private function sanitize_color( $value, $default_value, $allow_transparent ) {
+        $raw = is_string( $value ) ? strtolower( trim( $value ) ) : '';
+
+        if ( $allow_transparent && $raw === 'transparent' ) {
+            return 'transparent';
+        }
+
+        $sanitized = is_string( $value ) ? sanitize_hex_color( $value ) : '';
+
+        if ( $sanitized ) {
+            return $sanitized;
+        }
+
+        $default_raw = is_string( $default_value ) ? strtolower( trim( $default_value ) ) : '';
+
+        if ( $allow_transparent && $default_raw === 'transparent' ) {
+            return 'transparent';
+        }
+
+        $default_color = is_string( $default_value ) ? sanitize_hex_color( $default_value ) : '';
+
+        return $default_color ?: '';
+    }
+
+    private function sanitize_csv( $value, $default_value ) {
+        if ( is_string( $value ) ) {
+            $items = explode( ',', $value );
+        } elseif ( is_array( $value ) ) {
+            $items = $value;
+        } else {
+            $items = array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $items as $item ) {
+            $normalized = sanitize_key( (string) $item );
+
+            if ( $normalized !== '' ) {
+                $sanitized[] = $normalized;
+            }
+        }
+
+        if ( empty( $sanitized ) ) {
+            if ( is_string( $default_value ) ) {
+                $sanitized = array_filter( array_map( 'sanitize_key', explode( ',', $default_value ) ) );
+            } elseif ( is_array( $default_value ) ) {
+                $sanitized = array_filter( array_map( 'sanitize_key', $default_value ) );
+            }
+        }
+
+        return implode( ',', array_unique( $sanitized ) );
+    }
+
+    private function sanitize_text( $value, $default_value ) {
+        if ( $value === null ) {
+            return is_scalar( $default_value ) ? sanitize_text_field( (string) $default_value ) : '';
+        }
+
+        if ( is_scalar( $value ) ) {
+            return sanitize_text_field( (string) $value );
+        }
+
+        return is_scalar( $default_value ) ? sanitize_text_field( (string) $default_value ) : '';
+    }
+
+    private function apply_post_processing( array $sanitized, array $input, array $schema, array $defaults, array $current_options ) {
+        foreach ( $schema as $key => $definition ) {
+            if ( empty( $definition['postProcess'] ) ) {
+                continue;
+            }
+
+            $callbacks = (array) $definition['postProcess'];
+
+            foreach ( $callbacks as $callback ) {
+                $method = 'post_process_' . $callback;
+
+                if ( method_exists( $this, $method ) ) {
+                    $sanitized = $this->{$method}( $sanitized, $input, $defaults, $current_options, $definition );
+                }
+            }
+        }
+
+        return $sanitized;
+    }
+
+    private function post_process_schedule_score_scale_migration( array $sanitized, array $input, array $defaults, array $current_options ) {
+        $previous_max = isset( $current_options['score_max'] )
+            ? Helpers::get_score_max( array( 'score_max' => $current_options['score_max'] ) )
+            : ( $defaults['score_max'] ?? 10 );
+
+        $new_max = isset( $sanitized['score_max'] )
+            ? Helpers::get_score_max( array( 'score_max' => $sanitized['score_max'] ) )
+            : $previous_max;
+
+        if ( $previous_max !== $new_max ) {
+            Helpers::schedule_score_scale_migration( $previous_max, $new_max );
+        }
+
+        return $sanitized;
+    }
+
+    private function post_process_clamp_rating_badge_threshold( array $sanitized, array $input, array $defaults, array $current_options, array $definition ) {
+        if ( ! array_key_exists( 'rating_badge_threshold', $sanitized ) ) {
+            return $sanitized;
+        }
+
+        $raw_threshold = array_key_exists( 'rating_badge_threshold', $input )
+            ? $input['rating_badge_threshold']
+            : $sanitized['rating_badge_threshold'];
+
+        if ( is_string( $raw_threshold ) ) {
+            $raw_threshold = trim( $raw_threshold );
+        }
+
+        if ( ! is_numeric( $raw_threshold ) ) {
+            $raw_threshold = is_numeric( $sanitized['rating_badge_threshold'] )
+                ? (float) $sanitized['rating_badge_threshold']
+                : (float) ( $defaults['rating_badge_threshold'] ?? 0 );
+        } else {
+            $raw_threshold = (float) $raw_threshold;
+        }
+
+        $raw_threshold = max( 0.0, (float) $raw_threshold );
+
+        $score_max_reference = $sanitized['score_max'] ?? ( $defaults['score_max'] ?? 10 );
+
+        if ( ! is_numeric( $score_max_reference ) ) {
+            $score_max_reference = Helpers::get_score_max( array( 'score_max' => $score_max_reference ) );
+        }
+
+        if ( is_numeric( $score_max_reference ) ) {
+            $raw_threshold = min( $raw_threshold, (float) $score_max_reference );
+        }
+
+        $constraints = array(
+            'min'  => 0,
+            'max'  => is_numeric( $score_max_reference ) ? (float) $score_max_reference : null,
+            'step' => $definition['step'] ?? null,
+        );
+
+        $sanitized['rating_badge_threshold'] = $this->normalize_numeric_value(
+            'rating_badge_threshold',
+            $raw_threshold,
+            $defaults['rating_badge_threshold'] ?? 0,
+            $constraints
+        );
 
         return $sanitized;
     }
@@ -440,79 +564,6 @@ class Settings {
         }
 
         return $normalized;
-    }
-
-    private function sanitize_option_value( $key, $value, $default_value = '' ) {
-        if ( isset( $this->field_constraints[ $key ] ) ) {
-            return $this->normalize_numeric_value( $key, $value, $default_value );
-        }
-
-        // Couleurs
-        if ( strpos( $key, 'color' ) !== false && strpos( $key, 'color_mode' ) === false ) {
-            $allow_transparent_fields = array(
-                'table_row_bg_color',
-                'table_zebra_bg_color',
-            );
-
-            $trimmed_value = is_string( $value ) ? strtolower( trim( $value ) ) : '';
-
-            if (
-                $trimmed_value === 'transparent'
-                && in_array( $key, $allow_transparent_fields, true )
-            ) {
-                return 'transparent';
-            }
-
-            $sanitized_color = sanitize_hex_color( $value );
-
-            if ( ! empty( $sanitized_color ) ) {
-                return $sanitized_color;
-            }
-
-            $default_trimmed = is_string( $default_value ) ? strtolower( trim( $default_value ) ) : '';
-
-            if (
-                $default_trimmed === 'transparent'
-                && in_array( $key, $allow_transparent_fields, true )
-            ) {
-                return 'transparent';
-            }
-
-            $sanitized_default = is_string( $default_value ) ? sanitize_hex_color( $default_value ) : '';
-
-            return $sanitized_default ? $sanitized_default : '';
-        }
-
-        // Nombres
-        if ( strpos( $key, 'size' ) !== false || strpos( $key, 'width' ) !== false ||
-            strpos( $key, 'padding' ) !== false || strpos( $key, 'radius' ) !== false ||
-            strpos( $key, 'intensity' ) !== false || strpos( $key, 'speed' ) !== false ) {
-            return is_numeric( $value ) ? floatval( $value ) : ( is_numeric( $default_value ) ? floatval( $default_value ) : 0 );
-        }
-
-        // Checkboxes
-        if (
-            strpos( $key, 'enabled' ) !== false ||
-            strpos( $key, 'pulse' ) !== false ||
-            strpos( $key, 'striping' ) !== false ||
-            strpos( $key, 'enable_' ) === 0 ||
-            strpos( $key, 'requires_login' ) !== false
-        ) {
-            return ! empty( $value ) ? 1 : 0;
-        }
-
-        // CSS personnalisé
-        if ( $key === 'custom_css' ) {
-            return wp_strip_all_tags( $value );
-        }
-
-        // API Key
-        if ( $key === 'rawg_api_key' ) {
-            return sanitize_text_field( $value );
-        }
-
-        // Texte par défaut
-        return sanitize_text_field( $value );
     }
 
     private function sanitize_allowed_post_types( $raw_value, array $defaults, array $allowed_slugs ) {
@@ -612,12 +663,15 @@ class Settings {
         return array_keys( $choices );
     }
 
-    private function normalize_numeric_value( $key, $value, $default_value ) {
-        $constraints = $this->field_constraints[ $key ];
+    private function normalize_numeric_value( $key, $value, $default_value, ?array $constraints = null ) {
+        if ( $constraints === null ) {
+            $constraints = isset( $this->field_constraints[ $key ] ) ? $this->field_constraints[ $key ] : array();
+        }
 
-        $min  = isset( $constraints['min'] ) ? floatval( $constraints['min'] ) : null;
-        $max  = isset( $constraints['max'] ) ? floatval( $constraints['max'] ) : null;
-        $step = isset( $constraints['step'] ) ? floatval( $constraints['step'] ) : null;
+        $min  = array_key_exists( 'min', $constraints ) && $constraints['min'] !== null ? floatval( $constraints['min'] ) : null;
+        $max  = array_key_exists( 'max', $constraints ) && $constraints['max'] !== null ? floatval( $constraints['max'] ) : null;
+        $step = array_key_exists( 'step', $constraints ) && $constraints['step'] !== null ? floatval( $constraints['step'] ) : null;
+        $cast = $constraints['cast'] ?? null;
 
         if ( ! is_numeric( $value ) ) {
             if ( is_numeric( $default_value ) ) {
@@ -652,6 +706,14 @@ class Settings {
             if ( $max !== null ) {
                 $number = min( $number, $max );
             }
+        }
+
+        if ( $cast === 'int' ) {
+            return (int) round( $number );
+        }
+
+        if ( $cast === 'float' ) {
+            return (float) $number;
         }
 
         if ( $this->should_cast_to_int( $step, $min, $max, $default_value ) ) {
