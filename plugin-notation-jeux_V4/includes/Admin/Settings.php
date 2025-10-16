@@ -516,17 +516,8 @@ class Settings {
             $raw_threshold = trim( $raw_threshold );
         }
 
-        if ( ! is_numeric( $raw_threshold ) ) {
-            $raw_threshold = is_numeric( $sanitized['rating_badge_threshold'] )
-                ? (float) $sanitized['rating_badge_threshold']
-                : (float) ( $defaults['rating_badge_threshold'] ?? 0 );
-        } else {
-            $raw_threshold = (float) $raw_threshold;
-        }
-
-        $raw_threshold = max( 0.0, (float) $raw_threshold );
-
-        $score_max_reference = $sanitized['score_max'] ?? ( $defaults['score_max'] ?? 10 );
+        $score_max_reference = $sanitized['score_max']
+            ?? ( $current_options['score_max'] ?? ( $defaults['score_max'] ?? 10 ) );
 
         if ( ! is_numeric( $score_max_reference ) ) {
             $score_max_reference = Helpers::get_score_max( array( 'score_max' => $score_max_reference ) );
