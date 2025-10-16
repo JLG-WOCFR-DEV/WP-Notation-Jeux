@@ -230,8 +230,44 @@ class Validator {
             );
         }
 
-        $sanitized = array_map( 'sanitize_text_field', $platforms );
-        return array_values( array_intersect( $sanitized, $allowed_platforms ) );
+        $sanitized = array_filter(
+            array_map( 'sanitize_text_field', $platforms ),
+            static function ( $platform ) {
+                return is_string( $platform ) && $platform !== '';
+            }
+        );
+
+        if ( empty( $sanitized ) ) {
+            return array();
+        }
+
+        $allowed_map = array();
+
+        foreach ( $allowed_platforms as $allowed_platform ) {
+            $normalized_key = strtolower( sanitize_text_field( $allowed_platform ) );
+
+            if ( $normalized_key === '' || isset( $allowed_map[ $normalized_key ] ) ) {
+                continue;
+            }
+
+            $allowed_map[ $normalized_key ] = sanitize_text_field( $allowed_platform );
+        }
+
+        if ( empty( $allowed_map ) ) {
+            return array();
+        }
+
+        $normalized_results = array();
+
+        foreach ( $sanitized as $platform ) {
+            $normalized_key = strtolower( $platform );
+
+            if ( isset( $allowed_map[ $normalized_key ] ) ) {
+                $normalized_results[] = $allowed_map[ $normalized_key ];
+            }
+        }
+
+        return array_values( array_unique( $normalized_results ) );
     }
 
     public static function get_allowed_video_providers() {

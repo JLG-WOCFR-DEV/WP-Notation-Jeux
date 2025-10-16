@@ -229,6 +229,31 @@ class AdminPlatformsTest extends TestCase
         $this->assertSame(['Amiga 600'], $sanitized);
     }
 
+    public function test_sanitize_platforms_normalizes_case(): void
+    {
+        $instanceProperty = new ReflectionProperty(\JLG\Notation\Admin\Platforms::class, 'instance');
+        $instanceProperty->setAccessible(true);
+        $originalInstance = $instanceProperty->getValue();
+
+        try {
+            $instanceProperty->setValue(null, false);
+
+            $sanitized = \JLG\Notation\Utils\Validator::sanitize_platforms([
+                'pc',
+                'PLAYSTATION 5',
+                'steam deck',
+            ]);
+        } finally {
+            $instanceProperty->setValue(null, $originalInstance);
+        }
+
+        $this->assertSame([
+            'PC',
+            'PlayStation 5',
+            'Steam Deck',
+        ], $sanitized);
+    }
+
     public function test_render_platforms_page_handles_multiple_tag_selection_without_warnings(): void
     {
         $admin = new \JLG\Notation\Admin\Platforms();
