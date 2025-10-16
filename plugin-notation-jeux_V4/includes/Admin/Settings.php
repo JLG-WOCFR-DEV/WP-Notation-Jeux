@@ -408,19 +408,20 @@ class Settings {
 
         $sanitized = is_string( $value ) ? sanitize_hex_color( $value ) : '';
 
-        if ( $sanitized ) {
+        if ( $sanitized !== '' ) {
             return $sanitized;
         }
 
-        $default_raw = is_string( $default_value ) ? strtolower( trim( $default_value ) ) : '';
+        $default_candidate = is_string( $default_value ) ? trim( $default_value ) : '';
+        $default_raw       = strtolower( $default_candidate );
 
         if ( $allow_transparent && $default_raw === 'transparent' ) {
             return 'transparent';
         }
 
-        $default_color = is_string( $default_value ) ? sanitize_hex_color( $default_value ) : '';
+        $default_color = sanitize_hex_color( $default_candidate );
 
-        return $default_color ?: '';
+        return $default_color !== '' ? $default_color : '';
     }
 
     private function sanitize_csv( $value, $default_value ) {
