@@ -417,7 +417,6 @@ class Settings {
         if ( $allow_transparent && $default_raw === 'transparent' ) {
             return 'transparent';
         }
-    }
 
         $default_color = is_string( $default_value ) ? sanitize_hex_color( $default_value ) : '';
 
