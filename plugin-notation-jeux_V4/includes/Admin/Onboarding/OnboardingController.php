@@ -8,6 +8,7 @@
 namespace JLG\Notation\Admin\Onboarding;
 
 use JLG\Notation\Helpers;
+use JLG\Notation\Telemetry;
 use JLG\Notation\Utils\TemplateLoader;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,6 +23,7 @@ class OnboardingController {
     private const PAGE_SLUG                = 'jlg-notation-onboarding';
     private const ERRORS_TRANSIENT_PREFIX  = 'jlg_onboarding_errors_';
     private const FORM_STATE_TRANSIENT_KEY = 'jlg_onboarding_state_';
+    private const TRACKING_ACTION          = 'jlg_onboarding_track';
 
     /**
      * Plugin basename utilisé pour détecter l'activation.
@@ -47,6 +49,7 @@ class OnboardingController {
         add_action( 'admin_init', array( $this, 'maybe_redirect_to_onboarding' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'admin_post_' . self::FORM_ACTION, array( $this, 'handle_form_submission' ) );
+        add_action( 'wp_ajax_' . self::TRACKING_ACTION, array( $this, 'handle_tracking_event' ) );
     }
 
     public function handle_plugin_activation( $plugin, $network_wide ) {
@@ -147,6 +150,12 @@ class OnboardingController {
                     'moduleReminder' => __( 'Sélectionnez au moins un module pour enrichir votre expérience de test.', 'notation-jlg' ),
                 ),
                 'modules'   => wp_list_pluck( $modules, 'option_key' ),
+                'telemetry' => array(
+                    'endpoint' => admin_url( 'admin-ajax.php' ),
+                    'action'   => self::TRACKING_ACTION,
+                    'nonce'    => wp_create_nonce( self::TRACKING_ACTION ),
+                    'debug'    => defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG,
+                ),
             )
         );
 
@@ -325,6 +334,93 @@ class OnboardingController {
         if ( ! defined( 'JLG_NOTATION_TEST_ENV' ) ) {
             exit;
         }
+    }
+
+    public function handle_tracking_event() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => esc_html__( 'Accès refusé.', 'notation-jlg' ) ), 403 );
+        }
+
+        check_ajax_referer( self::TRACKING_ACTION, 'nonce' );
+
+        $event = isset( $_POST['event'] ) ? sanitize_key( wp_unslash( $_POST['event'] ) ) : '';
+        if ( $event === '' ) {
+            wp_send_json_error( array( 'message' => esc_html__( 'Événement invalide.', 'notation-jlg' ) ), 400 );
+        }
+
+        $payload       = array();
+        $raw_payload   = isset( $_POST['payload'] ) ? wp_unslash( $_POST['payload'] ) : '';
+        $decoded_entry = json_decode( is_string( $raw_payload ) ? $raw_payload : '', true );
+        if ( is_array( $decoded_entry ) ) {
+            $payload = $decoded_entry;
+        }
+
+        $status   = isset( $payload['status'] ) && $payload['status'] === 'error' ? 'error' : 'success';
+        $duration = isset( $payload['duration'] ) ? max( 0, (float) $payload['duration'] ) : 0.0;
+        $step     = isset( $payload['step'] ) ? max( 0, (int) $payload['step'] ) : 0;
+
+        $feedback_code    = isset( $payload['feedback_code'] ) ? sanitize_key( $payload['feedback_code'] ) : '';
+        $feedback_message = isset( $payload['feedback_message'] )
+            ? wp_strip_all_tags( (string) $payload['feedback_message'] )
+            : '';
+
+        $context = array(
+            'event' => $event,
+        );
+
+        if ( $step > 0 ) {
+            $context['step'] = $step;
+        }
+
+        if ( $feedback_code !== '' ) {
+            $context['feedback_code'] = $feedback_code;
+        }
+
+        if ( $feedback_message !== '' ) {
+            $context['feedback_message'] = $feedback_message;
+        }
+
+        $direction = isset( $payload['direction'] ) ? sanitize_key( $payload['direction'] ) : '';
+        if ( $direction !== '' ) {
+            $context['direction'] = $direction;
+        }
+
+        $reason = isset( $payload['reason'] ) ? sanitize_key( $payload['reason'] ) : '';
+        if ( $reason !== '' ) {
+            $context['reason'] = $reason;
+        }
+
+        if ( isset( $payload['metadata'] ) && is_array( $payload['metadata'] ) ) {
+            foreach ( $payload['metadata'] as $meta_key => $meta_value ) {
+                $meta_key = sanitize_key( (string) $meta_key );
+
+                if ( $meta_key === '' ) {
+                    continue;
+                }
+
+                if ( is_scalar( $meta_value ) ) {
+                    $context[ 'meta_' . $meta_key ] = is_string( $meta_value )
+                        ? wp_strip_all_tags( (string) $meta_value )
+                        : $meta_value;
+                }
+            }
+        }
+
+        Telemetry::record_event(
+            'onboarding',
+            array(
+                'duration' => $duration,
+                'status'   => $status,
+                'message'  => $status === 'error' ? $feedback_message : '',
+                'context'  => $context,
+            )
+        );
+
+        wp_send_json_success(
+            array(
+                'recorded' => true,
+            )
+        );
     }
 
     private function render_progress_overview( array $steps ) {
