@@ -35,6 +35,8 @@ class Helpers {
     private static $default_settings_cache        = null;
     private static $category_definition_cache     = null;
     private static $rating_meta_keys_cache        = null;
+    private static $score_insights_cache_prefix   = null;
+    private static $score_insights_runtime_cache  = array();
     private static $game_explorer_score_positions = array(
         'top-left',
         'top-right',
@@ -43,6 +45,9 @@ class Helpers {
         'bottom-left',
         'bottom-right',
     );
+
+    private const SCORE_INSIGHTS_CACHE_PREFIX_OPTION = 'jlg_score_insights_cache_prefix';
+    private const SCORE_INSIGHTS_CACHE_VERSION       = '1';
 
     private static function get_rating_meta_keys() {
         if ( is_array( self::$rating_meta_keys_cache ) ) {
@@ -68,6 +73,88 @@ class Helpers {
         self::$rating_meta_keys_cache = array_values( array_unique( $meta_keys ) );
 
         return self::$rating_meta_keys_cache;
+    }
+
+    private static function get_score_insights_cache_prefix() {
+        if ( is_string( self::$score_insights_cache_prefix ) && self::$score_insights_cache_prefix !== '' ) {
+            return self::$score_insights_cache_prefix;
+        }
+
+        $stored_prefix = get_option( self::SCORE_INSIGHTS_CACHE_PREFIX_OPTION, '' );
+
+        if ( ! is_string( $stored_prefix ) || $stored_prefix === '' ) {
+            $stored_prefix = self::generate_score_insights_cache_token();
+            update_option( self::SCORE_INSIGHTS_CACHE_PREFIX_OPTION, $stored_prefix, false );
+        }
+
+        $sanitized_prefix = self::assign_score_insights_cache_prefix( $stored_prefix );
+
+        if ( $sanitized_prefix === '' ) {
+            $fresh_prefix = self::generate_score_insights_cache_token();
+            self::assign_score_insights_cache_prefix( $fresh_prefix );
+            update_option( self::SCORE_INSIGHTS_CACHE_PREFIX_OPTION, $fresh_prefix, false );
+        }
+
+        return self::$score_insights_cache_prefix;
+    }
+
+    private static function generate_score_insights_cache_token() {
+        if ( function_exists( 'random_bytes' ) ) {
+            try {
+                return bin2hex( random_bytes( 6 ) );
+            } catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+            }
+        }
+
+        if ( function_exists( 'wp_generate_password' ) ) {
+            return strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', wp_generate_password( 8, false, false ) ) );
+        }
+
+        if ( function_exists( 'wp_rand' ) ) {
+            $random = wp_rand( 0, PHP_INT_MAX );
+        } elseif ( function_exists( 'random_int' ) ) {
+            try {
+                $random = random_int( 0, PHP_INT_MAX );
+            } catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+                $random = abs( crc32( uniqid( '', true ) ) );
+            }
+        } else {
+            $random = abs( crc32( uniqid( '', true ) ) );
+        }
+
+        return strtolower( dechex( (int) $random ) );
+    }
+
+    private static function assign_score_insights_cache_prefix( $prefix ) {
+        $sanitized = strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', (string) $prefix ) );
+
+        self::$score_insights_cache_prefix = sprintf(
+            'v%s_%s',
+            self::SCORE_INSIGHTS_CACHE_VERSION,
+            $sanitized
+        );
+
+        return $sanitized;
+    }
+
+    private static function build_score_insights_cache_key( array $post_ids, $time_range, $platform_slug ) {
+        $payload = array(
+            'ids'      => array_values( $post_ids ),
+            'range'    => is_string( $time_range ) ? $time_range : '',
+            'platform' => is_string( $platform_slug ) ? $platform_slug : '',
+        );
+
+        $hash = md5( wp_json_encode( $payload ) );
+
+        return self::get_score_insights_cache_prefix() . '_' . $hash;
+    }
+
+    private static function get_reader_feedback_meta_keys() {
+        return array(
+            '_jlg_user_rating_avg',
+            '_jlg_user_rating_count',
+            '_jlg_user_rating_breakdown',
+        );
     }
 
     public static function get_review_video_embed_data( $video_url, $provider = '' ) {
@@ -2586,11 +2673,22 @@ class Helpers {
     public static function maybe_handle_rating_meta_change( $meta_id, $post_id, $meta_key, $meta_value = null ) {
         unset( $meta_id, $meta_value );
 
-        if ( ! is_string( $meta_key ) || ! in_array( $meta_key, self::get_rating_meta_keys(), true ) ) {
+        if ( ! is_string( $meta_key ) || $meta_key === '' ) {
             return;
         }
 
-        self::invalidate_average_score_cache( $post_id );
+        $rating_meta_keys  = self::get_rating_meta_keys();
+        $reader_meta_keys  = self::get_reader_feedback_meta_keys();
+        $insights_meta_key = '_jlg_average_score';
+
+        if ( in_array( $meta_key, $rating_meta_keys, true ) ) {
+            self::invalidate_average_score_cache( $post_id );
+            return;
+        }
+
+        if ( $meta_key === $insights_meta_key || in_array( $meta_key, $reader_meta_keys, true ) ) {
+            self::flush_score_insights_cache();
+        }
     }
 
     /**
@@ -2830,7 +2928,20 @@ class Helpers {
     public static function clear_rated_post_ids_cache() {
         delete_transient( 'jlg_rated_post_ids_v1' );
 
+        self::flush_score_insights_cache();
+
         do_action( 'jlg_rated_post_ids_cache_cleared' );
+    }
+
+    public static function flush_score_insights_cache() {
+        self::$score_insights_runtime_cache = array();
+
+        $new_prefix = self::generate_score_insights_cache_token();
+        self::assign_score_insights_cache_prefix( $new_prefix );
+
+        update_option( self::SCORE_INSIGHTS_CACHE_PREFIX_OPTION, $new_prefix, false );
+
+        do_action( 'jlg_score_insights_cache_cleared' );
     }
 
     public static function adjust_hex_brightness( $hex, $steps ) {
@@ -3408,7 +3519,9 @@ class Helpers {
     /**
      * Calcule des statistiques globales sur les notes attribuées aux articles.
      *
-     * @param int[]|null $post_ids Identifiants d'articles à analyser. Par défaut tous les articles notés.
+     * @param int[]|null $post_ids       Identifiants d'articles à analyser. Par défaut tous les articles notés.
+     * @param string      $time_range     Plage temporelle utilisée pour filtrer les posts.
+     * @param string      $platform_slug  Slug de plateforme ciblé.
      *
      * @return array{
      *     total:int,
@@ -3430,7 +3543,7 @@ class Helpers {
      *     }>
      * }
      */
-    public static function get_posts_score_insights( $post_ids = null ) {
+    public static function get_posts_score_insights( $post_ids = null, $time_range = 'all', $platform_slug = '' ) {
         if ( $post_ids === null ) {
             $post_ids = self::get_rated_post_ids();
         }
@@ -3447,6 +3560,45 @@ class Helpers {
                 }
             )
         );
+
+        if ( empty( $post_ids ) ) {
+            $post_ids = array();
+        }
+
+        $post_ids = array_values( array_unique( $post_ids ) );
+        sort( $post_ids, SORT_NUMERIC );
+
+        $time_range    = is_string( $time_range ) ? $time_range : 'all';
+        $platform_slug = is_string( $platform_slug ) ? $platform_slug : '';
+
+        $cache_ttl = apply_filters(
+            'jlg_score_insights_cache_ttl',
+            10 * ( defined( 'MINUTE_IN_SECONDS' ) ? MINUTE_IN_SECONDS : 60 ),
+            $post_ids,
+            $time_range,
+            $platform_slug
+        );
+
+        $cache_ttl = (int) $cache_ttl;
+
+        $should_cache = $cache_ttl > 0;
+        $cache_key    = null;
+
+        if ( $should_cache ) {
+            $cache_key = self::build_score_insights_cache_key( $post_ids, $time_range, $platform_slug );
+
+            if ( isset( self::$score_insights_runtime_cache[ $cache_key ] ) ) {
+                return self::$score_insights_runtime_cache[ $cache_key ];
+            }
+
+            $transient_value = get_transient( $cache_key );
+
+            if ( $transient_value !== false && is_array( $transient_value ) ) {
+                self::$score_insights_runtime_cache[ $cache_key ] = $transient_value;
+
+                return $transient_value;
+            }
+        }
 
         $score_max           = max( 1, (float) self::get_score_max() );
         $scores              = array();
@@ -3600,7 +3752,7 @@ class Helpers {
         $total_scores = count( $scores );
 
         if ( $total_scores === 0 ) {
-            return array(
+            $payload = array(
                 'total'             => 0,
                 'mean'              => array(
                     'value'     => null,
@@ -3619,6 +3771,13 @@ class Helpers {
                 'timeline'          => self::build_timeline_payload( array(), $score_max ),
                 'sentiments'        => self::build_sentiments_payload( array(), array() ),
             );
+
+            if ( $should_cache && $cache_key !== null ) {
+                self::$score_insights_runtime_cache[ $cache_key ] = $payload;
+                set_transient( $cache_key, $payload, $cache_ttl );
+            }
+
+            return $payload;
         }
 
         sort( $scores );
@@ -3693,7 +3852,7 @@ class Helpers {
             unset( $divergence_candidates[ $index ]['absolute_delta_raw'] );
         }
 
-        return array(
+        $payload = array(
             'total'             => $total_scores,
             'mean'              => array(
                 'value'     => round( $mean_value, 1 ),
@@ -3712,6 +3871,13 @@ class Helpers {
             'timeline'          => self::build_timeline_payload( $timeline_entries, $score_max ),
             'sentiments'        => self::build_sentiments_payload( $pros_counter, $cons_counter ),
         );
+
+        if ( $should_cache && $cache_key !== null ) {
+            self::$score_insights_runtime_cache[ $cache_key ] = $payload;
+            set_transient( $cache_key, $payload, $cache_ttl );
+        }
+
+        return $payload;
     }
 
     private static function calculate_median_from_sorted_scores( array $scores ) {

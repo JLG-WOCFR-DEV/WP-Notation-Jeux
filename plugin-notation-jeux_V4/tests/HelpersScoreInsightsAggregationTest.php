@@ -14,11 +14,13 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $GLOBALS['jlg_test_permalinks'] = [];
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_score_insights_cache();
     }
 
     protected function tearDown(): void
     {
         \JLG\Notation\Helpers::flush_plugin_options_cache();
+        \JLG\Notation\Helpers::flush_score_insights_cache();
 
         unset($GLOBALS['jlg_test_meta'], $GLOBALS['jlg_test_options'], $GLOBALS['jlg_test_posts'], $GLOBALS['jlg_test_permalinks']);
 
@@ -257,5 +259,55 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame('Confiance élevée', $insights['consensus']['confidence']['label']);
 
         remove_filter('jlg_score_insights_confidence_thresholds', $threshold_filter);
+    }
+
+    public function test_score_insights_cache_is_refreshed_after_invalidation(): void
+    {
+        $ttl_filter = static function ($ttl, $post_ids, $time_range) {
+            unset($ttl, $post_ids, $time_range);
+
+            return 3600;
+        };
+
+        add_filter('jlg_score_insights_cache_ttl', $ttl_filter, 10, 3);
+
+        $post_id = 909;
+
+        $GLOBALS['jlg_test_meta'][$post_id] = [
+            '_jlg_average_score'     => '8.0',
+            '_jlg_user_rating_avg'   => '7.5',
+            '_jlg_user_rating_count' => '42',
+            '_jlg_plateformes'       => ['PC'],
+        ];
+
+        $GLOBALS['jlg_test_posts'][$post_id] = (object) [
+            'ID'            => $post_id,
+            'post_title'    => 'Cache invalidation test',
+            'post_date'     => '2025-03-01 12:00:00',
+            'post_date_gmt' => '2025-03-01 11:00:00',
+        ];
+
+        $GLOBALS['jlg_test_permalinks'][$post_id] = 'https://example.com/tests/cache-invalidation';
+
+        $initial = \JLG\Notation\Helpers::get_posts_score_insights([$post_id], 'last_30_days', 'pc');
+
+        $this->assertSame(1, $initial['total']);
+        $this->assertSame(8.0, $initial['mean']['value']);
+
+        // Modifier la note éditoriale mais conserver le cache intact.
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_average_score'] = '6.0';
+
+        $cached = \JLG\Notation\Helpers::get_posts_score_insights([$post_id], 'last_30_days', 'pc');
+
+        $this->assertSame(8.0, $cached['mean']['value'], 'Le cache doit conserver la valeur précédente avant invalidation.');
+
+        // Simuler une mise à jour de métadonnée qui invalide le cache.
+        \JLG\Notation\Helpers::maybe_handle_rating_meta_change(0, $post_id, '_jlg_average_score');
+
+        $refreshed = \JLG\Notation\Helpers::get_posts_score_insights([$post_id], 'last_30_days', 'pc');
+
+        $this->assertSame(6.0, $refreshed['mean']['value'], 'Les insights doivent être recalculés après invalidation.');
+
+        remove_filter('jlg_score_insights_cache_ttl', $ttl_filter, 10);
     }
 }

@@ -27,6 +27,7 @@ class HelpersRatingCacheTest extends TestCase
         $this->assertArrayNotHasKey('_jlg_average_score', $GLOBALS['jlg_test_meta'][$post_id] ?? []);
         $this->assertFalse(get_transient('jlg_rated_post_ids_v1'));
         $this->assertSame([
+            ['jlg_score_insights_cache_cleared', []],
             ['jlg_rated_post_ids_cache_cleared', []],
             ['jlg_queue_average_rebuild', [[123]]],
         ], $GLOBALS['jlg_test_actions']);
