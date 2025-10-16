@@ -487,6 +487,8 @@ class Settings {
     }
 
     private function post_process_schedule_score_scale_migration( array $sanitized, array $input, array $defaults, array $current_options, array $definition = array() ) {
+        unset( $definition );
+
         $previous_max = isset( $current_options['score_max'] )
             ? Helpers::get_score_max( array( 'score_max' => $current_options['score_max'] ) )
             : ( $defaults['score_max'] ?? 10 );
