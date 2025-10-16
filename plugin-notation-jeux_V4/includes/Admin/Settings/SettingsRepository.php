@@ -88,6 +88,185 @@ class SettingsRepository {
     );
 
     /**
+     * Returns the sanitization schema describing each settings field.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function get_sanitization_schema() {
+        $schema = array(
+            'visual_theme'                     => array(
+                'type'    => 'select',
+                'choices' => array( 'dark', 'light' ),
+            ),
+            'visual_preset'                    => array(
+                'type'    => 'select',
+                'choices' => array( 'signature', 'minimal', 'editorial' ),
+            ),
+            'score_layout'                     => array(
+                'type'    => 'select',
+                'choices' => array( 'text', 'circle' ),
+            ),
+            'text_glow_color_mode'             => array(
+                'type'    => 'select',
+                'choices' => array( 'dynamic', 'custom' ),
+            ),
+            'circle_glow_color_mode'           => array(
+                'type'    => 'select',
+                'choices' => array( 'dynamic', 'custom' ),
+            ),
+            'table_border_style'               => array(
+                'type'    => 'select',
+                'choices' => array( 'none', 'horizontal', 'full' ),
+            ),
+            'game_explorer_score_position'     => array(
+                'type'    => 'select',
+                'choices' => Helpers::get_game_explorer_score_positions(),
+            ),
+            'allowed_post_types'               => array(
+                'type'              => 'custom',
+                'sanitize_callback' => 'allowed_post_types',
+                'fallback'          => 'current_or_default',
+            ),
+            'game_explorer_filters'            => array(
+                'type'              => 'custom',
+                'sanitize_callback' => 'game_explorer_filters',
+                'fallback'          => 'current',
+            ),
+            'rating_categories'                => array(
+                'type'              => 'custom',
+                'sanitize_callback' => 'rating_categories',
+            ),
+            'related_guides_taxonomies'        => array(
+                'type' => 'csv',
+            ),
+            'custom_css'                       => array(
+                'type' => 'css',
+            ),
+            'deals_button_rel'                 => array(
+                'type' => 'text',
+            ),
+            'deals_disclaimer'                 => array(
+                'type' => 'text',
+            ),
+            'rawg_api_key'                     => array(
+                'type' => 'text',
+            ),
+            'score_max'                        => array(
+                'type'         => 'number',
+                'post_process' => array( 'score_scale_migration' ),
+            ),
+            'rating_badge_threshold'           => array(
+                'type'         => 'number',
+                'post_process' => array( 'clamp_rating_badge_threshold' ),
+            ),
+            'review_status_auto_finalize_days' => array(
+                'type'    => 'number',
+                'default' => 7,
+            ),
+        );
+
+        $boolean_fields = array(
+            'enable_animations',
+            'circle_dynamic_bg_enabled',
+            'circle_border_enabled',
+            'text_glow_enabled',
+            'text_glow_pulse',
+            'circle_glow_enabled',
+            'circle_glow_pulse',
+            'tagline_enabled',
+            'user_rating_enabled',
+            'user_rating_requires_login',
+            'user_rating_weighting_enabled',
+            'table_zebra_striping',
+            'rating_badge_enabled',
+            'review_status_enabled',
+            'review_status_auto_finalize_enabled',
+            'verdict_module_enabled',
+            'related_guides_enabled',
+            'deals_enabled',
+            'seo_schema_enabled',
+            'debug_mode_enabled',
+        );
+
+        foreach ( $boolean_fields as $field ) {
+            $schema[ $field ] = array(
+                'type'               => 'boolean',
+                'default_if_missing' => 0,
+            );
+        }
+
+        $color_fields = array(
+            'dark_bg_color',
+            'dark_bg_color_secondary',
+            'dark_border_color',
+            'dark_text_color',
+            'dark_text_color_secondary',
+            'tagline_bg_color',
+            'tagline_text_color',
+            'light_bg_color',
+            'light_bg_color_secondary',
+            'light_border_color',
+            'light_text_color',
+            'light_text_color_secondary',
+            'score_gradient_1',
+            'score_gradient_2',
+            'color_low',
+            'color_mid',
+            'color_high',
+            'user_rating_star_color',
+            'user_rating_text_color',
+            'user_rating_title_color',
+            'circle_border_color',
+            'text_glow_custom_color',
+            'circle_glow_custom_color',
+            'table_header_bg_color',
+            'table_header_text_color',
+            'table_row_bg_color',
+            'table_row_text_color',
+            'table_zebra_bg_color',
+            'thumb_text_color',
+        );
+
+        foreach ( $color_fields as $field ) {
+            $schema[ $field ] = array(
+                'type' => 'color',
+            );
+        }
+
+        foreach ( array( 'table_row_bg_color', 'table_zebra_bg_color' ) as $field ) {
+            $schema[ $field ]['allow_transparent'] = true;
+        }
+
+        $number_fields = array(
+            'circle_border_width',
+            'text_glow_intensity',
+            'text_glow_speed',
+            'circle_glow_intensity',
+            'circle_glow_speed',
+            'tagline_font_size',
+            'table_border_width',
+            'thumb_font_size',
+            'thumb_padding',
+            'thumb_border_radius',
+            'game_explorer_columns',
+            'game_explorer_posts_per_page',
+            'related_guides_limit',
+            'deals_limit',
+            'user_rating_guest_weight_start',
+            'user_rating_guest_weight_increment',
+            'user_rating_guest_weight_max',
+        );
+
+        foreach ( $number_fields as $field ) {
+            $schema[ $field ] = array(
+                'type' => 'number',
+            );
+        }
+
+        return $schema;
+    }
+
+    /**
      * Returns the list of available modes with labels and description keys.
      *
      * @return array<string, array<string, string>>

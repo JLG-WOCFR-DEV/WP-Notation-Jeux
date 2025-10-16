@@ -61,6 +61,78 @@ class MigrationScheduleTest extends TestCase
         $this->assertCount(0, $matches, sprintf('Did not expect hook "%s" to be scheduled.', $hook));
     }
 
+    /**
+     * @return array<string, array{int, int, bool}>
+     */
+    public function provideScoreScaleMigrationScenarios(): array
+    {
+        return [
+            'increase_scale_triggers_schedule' => [10, 20, true],
+            'decrease_scale_triggers_schedule' => [20, 10, true],
+            'identical_scale_skips_schedule'   => [20, 20, false],
+        ];
+    }
+
+    /**
+     * @dataProvider provideScoreScaleMigrationScenarios
+     */
+    public function testScheduleScoreScaleMigrationHandlesScaleChanges(int $oldMax, int $newMax, bool $shouldSchedule): void
+    {
+        $previous_wpdb = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = new class() {
+            public $postmeta = 'wp_postmeta';
+            public $posts    = 'wp_posts';
+
+            public function prepare($query, ...$args)
+            {
+                unset($args);
+
+                return $query;
+            }
+
+            public function get_col($query)
+            {
+                unset($query);
+
+                return [];
+            }
+        };
+
+        delete_option(\JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION);
+        delete_option(\JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION);
+        $GLOBALS['jlg_test_scheduled_events'] = [];
+
+        \JLG\Notation\Helpers::schedule_score_scale_migration($oldMax, $newMax);
+
+        $events = $GLOBALS['jlg_test_scheduled_events'] ?? [];
+
+        if ($shouldSchedule) {
+            $this->assertNotEmpty($events);
+            $this->assertSame(\JLG\Notation\Helpers::SCORE_SCALE_EVENT_HOOK, $events[0]['hook']);
+
+            $payload = get_option(\JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION, []);
+            $this->assertIsArray($payload);
+
+            $expectedOld = \JLG\Notation\Helpers::get_score_max(['score_max' => $oldMax]);
+            $expectedNew = \JLG\Notation\Helpers::get_score_max(['score_max' => $newMax]);
+
+            $this->assertSame($expectedOld, $payload['old_max']);
+            $this->assertSame($expectedNew, $payload['new_max']);
+
+            $queued_ids = get_option(\JLG\Notation\Helpers::SCORE_SCALE_QUEUE_OPTION, []);
+            $this->assertIsArray($queued_ids);
+        } else {
+            $this->assertEmpty($events);
+            $this->assertSame([], get_option(\JLG\Notation\Helpers::SCORE_SCALE_MIGRATION_OPTION, []));
+        }
+
+        if ($previous_wpdb === null) {
+            unset($GLOBALS['wpdb']);
+        } else {
+            $GLOBALS['wpdb'] = $previous_wpdb;
+        }
+    }
+
     public function testEnsureMigrationScheduleQueuesEventWhenScanIncomplete(): void
     {
         $plugin = $this->bootPlugin();
