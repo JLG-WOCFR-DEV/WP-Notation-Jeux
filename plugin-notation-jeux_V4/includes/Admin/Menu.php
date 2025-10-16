@@ -137,13 +137,24 @@ class Menu {
     }
 
     private function get_diagnostics_tab_content() {
-        $metrics      = array();
-        $rawg_status  = array(
+        $metrics            = array();
+        $rawg_status        = array(
             'configured' => false,
             'masked_key' => '',
         );
-        $ajax_action  = 'jlg_diagnostics_rawg_ping';
-        $reset_action = 'jlg_reset_notation_metrics';
+        $ajax_action        = 'jlg_diagnostics_rawg_ping';
+        $reset_action       = 'jlg_reset_notation_metrics';
+        $onboarding_summary = array(
+            'steps'      => array(),
+            'submission' => array(
+                'attempts'              => 0,
+                'success'               => 0,
+                'errors'                => 0,
+                'last_feedback_code'    => '',
+                'last_feedback_message' => '',
+                'last_attempt_at'       => 0,
+            ),
+        );
 
         $core_instance = Core::get_instance();
 
@@ -158,6 +169,10 @@ class Menu {
                 $rawg_status = $diagnostics->get_rawg_status();
             }
 
+            if ( $diagnostics && method_exists( $diagnostics, 'get_onboarding_summary' ) ) {
+                $onboarding_summary = $diagnostics->get_onboarding_summary( $metrics );
+            }
+
             if ( $diagnostics && method_exists( $diagnostics, 'get_rawg_ping_action' ) ) {
                 $ajax_action = $diagnostics->get_rawg_ping_action();
             }
@@ -170,11 +185,12 @@ class Menu {
         return TemplateLoader::get_admin_template(
             'tabs/diagnostics',
             array(
-                'metrics'      => $metrics,
-                'rawg_status'  => $rawg_status,
-                'ajax_action'  => $ajax_action,
-                'reset_action' => $reset_action,
-                'nonce'        => wp_create_nonce( $ajax_action ),
+                'metrics'            => $metrics,
+                'rawg_status'        => $rawg_status,
+                'ajax_action'        => $ajax_action,
+                'reset_action'       => $reset_action,
+                'nonce'              => wp_create_nonce( $ajax_action ),
+                'onboarding_summary' => $onboarding_summary,
             )
         );
     }
