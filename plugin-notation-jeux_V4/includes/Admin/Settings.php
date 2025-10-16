@@ -523,6 +523,10 @@ class Settings {
             $score_max_reference = Helpers::get_score_max( array( 'score_max' => $score_max_reference ) );
         }
 
+        if ( is_numeric( $score_max_reference ) ) {
+            $raw_threshold = min( $raw_threshold, (float) $score_max_reference );
+        }
+
         $constraints = array(
             'min'  => 0,
             'max'  => is_numeric( $score_max_reference ) ? (float) $score_max_reference : null,
