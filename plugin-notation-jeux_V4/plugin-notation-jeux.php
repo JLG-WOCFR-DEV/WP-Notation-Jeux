@@ -139,6 +139,7 @@ final class JLG_Plugin_De_Notation_Main {
         add_action( 'update_option_notation_jlg_settings', array( $helpers_class, 'flush_plugin_options_cache' ), 10, 0 );
         add_action( 'add_option_notation_jlg_settings', array( $helpers_class, 'flush_plugin_options_cache' ), 10, 0 );
         add_action( 'delete_option_notation_jlg_settings', array( $helpers_class, 'flush_plugin_options_cache' ), 10, 0 );
+        add_action( 'jlg_rated_post_ids_cache_cleared', array( $helpers_class, 'flush_score_insights_cache' ), 10, 0 );
         add_action( 'added_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
         add_action( 'updated_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
         add_action( 'deleted_post_meta', array( $helpers_class, 'maybe_handle_rating_meta_change' ), 10, 4 );
