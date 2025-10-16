@@ -26,6 +26,160 @@ class Diagnostics {
     }
 
     /**
+     * Provide aggregated onboarding insights for the diagnostics UI.
+     *
+     * @param array|null $metrics Optional telemetry metrics to reuse.
+     */
+    public function get_onboarding_summary( $metrics = null ) {
+        if ( $metrics === null ) {
+            $metrics = Telemetry::get_metrics_summary();
+        }
+
+        $channel = isset( $metrics['onboarding'] ) && is_array( $metrics['onboarding'] )
+            ? $metrics['onboarding']
+            : array();
+
+        $history = isset( $channel['history'] ) && is_array( $channel['history'] )
+            ? $channel['history']
+            : array();
+
+        if ( empty( $history ) ) {
+            return array(
+                'steps'      => array(),
+                'submission' => array(
+                    'attempts'              => 0,
+                    'success'               => 0,
+                    'errors'                => 0,
+                    'last_feedback_code'    => '',
+                    'last_feedback_message' => '',
+                    'last_attempt_at'       => 0,
+                ),
+            );
+        }
+
+        $steps      = array();
+        $submission = array(
+            'attempts'              => 0,
+            'success'               => 0,
+            'errors'                => 0,
+            'last_feedback_code'    => '',
+            'last_feedback_message' => '',
+            'last_attempt_at'       => 0,
+        );
+
+        foreach ( $history as $event ) {
+            $timestamp = isset( $event['timestamp'] ) ? (int) $event['timestamp'] : 0;
+            $status    = isset( $event['status'] ) && $event['status'] === 'success' ? 'success' : 'error';
+            $duration  = isset( $event['duration'] ) ? max( 0, (float) $event['duration'] ) : 0.0;
+            $context   = isset( $event['context'] ) && is_array( $event['context'] ) ? $event['context'] : array();
+
+            $event_type = isset( $context['event'] ) ? (string) $context['event'] : '';
+            $step_id    = isset( $context['step'] ) ? (int) $context['step'] : 0;
+            $feedback   = isset( $context['feedback_message'] ) ? (string) $context['feedback_message'] : '';
+            $code       = isset( $context['feedback_code'] ) ? (string) $context['feedback_code'] : '';
+
+            if ( $step_id > 0 && ! isset( $steps[ $step_id ] ) ) {
+                $steps[ $step_id ] = array(
+                    'step'                  => $step_id,
+                    'entries'               => 0,
+                    'exits'                 => 0,
+                    'total_time'            => 0.0,
+                    'avg_time'              => 0.0,
+                    'validation_success'    => 0,
+                    'validation_errors'     => 0,
+                    'last_feedback_code'    => '',
+                    'last_feedback_message' => '',
+                    'last_event_at'         => 0,
+                );
+            }
+
+            switch ( $event_type ) {
+                case 'step_enter':
+                    if ( $step_id > 0 ) {
+                        $steps[ $step_id ]['entries']      += 1;
+                        $steps[ $step_id ]['last_event_at'] = max( $steps[ $step_id ]['last_event_at'], $timestamp );
+                    }
+                    break;
+                case 'step_leave':
+                    if ( $step_id > 0 ) {
+                        $steps[ $step_id ]['exits']        += 1;
+                        $steps[ $step_id ]['total_time']   += $duration;
+                        $steps[ $step_id ]['last_event_at'] = max( $steps[ $step_id ]['last_event_at'], $timestamp );
+                    }
+                    break;
+                case 'validation':
+                    if ( $step_id > 0 ) {
+                        if ( $status === 'success' ) {
+                            $steps[ $step_id ]['validation_success'] += 1;
+                        } else {
+                            $steps[ $step_id ]['validation_errors'] += 1;
+                        }
+
+                        if ( $code !== '' ) {
+                            $steps[ $step_id ]['last_feedback_code'] = sanitize_key( $code );
+                        }
+
+                        if ( $feedback !== '' ) {
+                            $steps[ $step_id ]['last_feedback_message'] = wp_strip_all_tags( $feedback );
+                        }
+
+                        $steps[ $step_id ]['last_event_at'] = max( $steps[ $step_id ]['last_event_at'], $timestamp );
+                    }
+                    break;
+                case 'submission':
+                    $submission['attempts'] += 1;
+                    if ( $status === 'success' ) {
+                        $submission['success'] += 1;
+                    } else {
+                        $submission['errors'] += 1;
+                    }
+
+                    if ( $code !== '' ) {
+                        $submission['last_feedback_code'] = sanitize_key( $code );
+                    }
+
+                    if ( $feedback !== '' ) {
+                        $submission['last_feedback_message'] = wp_strip_all_tags( $feedback );
+                    }
+
+                    $submission['last_attempt_at'] = max( $submission['last_attempt_at'], $timestamp );
+
+                    if ( $step_id > 0 && isset( $steps[ $step_id ] ) ) {
+                        if ( $code !== '' ) {
+                            $steps[ $step_id ]['last_feedback_code'] = sanitize_key( $code );
+                        }
+
+                        if ( $feedback !== '' ) {
+                            $steps[ $step_id ]['last_feedback_message'] = wp_strip_all_tags( $feedback );
+                        }
+
+                        $steps[ $step_id ]['last_event_at'] = max( $steps[ $step_id ]['last_event_at'], $timestamp );
+                    }
+                    break;
+                default:
+                    if ( $step_id > 0 && isset( $steps[ $step_id ] ) ) {
+                        $steps[ $step_id ]['last_event_at'] = max( $steps[ $step_id ]['last_event_at'], $timestamp );
+                    }
+                    break;
+            }
+        }
+
+        foreach ( $steps as $step_id => $data ) {
+            $exits                           = max( 1, (int) $data['exits'] );
+            $avg                             = $data['exits'] > 0 ? $data['total_time'] / $exits : 0.0;
+            $steps[ $step_id ]['avg_time']   = $avg;
+            $steps[ $step_id ]['total_time'] = (float) $data['total_time'];
+        }
+
+        ksort( $steps );
+
+        return array(
+            'steps'      => array_values( $steps ),
+            'submission' => $submission,
+        );
+    }
+
+    /**
      * Provide RAWG connection info for the diagnostics UI.
      */
     public function get_rawg_status() {

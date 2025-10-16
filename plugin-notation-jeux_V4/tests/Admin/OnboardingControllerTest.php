@@ -2,6 +2,7 @@
 
 use JLG\Notation\Admin\Onboarding\OnboardingController;
 use JLG\Notation\Helpers;
+use JLG\Notation\Telemetry;
 use PHPUnit\Framework\TestCase;
 
 final class OnboardingControllerTest extends TestCase
@@ -23,6 +24,7 @@ final class OnboardingControllerTest extends TestCase
 
         Helpers::flush_plugin_options_cache();
         $this->resetHelpersDefaultCache();
+        Telemetry::reset_metrics();
     }
 
     private function resetHelpersDefaultCache(): void
@@ -163,5 +165,39 @@ final class OnboardingControllerTest extends TestCase
         $this->assertSame(0, $stateTransient['rawg_skip']);
         $this->assertSame(4, $stateTransient['current_step']);
         $this->assertSame(0, get_option('jlg_onboarding_completed'));
+    }
+
+    public function test_handle_tracking_event_records_payload(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        $_POST = [
+            'nonce'   => wp_create_nonce('jlg_onboarding_track'),
+            'event'   => 'validation',
+            'payload' => wp_json_encode([
+                'status'           => 'error',
+                'step'             => 2,
+                'duration'         => 1.5,
+                'feedback_code'    => 'missing_module',
+                'feedback_message' => 'Choisissez un module',
+            ]),
+        ];
+
+        try {
+            $controller->handle_tracking_event();
+            $this->fail('Expected JSON response.');
+        } catch (WP_Send_Json_Exception $exception) {
+            $this->assertTrue($exception->success);
+            $this->assertSame(['recorded' => true], $exception->data);
+        }
+
+        $metrics = Telemetry::get_metrics_summary();
+        $this->assertArrayHasKey('onboarding', $metrics);
+        $channel = $metrics['onboarding'];
+
+        $this->assertSame('error', $channel['last_status']);
+        $this->assertSame('validation', $channel['last_event']['context']['event'] ?? '');
+        $this->assertSame('missing_module', $channel['last_event']['context']['feedback_code'] ?? '');
+        $this->assertSame(2, $channel['last_event']['context']['step'] ?? 0);
     }
 }

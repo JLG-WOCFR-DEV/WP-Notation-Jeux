@@ -48,7 +48,7 @@ class ScoreInsights {
 
         $post_context = $this->resolve_post_ids_with_history( $time_range, $platform_slug );
         $post_ids     = $post_context['current'];
-        $insights     = Helpers::get_posts_score_insights( $post_ids );
+        $insights     = Helpers::get_posts_score_insights( $post_ids, $time_range, $platform_slug );
 
         if ( isset( $insights['platform_rankings'] ) && is_array( $insights['platform_rankings'] ) ) {
             $insights['platform_rankings'] = array_slice( $insights['platform_rankings'], 0, $platform_limit );
@@ -57,7 +57,7 @@ class ScoreInsights {
         $time_ranges = $this->get_available_time_ranges();
         $platforms   = Helpers::get_registered_platform_labels();
 
-        $trend = $this->build_trend_summary( $insights, $post_context, $time_range, $time_ranges );
+        $trend = $this->build_trend_summary( $insights, $post_context, $time_range, $time_ranges, $platform_slug );
 
         $platform_label = '';
         if ( $platform_slug !== '' ) {
@@ -403,7 +403,7 @@ class ScoreInsights {
         );
     }
 
-    private function build_trend_summary( $current_insights, $post_context, $time_range, $time_ranges ) {
+    private function build_trend_summary( $current_insights, $post_context, $time_range, $time_ranges, $platform_slug ) {
         $bounds         = $post_context['bounds'] ?? null;
         $previous_ids   = $post_context['previous'] ?? array();
         $current_mean   = isset( $current_insights['mean']['value'] ) ? $current_insights['mean']['value'] : null;
@@ -416,7 +416,7 @@ class ScoreInsights {
             );
         }
 
-        $previous_insights = Helpers::get_posts_score_insights( $previous_ids );
+        $previous_insights = Helpers::get_posts_score_insights( $previous_ids, 'previous:' . $time_range, $platform_slug );
 
         $previous_mean  = isset( $previous_insights['mean']['value'] ) ? $previous_insights['mean']['value'] : null;
         $previous_total = isset( $previous_insights['total'] ) ? (int) $previous_insights['total'] : 0;

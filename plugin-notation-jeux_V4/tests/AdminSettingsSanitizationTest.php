@@ -72,6 +72,60 @@ class AdminSettingsSanitizationTest extends TestCase
         $this->assertSame(15, $sanitized['text_glow_intensity']);
     }
 
+    public function test_allowed_post_types_use_current_when_missing(): void
+    {
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
+        update_option('notation_jlg_settings', array_merge($defaults, [
+            'allowed_post_types' => ['page'],
+        ]));
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $sanitized = $this->settings->sanitize_options([]);
+
+        $this->assertSame(['page'], $sanitized['allowed_post_types']);
+
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+    }
+
+    public function test_allowed_post_types_strip_invalid_entries(): void
+    {
+        $input = [
+            'allowed_post_types' => ['post', 'invalid', 42],
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame(['post'], $sanitized['allowed_post_types']);
+    }
+
+    public function test_game_explorer_filters_fall_back_to_current_configuration(): void
+    {
+        $defaults = \JLG\Notation\Helpers::get_default_settings();
+        $custom   = array('search', 'category');
+
+        update_option('notation_jlg_settings', array_merge($defaults, [
+            'game_explorer_filters' => $custom,
+        ]));
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $sanitized = $this->settings->sanitize_options([]);
+
+        $this->assertSame(['category', 'search'], $sanitized['game_explorer_filters']);
+
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+    }
+
+    public function test_review_status_auto_finalize_days_apply_constraints(): void
+    {
+        $sanitized = $this->settings->sanitize_options(['review_status_auto_finalize_days' => 120]);
+
+        $this->assertSame(60, $sanitized['review_status_auto_finalize_days']);
+
+        $sanitized = $this->settings->sanitize_options([]);
+
+        $this->assertSame(7, $sanitized['review_status_auto_finalize_days']);
+    }
+
     public function test_color_fields_accept_custom_hex_and_transparent(): void
     {
         $input = [
@@ -100,6 +154,17 @@ class AdminSettingsSanitizationTest extends TestCase
 
         $this->assertSame('transparent', $sanitized['table_row_bg_color']);
         $this->assertSame('transparent', $sanitized['table_zebra_bg_color']);
+    }
+
+    public function test_related_guides_taxonomies_are_sanitized(): void
+    {
+        $input = [
+            'related_guides_taxonomies' => ' guide , guide ,custom_tax , ',
+        ];
+
+        $sanitized = $this->settings->sanitize_options($input);
+
+        $this->assertSame('guide,custom_tax', $sanitized['related_guides_taxonomies']);
     }
 
     public function test_rating_badge_threshold_respects_new_score_max(): void

@@ -2,6 +2,25 @@
     'use strict';
 
     var config = window.jlgOnboarding || {};
+    var telemetryConfig = config.telemetry || {};
+    var debugEvents = telemetryConfig && telemetryConfig.debug ? [] : null;
+
+    if (typeof window !== 'undefined') {
+        window.jlgOnboardingTracker = Object.assign({}, window.jlgOnboardingTracker || {}, {
+            getDebugEvents: function () {
+                if (!debugEvents) {
+                    return [];
+                }
+
+                return debugEvents.slice();
+            },
+            resetDebugEvents: function () {
+                if (debugEvents) {
+                    debugEvents.length = 0;
+                }
+            },
+        });
+    }
 
     function ready(callback) {
         if (document.readyState === 'loading') {
@@ -16,6 +35,45 @@
             return config.i18n[key];
         }
         return fallback;
+    }
+
+    function sendTrackingEvent(eventName, payload) {
+        if (typeof eventName !== 'string' || eventName === '') {
+            return;
+        }
+
+        var details = payload && typeof payload === 'object' ? Object.assign({}, payload) : {};
+        var status = details.status === 'error' ? 'error' : 'success';
+        details.status = status;
+
+        if (debugEvents) {
+            debugEvents.push({
+                event: eventName,
+                payload: Object.assign({}, details),
+            });
+        }
+
+        if (!telemetryConfig || !telemetryConfig.endpoint || !telemetryConfig.action || !telemetryConfig.nonce) {
+            return;
+        }
+
+        try {
+            var body = new window.FormData();
+            body.append('action', telemetryConfig.action);
+            body.append('nonce', telemetryConfig.nonce);
+            body.append('event', eventName);
+            body.append('payload', JSON.stringify(details));
+
+            window.fetch(telemetryConfig.endpoint, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: body,
+            }).catch(function () {
+                // Ignore network errors to keep the onboarding flow smooth.
+            });
+        } catch (error) {
+            void error; // eslint-disable-line no-void
+        }
     }
 
     ready(function () {
@@ -41,6 +99,7 @@
         }
 
         var currentIndex = 0;
+        var stepStartedAt = null;
         if (hiddenStepInput) {
             var initialStep = parseInt(hiddenStepInput.value, 10);
             if (!isNaN(initialStep) && initialStep >= 1 && initialStep <= steps.length) {
@@ -122,23 +181,41 @@
         }
 
         function validateStep(index) {
+            var result = {
+                valid: true,
+                code: 'valid',
+                message: '',
+            };
+
             switch (index) {
                 case 0:
                     if (!hasCheckedInputs('input[name="allowed_post_types[]"]')) {
-                        return getMessage('selectPostType', 'Sélectionnez au moins un type de contenu.');
+                        result.valid = false;
+                        result.code = 'missing_post_type';
+                        result.message = getMessage('selectPostType', 'Sélectionnez au moins un type de contenu.');
+                        return result;
                     }
                     break;
                 case 1:
                     if (!hasCheckedInputs('input[name="modules[]"]')) {
-                        return getMessage('moduleReminder', 'Choisissez au moins un module optionnel.');
+                        result.valid = false;
+                        result.code = 'missing_module';
+                        result.message = getMessage('moduleReminder', 'Choisissez au moins un module optionnel.');
+                        return result;
                     }
                     break;
                 case 2:
                     if (!hasCheckedInputs('input[name="visual_preset"]')) {
-                        return getMessage('selectPreset', 'Choisissez un préréglage visuel.');
+                        result.valid = false;
+                        result.code = 'missing_visual_preset';
+                        result.message = getMessage('selectPreset', 'Choisissez un préréglage visuel.');
+                        return result;
                     }
                     if (!hasCheckedInputs('input[name="visual_theme"]')) {
-                        return getMessage('selectPreset', 'Choisissez un thème visuel.');
+                        result.valid = false;
+                        result.code = 'missing_visual_theme';
+                        result.message = getMessage('selectPreset', 'Choisissez un thème visuel.');
+                        return result;
                     }
                     break;
                 case 3:
@@ -147,13 +224,17 @@
                     var skipChecked = skip ? skip.checked : false;
                     var value = input ? String(input.value || '').trim() : '';
                     if (!skipChecked && value.length < 10) {
-                        return getMessage('missingRawgKey', 'Indiquez une clé RAWG ou cochez la case pour la fournir plus tard.');
+                        result.valid = false;
+                        result.code = 'missing_rawg_key';
+                        result.message = getMessage('missingRawgKey', 'Indiquez une clé RAWG ou cochez la case pour la fournir plus tard.');
+                        return result;
                     }
                     break;
                 default:
                     break;
             }
-            return '';
+
+            return result;
         }
 
         function goToStep(index) {
@@ -164,7 +245,30 @@
                 index = steps.length - 1;
             }
 
+            var previousIndex = currentIndex;
+            var now = Date.now();
+
+            if (previousIndex !== index && previousIndex >= 0 && previousIndex < steps.length && stepStartedAt !== null) {
+                var duration = Math.max(0, (now - stepStartedAt) / 1000);
+                sendTrackingEvent('step_leave', {
+                    step: previousIndex + 1,
+                    duration: duration,
+                    status: 'success',
+                    direction: index > previousIndex ? 'forward' : 'backward',
+                });
+            }
+
             currentIndex = index;
+
+            if (stepStartedAt === null || previousIndex !== currentIndex) {
+                stepStartedAt = now;
+                sendTrackingEvent('step_enter', {
+                    step: currentIndex + 1,
+                    status: 'success',
+                    direction: previousIndex < currentIndex ? 'forward' : (previousIndex > currentIndex ? 'backward' : 'initial'),
+                });
+            }
+
             toggleStepVisibility(currentIndex);
             updateNavigation(currentIndex);
             setFeedback('');
@@ -172,11 +276,24 @@
         }
 
         function handleNext() {
-            var validationMessage = validateStep(currentIndex);
-            if (validationMessage) {
-                setFeedback(validationMessage);
+            var validationResult = validateStep(currentIndex);
+            if (!validationResult.valid) {
+                setFeedback(validationResult.message);
+                sendTrackingEvent('validation', {
+                    step: currentIndex + 1,
+                    status: 'error',
+                    feedback_code: validationResult.code,
+                    feedback_message: validationResult.message,
+                });
                 return;
             }
+
+            sendTrackingEvent('validation', {
+                step: currentIndex + 1,
+                status: 'success',
+                feedback_code: 'valid',
+            });
+
             goToStep(currentIndex + 1);
         }
 
@@ -199,11 +316,47 @@
         }
 
         form.addEventListener('submit', function (event) {
-            var validationMessage = validateStep(currentIndex);
-            if (validationMessage) {
+            var validationResult = validateStep(currentIndex);
+            if (!validationResult.valid) {
                 event.preventDefault();
-                setFeedback(validationMessage);
+                setFeedback(validationResult.message);
+                sendTrackingEvent('validation', {
+                    step: currentIndex + 1,
+                    status: 'error',
+                    feedback_code: validationResult.code,
+                    feedback_message: validationResult.message,
+                });
+                sendTrackingEvent('submission', {
+                    step: currentIndex + 1,
+                    status: 'error',
+                    feedback_code: validationResult.code,
+                    feedback_message: validationResult.message,
+                });
+                return;
             }
+
+            sendTrackingEvent('validation', {
+                step: currentIndex + 1,
+                status: 'success',
+                feedback_code: 'valid',
+            });
+
+            if (currentIndex >= 0 && currentIndex < steps.length && stepStartedAt !== null) {
+                var duration = Math.max(0, (Date.now() - stepStartedAt) / 1000);
+                sendTrackingEvent('step_leave', {
+                    step: currentIndex + 1,
+                    duration: duration,
+                    status: 'success',
+                    direction: 'complete',
+                    reason: 'submission',
+                });
+            }
+
+            sendTrackingEvent('submission', {
+                step: currentIndex + 1,
+                status: 'success',
+                feedback_code: 'submitted',
+            });
         });
 
         var rawgSkip = form.querySelector('input[name="rawg_skip"]');

@@ -8,6 +8,16 @@ $rawg_status  = isset($variables['rawg_status']) && is_array($variables['rawg_st
 $ajax_action  = isset($variables['ajax_action']) ? (string) $variables['ajax_action'] : '';
 $reset_action = isset($variables['reset_action']) ? (string) $variables['reset_action'] : '';
 $nonce        = isset($variables['nonce']) ? (string) $variables['nonce'] : '';
+$onboarding_summary = isset($variables['onboarding_summary']) && is_array($variables['onboarding_summary']) ? $variables['onboarding_summary'] : array();
+$onboarding_steps = isset($onboarding_summary['steps']) && is_array($onboarding_summary['steps']) ? $onboarding_summary['steps'] : array();
+$onboarding_submission = isset($onboarding_summary['submission']) && is_array($onboarding_summary['submission']) ? $onboarding_summary['submission'] : array(
+    'attempts' => 0,
+    'success' => 0,
+    'errors' => 0,
+    'last_feedback_code' => '',
+    'last_feedback_message' => '',
+    'last_attempt_at' => 0,
+);
 
 $rawg_configured = ! empty($rawg_status['configured']);
 $masked_key      = isset($rawg_status['masked_key']) ? (string) $rawg_status['masked_key'] : '';
@@ -144,6 +154,126 @@ $masked_key      = isset($rawg_status['masked_key']) ? (string) $rawg_status['ma
                 <?php esc_html_e('Réinitialiser les métriques', 'notation-jlg'); ?>
             </button>
         </form>
+    </section>
+
+    <section class="jlg-diagnostics__panel jlg-diagnostics__panel--onboarding">
+        <header class="jlg-diagnostics__header">
+            <h2><?php esc_html_e('Assistant de démarrage', 'notation-jlg'); ?></h2>
+            <p class="jlg-diagnostics__subtitle">
+                <?php esc_html_e('Analysez la progression des étapes de configuration et les validations récentes.', 'notation-jlg'); ?>
+            </p>
+        </header>
+
+        <?php if (empty($onboarding_steps)) : ?>
+            <p class="jlg-diagnostics__empty">
+                <?php esc_html_e('Aucun parcours de configuration n’a encore été enregistré.', 'notation-jlg'); ?>
+            </p>
+        <?php else : ?>
+            <div class="jlg-diagnostics__grid jlg-diagnostics__grid--onboarding">
+                <?php foreach ($onboarding_steps as $step_data) :
+                    $step_number = isset($step_data['step']) ? (int) $step_data['step'] : 0;
+                    $entries = isset($step_data['entries']) ? (int) $step_data['entries'] : 0;
+                    $exits = isset($step_data['exits']) ? (int) $step_data['exits'] : 0;
+                    $avg_time = isset($step_data['avg_time']) ? (float) $step_data['avg_time'] : 0.0;
+                    $total_time = isset($step_data['total_time']) ? (float) $step_data['total_time'] : 0.0;
+                    $valid_success = isset($step_data['validation_success']) ? (int) $step_data['validation_success'] : 0;
+                    $valid_errors = isset($step_data['validation_errors']) ? (int) $step_data['validation_errors'] : 0;
+                    $last_feedback_code = isset($step_data['last_feedback_code']) ? (string) $step_data['last_feedback_code'] : '';
+                    $last_feedback_message = isset($step_data['last_feedback_message']) ? (string) $step_data['last_feedback_message'] : '';
+                    $last_event_at = isset($step_data['last_event_at']) ? (int) $step_data['last_event_at'] : 0;
+                    ?>
+                    <article class="jlg-diagnostics__card jlg-diagnostics__card--onboarding" data-step="<?php echo esc_attr($step_number); ?>">
+                        <h3 class="jlg-diagnostics__card-title">
+                            <?php
+                            if ($step_number > 0) {
+                                printf(esc_html__('Étape %d', 'notation-jlg'), $step_number);
+                            } else {
+                                esc_html_e('Étape', 'notation-jlg');
+                            }
+                            ?>
+                        </h3>
+                        <dl class="jlg-diagnostics__stats">
+                            <div>
+                                <dt><?php esc_html_e('Entrées', 'notation-jlg'); ?></dt>
+                                <dd><?php echo esc_html(number_format_i18n($entries)); ?></dd>
+                            </div>
+                            <div>
+                                <dt><?php esc_html_e('Sorties', 'notation-jlg'); ?></dt>
+                                <dd><?php echo esc_html(number_format_i18n($exits)); ?></dd>
+                            </div>
+                            <div>
+                                <dt><?php esc_html_e('Validations OK', 'notation-jlg'); ?></dt>
+                                <dd><?php echo esc_html(number_format_i18n($valid_success)); ?></dd>
+                            </div>
+                            <div>
+                                <dt><?php esc_html_e('Validations en erreur', 'notation-jlg'); ?></dt>
+                                <dd><?php echo esc_html(number_format_i18n($valid_errors)); ?></dd>
+                            </div>
+                            <div>
+                                <dt><?php esc_html_e('Temps moyen', 'notation-jlg'); ?></dt>
+                                <dd><?php echo esc_html(number_format_i18n($avg_time, 2)); ?>s</dd>
+                            </div>
+                            <div>
+                                <dt><?php esc_html_e('Temps cumulé', 'notation-jlg'); ?></dt>
+                                <dd><?php echo esc_html(number_format_i18n($total_time, 2)); ?>s</dd>
+                            </div>
+                        </dl>
+                        <?php if ($last_feedback_code !== '' || $last_feedback_message !== '' || $last_event_at > 0) : ?>
+                            <p class="jlg-diagnostics__last">
+                                <strong><?php esc_html_e('Dernier feedback', 'notation-jlg'); ?></strong>
+                                <?php if ($last_feedback_code !== '') : ?>
+                                    <code class="jlg-diagnostics__feedback-code"><?php echo esc_html($last_feedback_code); ?></code>
+                                <?php endif; ?>
+                                <?php if ($last_event_at > 0) : ?>
+                                    <span class="jlg-diagnostics__timestamp"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $last_event_at)); ?></span>
+                                <?php endif; ?>
+                            </p>
+                            <?php if ($last_feedback_message !== '') : ?>
+                                <p class="jlg-diagnostics__feedback-message"><?php echo esc_html($last_feedback_message); ?></p>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (! empty($onboarding_submission['attempts'])) :
+            $submission_feedback_code = isset($onboarding_submission['last_feedback_code']) ? (string) $onboarding_submission['last_feedback_code'] : '';
+            $submission_feedback_message = isset($onboarding_submission['last_feedback_message']) ? (string) $onboarding_submission['last_feedback_message'] : '';
+            $submission_last_at = isset($onboarding_submission['last_attempt_at']) ? (int) $onboarding_submission['last_attempt_at'] : 0;
+            ?>
+            <div class="jlg-diagnostics__submission-summary">
+                <h3><?php esc_html_e('Tentatives de finalisation', 'notation-jlg'); ?></h3>
+                <dl class="jlg-diagnostics__stats">
+                    <div>
+                        <dt><?php esc_html_e('Tentatives', 'notation-jlg'); ?></dt>
+                        <dd><?php echo esc_html(number_format_i18n((int) $onboarding_submission['attempts'])); ?></dd>
+                    </div>
+                    <div>
+                        <dt><?php esc_html_e('Réussites', 'notation-jlg'); ?></dt>
+                        <dd><?php echo esc_html(number_format_i18n((int) $onboarding_submission['success'])); ?></dd>
+                    </div>
+                    <div>
+                        <dt><?php esc_html_e('Échecs', 'notation-jlg'); ?></dt>
+                        <dd><?php echo esc_html(number_format_i18n((int) $onboarding_submission['errors'])); ?></dd>
+                    </div>
+                </dl>
+                <?php if ($submission_feedback_code !== '' || $submission_feedback_message !== '' || $submission_last_at > 0) : ?>
+                    <p class="jlg-diagnostics__last">
+                        <strong><?php esc_html_e('Dernière tentative', 'notation-jlg'); ?></strong>
+                        <?php if ($submission_feedback_code !== '') : ?>
+                            <code class="jlg-diagnostics__feedback-code"><?php echo esc_html($submission_feedback_code); ?></code>
+                        <?php endif; ?>
+                        <?php if ($submission_last_at > 0) : ?>
+                            <span class="jlg-diagnostics__timestamp"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $submission_last_at)); ?></span>
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($submission_feedback_message !== '') : ?>
+                        <p class="jlg-diagnostics__feedback-message"><?php echo esc_html($submission_feedback_message); ?></p>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </section>
 </div>
 

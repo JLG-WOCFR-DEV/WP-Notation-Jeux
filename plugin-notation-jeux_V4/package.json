@@ -1,0 +1,18 @@
+{
+  "name": "plugin-notation-jeux_V4",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "testMatch": [
+      "<rootDir>/assets/js/admin/__tests__/**/*.test.js"
+    ]
+  }
+}
