@@ -486,6 +486,8 @@ class Settings {
     }
 
     private function post_process_schedule_score_scale_migration( array $sanitized, array $input, array $defaults, array $current_options, array $definition = array() ) {
+        unset( $definition );
+
         $previous_max = isset( $current_options['score_max'] )
             ? Helpers::get_score_max( array( 'score_max' => $current_options['score_max'] ) )
             : ( $defaults['score_max'] ?? 10 );
@@ -529,16 +531,6 @@ class Settings {
         if ( ! is_numeric( $score_max_reference ) ) {
             $score_max_reference = Helpers::get_score_max( array( 'score_max' => $score_max_reference ) );
         }
-    }
-
-    private function maybe_schedule_score_scale_migration( array $sanitized, array $context ) {
-        $current_options = $context['current'] ?? array();
-        $defaults        = $context['defaults'] ?? Helpers::get_default_settings();
-
-        $old_reference = isset( $current_options['score_max'] )
-            ? array( 'score_max' => $current_options['score_max'] )
-            : array( 'score_max' => $defaults['score_max'] ?? 10 );
-        $new_reference = array( 'score_max' => $sanitized['score_max'] ?? ( $defaults['score_max'] ?? 10 ) );
 
         if ( is_numeric( $score_max_reference ) ) {
             $raw_threshold = min( $raw_threshold, (float) $score_max_reference );
