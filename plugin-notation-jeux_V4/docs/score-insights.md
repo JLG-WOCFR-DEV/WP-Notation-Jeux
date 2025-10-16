@@ -30,6 +30,16 @@ Dans Gutenberg, le bloc reprend ces attributs :
 
 Le bloc réutilise le shortcode côté serveur, garantissant la parité front/éditeur. L'aperçu dynamique respecte également les attributs pour vérifier le rendu avant publication.
 
+## Cache & invalidation
+
+- Les résultats de `Helpers::get_posts_score_insights()` sont mémorisés (transient + cache en mémoire) en fonction des identifiants analysés, de la plage temporelle (`time_range`) et du filtre plateforme (`platform`).
+- La durée de vie par défaut est de 10 minutes et peut être ajustée (ou désactivée en retournant `0`) via le filtre `jlg_score_insights_cache_ttl`.
+- Le cache est purgé automatiquement lorsque :
+  - `Helpers::clear_rated_post_ids_cache()` est exécuté (hook `jlg_rated_post_ids_cache_cleared`).
+  - Une métadonnée éditoriale utilisée pour calculer la moyenne est modifiée (rappel `maybe_handle_rating_meta_change`).
+  - Les métadonnées liées aux votes lecteurs (`_jlg_user_rating_avg`, `_jlg_user_rating_count`, `_jlg_user_rating_breakdown`) ou la moyenne stockée (`_jlg_average_score`) sont mises à jour.
+- L'action `jlg_score_insights_cache_cleared` est déclenchée après chaque purge pour permettre aux intégrateurs de synchroniser leurs propres optimisations.
+
 ## Bonnes pratiques
 
 - Préparez vos slugs de plateforme dans l'administration avant de configurer le bloc afin de disposer de libellés cohérents.
