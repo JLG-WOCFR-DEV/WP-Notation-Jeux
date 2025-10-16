@@ -487,19 +487,15 @@ class Settings {
     }
 
     private function post_process_schedule_score_scale_migration( array $sanitized, array $input, array $defaults, array $current_options, array $definition = array() ) {
-        unset( $definition );
+        unset( $input, $definition );
 
         $previous_max = isset( $current_options['score_max'] )
-            ? Helpers::get_score_max( array( 'score_max' => $current_options['score_max'] ) )
+            ? $current_options['score_max']
             : ( $defaults['score_max'] ?? 10 );
 
-        $new_max = isset( $sanitized['score_max'] )
-            ? Helpers::get_score_max( array( 'score_max' => $sanitized['score_max'] ) )
-            : $previous_max;
+        $new_max = $sanitized['score_max'] ?? $previous_max;
 
-        if ( $previous_max !== $new_max ) {
-            Helpers::schedule_score_scale_migration( $previous_max, $new_max );
-        }
+        $this->maybe_schedule_score_scale_migration( $previous_max, $new_max );
 
         return $sanitized;
     }
@@ -520,17 +516,15 @@ class Settings {
         $score_max_reference = $sanitized['score_max']
             ?? ( $current_options['score_max'] ?? ( $defaults['score_max'] ?? 10 ) );
 
-        if ( ! is_numeric( $score_max_reference ) ) {
-            $score_max_reference = Helpers::get_score_max( array( 'score_max' => $score_max_reference ) );
-        }
-
-        if ( is_numeric( $score_max_reference ) ) {
-            $raw_threshold = min( $raw_threshold, (float) $score_max_reference );
-        }
+        $normalized_max = Helpers::get_score_max(
+            array(
+                'score_max' => $score_max_reference,
+            )
+        );
 
         $constraints = array(
             'min'  => 0,
-            'max'  => is_numeric( $score_max_reference ) ? (float) $score_max_reference : null,
+            'max'  => $normalized_max,
             'step' => $definition['step'] ?? null,
         );
 
@@ -542,6 +536,17 @@ class Settings {
         );
 
         return $sanitized;
+    }
+
+    private function maybe_schedule_score_scale_migration( $previous_max, $new_max ) {
+        $normalized_previous = Helpers::get_score_max( array( 'score_max' => $previous_max ) );
+        $normalized_new      = Helpers::get_score_max( array( 'score_max' => $new_max ) );
+
+        if ( $normalized_previous === $normalized_new ) {
+            return;
+        }
+
+        Helpers::schedule_score_scale_migration( $normalized_previous, $normalized_new );
     }
 
     private function sanitize_game_explorer_filters( $raw_filters, array $default_filters, $current_filters ) {
