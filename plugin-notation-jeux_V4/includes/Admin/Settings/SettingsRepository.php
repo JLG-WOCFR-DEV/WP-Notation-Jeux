@@ -88,182 +88,393 @@ class SettingsRepository {
     );
 
     /**
-     * Returns the sanitization schema describing each settings field.
+     * Declarative schema describing every persisted option.
+     *
+     * Each entry defines the field type as well as the constraints used during
+     * sanitization. Complex fields can also expose callbacks that will be
+     * executed after the generic normalization logic.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private const BASE_OPTION_SCHEMA = array(
+        'visual_theme'                        => array(
+            'type'    => 'enum',
+            'choices' => array( 'dark', 'light' ),
+        ),
+        'visual_preset'                       => array(
+            'type'    => 'enum',
+            'choices' => array( 'signature', 'minimal', 'editorial' ),
+        ),
+        'score_layout'                        => array(
+            'type'    => 'enum',
+            'choices' => array( 'text', 'circle' ),
+        ),
+        'score_max'                           => array(
+            'type'        => 'number',
+            'min'         => 5,
+            'max'         => 100,
+            'step'        => 1,
+            'cast'        => 'int',
+            'postProcess' => array( 'schedule_score_scale_migration' ),
+        ),
+        'enable_animations'                   => array(
+            'type' => 'checkbox',
+        ),
+        'allowed_post_types'                  => array(
+            'type'        => 'post_types',
+            'postProcess' => array(),
+        ),
+        'tagline_font_size'                   => array(
+            'type' => 'number',
+            'min'  => 12,
+            'max'  => 32,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'rating_badge_enabled'                => array(
+            'type' => 'checkbox',
+        ),
+        'rating_badge_threshold'              => array(
+            'type'        => 'number',
+            'min'         => 0,
+            'step'        => 0.1,
+            'postProcess' => array( 'clamp_rating_badge_threshold' ),
+        ),
+        'review_status_enabled'               => array(
+            'type' => 'checkbox',
+        ),
+        'review_status_auto_finalize_enabled' => array(
+            'type'    => 'checkbox',
+            'default' => 0,
+        ),
+        'review_status_auto_finalize_days'    => array(
+            'type'    => 'number',
+            'min'     => 1,
+            'max'     => 60,
+            'step'    => 1,
+            'cast'    => 'int',
+            'default' => 7,
+        ),
+        'verdict_module_enabled'              => array(
+            'type' => 'checkbox',
+        ),
+        'related_guides_enabled'              => array(
+            'type' => 'checkbox',
+        ),
+        'related_guides_limit'                => array(
+            'type' => 'number',
+            'min'  => 1,
+            'max'  => 6,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'related_guides_taxonomies'           => array(
+            'type' => 'csv',
+        ),
+        'deals_enabled'                       => array(
+            'type' => 'checkbox',
+        ),
+        'deals_limit'                         => array(
+            'type' => 'number',
+            'min'  => 1,
+            'max'  => 6,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'deals_button_rel'                    => array(
+            'type' => 'text',
+        ),
+        'deals_disclaimer'                    => array(
+            'type' => 'text',
+        ),
+        'dark_bg_color'                       => array(
+            'type' => 'color',
+        ),
+        'dark_bg_color_secondary'             => array(
+            'type' => 'color',
+        ),
+        'dark_border_color'                   => array(
+            'type' => 'color',
+        ),
+        'dark_text_color'                     => array(
+            'type' => 'color',
+        ),
+        'dark_text_color_secondary'           => array(
+            'type' => 'color',
+        ),
+        'tagline_bg_color'                    => array(
+            'type' => 'color',
+        ),
+        'tagline_text_color'                  => array(
+            'type' => 'color',
+        ),
+        'light_bg_color'                      => array(
+            'type' => 'color',
+        ),
+        'light_bg_color_secondary'            => array(
+            'type' => 'color',
+        ),
+        'light_border_color'                  => array(
+            'type' => 'color',
+        ),
+        'light_text_color'                    => array(
+            'type' => 'color',
+        ),
+        'light_text_color_secondary'          => array(
+            'type' => 'color',
+        ),
+        'score_gradient_1'                    => array(
+            'type' => 'color',
+        ),
+        'score_gradient_2'                    => array(
+            'type' => 'color',
+        ),
+        'color_low'                           => array(
+            'type' => 'color',
+        ),
+        'color_mid'                           => array(
+            'type' => 'color',
+        ),
+        'color_high'                          => array(
+            'type' => 'color',
+        ),
+        'user_rating_star_color'              => array(
+            'type' => 'color',
+        ),
+        'user_rating_text_color'              => array(
+            'type' => 'color',
+        ),
+        'user_rating_title_color'             => array(
+            'type' => 'color',
+        ),
+        'circle_dynamic_bg_enabled'           => array(
+            'type' => 'checkbox',
+        ),
+        'circle_border_enabled'               => array(
+            'type' => 'checkbox',
+        ),
+        'circle_border_width'                 => array(
+            'type' => 'number',
+            'min'  => 1,
+            'max'  => 20,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'circle_border_color'                 => array(
+            'type' => 'color',
+        ),
+        'text_glow_enabled'                   => array(
+            'type' => 'checkbox',
+        ),
+        'text_glow_color_mode'                => array(
+            'type'    => 'enum',
+            'choices' => array( 'dynamic', 'custom' ),
+        ),
+        'text_glow_custom_color'              => array(
+            'type' => 'color',
+        ),
+        'text_glow_intensity'                 => array(
+            'type' => 'number',
+            'min'  => 5,
+            'max'  => 50,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'text_glow_pulse'                     => array(
+            'type' => 'checkbox',
+        ),
+        'text_glow_speed'                     => array(
+            'type' => 'number',
+            'min'  => 0.5,
+            'max'  => 10,
+            'step' => 0.1,
+        ),
+        'circle_glow_enabled'                 => array(
+            'type' => 'checkbox',
+        ),
+        'circle_glow_color_mode'              => array(
+            'type'    => 'enum',
+            'choices' => array( 'dynamic', 'custom' ),
+        ),
+        'circle_glow_custom_color'            => array(
+            'type' => 'color',
+        ),
+        'circle_glow_intensity'               => array(
+            'type' => 'number',
+            'min'  => 5,
+            'max'  => 50,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'circle_glow_pulse'                   => array(
+            'type' => 'checkbox',
+        ),
+        'circle_glow_speed'                   => array(
+            'type' => 'number',
+            'min'  => 0.5,
+            'max'  => 10,
+            'step' => 0.1,
+        ),
+        'tagline_enabled'                     => array(
+            'type' => 'checkbox',
+        ),
+        'user_rating_enabled'                 => array(
+            'type' => 'checkbox',
+        ),
+        'user_rating_requires_login'          => array(
+            'type' => 'checkbox',
+        ),
+        'user_rating_weighting_enabled'       => array(
+            'type' => 'checkbox',
+        ),
+        'user_rating_guest_weight_start'      => array(
+            'type' => 'number',
+            'min'  => 0,
+            'max'  => 1,
+            'step' => 0.1,
+        ),
+        'user_rating_guest_weight_increment'  => array(
+            'type' => 'number',
+            'min'  => 0,
+            'max'  => 1,
+            'step' => 0.01,
+        ),
+        'user_rating_guest_weight_max'        => array(
+            'type' => 'number',
+            'min'  => 0,
+            'max'  => 1,
+            'step' => 0.1,
+        ),
+        'table_zebra_striping'                => array(
+            'type' => 'checkbox',
+        ),
+        'table_border_style'                  => array(
+            'type'    => 'enum',
+            'choices' => array( 'none', 'horizontal', 'full' ),
+        ),
+        'table_border_width'                  => array(
+            'type' => 'number',
+            'min'  => 0,
+            'max'  => 10,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'table_header_bg_color'               => array(
+            'type' => 'color',
+        ),
+        'table_header_text_color'             => array(
+            'type' => 'color',
+        ),
+        'table_row_bg_color'                  => array(
+            'type'              => 'color',
+            'allow_transparent' => true,
+        ),
+        'table_row_text_color'                => array(
+            'type' => 'color',
+        ),
+        'table_zebra_bg_color'                => array(
+            'type'              => 'color',
+            'allow_transparent' => true,
+        ),
+        'thumb_text_color'                    => array(
+            'type' => 'color',
+        ),
+        'thumb_font_size'                     => array(
+            'type' => 'number',
+            'min'  => 10,
+            'max'  => 24,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'thumb_padding'                       => array(
+            'type' => 'number',
+            'min'  => 2,
+            'max'  => 20,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'thumb_border_radius'                 => array(
+            'type' => 'number',
+            'min'  => 0,
+            'max'  => 50,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'game_explorer_columns'               => array(
+            'type' => 'number',
+            'min'  => 2,
+            'max'  => 4,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'game_explorer_posts_per_page'        => array(
+            'type' => 'number',
+            'min'  => 6,
+            'max'  => 36,
+            'step' => 1,
+            'cast' => 'int',
+        ),
+        'game_explorer_filters'               => array(
+            'type' => 'game_explorer_filters',
+        ),
+        'game_explorer_score_position'        => array(
+            'type'              => 'enum',
+            'choices_callback'  => array( Helpers::class, 'get_game_explorer_score_positions' ),
+            'sanitize_callback' => array( Helpers::class, 'normalize_game_explorer_score_position' ),
+        ),
+        'rating_categories'                   => array(
+            'type' => 'rating_categories',
+        ),
+        'custom_css'                          => array(
+            'type' => 'css',
+        ),
+        'seo_schema_enabled'                  => array(
+            'type' => 'checkbox',
+        ),
+        'debug_mode_enabled'                  => array(
+            'type' => 'checkbox',
+        ),
+        'rawg_api_key'                        => array(
+            'type' => 'text',
+        ),
+    );
+
+    /**
+     * Cached representation of the expanded option schema.
+     *
+     * @var array<string, array<string, mixed>>|null
+     */
+    private static $option_schema = null;
+
+    /**
+     * Returns the declarative option schema used during sanitization.
      *
      * @return array<string, array<string, mixed>>
      */
-    public function get_sanitization_schema() {
-        $schema = array(
-            'visual_theme'                     => array(
-                'type'    => 'select',
-                'choices' => array( 'dark', 'light' ),
-            ),
-            'visual_preset'                    => array(
-                'type'    => 'select',
-                'choices' => array( 'signature', 'minimal', 'editorial' ),
-            ),
-            'score_layout'                     => array(
-                'type'    => 'select',
-                'choices' => array( 'text', 'circle' ),
-            ),
-            'text_glow_color_mode'             => array(
-                'type'    => 'select',
-                'choices' => array( 'dynamic', 'custom' ),
-            ),
-            'circle_glow_color_mode'           => array(
-                'type'    => 'select',
-                'choices' => array( 'dynamic', 'custom' ),
-            ),
-            'table_border_style'               => array(
-                'type'    => 'select',
-                'choices' => array( 'none', 'horizontal', 'full' ),
-            ),
-            'game_explorer_score_position'     => array(
-                'type'    => 'select',
-                'choices' => Helpers::get_game_explorer_score_positions(),
-            ),
-            'allowed_post_types'               => array(
-                'type'              => 'custom',
-                'sanitize_callback' => 'allowed_post_types',
-                'fallback'          => 'current_or_default',
-            ),
-            'game_explorer_filters'            => array(
-                'type'              => 'custom',
-                'sanitize_callback' => 'game_explorer_filters',
-                'fallback'          => 'current',
-            ),
-            'rating_categories'                => array(
-                'type'              => 'custom',
-                'sanitize_callback' => 'rating_categories',
-            ),
-            'related_guides_taxonomies'        => array(
-                'type' => 'csv',
-            ),
-            'custom_css'                       => array(
-                'type' => 'css',
-            ),
-            'deals_button_rel'                 => array(
-                'type' => 'text',
-            ),
-            'deals_disclaimer'                 => array(
-                'type' => 'text',
-            ),
-            'rawg_api_key'                     => array(
-                'type' => 'text',
-            ),
-            'score_max'                        => array(
-                'type'         => 'number',
-                'post_process' => array( 'score_scale_migration' ),
-            ),
-            'rating_badge_threshold'           => array(
-                'type'         => 'number',
-                'post_process' => array( 'clamp_rating_badge_threshold' ),
-            ),
-            'review_status_auto_finalize_days' => array(
-                'type'    => 'number',
-                'default' => 7,
-            ),
-        );
-
-        $boolean_fields = array(
-            'enable_animations',
-            'circle_dynamic_bg_enabled',
-            'circle_border_enabled',
-            'text_glow_enabled',
-            'text_glow_pulse',
-            'circle_glow_enabled',
-            'circle_glow_pulse',
-            'tagline_enabled',
-            'user_rating_enabled',
-            'user_rating_requires_login',
-            'user_rating_weighting_enabled',
-            'table_zebra_striping',
-            'rating_badge_enabled',
-            'review_status_enabled',
-            'review_status_auto_finalize_enabled',
-            'verdict_module_enabled',
-            'related_guides_enabled',
-            'deals_enabled',
-            'seo_schema_enabled',
-            'debug_mode_enabled',
-        );
-
-        foreach ( $boolean_fields as $field ) {
-            $schema[ $field ] = array(
-                'type'               => 'boolean',
-                'default_if_missing' => 0,
-            );
+    public static function get_option_schema() {
+        if ( self::$option_schema !== null ) {
+            return self::$option_schema;
         }
 
-        $color_fields = array(
-            'dark_bg_color',
-            'dark_bg_color_secondary',
-            'dark_border_color',
-            'dark_text_color',
-            'dark_text_color_secondary',
-            'tagline_bg_color',
-            'tagline_text_color',
-            'light_bg_color',
-            'light_bg_color_secondary',
-            'light_border_color',
-            'light_text_color',
-            'light_text_color_secondary',
-            'score_gradient_1',
-            'score_gradient_2',
-            'color_low',
-            'color_mid',
-            'color_high',
-            'user_rating_star_color',
-            'user_rating_text_color',
-            'user_rating_title_color',
-            'circle_border_color',
-            'text_glow_custom_color',
-            'circle_glow_custom_color',
-            'table_header_bg_color',
-            'table_header_text_color',
-            'table_row_bg_color',
-            'table_row_text_color',
-            'table_zebra_bg_color',
-            'thumb_text_color',
-        );
+        $schema = self::BASE_OPTION_SCHEMA;
 
-        foreach ( $color_fields as $field ) {
-            $schema[ $field ] = array(
-                'type' => 'color',
-            );
+        foreach ( $schema as $field => &$definition ) {
+            if ( isset( $definition['choices_callback'] ) && is_callable( $definition['choices_callback'] ) ) {
+                $choices = call_user_func( $definition['choices_callback'] );
+
+                if ( is_array( $choices ) ) {
+                    $definition['choices'] = array_values( array_map( 'sanitize_key', $choices ) );
+                }
+
+                unset( $definition['choices_callback'] );
+            }
         }
 
-        foreach ( array( 'table_row_bg_color', 'table_zebra_bg_color' ) as $field ) {
-            $schema[ $field ]['allow_transparent'] = true;
-        }
+        unset( $definition );
 
-        $number_fields = array(
-            'circle_border_width',
-            'text_glow_intensity',
-            'text_glow_speed',
-            'circle_glow_intensity',
-            'circle_glow_speed',
-            'tagline_font_size',
-            'table_border_width',
-            'thumb_font_size',
-            'thumb_padding',
-            'thumb_border_radius',
-            'game_explorer_columns',
-            'game_explorer_posts_per_page',
-            'related_guides_limit',
-            'deals_limit',
-            'user_rating_guest_weight_start',
-            'user_rating_guest_weight_increment',
-            'user_rating_guest_weight_max',
-        );
+        self::$option_schema = $schema;
 
-        foreach ( $number_fields as $field ) {
-            $schema[ $field ] = array(
-                'type' => 'number',
-            );
-        }
-
-        return $schema;
+        return self::$option_schema;
     }
 
     /**
