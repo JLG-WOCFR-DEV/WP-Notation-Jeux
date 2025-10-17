@@ -47,7 +47,9 @@ class Telemetry {
             'duration'  => isset( $payload['duration'] ) ? max( 0, (float) $payload['duration'] ) : 0.0,
             'status'    => isset( $payload['status'] ) && $payload['status'] === 'success' ? 'success' : 'error',
             'message'   => isset( $payload['message'] ) ? wp_strip_all_tags( (string) $payload['message'] ) : '',
-            'context'   => isset( $payload['context'] ) && is_array( $payload['context'] ) ? $payload['context'] : array(),
+            'context'   => isset( $payload['context'] ) && is_array( $payload['context'] )
+                ? self::sanitize_event_context( $payload['context'] )
+                : array(),
         );
 
         $metrics[ $channel ]['history'][] = $entry;
@@ -177,8 +179,56 @@ class Telemetry {
             'duration'  => isset( $event['duration'] ) ? (float) $event['duration'] : 0.0,
             'status'    => isset( $event['status'] ) && $event['status'] === 'success' ? 'success' : 'error',
             'message'   => isset( $event['message'] ) ? wp_strip_all_tags( (string) $event['message'] ) : '',
-            'context'   => isset( $event['context'] ) && is_array( $event['context'] ) ? $event['context'] : array(),
+            'context'   => isset( $event['context'] ) && is_array( $event['context'] )
+                ? self::sanitize_event_context( $event['context'] )
+                : array(),
         );
+    }
+
+    /**
+     * Sanitize telemetry context payloads while preserving scalar types.
+     *
+     * @param array $context Raw context payload.
+     *
+     * @return array<string|int, mixed>
+     */
+    private static function sanitize_event_context( $context ) {
+        if ( ! is_array( $context ) ) {
+            return array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $context as $key => $value ) {
+            $normalized_key = $key;
+
+            if ( is_string( $key ) ) {
+                $maybe_key = sanitize_key( $key );
+                if ( $maybe_key !== '' ) {
+                    $normalized_key = $maybe_key;
+                }
+            }
+
+            if ( is_array( $value ) ) {
+                $sanitized_value = self::sanitize_event_context( $value );
+            } elseif ( is_object( $value ) ) {
+                $sanitized_value = self::sanitize_event_context( (array) $value );
+            } elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+                $sanitized_value = $value;
+            } elseif ( $value === null ) {
+                $sanitized_value = '';
+            } elseif ( is_scalar( $value ) ) {
+                $string_value    = (string) $value;
+                $stripped        = wp_strip_all_tags( $string_value );
+                $sanitized_value = sanitize_text_field( $stripped );
+            } else {
+                $sanitized_value = sanitize_text_field( (string) $value );
+            }
+
+            $sanitized[ $normalized_key ] = $sanitized_value;
+        }
+
+        return $sanitized;
     }
 
     /**
