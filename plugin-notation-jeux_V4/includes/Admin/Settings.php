@@ -495,12 +495,17 @@ class Settings {
 
         $new_max = $sanitized['score_max'] ?? $previous_max;
 
-        $this->maybe_schedule_score_scale_migration( $previous_max, $new_max );
+        $normalized_previous = Helpers::get_score_max( array( 'score_max' => $previous_max ) );
+        $normalized_new      = Helpers::get_score_max( array( 'score_max' => $new_max ) );
+
+        if ( $normalized_previous !== $normalized_new ) {
+            Helpers::schedule_score_scale_migration( $normalized_previous, $normalized_new );
+        }
 
         return $sanitized;
     }
 
-    private function post_process_clamp_rating_badge_threshold( array $sanitized, array $input, array $defaults, array $current_options, array $definition ) {
+    private function post_process_clamp_rating_badge_threshold( array $sanitized, array $input, array $defaults, array $current_options, array $definition = array() ) {
         if ( ! array_key_exists( 'rating_badge_threshold', $sanitized ) ) {
             return $sanitized;
         }
@@ -516,15 +521,13 @@ class Settings {
         $score_max_reference = $sanitized['score_max']
             ?? ( $current_options['score_max'] ?? ( $defaults['score_max'] ?? 10 ) );
 
-        $normalized_max = Helpers::get_score_max(
-            array(
-                'score_max' => $score_max_reference,
-            )
-        );
-
         $constraints = array(
             'min'  => 0,
-            'max'  => $normalized_max,
+            'max'  => Helpers::get_score_max(
+                array(
+                    'score_max' => $score_max_reference,
+                )
+            ),
             'step' => $definition['step'] ?? null,
         );
 
@@ -536,17 +539,6 @@ class Settings {
         );
 
         return $sanitized;
-    }
-
-    private function maybe_schedule_score_scale_migration( $previous_max, $new_max ) {
-        $normalized_previous = Helpers::get_score_max( array( 'score_max' => $previous_max ) );
-        $normalized_new      = Helpers::get_score_max( array( 'score_max' => $new_max ) );
-
-        if ( $normalized_previous === $normalized_new ) {
-            return;
-        }
-
-        Helpers::schedule_score_scale_migration( $normalized_previous, $normalized_new );
     }
 
     private function sanitize_game_explorer_filters( $raw_filters, array $default_filters, $current_filters ) {
