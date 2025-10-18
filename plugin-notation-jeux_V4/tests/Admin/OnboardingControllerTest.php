@@ -17,6 +17,8 @@ final class OnboardingControllerTest extends TestCase
         $GLOBALS['jlg_onboarding_errors'] = [];
         $GLOBALS['jlg_test_is_admin']     = true;
         $GLOBALS['jlg_test_current_user_id'] = 1;
+        $GLOBALS['jlg_test_menu_pages']      = [];
+        $GLOBALS['jlg_test_submenu_pages']   = [];
 
         $_POST    = [];
         $_GET     = [];
@@ -57,6 +59,32 @@ final class OnboardingControllerTest extends TestCase
         $this->assertNotEmpty($GLOBALS['jlg_test_redirects']);
         $firstRedirect = $GLOBALS['jlg_test_redirects'][0];
         $this->assertSame('https://example.com/wp-admin/admin.php?page=jlg-notation-onboarding', $firstRedirect['location']);
+    }
+
+    public function test_register_onboarding_page_keeps_menu_visible_until_completion(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        update_option('jlg_onboarding_completed', 0);
+
+        $hook_suffix = $controller->register_onboarding_page();
+
+        $this->assertSame('notation_jlg_settings_page_jlg-notation-onboarding', $hook_suffix);
+        $this->assertArrayHasKey('notation_jlg_settings', $GLOBALS['jlg_test_submenu_pages']);
+        $submenu = $GLOBALS['jlg_test_submenu_pages']['notation_jlg_settings'];
+        $this->assertArrayHasKey('jlg-notation-onboarding', $submenu);
+    }
+
+    public function test_register_onboarding_page_hides_menu_once_completed(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        update_option('jlg_onboarding_completed', 1);
+
+        $hook_suffix = $controller->register_onboarding_page();
+
+        $this->assertSame('notation_jlg_settings_page_jlg-notation-onboarding', $hook_suffix);
+        $this->assertArrayNotHasKey('notation_jlg_settings', $GLOBALS['jlg_test_submenu_pages']);
     }
 
     public function test_handle_form_submission_updates_options_and_marks_completion(): void

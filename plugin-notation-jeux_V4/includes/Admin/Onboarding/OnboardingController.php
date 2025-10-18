@@ -77,7 +77,11 @@ class OnboardingController {
         );
 
         if ( function_exists( 'remove_submenu_page' ) ) {
-            remove_submenu_page( 'notation_jlg_settings', self::PAGE_SLUG );
+            $is_completed = (int) get_option( self::OPTION_COMPLETED );
+
+            if ( 1 === $is_completed ) {
+                remove_submenu_page( 'notation_jlg_settings', self::PAGE_SLUG );
+            }
         }
 
         return $hook_suffix;
