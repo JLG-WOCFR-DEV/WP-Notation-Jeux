@@ -404,6 +404,75 @@ if (!function_exists('add_action')) {
     }
 }
 
+if (!function_exists('add_menu_page')) {
+    function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null) {
+        if (!isset($GLOBALS['jlg_test_menu_pages'])) {
+            $GLOBALS['jlg_test_menu_pages'] = [];
+        }
+
+        $menu_slug = sanitize_key($menu_slug);
+        $hook_suffix = 'toplevel_page_' . $menu_slug;
+
+        $GLOBALS['jlg_test_menu_pages'][$menu_slug] = [
+            'page_title' => $page_title,
+            'menu_title' => $menu_title,
+            'capability' => $capability,
+            'callback'   => $callback,
+            'icon_url'   => $icon_url,
+            'position'   => $position,
+            'hook'       => $hook_suffix,
+        ];
+
+        return $hook_suffix;
+    }
+}
+
+if (!function_exists('add_submenu_page')) {
+    function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null) {
+        if (!isset($GLOBALS['jlg_test_submenu_pages'])) {
+            $GLOBALS['jlg_test_submenu_pages'] = [];
+        }
+
+        $parent_slug = sanitize_key($parent_slug);
+        $menu_slug   = sanitize_key($menu_slug);
+        $hook_suffix = $parent_slug . '_page_' . $menu_slug;
+
+        if (!isset($GLOBALS['jlg_test_submenu_pages'][$parent_slug])) {
+            $GLOBALS['jlg_test_submenu_pages'][$parent_slug] = [];
+        }
+
+        $GLOBALS['jlg_test_submenu_pages'][$parent_slug][$menu_slug] = [
+            'page_title' => $page_title,
+            'menu_title' => $menu_title,
+            'capability' => $capability,
+            'callback'   => $callback,
+            'position'   => $position,
+            'hook'       => $hook_suffix,
+        ];
+
+        return $hook_suffix;
+    }
+}
+
+if (!function_exists('remove_submenu_page')) {
+    function remove_submenu_page($parent_slug, $menu_slug) {
+        $parent_slug = sanitize_key($parent_slug);
+        $menu_slug   = sanitize_key($menu_slug);
+
+        if (isset($GLOBALS['jlg_test_submenu_pages'][$parent_slug][$menu_slug])) {
+            unset($GLOBALS['jlg_test_submenu_pages'][$parent_slug][$menu_slug]);
+
+            if (empty($GLOBALS['jlg_test_submenu_pages'][$parent_slug])) {
+                unset($GLOBALS['jlg_test_submenu_pages'][$parent_slug]);
+            }
+
+            return $menu_slug;
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('add_meta_box')) {
     function add_meta_box($id, $title, $callback, $screen, $context = 'advanced', $priority = 'default', $callback_args = null) {
         if (!isset($GLOBALS['jlg_test_meta_boxes'])) {
