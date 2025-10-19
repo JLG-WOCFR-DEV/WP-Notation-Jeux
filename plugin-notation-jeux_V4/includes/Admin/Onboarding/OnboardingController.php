@@ -114,7 +114,27 @@ class OnboardingController {
             return;
         }
 
+        $should_redirect   = false;
+        $redirect_flag     = get_transient( self::TRANSIENT_REDIRECT );
+        $plugin_page_slugs = array( self::SETTINGS_OPTION );
+
+        if ( $redirect_flag ) {
+            $should_redirect = true;
+        }
+
+        if ( ! $should_redirect && $current_page && in_array( $current_page, $plugin_page_slugs, true ) ) {
+            $should_redirect = true;
+        }
+
+        if ( ! $should_redirect ) {
+            return;
+        }
+
         $redirect = add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'admin.php' ) );
+
+        if ( $redirect_flag ) {
+            delete_transient( self::TRANSIENT_REDIRECT );
+        }
 
         wp_safe_redirect( $redirect );
 

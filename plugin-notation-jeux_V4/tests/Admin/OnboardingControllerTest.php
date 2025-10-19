@@ -46,13 +46,38 @@ final class OnboardingControllerTest extends TestCase
         $this->assertSame(1, get_transient('jlg_onboarding_redirect'));
     }
 
-    public function test_maybe_redirect_to_onboarding_forces_admins_into_flow(): void
+    public function test_maybe_redirect_to_onboarding_ignores_regular_admin_pages_when_no_flag(): void
     {
         $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
 
         update_option('jlg_onboarding_completed', 0);
-        $_GET     = [];
-        $_REQUEST = [];
+
+        $controller->maybe_redirect_to_onboarding();
+
+        $this->assertEmpty($GLOBALS['jlg_test_redirects']);
+    }
+
+    public function test_maybe_redirect_to_onboarding_redirects_once_after_activation(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        update_option('jlg_onboarding_completed', 0);
+        set_transient('jlg_onboarding_redirect', 1, MINUTE_IN_SECONDS);
+
+        $controller->maybe_redirect_to_onboarding();
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_redirects']);
+        $firstRedirect = $GLOBALS['jlg_test_redirects'][0];
+        $this->assertSame('https://example.com/wp-admin/admin.php?page=jlg-notation-onboarding', $firstRedirect['location']);
+        $this->assertEmpty(get_transient('jlg_onboarding_redirect'));
+    }
+
+    public function test_maybe_redirect_to_onboarding_redirects_from_settings_page_while_incomplete(): void
+    {
+        $controller = new OnboardingController('plugin-notation-jeux_V4/plugin-notation-jeux.php');
+
+        update_option('jlg_onboarding_completed', 0);
+        $_GET['page'] = 'notation_jlg_settings';
 
         $controller->maybe_redirect_to_onboarding();
 
