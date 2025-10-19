@@ -184,7 +184,17 @@ class Helpers {
         );
     }
 
-    private static function get_default_platform_definitions() {
+    /**
+     * Retourne la liste par défaut des plateformes supportées.
+     *
+     * Exposée publiquement pour permettre aux helpers externes (Validator,
+     * contrôleurs REST, tests, etc.) de récupérer une liste cohérente sans
+     * recourir à la réflexion qui n'est plus supportée sur les versions
+     * récentes de PHP.
+     *
+     * @return array<string, array{name: string, order: int}>
+     */
+    public static function get_default_platform_definitions() {
         return array(
             'pc'              => array(
 				'name'  => 'PC',
