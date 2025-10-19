@@ -194,23 +194,7 @@ class Validator {
         }
 
         if ( empty( $allowed_platforms ) && class_exists( \JLG\Notation\Helpers::class ) && method_exists( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' ) ) {
-            $default_definitions = array();
-
-            if ( is_callable( array( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' ) ) ) {
-                $default_definitions = \JLG\Notation\Helpers::get_default_platform_definitions();
-            } else {
-                try {
-                    $reflection = new \ReflectionMethod( \JLG\Notation\Helpers::class, 'get_default_platform_definitions' );
-
-                    if ( ! $reflection->isPublic() ) {
-                        $reflection->setAccessible( true );
-                    }
-
-                    $default_definitions = $reflection->invoke( null );
-                } catch ( \ReflectionException $exception ) {
-                    $default_definitions = array();
-                }
-            }
+            $default_definitions = \JLG\Notation\Helpers::get_default_platform_definitions();
 
             $allowed_platforms = $extract_labels( $default_definitions );
         }
