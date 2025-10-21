@@ -80,7 +80,11 @@ class OnboardingController {
             $is_completed = (int) get_option( self::OPTION_COMPLETED );
 
             if ( 1 === $is_completed ) {
-                remove_submenu_page( 'notation_jlg_settings', self::PAGE_SLUG );
+                $current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+                if ( self::PAGE_SLUG !== $current_page ) {
+                    remove_submenu_page( 'notation_jlg_settings', self::PAGE_SLUG );
+                }
             }
         }
 
