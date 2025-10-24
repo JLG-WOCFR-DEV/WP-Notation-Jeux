@@ -22,6 +22,48 @@ delete_option( 'jlg_migration_v5_completed' );
 $helpers_file      = __DIR__ . '/includes/Helpers.php';
 $helpers_available = class_exists( '\\JLG\\Notation\\Helpers' );
 
+if ( ! $helpers_available ) {
+    $autoload_path = __DIR__ . '/vendor/autoload.php';
+
+    if ( file_exists( $autoload_path ) ) {
+        require_once $autoload_path;
+    }
+
+    if ( ! class_exists( '\\JLG\\Notation\\Admin\\Settings\\SettingsRepository' ) ) {
+        spl_autoload_register(
+            static function ( $class_name ) {
+                $prefixes = array(
+                    'JLG\\\\Notation\\\\Admin\\\\'      => 'includes/Admin/',
+                    'JLG\\\\Notation\\\\Utils\\\\'      => 'includes/Utils/',
+                    'JLG\\\\Notation\\\\Shortcodes\\\\' => 'includes/Shortcodes/',
+                    'JLG\\\\Notation\\\\'               => 'includes/',
+                );
+
+                foreach ( $prefixes as $prefix => $directory ) {
+                    if ( strpos( $class_name, $prefix ) !== 0 ) {
+                        continue;
+                    }
+
+                    $relative_class = substr( $class_name, strlen( $prefix ) );
+
+                    if ( $relative_class === false ) {
+                        return;
+                    }
+
+                    $relative_path = str_replace( '\\', '/', $relative_class );
+                    $file          = __DIR__ . '/' . $directory . $relative_path . '.php';
+
+                    if ( file_exists( $file ) ) {
+                        require_once $file;
+                    }
+
+                    return;
+                }
+            }
+        );
+    }
+}
+
 if ( ! $helpers_available && file_exists( $helpers_file ) ) {
     require_once $helpers_file;
     $helpers_available = class_exists( '\\JLG\\Notation\\Helpers' );
