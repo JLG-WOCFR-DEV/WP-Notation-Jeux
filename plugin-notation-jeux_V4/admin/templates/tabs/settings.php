@@ -61,7 +61,14 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
                             <span class="jlg-theme-preview__caption"><?php esc_html_e('Score cercle', 'notation-jlg'); ?></span>
                         </div>
                         <div class="jlg-theme-preview__score-text" data-preview-text>
-                            <span class="jlg-theme-preview__score-value" data-preview-text-value>18 / 20</span>
+                            <span class="jlg-theme-preview__score-value" data-preview-text-value>
+                                <span class="jlg-score-ratio" aria-hidden="true">
+                                    <span class="jlg-score-ratio__current">18</span>
+                                    <span class="jlg-score-ratio__separator" role="presentation"></span>
+                                    <span class="jlg-score-ratio__total">20</span>
+                                </span>
+                                <span class="screen-reader-text">18 sur 20</span>
+                            </span>
                             <span class="jlg-theme-preview__caption"><?php esc_html_e('Score texte', 'notation-jlg'); ?></span>
                         </div>
                     </div>
