@@ -225,8 +225,10 @@ class RatingsController {
             $params['page'] = 1;
         }
 
+        $page_items = $records;
+
         $items = array();
-        foreach ( $records as $record ) {
+        foreach ( $page_items as $record ) {
             $items[] = array(
                 'id'            => $record['id'],
                 'title'         => $record['title'],
@@ -274,7 +276,7 @@ class RatingsController {
 
         $summary = Helpers::get_posts_score_insights( $summary_post_ids );
         if ( is_array( $summary ) ) {
-            $summary['total'] = $total_items;
+            $summary['total'] = count( $summary_post_ids );
         }
 
         return rest_ensure_response(
@@ -588,10 +590,25 @@ class RatingsController {
             $query_args['date_query'] = array( $date_query );
         }
 
+        $meta_query = array(
+            'relation' => 'AND',
+            array(
+                'key'     => '_jlg_average_score',
+                'compare' => 'EXISTS',
+            ),
+            array(
+                'key'     => '_jlg_average_score',
+                'value'   => '',
+                'compare' => '!=',
+            ),
+        );
+
         $platform_meta_query = $this->build_platform_meta_query( $params['platform'] );
         if ( ! empty( $platform_meta_query ) ) {
-            $query_args['meta_query'] = array( $platform_meta_query );
+            $meta_query[] = $platform_meta_query;
         }
+
+        $query_args['meta_query'] = $meta_query;
 
         if ( class_exists( WP_Query::class ) ) {
             $query = new WP_Query( $query_args );
