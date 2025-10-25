@@ -1078,6 +1078,29 @@ class GameExplorer {
     }
 
     protected static function build_filters_snapshot() {
+        $allowed_post_types = Helpers::get_allowed_post_types();
+        if ( ! is_array( $allowed_post_types ) ) {
+            $allowed_post_types = array();
+        }
+
+        $allowed_post_types = array_values(
+            array_filter(
+                array_map(
+                    static function ( $post_type ) {
+                        return is_string( $post_type ) ? $post_type : '';
+                    },
+                    $allowed_post_types
+                ),
+                static function ( $post_type ) {
+                    return $post_type !== '';
+                }
+            )
+        );
+
+        if ( empty( $allowed_post_types ) ) {
+            $allowed_post_types = array( 'post' );
+        }
+
         $snapshot = array(
             'posts'          => array(),
             'letters_map'    => array(),
@@ -1122,9 +1145,41 @@ class GameExplorer {
         }
 
         if ( function_exists( 'update_object_term_cache' ) ) {
+            $primary_post_type = $allowed_post_types[0];
+
             foreach ( $post_id_chunks as $post_id_chunk ) {
-                if ( ! empty( $post_id_chunk ) ) {
-                    update_object_term_cache( $post_id_chunk, 'post', array( 'category' ) );
+                if ( empty( $post_id_chunk ) ) {
+                    continue;
+                }
+
+                $post_ids_by_type = array();
+
+                foreach ( $post_id_chunk as $post_id ) {
+                    $post_id = (int) $post_id;
+
+                    if ( $post_id <= 0 ) {
+                        continue;
+                    }
+
+                    $post_type = get_post_type( $post_id );
+
+                    if ( ! is_string( $post_type ) || $post_type === '' || ! in_array( $post_type, $allowed_post_types, true ) ) {
+                        $post_type = $primary_post_type;
+                    }
+
+                    if ( ! isset( $post_ids_by_type[ $post_type ] ) ) {
+                        $post_ids_by_type[ $post_type ] = array();
+                    }
+
+                    $post_ids_by_type[ $post_type ][] = $post_id;
+                }
+
+                foreach ( $post_ids_by_type as $post_type => $ids_for_type ) {
+                    if ( empty( $ids_for_type ) ) {
+                        continue;
+                    }
+
+                    update_object_term_cache( $ids_for_type, $post_type, array( 'category' ) );
                 }
             }
         }

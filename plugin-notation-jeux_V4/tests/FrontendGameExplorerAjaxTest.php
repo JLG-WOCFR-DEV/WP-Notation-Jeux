@@ -1034,11 +1034,11 @@ class FrontendGameExplorerAjaxTest extends TestCase
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
-    private function registerPost(int $post_id, string $title, string $content, string $post_date): void
+    private function registerPost(int $post_id, string $title, string $content, string $post_date, string $post_type = 'post'): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
             'ID'            => $post_id,
-            'post_type'     => 'post',
+            'post_type'     => $post_type,
             'post_status'   => 'publish',
             'post_title'    => $title,
             'post_content'  => $content,
@@ -1141,6 +1141,71 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    public function test_build_filters_snapshot_primes_custom_post_type_term_cache_without_extra_calls(): void
+    {
+        $this->configureOptions();
+
+        $GLOBALS['jlg_test_options']['notation_jlg_settings']['allowed_post_types'] = ['post', 'jlg_review'];
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the first test post.', '2023-01-01 10:00:00', 'post');
+        $this->registerPost(303, 'Custom Saga', 'Custom content for the second test post.', '2024-03-15 09:30:00', 'jlg_review');
+
+        $this->setMeta(101, [
+            '_jlg_game_title'  => 'Alpha Quest',
+            '_jlg_developpeur' => 'Studio Alpha',
+            '_jlg_editeur'     => 'Publisher A',
+            '_jlg_date_sortie' => '2023-02-14',
+            '_jlg_plateformes' => ['PC', 'PlayStation 5'],
+        ]);
+
+        $this->setMeta(303, [
+            '_jlg_game_title'  => 'Custom Saga',
+            '_jlg_developpeur' => 'Studio Custom',
+            '_jlg_editeur'     => 'Publisher C',
+            '_jlg_date_sortie' => '2024-05-21',
+            '_jlg_plateformes' => ['Nintendo Switch'],
+        ]);
+
+        $GLOBALS['jlg_test_terms'] = [
+            101 => [
+                'category' => [
+                    ['term_id' => 11, 'name' => 'Action', 'slug' => 'action'],
+                ],
+            ],
+            303 => [
+                'category' => [
+                    ['term_id' => 12, 'name' => 'Adventure', 'slug' => 'adventure'],
+                ],
+            ],
+        ];
+
+        $GLOBALS['jlg_test_meta_cache_calls'] = [];
+        $GLOBALS['jlg_test_term_cache_calls'] = [];
+
+        set_transient('jlg_rated_post_ids_v1', [101, 303]);
+
+        $reflection = new ReflectionMethod(\JLG\Notation\Shortcodes\GameExplorer::class, 'build_filters_snapshot');
+        $reflection->setAccessible(true);
+
+        $snapshot = $reflection->invoke(null);
+
+        $this->assertArrayHasKey('posts', $snapshot);
+        $this->assertArrayHasKey(101, $snapshot['posts']);
+        $this->assertArrayHasKey(303, $snapshot['posts']);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur with custom post types.');
+        $this->assertCount(2, $GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur exactly once per populated post type.');
+
+        $this->assertSame([101], $GLOBALS['jlg_test_term_cache_calls'][0][0]);
+        $this->assertSame('post', $GLOBALS['jlg_test_term_cache_calls'][0][1]);
+        $this->assertSame(['category'], $GLOBALS['jlg_test_term_cache_calls'][0][2]);
+
+        $this->assertSame([303], $GLOBALS['jlg_test_term_cache_calls'][1][0]);
+        $this->assertSame('jlg_review', $GLOBALS['jlg_test_term_cache_calls'][1][1]);
+        $this->assertSame(['category'], $GLOBALS['jlg_test_term_cache_calls'][1][2]);
     }
 
     private function getDefaultFiltersString(): string
