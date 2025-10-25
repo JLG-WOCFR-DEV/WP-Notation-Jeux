@@ -208,6 +208,36 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertSame(1, $searched['pagination']['total']);
     }
 
+    public function test_handle_get_ratings_search_matches_slug_even_when_title_differs(): void
+    {
+        $this->seedRatedPost(
+            501,
+            'Galactic Showdown Verdict',
+            'stellar-blade-review',
+            8.8,
+            7.5,
+            28,
+            [1 => 1, 2 => 2, 3 => 5, 4 => 9, 5 => 11],
+            ['PlayStation 5']
+        );
+
+        $GLOBALS['jlg_test_current_user_can'] = static function ($capability) {
+            return $capability === 'read';
+        };
+
+        $controller = new \JLG\Notation\Rest\RatingsController();
+        $response   = $controller->handle_get_ratings(new TestRestRequest([
+            'search' => 'stellar-blade-review',
+        ]));
+
+        $this->assertIsArray($response);
+        $this->assertCount(1, $response['items']);
+        $this->assertSame('stellar-blade-review', $response['items'][0]['slug']);
+        $this->assertSame('Galactic Showdown Verdict', $response['items'][0]['title']);
+        $this->assertSame(1, $response['pagination']['total']);
+        $this->assertSame(1, $response['pagination']['page']);
+    }
+
     public function test_handle_get_ratings_returns_error_for_unknown_post(): void
     {
         $GLOBALS['jlg_test_current_user_can'] = static function ($capability) {
