@@ -41,6 +41,7 @@ class RestRatingsEndpointTest extends TestCase
         $GLOBALS['jlg_test_posts']        = [];
         $GLOBALS['jlg_test_meta']         = [];
         $GLOBALS['jlg_test_rest_routes']  = [];
+        $GLOBALS['jlg_test_wp_query_log'] = [];
         unset($GLOBALS['jlg_test_current_user_can'], $GLOBALS['jlg_test_is_user_logged_in']);
         delete_option('notation_jlg_settings');
         \JLG\Notation\Helpers::flush_plugin_options_cache();
