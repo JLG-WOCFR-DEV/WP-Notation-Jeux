@@ -41,11 +41,16 @@ class RestRatingsEndpointTest extends TestCase
         $GLOBALS['jlg_test_posts']        = [];
         $GLOBALS['jlg_test_meta']         = [];
         $GLOBALS['jlg_test_rest_routes']  = [];
+        unset($GLOBALS['jlg_test_transients'], $GLOBALS['jlg_test_object_cache']);
         unset($GLOBALS['jlg_test_current_user_can'], $GLOBALS['jlg_test_is_user_logged_in']);
         delete_option('notation_jlg_settings');
+        delete_option('jlg_ratings_rest_summary_prefix');
         \JLG\Notation\Helpers::flush_plugin_options_cache();
         remove_all_filters('jlg_ratings_rest_is_public');
         remove_all_filters('jlg_ratings_rest_post_statuses');
+
+        $controller = new \JLG\Notation\Rest\RatingsController();
+        $controller->flush_rest_summary_cache();
     }
 
     protected function tearDown(): void
@@ -138,7 +143,25 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertGreaterThan(0, $response['items'][0]['readers']['histogram'][0]['percentage']);
         $this->assertSame('in_progress', $response['items'][0]['review_status']['slug']);
         $this->assertArrayHasKey('summary', $response);
-        $this->assertSame(2, $response['summary']['total']);
+        $this->assertSame(1, $response['summary']['total']);
+        $this->assertSame(1, $response['summary']['consensus']['sample']['count']);
+        $this->assertSame(1, count($response['items']));
+        $this->assertSame(9.1, $response['summary']['mean']['value']);
+
+        $secondPage = $controller->handle_get_ratings(
+            new TestRestRequest([
+                'per_page' => 1,
+                'page'     => 2,
+                'orderby'  => 'editorial',
+                'order'    => 'desc',
+            ])
+        );
+
+        $this->assertCount(1, $secondPage['items']);
+        $this->assertSame('arcade-frenzy-verdict', $secondPage['items'][0]['slug']);
+        $this->assertSame(1, $secondPage['summary']['total']);
+        $this->assertSame(1, $secondPage['summary']['consensus']['sample']['count']);
+        $this->assertSame(7.4, $secondPage['summary']['mean']['value']);
         $this->assertSame(10.0, $response['score_max']);
 
         $secondPage = $controller->handle_get_ratings(new TestRestRequest([
@@ -295,6 +318,65 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertIsArray($publishResponse);
         $this->assertCount(1, $publishResponse['items']);
         $this->assertSame('stellar-blade-review', $publishResponse['items'][0]['slug']);
+    }
+
+    public function test_handle_get_ratings_uses_summary_cache_on_repeated_requests(): void
+    {
+        $this->seedRatedPost(
+            101,
+            'Stellar Blade Review',
+            'stellar-blade-review',
+            9.1,
+            8.7,
+            142,
+            [1 => 2, 2 => 6, 3 => 12, 4 => 40, 5 => 82],
+            ['PlayStation 5']
+        );
+
+        $this->seedRatedPost(
+            202,
+            'Arcade Frenzy Verdict',
+            'arcade-frenzy-verdict',
+            7.4,
+            7.9,
+            63,
+            [1 => 1, 2 => 3, 3 => 8, 4 => 18, 5 => 33],
+            ['Nintendo Switch']
+        );
+
+        $GLOBALS['jlg_test_current_user_can'] = static function ($capability) {
+            return $capability === 'read';
+        };
+
+        add_filter('jlg_ratings_rest_summary_ttl', static function () {
+            return 90;
+        });
+
+        $controller = new class extends \JLG\Notation\Rest\RatingsController {
+            public $insightsCalls = 0;
+
+            protected function resolve_summary_insights(array $post_ids)
+            {
+                $this->insightsCalls++;
+
+                return parent::resolve_summary_insights($post_ids);
+            }
+        };
+
+        $request = new TestRestRequest([
+            'orderby' => 'editorial',
+            'order'   => 'desc',
+        ]);
+
+        $firstResponse = $controller->handle_get_ratings($request);
+        $this->assertSame(1, $controller->insightsCalls);
+        $this->assertArrayHasKey('summary', $firstResponse);
+
+        $secondResponse = $controller->handle_get_ratings($request);
+        $this->assertSame(1, $controller->insightsCalls, 'Summary should be retrieved from cache on second call.');
+        $this->assertSame($firstResponse['summary'], $secondResponse['summary']);
+
+        remove_all_filters('jlg_ratings_rest_summary_ttl');
     }
 
     private function seedRatedPost(

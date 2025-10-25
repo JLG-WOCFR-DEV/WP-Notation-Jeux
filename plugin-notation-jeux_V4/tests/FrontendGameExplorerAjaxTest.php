@@ -1153,6 +1153,13 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->registerPost(101, 'Alpha Quest', 'Alpha content for the first test post.', '2023-01-01 10:00:00', 'post');
         $this->registerPost(303, 'Custom Saga', 'Custom content for the second test post.', '2024-03-15 09:30:00', 'jlg_review');
 
+        $bulk_post_ids = [];
+        for ($i = 0; $i < 100; $i++) {
+            $post_id = 400 + $i;
+            $bulk_post_ids[] = $post_id;
+            $this->registerPost($post_id, 'Bulk Post ' . $post_id, 'Bulk content ' . $post_id, '2024-01-01 08:00:00', 'post');
+        }
+
         $this->setMeta(101, [
             '_jlg_game_title'  => 'Alpha Quest',
             '_jlg_developpeur' => 'Studio Alpha',
@@ -1185,7 +1192,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $GLOBALS['jlg_test_meta_cache_calls'] = [];
         $GLOBALS['jlg_test_term_cache_calls'] = [];
 
-        set_transient('jlg_rated_post_ids_v1', [101, 303]);
+        $rated_post_ids = array_merge([101], $bulk_post_ids, [303]);
+        set_transient('jlg_rated_post_ids_v1', $rated_post_ids);
 
         $reflection = new ReflectionMethod(\JLG\Notation\Shortcodes\GameExplorer::class, 'build_filters_snapshot');
         $reflection->setAccessible(true);
@@ -1199,13 +1207,21 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertNotEmpty($GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur with custom post types.');
         $this->assertCount(2, $GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur exactly once per populated post type.');
 
-        $this->assertSame([101], $GLOBALS['jlg_test_term_cache_calls'][0][0]);
-        $this->assertSame('post', $GLOBALS['jlg_test_term_cache_calls'][0][1]);
-        $this->assertSame(['category'], $GLOBALS['jlg_test_term_cache_calls'][0][2]);
+        $post_cache_call = $GLOBALS['jlg_test_term_cache_calls'][0];
+        $custom_cache_call = $GLOBALS['jlg_test_term_cache_calls'][1];
 
-        $this->assertSame([303], $GLOBALS['jlg_test_term_cache_calls'][1][0]);
-        $this->assertSame('jlg_review', $GLOBALS['jlg_test_term_cache_calls'][1][1]);
-        $this->assertSame(['category'], $GLOBALS['jlg_test_term_cache_calls'][1][2]);
+        $this->assertSame('post', $post_cache_call[1]);
+        $this->assertSame(['category'], $post_cache_call[2]);
+
+        $expected_post_ids = array_merge([101], $bulk_post_ids);
+        sort($expected_post_ids);
+        $actual_post_ids = $post_cache_call[0];
+        sort($actual_post_ids);
+        $this->assertSame($expected_post_ids, $actual_post_ids);
+
+        $this->assertSame([303], $custom_cache_call[0]);
+        $this->assertSame('jlg_review', $custom_cache_call[1]);
+        $this->assertSame(['category'], $custom_cache_call[2]);
     }
 
     private function getDefaultFiltersString(): string
