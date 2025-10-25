@@ -74,10 +74,14 @@ class RatingsController {
     public function handle_get_ratings( $request ) {
         $params = $this->prepare_request_params( $request );
 
-        $candidate_posts = $this->collect_candidate_posts( $params );
-        $registered      = Helpers::get_registered_platform_labels();
-        $score_max       = max( 1.0, (float) Helpers::get_score_max() );
-        $records         = array();
+        $query_result    = $this->collect_candidate_posts( $params );
+        $candidate_posts = isset( $query_result['posts'] ) ? $query_result['posts'] : array();
+        $total_items     = isset( $query_result['found_posts'] ) ? (int) $query_result['found_posts'] : count( $candidate_posts );
+        $total_pages     = isset( $query_result['max_num_pages'] ) ? (int) $query_result['max_num_pages'] : ( $params['per_page'] > 0 ? (int) ceil( count( $candidate_posts ) / $params['per_page'] ) : 0 );
+
+        $registered = Helpers::get_registered_platform_labels();
+        $score_max  = max( 1.0, (float) Helpers::get_score_max() );
+        $records    = array();
 
         foreach ( $candidate_posts as $post ) {
             if ( ! ( $post instanceof \WP_Post ) ) {
@@ -215,20 +219,14 @@ class RatingsController {
 
         $this->sort_records( $records, $params['orderby'], $params['order'] );
 
-        $total_items = count( $records );
-        $total_pages = $params['per_page'] > 0 ? (int) ceil( $total_items / $params['per_page'] ) : 0;
-
         if ( $total_pages > 0 ) {
             $params['page'] = min( max( 1, $params['page'] ), $total_pages );
         } else {
             $params['page'] = 1;
         }
 
-        $offset     = ( $params['page'] - 1 ) * $params['per_page'];
-        $page_items = array_slice( $records, $offset, $params['per_page'] );
-
         $items = array();
-        foreach ( $page_items as $record ) {
+        foreach ( $records as $record ) {
             $items[] = array(
                 'id'            => $record['id'],
                 'title'         => $record['title'],
@@ -274,7 +272,10 @@ class RatingsController {
             }
         }
 
-        $summary = $this->resolve_summary_insights( $summary_post_ids, $params );
+        $summary = Helpers::get_posts_score_insights( $summary_post_ids );
+        if ( is_array( $summary ) ) {
+            $summary['total'] = $total_items;
+        }
 
         return rest_ensure_response(
             array(
@@ -543,14 +544,33 @@ class RatingsController {
             $statuses = array( 'publish' );
         }
 
+        $order      = strtoupper( $params['order'] );
+        $order_args = $this->resolve_query_orderby( $params );
+
         $query_args = array(
-            'post_type'      => Helpers::get_allowed_post_types(),
-            'post_status'    => $statuses,
-            'posts_per_page' => -1,
-            'orderby'        => ! empty( $post__in ) ? 'post__in' : 'date',
-            'order'          => 'DESC',
-            'post__in'       => $post__in,
+            'post_type'              => Helpers::get_allowed_post_types(),
+            'post_status'            => $statuses,
+            'posts_per_page'         => max( 1, (int) $params['per_page'] ),
+            'paged'                  => max( 1, (int) $params['page'] ),
+            'orderby'                => $order_args['orderby'],
+            'order'                  => $order,
+            'post__in'               => $post__in,
+            'no_found_rows'          => false,
+            'update_post_term_cache' => false,
         );
+
+        if ( isset( $order_args['meta_key'] ) ) {
+            $query_args['meta_key'] = $order_args['meta_key'];
+        }
+
+        if ( $params['slug'] !== '' ) {
+            $query_args['name'] = $params['slug'];
+        }
+
+        if ( $params['search'] !== '' ) {
+            $query_args['s']              = $params['search'];
+            $query_args['search_columns'] = array( 'post_title', 'post_name' );
+        }
 
         $date_query = array();
 
@@ -568,8 +588,14 @@ class RatingsController {
             $query_args['date_query'] = array( $date_query );
         }
 
+        $platform_meta_query = $this->build_platform_meta_query( $params['platform'] );
+        if ( ! empty( $platform_meta_query ) ) {
+            $query_args['meta_query'] = array( $platform_meta_query );
+        }
+
         if ( class_exists( WP_Query::class ) ) {
             $query = new WP_Query( $query_args );
+
             if ( isset( $query->posts ) && is_array( $query->posts ) ) {
                 $filtered_posts = array();
 
@@ -585,10 +611,20 @@ class RatingsController {
                     $filtered_posts[] = $post;
                 }
 
-                if ( ! empty( $filtered_posts ) ) {
-                    return $filtered_posts;
-                }
+                return array(
+                    'posts'         => $filtered_posts,
+                    'found_posts'   => isset( $query->found_posts ) ? (int) $query->found_posts : count( $filtered_posts ),
+                    'max_num_pages' => isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0,
+                    'query_args'    => $query_args,
+                );
             }
+
+            return array(
+                'posts'         => array(),
+                'found_posts'   => isset( $query->found_posts ) ? (int) $query->found_posts : 0,
+                'max_num_pages' => isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0,
+                'query_args'    => $query_args,
+            );
         }
 
         $store = array();
@@ -608,6 +644,14 @@ class RatingsController {
                 }
             }
 
+            if ( $params['slug'] !== '' && sanitize_title( $post->post_name ?? '' ) !== $params['slug'] ) {
+                continue;
+            }
+
+            if ( $params['search'] !== '' && ! $this->matches_search_filter( $post->post_title ?? '', $post->post_name ?? '', $params['search'] ) ) {
+                continue;
+            }
+
             if ( ! $this->passes_date_filters( $post, $params ) ) {
                 continue;
             }
@@ -615,7 +659,154 @@ class RatingsController {
             $store[] = $post;
         }
 
-        return $store;
+        if ( $params['platform'] !== '' ) {
+            $registered = Helpers::get_registered_platform_labels();
+            $store      = array_values(
+                array_filter(
+                    $store,
+                    function ( $post ) use ( $registered, $params ) {
+                        if ( ! ( $post instanceof \WP_Post ) ) {
+                            return false;
+                        }
+
+                        $labels = $this->get_post_platform_labels( (int) $post->ID );
+
+                        return $this->matches_platform_filter( $labels, $params['platform'], $registered );
+                    }
+                )
+            );
+        }
+
+        $store = $this->fallback_sort_posts( $store, $params );
+
+        $total      = count( $store );
+        $per_page   = max( 1, (int) $params['per_page'] );
+        $total_page = $per_page > 0 ? (int) ceil( $total / $per_page ) : 0;
+        $page       = min( max( 1, (int) $params['page'] ), max( 1, $total_page ) );
+        $offset     = ( $page - 1 ) * $per_page;
+
+        return array(
+            'posts'         => array_slice( $store, $offset, $per_page ),
+            'found_posts'   => $total,
+            'max_num_pages' => $total_page,
+            'query_args'    => $query_args,
+        );
+    }
+
+    private function resolve_query_orderby( array $params ) {
+        $orderby = $params['orderby'];
+
+        if ( ! empty( $params['post_id'] ) ) {
+            return array(
+                'orderby' => 'post__in',
+            );
+        }
+
+        switch ( $orderby ) {
+            case 'title':
+                return array(
+                    'orderby' => 'title',
+                );
+            case 'editorial':
+                return array(
+                    'orderby'  => 'meta_value_num',
+                    'meta_key' => '_jlg_average_score',
+                );
+            case 'reader':
+                return array(
+                    'orderby'  => 'meta_value_num',
+                    'meta_key' => '_jlg_user_rating_avg',
+                );
+            case 'user_votes':
+                return array(
+                    'orderby'  => 'meta_value_num',
+                    'meta_key' => '_jlg_user_rating_count',
+                );
+            case 'date':
+            default:
+                return array(
+                    'orderby' => 'date',
+                );
+        }
+    }
+
+    private function build_platform_meta_query( $platform_slug ) {
+        if ( ! is_string( $platform_slug ) || $platform_slug === '' ) {
+            return array();
+        }
+
+        $registered = Helpers::get_registered_platform_labels();
+        $normalized = sanitize_title( $platform_slug );
+
+        $lookup = array();
+        foreach ( $registered as $slug => $label ) {
+            $lookup[ sanitize_title( $slug ) ] = $label;
+            if ( is_string( $label ) ) {
+                $lookup[ sanitize_title( $label ) ] = $label;
+            }
+        }
+
+        $target_label = $lookup[ $normalized ] ?? $lookup[ sanitize_title( $platform_slug ) ] ?? '';
+
+        if ( $target_label === '' ) {
+            $target_label = $platform_slug;
+        }
+
+        return array(
+            'key'     => '_jlg_plateformes',
+            'value'   => $target_label,
+            'compare' => 'LIKE',
+        );
+    }
+
+    private function fallback_sort_posts( array $posts, array $params ) {
+        $order_args = $this->resolve_query_orderby( $params );
+        $order      = strtoupper( $params['order'] ) === 'ASC' ? 'ASC' : 'DESC';
+
+        if ( empty( $posts ) ) {
+            return $posts;
+        }
+
+        if ( isset( $order_args['orderby'] ) && $order_args['orderby'] === 'post__in' ) {
+            return $posts;
+        }
+
+        usort(
+            $posts,
+            function ( $a, $b ) use ( $order_args, $order ) {
+                if ( ! ( $a instanceof \WP_Post ) || ! ( $b instanceof \WP_Post ) ) {
+                    return 0;
+                }
+
+                switch ( $order_args['orderby'] ) {
+                    case 'title':
+                        $a_value = strtolower( $a->post_title ?? '' );
+                        $b_value = strtolower( $b->post_title ?? '' );
+                        $result  = $a_value <=> $b_value;
+                        break;
+                    case 'meta_value_num':
+                        $meta_key = $order_args['meta_key'] ?? '';
+                        $a_value  = (float) get_post_meta( (int) $a->ID, $meta_key, true );
+                        $b_value  = (float) get_post_meta( (int) $b->ID, $meta_key, true );
+                        $result   = $a_value <=> $b_value;
+                        break;
+                    case 'date':
+                    default:
+                        $a_value = strtotime( $a->post_date_gmt ?? $a->post_date ?? 'now' );
+                        $b_value = strtotime( $b->post_date_gmt ?? $b->post_date ?? 'now' );
+                        $result  = $a_value <=> $b_value;
+                        break;
+                }
+
+                if ( 'DESC' === $order ) {
+                    $result = -$result;
+                }
+
+                return $result;
+            }
+        );
+
+        return $posts;
     }
 
     private function matches_platform_filter( array $labels, $platform_slug, array $registered ) {
