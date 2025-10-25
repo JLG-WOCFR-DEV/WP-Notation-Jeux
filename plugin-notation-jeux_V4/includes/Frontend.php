@@ -1194,10 +1194,9 @@ class Frontend {
         $status     = strtolower( (string) $this->get_rest_request_param( $request, 'status' ) );
         $note       = (string) $this->get_rest_request_param( $request, 'note' );
         $expires    = $this->get_rest_request_param( $request, 'expires' );
-        $token      = self::normalize_user_rating_token( $token );
-        $token_hash = self::hash_user_rating_token( $token );
+        $token_hash = self::normalize_user_rating_token( $token );
 
-        if ( $token === '' || $token_hash === '' ) {
+        if ( $token_hash === '' ) {
             return $this->prepare_rest_response(
                 array(
                     'success' => false,
@@ -1206,6 +1205,12 @@ class Frontend {
                 ),
                 400
             );
+        }
+
+        $token_hash = strtolower( $token_hash );
+
+        if ( strlen( $token_hash ) < 64 ) {
+            $token_hash = self::hash_user_rating_token( $token_hash );
         }
 
         do_action( 'jlg_user_rating_rest_token_status_request', $token_hash, $status, $request );
@@ -1280,12 +1285,25 @@ class Frontend {
             $capability = 'manage_options';
         }
 
-        $nonce = $this->get_rest_request_param( $request, '_wpnonce' );
+        $nonce       = $this->get_rest_request_param( $request, '_wpnonce' );
+        $status_code = function_exists( 'rest_authorization_required_code' )
+            ? rest_authorization_required_code()
+            : 403;
 
-        if ( is_string( $nonce ) && $nonce !== '' && function_exists( 'wp_verify_nonce' ) ) {
-            if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-                return false;
-            }
+        if ( ! is_string( $nonce ) || $nonce === '' ) {
+            return $this->build_rest_permission_error(
+                'jlg_user_rating_rest_nonce_required',
+                __( 'Nonce de vérification manquant.', 'notation-jlg' ),
+                $status_code
+            );
+        }
+
+        if ( function_exists( 'wp_verify_nonce' ) && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return $this->build_rest_permission_error(
+                'jlg_user_rating_rest_nonce_invalid',
+                __( 'Nonce invalide.', 'notation-jlg' ),
+                $status_code
+            );
         }
 
         return current_user_can( $capability );
@@ -1689,6 +1707,20 @@ class Frontend {
         $hashed = hash( 'sha256', (string) $token );
 
         return is_string( $hashed ) ? $hashed : '';
+    }
+
+    private function build_rest_permission_error( $code, $message, $status ) {
+        if ( class_exists( 'WP_Error' ) ) {
+            return new \WP_Error(
+                $code,
+                $message,
+                array(
+                    'status' => $status,
+                )
+            );
+        }
+
+        return false;
     }
 
     private static function hash_user_ip( $ip_address ) {

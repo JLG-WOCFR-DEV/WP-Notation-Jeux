@@ -9,6 +9,37 @@ if (!function_exists('did_action')) {
     }
 }
 
+if (!class_exists('WP_Error')) {
+    class WP_Error
+    {
+        private $code;
+        private $message;
+        private $data;
+
+        public function __construct($code = '', $message = '', $data = [])
+        {
+            $this->code    = (string) $code;
+            $this->message = (string) $message;
+            $this->data    = $data;
+        }
+
+        public function get_error_code(): string
+        {
+            return $this->code;
+        }
+
+        public function get_error_message(): string
+        {
+            return $this->message;
+        }
+
+        public function get_error_data()
+        {
+            return $this->data;
+        }
+    }
+}
+
 class FrontendUserRatingTest extends TestCase
 {
     protected function setUp(): void
@@ -677,8 +708,9 @@ class FrontendUserRatingTest extends TestCase
 
     public function test_rest_endpoint_allows_explicit_token_ban(): void
     {
-        $frontend = new \JLG\Notation\Frontend();
-        $token    = str_repeat('f', 32);
+        $frontend  = new \JLG\Notation\Frontend();
+        $raw_token = str_repeat('f', 32);
+        $token     = hash('sha256', $raw_token);
 
         $request = new class($token) {
             private $params;
@@ -719,8 +751,7 @@ class FrontendUserRatingTest extends TestCase
         $this->assertSame('banned', $response['status']);
         $this->assertTrue($response['success']);
 
-        $token_hash = hash('sha256', $token);
-        $this->assertTrue(\JLG\Notation\Frontend::is_user_rating_token_banned($token_hash));
+        $this->assertTrue(\JLG\Notation\Frontend::is_user_rating_token_banned($token));
 
         $allow_request = new class($token) {
             private $params;
@@ -730,6 +761,7 @@ class FrontendUserRatingTest extends TestCase
                 $this->params = [
                     'token'  => $token,
                     'status' => 'allowed',
+                    '_wpnonce' => 'nonce',
                 ];
             }
 
@@ -753,6 +785,76 @@ class FrontendUserRatingTest extends TestCase
         $this->assertIsArray($response);
         $this->assertSame('allowed', $response['status']);
         $this->assertTrue($response['success']);
+    }
+
+    public function test_rest_endpoint_does_not_double_hash_token(): void
+    {
+        $frontend   = new \JLG\Notation\Frontend();
+        $raw_token  = str_repeat('a', 32);
+        $token_hash = hash('sha256', $raw_token);
+
+        $request = new class($token_hash) {
+            private $params;
+
+            public function __construct($token_hash)
+            {
+                $this->params = [
+                    'token'    => strtoupper($token_hash),
+                    'status'   => 'banned',
+                    '_wpnonce' => 'nonce',
+                ];
+            }
+
+            public function get_param($name)
+            {
+                return $this->params[$name] ?? null;
+            }
+
+            public function get_params()
+            {
+                return $this->params;
+            }
+
+            public function get_url_params()
+            {
+                return [];
+            }
+        };
+
+        $frontend->rest_handle_user_rating_token_status($request);
+
+        $this->assertTrue(\JLG\Notation\Frontend::is_user_rating_token_banned($token_hash));
+
+        $store = get_option('jlg_user_rating_banned_tokens', []);
+        $this->assertArrayHasKey($token_hash, $store);
+        $this->assertArrayNotHasKey(hash('sha256', $token_hash), $store);
+    }
+
+    public function test_user_rating_rest_permission_check_requires_nonce(): void
+    {
+        $frontend = new \JLG\Notation\Frontend();
+
+        $request = new class {
+            public function get_param($name)
+            {
+                return null;
+            }
+
+            public function get_params()
+            {
+                return [];
+            }
+
+            public function get_url_params()
+            {
+                return [];
+            }
+        };
+
+        $result = $frontend->user_rating_rest_permission_check($request);
+
+        $this->assertInstanceOf(WP_Error::class, $result);
+        $this->assertSame('jlg_user_rating_rest_nonce_required', $result->get_error_code());
     }
 
     public function test_weighted_average_is_calculated_from_category_scores(): void
