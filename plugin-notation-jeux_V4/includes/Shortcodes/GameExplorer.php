@@ -1145,14 +1145,12 @@ class GameExplorer {
         }
 
         if ( function_exists( 'update_object_term_cache' ) ) {
-            $primary_post_type = $allowed_post_types[0];
+            $post_ids_by_type = array();
 
             foreach ( $post_id_chunks as $post_id_chunk ) {
                 if ( empty( $post_id_chunk ) ) {
                     continue;
                 }
-
-                $post_ids_by_type = array();
 
                 foreach ( $post_id_chunk as $post_id ) {
                     $post_id = (int) $post_id;
@@ -1161,10 +1159,10 @@ class GameExplorer {
                         continue;
                     }
 
-                    $post_type = get_post_type( $post_id );
+                    $post_type = function_exists( 'get_post_type' ) ? get_post_type( $post_id ) : null;
 
                     if ( ! is_string( $post_type ) || $post_type === '' || ! in_array( $post_type, $allowed_post_types, true ) ) {
-                        $post_type = $primary_post_type;
+                        $post_type = 'post';
                     }
 
                     if ( ! isset( $post_ids_by_type[ $post_type ] ) ) {
@@ -1173,14 +1171,14 @@ class GameExplorer {
 
                     $post_ids_by_type[ $post_type ][] = $post_id;
                 }
+            }
 
-                foreach ( $post_ids_by_type as $post_type => $ids_for_type ) {
-                    if ( empty( $ids_for_type ) ) {
-                        continue;
-                    }
-
-                    update_object_term_cache( $ids_for_type, $post_type, array( 'category' ) );
+            foreach ( $post_ids_by_type as $post_type => $ids_for_type ) {
+                if ( empty( $ids_for_type ) ) {
+                    continue;
                 }
+
+                update_object_term_cache( $ids_for_type, $post_type, array( 'category' ) );
             }
         }
 
