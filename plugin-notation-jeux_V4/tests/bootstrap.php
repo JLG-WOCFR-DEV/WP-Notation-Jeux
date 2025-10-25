@@ -2091,6 +2091,12 @@ if (!class_exists('WP_Query')) {
         {
             $this->args = is_array($args) ? $args : [];
 
+            if (!isset($GLOBALS['jlg_test_wp_query_log'])) {
+                $GLOBALS['jlg_test_wp_query_log'] = [];
+            }
+
+            $GLOBALS['jlg_test_wp_query_log'][] = $this->args;
+
             $posts_store = $GLOBALS['jlg_test_posts'] ?? [];
             $filtered    = [];
 
