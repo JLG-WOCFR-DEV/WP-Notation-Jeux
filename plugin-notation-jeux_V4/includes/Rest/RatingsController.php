@@ -630,6 +630,18 @@ class RatingsController {
                 }
             }
 
+            if ( $params['search'] !== '' && empty( $posts ) ) {
+                $slug_candidate = $this->resolve_slug_search_candidate( $params['search'] );
+
+                if ( $slug_candidate !== '' ) {
+                    $slug_result = $this->run_slug_search_query( $slug_candidate, $params, $query_args );
+
+                    if ( $slug_result !== null ) {
+                        return $slug_result;
+                    }
+                }
+            }
+
             $all_ids = array();
             if ( $found_posts > 0 ) {
                 if ( $found_posts === count( $posts ) && $current_page <= 1 ) {
@@ -1059,6 +1071,88 @@ class RatingsController {
         }
 
         return $value;
+    }
+
+    private function resolve_slug_search_candidate( $search ) {
+        if ( $search === '' ) {
+            return '';
+        }
+
+        if ( strpos( $search, '-' ) === false ) {
+            return '';
+        }
+
+        $candidate = sanitize_title( $search );
+
+        if ( $candidate === '' ) {
+            return '';
+        }
+
+        return $candidate;
+    }
+
+    private function run_slug_search_query( $slug, array $params, array $query_args ) {
+        if ( ! class_exists( WP_Query::class ) ) {
+            return null;
+        }
+
+        $slug_args = $query_args;
+        unset( $slug_args['s'], $slug_args['search_columns'] );
+
+        $slug_args['name']            = $slug;
+        $slug_args['paged']           = 1;
+        $slug_args['posts_per_page']  = $params['per_page'];
+        $slug_args['no_found_rows']   = false;
+
+        $slug_query = new WP_Query( $slug_args );
+
+        $posts = array();
+        foreach ( $slug_query->posts ?? array() as $post ) {
+            if ( $post instanceof \WP_Post ) {
+                $posts[] = $post;
+            }
+        }
+
+        if ( empty( $posts ) ) {
+            return null;
+        }
+
+        $found_posts = isset( $slug_query->found_posts ) ? (int) $slug_query->found_posts : count( $posts );
+        $max_pages   = isset( $slug_query->max_num_pages ) ? (int) $slug_query->max_num_pages : 0;
+
+        if ( $max_pages === 0 && $found_posts > 0 && $params['per_page'] > 0 ) {
+            $max_pages = (int) ceil( $found_posts / $params['per_page'] );
+        }
+
+        $all_ids = array();
+        if ( $found_posts > 0 ) {
+            if ( $found_posts === count( $posts ) ) {
+                foreach ( $posts as $post ) {
+                    $all_ids[] = (int) $post->ID;
+                }
+            } else {
+                $ids_args                   = $slug_args;
+                $ids_args['fields']         = 'ids';
+                $ids_args['posts_per_page'] = -1;
+                $ids_args['no_found_rows']  = true;
+                unset( $ids_args['paged'] );
+
+                $ids_query = new WP_Query( $ids_args );
+                foreach ( $ids_query->posts ?? array() as $post_id ) {
+                    $all_ids[] = (int) $post_id;
+                }
+            }
+        }
+
+        $max_pages = max( 1, $max_pages );
+
+        return array(
+            'posts'         => $posts,
+            'found_posts'   => $found_posts,
+            'max_num_pages' => $max_pages,
+            'all_ids'       => array_values( array_unique( array_filter( $all_ids ) ) ),
+            'page'          => min( max( 1, (int) $params['page'] ), $max_pages ),
+        );
     }
 
     private function matches_search_filter( $title, $slug, $search ) {
