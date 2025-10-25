@@ -12,6 +12,9 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $GLOBALS['jlg_test_options'] = [];
         $GLOBALS['jlg_test_posts'] = [];
         $GLOBALS['jlg_test_permalinks'] = [];
+        $GLOBALS['jlg_test_get_posts_log'] = [];
+        $GLOBALS['jlg_test_post_cache_updates'] = [];
+        $GLOBALS['jlg_test_meta_cache_updates'] = [];
 
         \JLG\Notation\Helpers::flush_plugin_options_cache();
         \JLG\Notation\Helpers::flush_score_insights_cache();
@@ -23,6 +26,7 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         \JLG\Notation\Helpers::flush_score_insights_cache();
 
         unset($GLOBALS['jlg_test_meta'], $GLOBALS['jlg_test_options'], $GLOBALS['jlg_test_posts'], $GLOBALS['jlg_test_permalinks']);
+        unset($GLOBALS['jlg_test_get_posts_log'], $GLOBALS['jlg_test_post_cache_updates'], $GLOBALS['jlg_test_meta_cache_updates']);
 
         parent::tearDown();
     }
@@ -309,5 +313,43 @@ class HelpersScoreInsightsAggregationTest extends TestCase
         $this->assertSame(6.0, $refreshed['mean']['value'], 'Les insights doivent être recalculés après invalidation.');
 
         remove_filter('jlg_score_insights_cache_ttl', $ttl_filter, 10);
+    }
+
+    public function test_score_insights_primes_post_caches(): void
+    {
+        $post_ids = [801, 402];
+
+        foreach ($post_ids as $index => $post_id) {
+            $score = 7.5 + $index;
+
+            $GLOBALS['jlg_test_meta'][$post_id] = [
+                '_jlg_average_score' => (string) $score,
+            ];
+
+            $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
+                'ID'            => $post_id,
+                'post_title'    => 'Cache primer ' . $post_id,
+                'post_date'     => '2025-03-01 12:00:00',
+                'post_date_gmt' => '2025-03-01 11:00:00',
+            ]);
+        }
+
+        $expected_ids = $post_ids;
+        sort($expected_ids, SORT_NUMERIC);
+
+        \JLG\Notation\Helpers::get_posts_score_insights($post_ids);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_get_posts_log'], 'get_posts should be called to warm caches.');
+        $this->assertNotEmpty($GLOBALS['jlg_test_post_cache_updates'], 'update_post_caches should receive the queried posts.');
+
+        $last_cache_update = end($GLOBALS['jlg_test_post_cache_updates']);
+        $this->assertSame($expected_ids, $last_cache_update['post_ids']);
+        $this->assertTrue($last_cache_update['update_meta']);
+        $this->assertFalse($last_cache_update['update_term']);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_meta_cache_updates'], 'Meta cache should be primed for analysed posts.');
+        $meta_update = end($GLOBALS['jlg_test_meta_cache_updates']);
+        $this->assertSame('post', $meta_update['meta_type']);
+        $this->assertSame($expected_ids, $meta_update['object_ids']);
     }
 }

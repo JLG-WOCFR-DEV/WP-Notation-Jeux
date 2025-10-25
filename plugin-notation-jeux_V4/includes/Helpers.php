@@ -3578,6 +3578,8 @@ class Helpers {
         $post_ids = array_values( array_unique( $post_ids ) );
         sort( $post_ids, SORT_NUMERIC );
 
+        self::prime_score_insights_post_cache( $post_ids );
+
         $time_range    = is_string( $time_range ) ? $time_range : 'all';
         $platform_slug = is_string( $platform_slug ) ? $platform_slug : '';
 
@@ -3888,6 +3890,38 @@ class Helpers {
         }
 
         return $payload;
+    }
+
+    private static function prime_score_insights_post_cache( array $post_ids ) {
+        if ( empty( $post_ids ) ) {
+            return;
+        }
+
+        $posts_for_cache = array();
+
+        if ( function_exists( 'get_posts' ) ) {
+            $posts_for_cache = get_posts(
+                array(
+                    'post__in'               => $post_ids,
+                    'posts_per_page'         => max( 1, count( $post_ids ) ),
+                    'post_status'            => 'any',
+                    'post_type'              => 'any',
+                    'orderby'                => 'post__in',
+                    'no_found_rows'          => true,
+                    'suppress_filters'       => false,
+                    'update_post_meta_cache' => true,
+                    'update_post_term_cache' => false,
+                )
+            );
+
+            if ( is_array( $posts_for_cache ) && ! empty( $posts_for_cache ) && function_exists( 'update_post_caches' ) ) {
+                update_post_caches( $posts_for_cache, 'any', true, false );
+            }
+        }
+
+        if ( function_exists( 'update_meta_cache' ) ) {
+            update_meta_cache( 'post', $post_ids );
+        }
     }
 
     private static function calculate_median_from_sorted_scores( array $scores ) {

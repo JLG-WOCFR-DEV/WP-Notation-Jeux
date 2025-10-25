@@ -50,6 +50,37 @@ class FrontendAssetsEnqueueTest extends TestCase
         $this->assertNotEmpty($inline_styles['jlg-game-explorer'][0] ?? '', 'Generated Game Explorer CSS should not be empty.');
     }
 
+    public function test_game_explorer_css_colors_are_sanitized(): void
+    {
+        $frontend = new \JLG\Notation\Frontend();
+
+        $method = new ReflectionMethod(\JLG\Notation\Frontend::class, 'build_game_explorer_css');
+        $method->setAccessible(true);
+
+        $css = $method->invoke(
+            $frontend,
+            [
+                'score_gradient_1' => 'linear-gradient(red, blue)',
+                'score_gradient_2' => 'url(javascript:alert(1))',
+            ],
+            [
+                'bg_color_secondary'    => 'rgb(0, 0, 0)',
+                'border_color'          => '#3f3f46',
+                'text_color'            => 'alert(1)',
+                'text_color_secondary'  => '#abc',
+            ]
+        );
+
+        $this->assertStringContainsString('--jlg-ge-card-bg: #1f2937', $css);
+        $this->assertStringContainsString('--jlg-ge-card-border: #3f3f46', $css);
+        $this->assertStringContainsString('--jlg-ge-text: #fafafa', $css);
+        $this->assertStringContainsString('--jlg-ge-text-muted: #abc', $css);
+        $this->assertStringContainsString('--jlg-ge-accent: #60a5fa', $css);
+        $this->assertStringContainsString('--jlg-ge-accent-alt: #c084fc', $css);
+        $this->assertStringNotContainsString('javascript', strtolower($css));
+        $this->assertStringNotContainsString('linear-gradient', strtolower($css));
+    }
+
     private function registerPost(int $post_id, string $content): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([

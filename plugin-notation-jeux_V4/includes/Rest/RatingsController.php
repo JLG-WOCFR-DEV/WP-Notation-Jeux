@@ -27,8 +27,9 @@ class RatingsController {
     private static $summary_cache_prefix  = null;
     private static $summary_runtime_cache = array();
 
-    private $namespace = 'jlg/v1';
-    private $rest_base = 'ratings';
+    private $namespace               = 'jlg/v1';
+    private $rest_base               = 'ratings';
+    protected $active_summary_params = array();
 
     public function __construct() {
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
@@ -268,14 +269,20 @@ class RatingsController {
             );
         }
 
-        $summary_post_ids = ! empty( $candidate_query['all_ids'] )
-            ? array_map( 'intval', $candidate_query['all_ids'] )
-            : array_map(
-                function ( $record ) {
-                    return (int) $record['id'];
-                },
-                $records
-            );
+        $summary_post_ids = array_map(
+            function ( $record ) {
+                return (int) $record['id'];
+            },
+            $records
+        );
+
+        if ( empty( $summary_post_ids ) && ! empty( $candidate_query['all_ids'] ) ) {
+            $summary_post_ids = array_map( 'intval', $candidate_query['all_ids'] );
+        }
+
+        $page_items = isset( $candidate_query['page_items'] ) && is_array( $candidate_query['page_items'] )
+            ? $candidate_query['page_items']
+            : array();
 
         foreach ( $page_items as $record ) {
             if ( isset( $record['id'] ) ) {
@@ -283,7 +290,49 @@ class RatingsController {
             }
         }
 
-        $summary = $this->resolve_summary_insights( $summary_post_ids, $params );
+        $summary_post_ids = array_values(
+            array_unique(
+                array_filter(
+                    $summary_post_ids,
+                    static function ( $id ) {
+                        return (int) $id > 0;
+                    }
+                )
+            )
+        );
+
+        $normalized_runtime_ids = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'intval', $summary_post_ids )
+                )
+            )
+        );
+
+        $runtime_key = null;
+        $summary     = null;
+
+        if ( ! empty( $normalized_runtime_ids ) ) {
+            $runtime_key = $this->build_summary_cache_key( $normalized_runtime_ids, $params );
+
+            if ( isset( self::$summary_runtime_cache[ $runtime_key ] ) ) {
+                $summary = self::$summary_runtime_cache[ $runtime_key ];
+            }
+        }
+
+        if ( $summary === null ) {
+            $this->active_summary_params = $params;
+
+            try {
+                $summary = $this->resolve_summary_insights( $summary_post_ids );
+            } finally {
+                $this->active_summary_params = array();
+            }
+
+            if ( $runtime_key !== null ) {
+                self::$summary_runtime_cache[ $runtime_key ] = $summary;
+            }
+        }
 
         return rest_ensure_response(
             array(
@@ -303,7 +352,13 @@ class RatingsController {
         );
     }
 
-    private function resolve_summary_insights( array $post_ids, array $params ) {
+    protected function resolve_summary_insights( array $post_ids ) {
+        $params = is_array( $this->active_summary_params ) ? $this->active_summary_params : array();
+
+        return $this->do_resolve_summary_insights( $post_ids, $params );
+    }
+
+    private function do_resolve_summary_insights( array $post_ids, array $params ) {
         $normalized_ids = array();
 
         foreach ( $post_ids as $post_id ) {
@@ -718,7 +773,7 @@ class RatingsController {
                 } else {
                     $ids_args                   = $this->build_query_args( $params );
                     $ids_args['fields']         = 'ids';
-                    $ids_args['posts_per_page'] = -1;
+                    $ids_args['posts_per_page'] = max( 1, $found_posts );
                     $ids_args['no_found_rows']  = true;
                     unset( $ids_args['paged'] );
 

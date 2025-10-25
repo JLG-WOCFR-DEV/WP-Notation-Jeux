@@ -2064,6 +2064,104 @@ if (!function_exists('has_shortcode')) {
     }
 }
 
+if (!function_exists('get_posts')) {
+    function get_posts($args = [])
+    {
+        if (!isset($GLOBALS['jlg_test_get_posts_log'])) {
+            $GLOBALS['jlg_test_get_posts_log'] = [];
+        }
+
+        $normalized_args = is_array($args) ? $args : [];
+        $GLOBALS['jlg_test_get_posts_log'][] = $normalized_args;
+
+        $ids = [];
+
+        if (isset($normalized_args['post__in']) && is_array($normalized_args['post__in'])) {
+            $ids = array_map('intval', $normalized_args['post__in']);
+        } elseif (isset($normalized_args['include']) && is_array($normalized_args['include'])) {
+            $ids = array_map('intval', $normalized_args['include']);
+        }
+
+        if (empty($ids) && isset($normalized_args['p']) && is_numeric($normalized_args['p'])) {
+            $ids = [(int) $normalized_args['p']];
+        }
+
+        $posts_store = $GLOBALS['jlg_test_posts'] ?? [];
+        $posts       = [];
+
+        foreach ($ids as $id) {
+            if (isset($posts_store[$id]) && $posts_store[$id] instanceof WP_Post) {
+                $posts[] = $posts_store[$id];
+            }
+        }
+
+        return $posts;
+    }
+}
+
+if (!function_exists('update_post_caches')) {
+    function update_post_caches($posts, $post_type = 'post', $update_meta_cache = true, $update_term_cache = true)
+    {
+        if (!isset($GLOBALS['jlg_test_post_cache_updates'])) {
+            $GLOBALS['jlg_test_post_cache_updates'] = [];
+        }
+
+        $ids = [];
+
+        if (is_array($posts)) {
+            foreach ($posts as $post) {
+                if ($post instanceof WP_Post && isset($post->ID)) {
+                    $ids[] = (int) $post->ID;
+                }
+            }
+        }
+
+        $GLOBALS['jlg_test_post_cache_updates'][] = [
+            'post_ids'    => $ids,
+            'post_type'   => $post_type,
+            'update_meta' => (bool) $update_meta_cache,
+            'update_term' => (bool) $update_term_cache,
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('update_meta_cache')) {
+    function update_meta_cache($meta_type, $object_ids)
+    {
+        if (!isset($GLOBALS['jlg_test_meta_cache_updates'])) {
+            $GLOBALS['jlg_test_meta_cache_updates'] = [];
+        }
+
+        $ids = [];
+
+        if (is_array($object_ids)) {
+            foreach ($object_ids as $id) {
+                $ids[] = (int) $id;
+            }
+        } elseif ($object_ids !== null) {
+            $ids[] = (int) $object_ids;
+        }
+
+        $GLOBALS['jlg_test_meta_cache_updates'][] = [
+            'meta_type' => (string) $meta_type,
+            'object_ids' => $ids,
+        ];
+
+        if (!isset($GLOBALS['jlg_test_meta_cache_calls'])) {
+            $GLOBALS['jlg_test_meta_cache_calls'] = [];
+        }
+
+        $GLOBALS['jlg_test_meta_cache_calls'][] = [
+            (string) $meta_type,
+            array_values($ids),
+        ];
+
+        return true;
+    }
+}
+
 if (!class_exists('WP_Post')) {
     #[\AllowDynamicProperties]
     class WP_Post

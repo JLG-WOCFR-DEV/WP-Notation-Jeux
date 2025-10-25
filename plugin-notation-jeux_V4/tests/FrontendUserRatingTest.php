@@ -932,6 +932,93 @@ class FrontendUserRatingTest extends TestCase
         $this->assertSame(200, $metrics['user_rating']['last_event']['context']['status_code']);
     }
 
+    public function test_store_user_rating_tokens_merges_concurrent_snapshot(): void
+    {
+        $post_id         = 9090;
+        $existing_hash   = hash('sha256', str_repeat('a', 32));
+        $now             = time();
+        $existing_stamp  = $now - 120;
+        $concurrent_stamp = $now - 60;
+        $new_stamp        = $now;
+
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_ratings'] = [
+            $existing_hash => 4.0,
+            '__meta'       => [
+                'version'    => 3,
+                'timestamps' => [
+                    $existing_hash => $existing_stamp,
+                ],
+                'weights'    => [
+                    $existing_hash => 1.0,
+                ],
+                'aggregates' => [
+                    'weighted_sum' => 4.0,
+                    'weight_total' => 1.0,
+                    'count'        => 1,
+                    'average'      => 4.0,
+                    'computed_at'  => 1000,
+                ],
+            ],
+        ];
+
+        $reflection = new ReflectionClass(\JLG\Notation\Frontend::class);
+        $getter     = $reflection->getMethod('get_post_user_rating_tokens');
+        $getter->setAccessible(true);
+
+        $meta    = [];
+        $ratings = $getter->invokeArgs(null, [$post_id, &$meta]);
+
+        $concurrent_hash = hash('sha256', str_repeat('b', 32));
+        $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_ratings'] = [
+            $existing_hash   => 4.0,
+            $concurrent_hash => 2.0,
+            '__meta'         => [
+                'version'    => 3,
+                'timestamps' => [
+                    $existing_hash   => $existing_stamp,
+                    $concurrent_hash => $concurrent_stamp,
+                ],
+                'weights'    => [
+                    $existing_hash   => 1.0,
+                    $concurrent_hash => 1.0,
+                ],
+                'aggregates' => [
+                    'weighted_sum' => 6.0,
+                    'weight_total' => 2.0,
+                    'count'        => 2,
+                    'average'      => 3.0,
+                    'computed_at'  => $concurrent_stamp,
+                ],
+            ],
+        ];
+
+        $new_hash                      = hash('sha256', str_repeat('c', 32));
+        $ratings[$new_hash]            = 5.0;
+        $meta['timestamps'][$new_hash] = $new_stamp;
+        $meta['weights'][$new_hash]    = 1.0;
+
+        $store = $reflection->getMethod('store_post_user_rating_tokens');
+        $store->setAccessible(true);
+        $store->invoke(null, $post_id, $ratings, $meta);
+
+        $this->assertArrayHasKey($post_id, $GLOBALS['jlg_test_meta']);
+        $stored = $GLOBALS['jlg_test_meta'][$post_id]['_jlg_user_ratings'];
+
+        $this->assertArrayHasKey($existing_hash, $stored);
+        $this->assertArrayHasKey($concurrent_hash, $stored);
+        $this->assertArrayHasKey($new_hash, $stored);
+
+        $this->assertSame($existing_stamp, $stored['__meta']['timestamps'][$existing_hash]);
+        $this->assertSame($concurrent_stamp, $stored['__meta']['timestamps'][$concurrent_hash]);
+        $this->assertSame($new_stamp, $stored['__meta']['timestamps'][$new_hash]);
+
+        $aggregates = $stored['__meta']['aggregates'];
+        $this->assertSame(3, $aggregates['count']);
+        $this->assertSame(3.0, $aggregates['weight_total']);
+        $this->assertEqualsWithDelta(11.0, $aggregates['weighted_sum'], 0.001);
+        $this->assertEqualsWithDelta(3.67, $aggregates['average'], 0.01);
+    }
+
     public function test_handle_user_rating_records_login_required_feedback(): void
     {
         $post_id = 4159;
