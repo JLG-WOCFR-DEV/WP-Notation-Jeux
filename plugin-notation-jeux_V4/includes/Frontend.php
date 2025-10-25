@@ -696,18 +696,36 @@ class Frontend {
     }
 
     private function build_game_explorer_css( $options, $palette ) {
-        $card_bg          = $palette['bg_color_secondary'] ?? '#1f2937';
-        $border           = $palette['border_color'] ?? '#3f3f46';
-        $text             = $palette['text_color'] ?? '#fafafa';
-        $secondary        = $palette['text_color_secondary'] ?? '#9ca3af';
-        $accent_primary   = $options['score_gradient_1'] ?? '#60a5fa';
-        $accent_secondary = $options['score_gradient_2'] ?? '#c084fc';
+        $card_bg          = $this->sanitize_game_explorer_color( $palette['bg_color_secondary'] ?? '', '#1f2937' );
+        $border           = $this->sanitize_game_explorer_color( $palette['border_color'] ?? '', '#3f3f46' );
+        $text             = $this->sanitize_game_explorer_color( $palette['text_color'] ?? '', '#fafafa' );
+        $secondary        = $this->sanitize_game_explorer_color( $palette['text_color_secondary'] ?? '', '#9ca3af' );
+        $accent_primary   = $this->sanitize_game_explorer_color( $options['score_gradient_1'] ?? '', '#60a5fa' );
+        $accent_secondary = $this->sanitize_game_explorer_color( $options['score_gradient_2'] ?? '', '#c084fc' );
 
         $css = "
 .jlg-game-explorer{--jlg-ge-card-bg: {$card_bg};--jlg-ge-card-border: {$border};--jlg-ge-text: {$text};--jlg-ge-text-muted: {$secondary};--jlg-ge-accent: {$accent_primary};--jlg-ge-accent-alt: {$accent_secondary};}
 ";
 
         return trim( $css );
+    }
+
+    private function sanitize_game_explorer_color( $value, $fallback ) {
+        $fallback_color = is_string( $fallback ) ? sanitize_hex_color( $fallback ) : '';
+
+        if ( ! $fallback_color ) {
+            $fallback_color = '#000000';
+        }
+
+        if ( is_string( $value ) ) {
+            $sanitized = sanitize_hex_color( $value );
+
+            if ( $sanitized ) {
+                return $sanitized;
+            }
+        }
+
+        return $fallback_color;
     }
 
     /**
@@ -1843,7 +1861,56 @@ class Frontend {
             $meta['aggregates'] = array();
         }
 
+        $existing_meta    = array();
+        $existing_ratings = self::get_post_user_rating_tokens( $post_id, $existing_meta );
+
+        if ( ! empty( $existing_ratings ) ) {
+            foreach ( $existing_ratings as $hash => $value ) {
+                if ( array_key_exists( $hash, $ratings ) ) {
+                    continue;
+                }
+
+                $ratings[ $hash ] = $value;
+            }
+        }
+
+        $meta = self::merge_user_rating_meta_snapshot( $meta, $existing_meta, $ratings );
+
         self::write_user_rating_store( $post_id, $ratings, $meta, true );
+    }
+
+    private static function merge_user_rating_meta_snapshot( array $meta, array $existing_meta, array $ratings ) {
+        if ( ! isset( $meta['timestamps'] ) || ! is_array( $meta['timestamps'] ) ) {
+            $meta['timestamps'] = array();
+        }
+
+        if ( ! isset( $meta['weights'] ) || ! is_array( $meta['weights'] ) ) {
+            $meta['weights'] = array();
+        }
+
+        if ( isset( $existing_meta['version'] ) && (int) $existing_meta['version'] > (int) $meta['version'] ) {
+            $meta['version'] = (int) $existing_meta['version'];
+        }
+
+        if ( isset( $existing_meta['timestamps'] ) && is_array( $existing_meta['timestamps'] ) ) {
+            foreach ( $existing_meta['timestamps'] as $hash => $timestamp ) {
+                if ( array_key_exists( $hash, $ratings ) && ! isset( $meta['timestamps'][ $hash ] ) ) {
+                    $meta['timestamps'][ $hash ] = $timestamp;
+                }
+            }
+        }
+
+        if ( isset( $existing_meta['weights'] ) && is_array( $existing_meta['weights'] ) ) {
+            foreach ( $existing_meta['weights'] as $hash => $weight ) {
+                if ( array_key_exists( $hash, $ratings ) && ! isset( $meta['weights'][ $hash ] ) ) {
+                    $meta['weights'][ $hash ] = $weight;
+                }
+            }
+        }
+
+        $meta['aggregates'] = array();
+
+        return $meta;
     }
 
     private static function write_user_rating_store( $post_id, array $ratings, array $meta, $run_prune = true ) {
