@@ -51,6 +51,42 @@ class RatingsControllerPaginationTest extends TestCase
         }
     }
 
+    public function test_query_excludes_posts_without_resolved_score(): void
+    {
+        $this->seedRatedPost(11, 'Post Alpha', 'post-alpha');
+        $this->seedRatedPost(22, 'Post Bravo', 'post-bravo');
+        $this->seedUnratedPost(99, 'Post Unrated', 'post-unrated');
+
+        $GLOBALS['jlg_test_current_user_can'] = static function ($capability) {
+            return $capability === 'read';
+        };
+
+        $controller = new \JLG\Notation\Rest\RatingsController();
+        $request    = new RatingsPaginationTestRequest([
+            'per_page' => 1,
+            'page'     => 1,
+            'orderby'  => 'date',
+            'order'    => 'desc',
+        ]);
+
+        $response = $controller->handle_get_ratings($request);
+
+        $this->assertIsArray($response);
+        $this->assertArrayHasKey('items', $response);
+        $this->assertCount(1, $response['items']);
+        $this->assertSame(2, $response['pagination']['total']);
+        $this->assertSame(2, $response['pagination']['total_pages']);
+
+        $firstSlug = $response['items'][0]['slug'] ?? '';
+        $this->assertContains($firstSlug, ['post-alpha', 'post-bravo']);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_wp_query_log']);
+        $lastQueryArgs = end($GLOBALS['jlg_test_wp_query_log']);
+        $this->assertIsArray($lastQueryArgs);
+        $this->assertArrayHasKey('meta_query', $lastQueryArgs);
+        $this->assertMetaQueryRequiresScore($lastQueryArgs['meta_query']);
+    }
+
     private function seedRatedPost(int $postId, string $title, string $slug): void
     {
         $GLOBALS['jlg_test_posts'][$postId] = new WP_Post([
@@ -71,6 +107,54 @@ class RatingsControllerPaginationTest extends TestCase
             '_jlg_plateformes'           => ['PC'],
             '_jlg_review_status'         => 'final',
         ];
+    }
+
+    private function seedUnratedPost(int $postId, string $title, string $slug): void
+    {
+        $GLOBALS['jlg_test_posts'][$postId] = new WP_Post([
+            'ID'            => $postId,
+            'post_title'    => $title,
+            'post_name'     => $slug,
+            'post_type'     => 'post',
+            'post_status'   => 'publish',
+            'post_date'     => '2025-03-01 12:00:00',
+            'post_date_gmt' => '2025-03-01 11:00:00',
+        ]);
+    }
+
+    private function assertMetaQueryRequiresScore($metaQuery): void
+    {
+        $this->assertIsArray($metaQuery);
+        $this->assertSame('AND', strtoupper($metaQuery['relation'] ?? ''));
+
+        $clauses = $metaQuery;
+        unset($clauses['relation']);
+
+        $foundExists    = false;
+        $foundNonEmpty  = false;
+
+        foreach ($clauses as $clause) {
+            if (!is_array($clause)) {
+                continue;
+            }
+
+            if (($clause['key'] ?? '') !== '_jlg_average_score') {
+                continue;
+            }
+
+            $compare = strtoupper($clause['compare'] ?? '');
+
+            if ($compare === 'EXISTS') {
+                $foundExists = true;
+            }
+
+            if ($compare === '!=' && (($clause['value'] ?? null) === '')) {
+                $foundNonEmpty = true;
+            }
+        }
+
+        $this->assertTrue($foundExists, 'Meta query should ensure the score meta exists.');
+        $this->assertTrue($foundNonEmpty, 'Meta query should exclude empty score values.');
     }
 }
 

@@ -2236,6 +2236,10 @@ if (!class_exists('WP_Query')) {
                 return $meta_value === null;
             }
 
+            if ($compare === 'EXISTS') {
+                return $meta_value !== null;
+            }
+
             if ($meta_value === null) {
                 return false;
             }
@@ -2254,6 +2258,8 @@ if (!class_exists('WP_Query')) {
                     return (string) $meta_value === (string) $value;
                 case 'LIKE':
                     return stripos((string) $meta_value, (string) $value) !== false;
+                case '!=':
+                    return (string) $meta_value !== (string) $value;
                 case 'IN':
                     $value_list = is_array($value) ? $value : [$value];
 
