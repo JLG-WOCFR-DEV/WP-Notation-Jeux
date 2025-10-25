@@ -268,11 +268,13 @@ class RatingsController {
 
         $summary_post_ids = array();
 
-        foreach ( $records as $record ) {
-            $summary_post_ids[] = (int) $record['id'];
+        foreach ( $page_items as $record ) {
+            if ( isset( $record['id'] ) ) {
+                $summary_post_ids[] = (int) $record['id'];
+            }
         }
 
-        $summary = Helpers::get_posts_score_insights( $summary_post_ids );
+        $summary = $this->resolve_summary_insights( $summary_post_ids, $params );
 
         return rest_ensure_response(
             array(
@@ -290,6 +292,99 @@ class RatingsController {
                 'generated_at' => gmdate( 'c', $this->current_gmt_timestamp() ),
             )
         );
+    }
+
+    private function resolve_summary_insights( array $post_ids, array $params ) {
+        $normalized_ids = array();
+
+        foreach ( $post_ids as $post_id ) {
+            $post_id = (int) $post_id;
+
+            if ( $post_id > 0 ) {
+                $normalized_ids[] = $post_id;
+            }
+        }
+
+        $normalized_ids = array_values( array_unique( $normalized_ids ) );
+
+        if ( empty( $normalized_ids ) ) {
+            return Helpers::get_posts_score_insights( array() );
+        }
+
+        if ( ! function_exists( 'wp_cache_get' ) || ! function_exists( 'wp_cache_set' ) ) {
+            return Helpers::get_posts_score_insights( $normalized_ids );
+        }
+
+        $cache_key   = $this->build_summary_cache_key( $normalized_ids, $params );
+        $cache_group = 'jlg_ratings_summary';
+
+        $cached_summary = wp_cache_get( $cache_key, $cache_group );
+        if ( false !== $cached_summary && $cached_summary !== null ) {
+            return $cached_summary;
+        }
+
+        $summary = Helpers::get_posts_score_insights( $normalized_ids );
+
+        $ttl = $this->determine_summary_cache_ttl( $params, $normalized_ids );
+        if ( $ttl > 0 ) {
+            wp_cache_set( $cache_key, $summary, $cache_group, $ttl );
+        }
+
+        return $summary;
+    }
+
+    private function build_summary_cache_key( array $post_ids, array $params ) {
+        $payload = array(
+            'ids'      => $post_ids,
+            'page'     => isset( $params['page'] ) ? (int) $params['page'] : 1,
+            'per_page' => isset( $params['per_page'] ) ? (int) $params['per_page'] : count( $post_ids ),
+            'orderby'  => isset( $params['orderby'] ) ? (string) $params['orderby'] : 'date',
+            'order'    => isset( $params['order'] ) ? (string) $params['order'] : 'desc',
+            'search'   => isset( $params['search'] ) ? (string) $params['search'] : '',
+            'platform' => isset( $params['platform'] ) ? (string) $params['platform'] : '',
+            'from'     => isset( $params['from']['timestamp'] ) ? (int) $params['from']['timestamp'] : null,
+            'to'       => isset( $params['to']['timestamp'] ) ? (int) $params['to']['timestamp'] : null,
+            'statuses' => isset( $params['statuses'] ) ? array_values( (array) $params['statuses'] ) : array(),
+        );
+
+        if ( ! empty( $payload['statuses'] ) ) {
+            sort( $payload['statuses'] );
+        }
+
+        if ( function_exists( 'wp_json_encode' ) ) {
+            $encoded = wp_json_encode( $payload );
+        } else {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
+            $encoded = json_encode( $payload );
+        }
+
+        if ( ! is_string( $encoded ) || $encoded === '' ) {
+            $encoded = '[]';
+        }
+
+        $hash = md5( $encoded );
+
+        return 'summary_' . $hash;
+    }
+
+    private function determine_summary_cache_ttl( array $params, array $post_ids ) {
+        $ttl = defined( 'MINUTE_IN_SECONDS' )
+            ? max( 60, (int) MINUTE_IN_SECONDS * 2 )
+            : 120;
+
+        if ( function_exists( 'apply_filters' ) ) {
+            $filtered_ttl = apply_filters( 'jlg_ratings_summary_cache_ttl', $ttl, $params, $post_ids );
+
+            if ( is_numeric( $filtered_ttl ) ) {
+                $ttl = (int) $filtered_ttl;
+            }
+        }
+
+        if ( $ttl < 0 ) {
+            return 0;
+        }
+
+        return $ttl;
     }
 
     private function get_collection_params() {
