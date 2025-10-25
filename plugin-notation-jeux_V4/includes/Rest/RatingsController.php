@@ -279,9 +279,6 @@ class RatingsController {
 
         $summary_post_ids = array_values( array_unique( array_filter( $summary_post_ids ) ) );
 
-        if ( ! is_array( $summary ) ) {
-            $summary = $this->resolve_summary_insights( $summary_post_ids );
-
             if ( $cache_key !== '' ) {
                 self::$summary_runtime_cache[ $cache_key ] = $summary;
 
