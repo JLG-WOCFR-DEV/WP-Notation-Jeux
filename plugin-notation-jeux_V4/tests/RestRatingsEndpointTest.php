@@ -129,6 +129,7 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertCount(1, $response['items']);
         $this->assertSame(2, $response['pagination']['total']);
         $this->assertSame(2, $response['pagination']['total_pages']);
+        $this->assertSame(1, $response['pagination']['page']);
         $this->assertSame('stellar-blade-review', $response['items'][0]['slug']);
         $this->assertSame(9.1, $response['items'][0]['editorial']['score']);
         $this->assertSame(142, $response['items'][0]['readers']['votes']);
@@ -139,6 +140,31 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertArrayHasKey('summary', $response);
         $this->assertSame(2, $response['summary']['total']);
         $this->assertSame(10.0, $response['score_max']);
+
+        $secondPage = $controller->handle_get_ratings(new TestRestRequest([
+            'per_page' => 1,
+            'page'     => 2,
+            'orderby'  => 'editorial',
+            'order'    => 'desc',
+        ]));
+
+        $this->assertIsArray($secondPage);
+        $this->assertCount(1, $secondPage['items']);
+        $this->assertSame(2, $secondPage['pagination']['total']);
+        $this->assertSame(2, $secondPage['pagination']['total_pages']);
+        $this->assertSame(2, $secondPage['pagination']['page']);
+        $this->assertSame('arcade-frenzy-verdict', $secondPage['items'][0]['slug']);
+
+        $readerOrder = $controller->handle_get_ratings(new TestRestRequest([
+            'per_page' => 2,
+            'orderby'  => 'reader',
+            'order'    => 'asc',
+        ]));
+
+        $this->assertIsArray($readerOrder);
+        $this->assertCount(2, $readerOrder['items']);
+        $this->assertSame('arcade-frenzy-verdict', $readerOrder['items'][0]['slug']);
+        $this->assertSame('stellar-blade-review', $readerOrder['items'][1]['slug']);
 
         $platformRequest = new TestRestRequest([
             'platform' => 'nintendo-switch',
@@ -156,6 +182,7 @@ class RestRatingsEndpointTest extends TestCase
         $searched = $controller->handle_get_ratings($searchRequest);
         $this->assertCount(1, $searched['items']);
         $this->assertSame('Arcade Frenzy Verdict', $searched['items'][0]['title']);
+        $this->assertSame(1, $searched['pagination']['total']);
     }
 
     public function test_handle_get_ratings_returns_error_for_unknown_post(): void
