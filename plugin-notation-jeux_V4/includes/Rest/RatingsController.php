@@ -15,12 +15,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RatingsController {
 
-    private $namespace = 'jlg/v1';
+    private const SUMMARY_CACHE_GROUP         = 'jlg_ratings_rest';
+    private const SUMMARY_CACHE_PREFIX_OPTION = 'jlg_ratings_rest_summary_prefix';
+    private const SUMMARY_CACHE_VERSION       = '1';
+    private const SUMMARY_CACHE_META_KEYS     = array(
+        '_jlg_average_score',
+        '_jlg_user_rating_avg',
+        '_jlg_user_rating_count',
+    );
 
+    private static $summary_cache_prefix  = null;
+    private static $summary_runtime_cache = array();
+
+    private $namespace = 'jlg/v1';
     private $rest_base = 'ratings';
 
     public function __construct() {
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+        add_action( 'jlg_rated_post_ids_cache_cleared', array( $this, 'flush_rest_summary_cache' ), 10, 0 );
+        add_action( 'updated_post_meta', array( $this, 'maybe_flush_rest_summary_cache_for_meta' ), 10, 4 );
     }
 
     public function register_routes() {
@@ -272,9 +285,50 @@ class RatingsController {
             }
         }
 
-        $summary = Helpers::get_posts_score_insights( $summary_post_ids );
-        if ( is_array( $summary ) ) {
-            $summary['total'] = $total_items;
+        $cache_key = $this->get_summary_cache_key( $params, $summary_post_ids );
+        $cache_ttl = $this->get_summary_cache_ttl();
+        $summary   = null;
+
+        if ( $cache_key !== '' ) {
+            if ( isset( self::$summary_runtime_cache[ $cache_key ] ) ) {
+                $cached_summary = self::$summary_runtime_cache[ $cache_key ];
+            } else {
+                $cached_summary = function_exists( 'wp_cache_get' )
+                    ? wp_cache_get( $cache_key, self::SUMMARY_CACHE_GROUP )
+                    : false;
+
+                if ( $cached_summary === false ) {
+                    $cached_summary = get_transient( $cache_key );
+
+                    if ( $cached_summary !== false && is_array( $cached_summary ) && function_exists( 'wp_cache_set' ) && $cache_ttl > 0 ) {
+                        wp_cache_set( $cache_key, $cached_summary, self::SUMMARY_CACHE_GROUP, $cache_ttl );
+                    }
+                }
+
+                if ( is_array( $cached_summary ) ) {
+                    self::$summary_runtime_cache[ $cache_key ] = $cached_summary;
+                }
+            }
+
+            if ( isset( self::$summary_runtime_cache[ $cache_key ] ) ) {
+                $summary = self::$summary_runtime_cache[ $cache_key ];
+            }
+        }
+
+        if ( ! is_array( $summary ) ) {
+            $summary = $this->resolve_summary_insights( $summary_post_ids );
+
+            if ( $cache_key !== '' ) {
+                self::$summary_runtime_cache[ $cache_key ] = $summary;
+
+                if ( $cache_ttl > 0 ) {
+                    if ( function_exists( 'wp_cache_set' ) ) {
+                        wp_cache_set( $cache_key, $summary, self::SUMMARY_CACHE_GROUP, $cache_ttl );
+                    }
+
+                    set_transient( $cache_key, $summary, $cache_ttl );
+                }
+            }
         }
 
         return rest_ensure_response(
@@ -295,97 +349,8 @@ class RatingsController {
         );
     }
 
-    private function resolve_summary_insights( array $post_ids, array $params ) {
-        $normalized_ids = array();
-
-        foreach ( $post_ids as $post_id ) {
-            $post_id = (int) $post_id;
-
-            if ( $post_id > 0 ) {
-                $normalized_ids[] = $post_id;
-            }
-        }
-
-        $normalized_ids = array_values( array_unique( $normalized_ids ) );
-
-        if ( empty( $normalized_ids ) ) {
-            return Helpers::get_posts_score_insights( array() );
-        }
-
-        if ( ! function_exists( 'wp_cache_get' ) || ! function_exists( 'wp_cache_set' ) ) {
-            return Helpers::get_posts_score_insights( $normalized_ids );
-        }
-
-        $cache_key   = $this->build_summary_cache_key( $normalized_ids, $params );
-        $cache_group = 'jlg_ratings_summary';
-
-        $cached_summary = wp_cache_get( $cache_key, $cache_group );
-        if ( false !== $cached_summary && $cached_summary !== null ) {
-            return $cached_summary;
-        }
-
-        $summary = Helpers::get_posts_score_insights( $normalized_ids );
-
-        $ttl = $this->determine_summary_cache_ttl( $params, $normalized_ids );
-        if ( $ttl > 0 ) {
-            wp_cache_set( $cache_key, $summary, $cache_group, $ttl );
-        }
-
-        return $summary;
-    }
-
-    private function build_summary_cache_key( array $post_ids, array $params ) {
-        $payload = array(
-            'ids'      => $post_ids,
-            'page'     => isset( $params['page'] ) ? (int) $params['page'] : 1,
-            'per_page' => isset( $params['per_page'] ) ? (int) $params['per_page'] : count( $post_ids ),
-            'orderby'  => isset( $params['orderby'] ) ? (string) $params['orderby'] : 'date',
-            'order'    => isset( $params['order'] ) ? (string) $params['order'] : 'desc',
-            'search'   => isset( $params['search'] ) ? (string) $params['search'] : '',
-            'platform' => isset( $params['platform'] ) ? (string) $params['platform'] : '',
-            'from'     => isset( $params['from']['timestamp'] ) ? (int) $params['from']['timestamp'] : null,
-            'to'       => isset( $params['to']['timestamp'] ) ? (int) $params['to']['timestamp'] : null,
-            'statuses' => isset( $params['statuses'] ) ? array_values( (array) $params['statuses'] ) : array(),
-        );
-
-        if ( ! empty( $payload['statuses'] ) ) {
-            sort( $payload['statuses'] );
-        }
-
-        if ( function_exists( 'wp_json_encode' ) ) {
-            $encoded = wp_json_encode( $payload );
-        } else {
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
-            $encoded = json_encode( $payload );
-        }
-
-        if ( ! is_string( $encoded ) || $encoded === '' ) {
-            $encoded = '[]';
-        }
-
-        $hash = md5( $encoded );
-
-        return 'summary_' . $hash;
-    }
-
-    private function determine_summary_cache_ttl( array $params, array $post_ids ) {
-        $ttl = defined( 'MINUTE_IN_SECONDS' )
-            ? max( 60, (int) MINUTE_IN_SECONDS * 2 )
-            : 120;
-
-        if ( function_exists( 'apply_filters' ) ) {
-            $filtered_ttl = apply_filters( 'jlg_ratings_summary_cache_ttl', $ttl, $params, $post_ids );
-
-            if ( is_numeric( $filtered_ttl ) ) {
-                $ttl = (int) $filtered_ttl;
-            }
-        }
-
-        if ( $ttl < 0 ) {
-            return 0;
-        }
-
-        return $ttl;
+    protected function resolve_summary_insights( array $post_ids ) {
+        return Helpers::get_posts_score_insights( $post_ids );
     }
 
     private function get_collection_params() {
@@ -1150,6 +1115,153 @@ class RatingsController {
         }
 
         return true;
+    }
+
+    public function flush_rest_summary_cache() {
+        self::$summary_runtime_cache = array();
+
+        $new_prefix = self::generate_summary_cache_token();
+        self::assign_summary_cache_prefix( $new_prefix );
+
+        update_option( self::SUMMARY_CACHE_PREFIX_OPTION, $new_prefix, false );
+    }
+
+    public function maybe_flush_rest_summary_cache_for_meta( $meta_id, $object_id, $meta_key ) {
+        unset( $meta_id, $object_id );
+
+        if ( ! is_string( $meta_key ) ) {
+            return;
+        }
+
+        if ( in_array( $meta_key, self::SUMMARY_CACHE_META_KEYS, true ) ) {
+            $this->flush_rest_summary_cache();
+        }
+    }
+
+    private function get_summary_cache_key( array $params, array $post_ids ) {
+        $post_ids = array_map( 'intval', $post_ids );
+        $post_ids = array_values( array_unique( $post_ids ) );
+        sort( $post_ids, SORT_NUMERIC );
+
+        $statuses = array();
+
+        if ( isset( $params['statuses'] ) && is_array( $params['statuses'] ) ) {
+            foreach ( $params['statuses'] as $status ) {
+                $sanitized = sanitize_key( (string) $status );
+
+                if ( $sanitized === '' ) {
+                    continue;
+                }
+
+                $statuses[] = $sanitized;
+            }
+        }
+
+        if ( ! empty( $statuses ) ) {
+            $statuses = array_values( array_unique( $statuses ) );
+            sort( $statuses );
+        }
+
+        $filters = array(
+            'id'       => isset( $params['post_id'] ) ? max( 0, (int) $params['post_id'] ) : 0,
+            'slug'     => isset( $params['slug'] ) ? (string) $params['slug'] : '',
+            'platform' => isset( $params['platform'] ) ? (string) $params['platform'] : '',
+            'search'   => isset( $params['search'] ) ? (string) $params['search'] : '',
+            'statuses' => $statuses,
+            'from'     => isset( $params['from']['timestamp'] ) ? (int) $params['from']['timestamp'] : null,
+            'to'       => isset( $params['to']['timestamp'] ) ? (int) $params['to']['timestamp'] : null,
+        );
+
+        $payload = array(
+            'filters' => $filters,
+            'ids'     => $post_ids,
+        );
+
+        $hash = md5( wp_json_encode( $payload ) );
+
+        return self::get_summary_cache_prefix() . '_' . $hash;
+    }
+
+    private function get_summary_cache_ttl() {
+        $default_ttl = defined( 'MINUTE_IN_SECONDS' ) ? MINUTE_IN_SECONDS : 60;
+
+        $ttl = apply_filters( 'jlg_ratings_rest_summary_ttl', $default_ttl );
+
+        if ( ! is_numeric( $ttl ) ) {
+            return 0;
+        }
+
+        $ttl = (int) $ttl;
+
+        if ( $ttl < 0 ) {
+            return 0;
+        }
+
+        return $ttl;
+    }
+
+    private static function get_summary_cache_prefix() {
+        if ( is_string( self::$summary_cache_prefix ) && self::$summary_cache_prefix !== '' ) {
+            return self::$summary_cache_prefix;
+        }
+
+        $stored_prefix = get_option( self::SUMMARY_CACHE_PREFIX_OPTION, '' );
+
+        if ( ! is_string( $stored_prefix ) || $stored_prefix === '' ) {
+            $stored_prefix = self::generate_summary_cache_token();
+            update_option( self::SUMMARY_CACHE_PREFIX_OPTION, $stored_prefix, false );
+        }
+
+        $sanitized = self::assign_summary_cache_prefix( $stored_prefix );
+
+        if ( $sanitized === '' ) {
+            $fresh_prefix = self::generate_summary_cache_token();
+            self::assign_summary_cache_prefix( $fresh_prefix );
+            update_option( self::SUMMARY_CACHE_PREFIX_OPTION, $fresh_prefix, false );
+        }
+
+        return self::$summary_cache_prefix;
+    }
+
+    private static function assign_summary_cache_prefix( $prefix ) {
+        $sanitized = strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', (string) $prefix ) );
+
+        self::$summary_cache_prefix = sprintf(
+            'v%s_%s',
+            self::SUMMARY_CACHE_VERSION,
+            $sanitized
+        );
+
+        return $sanitized;
+    }
+
+    private static function generate_summary_cache_token() {
+        if ( function_exists( 'random_bytes' ) ) {
+            try {
+                return bin2hex( random_bytes( 6 ) );
+            } catch ( Exception $exception ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+            }
+        }
+
+        if ( function_exists( 'wp_generate_password' ) ) {
+            $password = wp_generate_password( 8, false, false );
+
+            return strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', (string) $password ) );
+        }
+
+        if ( function_exists( 'wp_rand' ) ) {
+            $random = wp_rand( 0, PHP_INT_MAX );
+        } elseif ( function_exists( 'random_int' ) ) {
+            try {
+                $random = random_int( 0, PHP_INT_MAX );
+            } catch ( Exception $exception ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+                $random = abs( crc32( uniqid( '', true ) ) );
+            }
+        } else {
+            $random = abs( crc32( uniqid( '', true ) ) );
+        }
+
+        return strtolower( dechex( (int) $random ) );
     }
 
     private function extract_post_timestamp( $post ) {

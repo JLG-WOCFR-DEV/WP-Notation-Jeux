@@ -41,12 +41,16 @@ class RestRatingsEndpointTest extends TestCase
         $GLOBALS['jlg_test_posts']        = [];
         $GLOBALS['jlg_test_meta']         = [];
         $GLOBALS['jlg_test_rest_routes']  = [];
-        $GLOBALS['jlg_test_wp_query_log'] = [];
+        unset($GLOBALS['jlg_test_transients'], $GLOBALS['jlg_test_object_cache']);
         unset($GLOBALS['jlg_test_current_user_can'], $GLOBALS['jlg_test_is_user_logged_in']);
         delete_option('notation_jlg_settings');
+        delete_option('jlg_ratings_rest_summary_prefix');
         \JLG\Notation\Helpers::flush_plugin_options_cache();
         remove_all_filters('jlg_ratings_rest_is_public');
         remove_all_filters('jlg_ratings_rest_post_statuses');
+
+        $controller = new \JLG\Notation\Rest\RatingsController();
+        $controller->flush_rest_summary_cache();
     }
 
     protected function tearDown(): void
@@ -287,6 +291,65 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertIsArray($publishResponse);
         $this->assertCount(1, $publishResponse['items']);
         $this->assertSame('stellar-blade-review', $publishResponse['items'][0]['slug']);
+    }
+
+    public function test_handle_get_ratings_uses_summary_cache_on_repeated_requests(): void
+    {
+        $this->seedRatedPost(
+            101,
+            'Stellar Blade Review',
+            'stellar-blade-review',
+            9.1,
+            8.7,
+            142,
+            [1 => 2, 2 => 6, 3 => 12, 4 => 40, 5 => 82],
+            ['PlayStation 5']
+        );
+
+        $this->seedRatedPost(
+            202,
+            'Arcade Frenzy Verdict',
+            'arcade-frenzy-verdict',
+            7.4,
+            7.9,
+            63,
+            [1 => 1, 2 => 3, 3 => 8, 4 => 18, 5 => 33],
+            ['Nintendo Switch']
+        );
+
+        $GLOBALS['jlg_test_current_user_can'] = static function ($capability) {
+            return $capability === 'read';
+        };
+
+        add_filter('jlg_ratings_rest_summary_ttl', static function () {
+            return 90;
+        });
+
+        $controller = new class extends \JLG\Notation\Rest\RatingsController {
+            public $insightsCalls = 0;
+
+            protected function resolve_summary_insights(array $post_ids)
+            {
+                $this->insightsCalls++;
+
+                return parent::resolve_summary_insights($post_ids);
+            }
+        };
+
+        $request = new TestRestRequest([
+            'orderby' => 'editorial',
+            'order'   => 'desc',
+        ]);
+
+        $firstResponse = $controller->handle_get_ratings($request);
+        $this->assertSame(1, $controller->insightsCalls);
+        $this->assertArrayHasKey('summary', $firstResponse);
+
+        $secondResponse = $controller->handle_get_ratings($request);
+        $this->assertSame(1, $controller->insightsCalls, 'Summary should be retrieved from cache on second call.');
+        $this->assertSame($firstResponse['summary'], $secondResponse['summary']);
+
+        remove_all_filters('jlg_ratings_rest_summary_ttl');
     }
 
     private function seedRatedPost(
