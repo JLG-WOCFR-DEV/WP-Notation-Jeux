@@ -138,7 +138,25 @@ class RestRatingsEndpointTest extends TestCase
         $this->assertGreaterThan(0, $response['items'][0]['readers']['histogram'][0]['percentage']);
         $this->assertSame('in_progress', $response['items'][0]['review_status']['slug']);
         $this->assertArrayHasKey('summary', $response);
-        $this->assertSame(2, $response['summary']['total']);
+        $this->assertSame(1, $response['summary']['total']);
+        $this->assertSame(1, $response['summary']['consensus']['sample']['count']);
+        $this->assertSame(1, count($response['items']));
+        $this->assertSame(9.1, $response['summary']['mean']['value']);
+
+        $secondPage = $controller->handle_get_ratings(
+            new TestRestRequest([
+                'per_page' => 1,
+                'page'     => 2,
+                'orderby'  => 'editorial',
+                'order'    => 'desc',
+            ])
+        );
+
+        $this->assertCount(1, $secondPage['items']);
+        $this->assertSame('arcade-frenzy-verdict', $secondPage['items'][0]['slug']);
+        $this->assertSame(1, $secondPage['summary']['total']);
+        $this->assertSame(1, $secondPage['summary']['consensus']['sample']['count']);
+        $this->assertSame(7.4, $secondPage['summary']['mean']['value']);
         $this->assertSame(10.0, $response['score_max']);
 
         $platformRequest = new TestRestRequest([
