@@ -87,16 +87,12 @@ class RatingsController {
     public function handle_get_ratings( $request ) {
         $params = $this->prepare_request_params( $request );
 
-        $query_result    = $this->collect_candidate_posts( $params );
-        $candidate_posts = isset( $query_result['posts'] ) ? $query_result['posts'] : array();
-        $total_items     = isset( $query_result['found_posts'] ) ? (int) $query_result['found_posts'] : count( $candidate_posts );
-        $total_pages     = isset( $query_result['max_num_pages'] ) ? (int) $query_result['max_num_pages'] : ( $params['per_page'] > 0 ? (int) ceil( count( $candidate_posts ) / $params['per_page'] ) : 0 );
+        $candidate_query = $this->collect_candidate_posts( $params );
+        $registered      = Helpers::get_registered_platform_labels();
+        $score_max       = max( 1.0, (float) Helpers::get_score_max() );
+        $records         = array();
 
-        $registered = Helpers::get_registered_platform_labels();
-        $score_max  = max( 1.0, (float) Helpers::get_score_max() );
-        $records    = array();
-
-        foreach ( $candidate_posts as $post ) {
+        foreach ( $candidate_query['posts'] as $post ) {
             if ( ! ( $post instanceof \WP_Post ) ) {
                 continue;
             }
@@ -121,17 +117,8 @@ class RatingsController {
                 $title = '';
             }
 
-            $title = wp_strip_all_tags( $title );
-
-            if ( $params['search'] !== '' && ! $this->matches_search_filter( $title, $post->post_name ?? '', $params['search'] ) ) {
-                continue;
-            }
-
+            $title           = wp_strip_all_tags( $title );
             $platform_labels = $this->get_post_platform_labels( $post_id );
-
-            if ( $params['platform'] !== '' && ! $this->matches_platform_filter( $platform_labels, $params['platform'], $registered ) ) {
-                continue;
-            }
 
             $user_average_raw = get_post_meta( $post_id, '_jlg_user_rating_avg', true );
             $user_average     = is_numeric( $user_average_raw ) ? round( (float) $user_average_raw, 1 ) : null;
@@ -183,6 +170,14 @@ class RatingsController {
         }
 
         if ( $params['post_id'] > 0 || $params['slug'] !== '' ) {
+            if ( empty( $records ) ) {
+                return new \WP_Error(
+                    'jlg_ratings_rest_not_found',
+                    __( 'Aucun test noté trouvé pour ce contenu.', 'notation-jlg' ),
+                    array( 'status' => 404 )
+                );
+            }
+
             $records = array_values(
                 array_filter(
                     $records,
@@ -209,7 +204,11 @@ class RatingsController {
             }
         }
 
-        if ( empty( $records ) ) {
+        $total_items  = (int) $candidate_query['found_posts'];
+        $total_pages  = (int) $candidate_query['max_num_pages'];
+        $current_page = max( 1, (int) $candidate_query['page'] );
+
+        if ( $total_items === 0 || empty( $records ) ) {
             $empty_summary = Helpers::get_posts_score_insights( array() );
 
             return rest_ensure_response(
@@ -228,14 +227,6 @@ class RatingsController {
                     'generated_at' => gmdate( 'c', $this->current_gmt_timestamp() ),
                 )
             );
-        }
-
-        $this->sort_records( $records, $params['orderby'], $params['order'] );
-
-        if ( $total_pages > 0 ) {
-            $params['page'] = min( max( 1, $params['page'] ), $total_pages );
-        } else {
-            $params['page'] = 1;
         }
 
         $items = array();
@@ -277,43 +268,16 @@ class RatingsController {
             );
         }
 
-        $summary_post_ids = array();
+        $summary_post_ids = ! empty( $candidate_query['all_ids'] )
+            ? array_map( 'intval', $candidate_query['all_ids'] )
+            : array_map(
+                function ( $record ) {
+                    return (int) $record['id'];
+                },
+                $records
+            );
 
-        foreach ( $page_items as $record ) {
-            if ( isset( $record['id'] ) ) {
-                $summary_post_ids[] = (int) $record['id'];
-            }
-        }
-
-        $cache_key = $this->get_summary_cache_key( $params, $summary_post_ids );
-        $cache_ttl = $this->get_summary_cache_ttl();
-        $summary   = null;
-
-        if ( $cache_key !== '' ) {
-            if ( isset( self::$summary_runtime_cache[ $cache_key ] ) ) {
-                $cached_summary = self::$summary_runtime_cache[ $cache_key ];
-            } else {
-                $cached_summary = function_exists( 'wp_cache_get' )
-                    ? wp_cache_get( $cache_key, self::SUMMARY_CACHE_GROUP )
-                    : false;
-
-                if ( $cached_summary === false ) {
-                    $cached_summary = get_transient( $cache_key );
-
-                    if ( $cached_summary !== false && is_array( $cached_summary ) && function_exists( 'wp_cache_set' ) && $cache_ttl > 0 ) {
-                        wp_cache_set( $cache_key, $cached_summary, self::SUMMARY_CACHE_GROUP, $cache_ttl );
-                    }
-                }
-
-                if ( is_array( $cached_summary ) ) {
-                    self::$summary_runtime_cache[ $cache_key ] = $cached_summary;
-                }
-            }
-
-            if ( isset( self::$summary_runtime_cache[ $cache_key ] ) ) {
-                $summary = self::$summary_runtime_cache[ $cache_key ];
-            }
-        }
+        $summary_post_ids = array_values( array_unique( array_filter( $summary_post_ids ) ) );
 
         if ( ! is_array( $summary ) ) {
             $summary = $this->resolve_summary_insights( $summary_post_ids );
@@ -338,7 +302,7 @@ class RatingsController {
                     'total'       => $total_items,
                     'total_pages' => $total_pages,
                     'per_page'    => $params['per_page'],
-                    'page'        => $params['page'],
+                    'page'        => $current_page,
                 ),
                 'summary'      => $summary,
                 'filters'      => $this->expose_filters( $params ),
@@ -493,7 +457,7 @@ class RatingsController {
         return $fallback;
     }
 
-    private function collect_candidate_posts( array $params ) {
+    private function build_query_args( array $params ) {
         $post__in = array();
         if ( $params['post_id'] > 0 ) {
             $post__in[] = $params['post_id'];
@@ -509,23 +473,21 @@ class RatingsController {
             $statuses = array( 'publish' );
         }
 
-        $order      = strtoupper( $params['order'] );
-        $order_args = $this->resolve_query_orderby( $params );
+        $order = strtoupper( $params['order'] );
+        if ( $order !== 'ASC' && $order !== 'DESC' ) {
+            $order = 'DESC';
+        }
 
         $query_args = array(
-            'post_type'              => Helpers::get_allowed_post_types(),
-            'post_status'            => $statuses,
-            'posts_per_page'         => max( 1, (int) $params['per_page'] ),
-            'paged'                  => max( 1, (int) $params['page'] ),
-            'orderby'                => $order_args['orderby'],
-            'order'                  => $order,
-            'post__in'               => $post__in,
-            'no_found_rows'          => false,
-            'update_post_term_cache' => false,
+            'post_type'   => Helpers::get_allowed_post_types(),
+            'post_status' => $statuses,
+            'orderby'     => ! empty( $post__in ) ? 'post__in' : 'date',
+            'order'       => $order,
         );
 
-        if ( isset( $order_args['meta_key'] ) ) {
-            $query_args['meta_key'] = $order_args['meta_key'];
+        if ( ! empty( $post__in ) ) {
+            $query_args['post__in'] = array_values( array_unique( array_map( 'intval', $post__in ) ) );
+            $query_args['p']        = $query_args['post__in'][0];
         }
 
         if ( $params['slug'] !== '' ) {
@@ -553,58 +515,169 @@ class RatingsController {
             $query_args['date_query'] = array( $date_query );
         }
 
-        $platform_meta_query = $this->build_platform_meta_query( $params['platform'] );
-        if ( ! empty( $platform_meta_query ) ) {
-            $query_args['meta_query'] = array( $platform_meta_query );
+        $meta_query = array(
+            array(
+                'key'     => '_jlg_average_score',
+                'compare' => 'EXISTS',
+            ),
+        );
+
+        if ( $params['platform'] !== '' ) {
+            $registered       = Helpers::get_registered_platform_labels();
+            $requested_slug   = $params['platform'];
+            $platform_clauses = array();
+
+            foreach ( $registered as $slug => $label ) {
+                $candidates = array(
+                    sanitize_title( (string) $slug ),
+                    sanitize_title( (string) $label ),
+                );
+
+                if ( in_array( $requested_slug, $candidates, true ) ) {
+                    $platform_clauses[] = array(
+                        'key'     => '_jlg_plateformes',
+                        'value'   => sanitize_text_field( (string) $label ),
+                        'compare' => 'LIKE',
+                    );
+                }
+            }
+
+            $platform_clauses[] = array(
+                'key'     => '_jlg_plateformes',
+                'value'   => $params['platform'],
+                'compare' => 'LIKE',
+            );
+
+            $platform_clauses = array_values(
+                array_filter(
+                    $platform_clauses,
+                    function ( $clause ) {
+                        return is_array( $clause ) && $clause['value'] !== '';
+                    }
+                )
+            );
+
+            if ( count( $platform_clauses ) === 1 ) {
+                $meta_query[] = $platform_clauses[0];
+            } elseif ( ! empty( $platform_clauses ) ) {
+                $meta_query[] = array_merge( array( 'relation' => 'OR' ), $platform_clauses );
+            }
         }
+
+        if ( ! empty( $meta_query ) ) {
+            $query_args['meta_query'] = $meta_query;
+        }
+
+        switch ( $params['orderby'] ) {
+            case 'title':
+                $query_args['orderby'] = 'title';
+                break;
+            case 'editorial':
+                $query_args['meta_key']  = '_jlg_average_score';
+                $query_args['orderby']   = 'meta_value_num';
+                $query_args['meta_type'] = 'NUMERIC';
+                break;
+            case 'reader':
+                $query_args['meta_key']  = '_jlg_user_rating_avg';
+                $query_args['orderby']   = 'meta_value_num';
+                $query_args['meta_type'] = 'NUMERIC';
+                break;
+            case 'user_votes':
+                $query_args['meta_key']  = '_jlg_user_rating_count';
+                $query_args['orderby']   = 'meta_value_num';
+                $query_args['meta_type'] = 'NUMERIC';
+                break;
+            default:
+                break;
+        }
+
+        return $query_args;
+    }
+
+    private function collect_candidate_posts( array $params ) {
+        $result = array(
+            'posts'         => array(),
+            'found_posts'   => 0,
+            'max_num_pages' => 0,
+            'all_ids'       => array(),
+            'page'          => max( 1, (int) $params['page'] ),
+        );
+
+        $query_args                   = $this->build_query_args( $params );
+        $query_args['posts_per_page'] = $params['per_page'];
+        $query_args['paged']          = $result['page'];
+        $query_args['no_found_rows']  = false;
 
         if ( class_exists( WP_Query::class ) ) {
             $query = new WP_Query( $query_args );
 
-            if ( isset( $query->posts ) && is_array( $query->posts ) ) {
-                $filtered_posts = array();
+            $found_posts  = isset( $query->found_posts ) ? (int) $query->found_posts : 0;
+            $max_pages    = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0;
+            $current_page = $query_args['paged'];
 
-                foreach ( $query->posts as $post ) {
-                    if ( ! ( $post instanceof \WP_Post ) ) {
-                        continue;
-                    }
-
-                    if ( ! $this->passes_date_filters( $post, $params ) ) {
-                        continue;
-                    }
-
-                    $filtered_posts[] = $post;
-                }
-
-                return array(
-                    'posts'         => $filtered_posts,
-                    'found_posts'   => isset( $query->found_posts ) ? (int) $query->found_posts : count( $filtered_posts ),
-                    'max_num_pages' => isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0,
-                    'query_args'    => $query_args,
-                );
+            if ( $found_posts > 0 && $max_pages > 0 && $current_page > $max_pages ) {
+                $current_page        = $max_pages;
+                $query_args['paged'] = $current_page;
+                $query               = new WP_Query( $query_args );
+                $found_posts         = isset( $query->found_posts ) ? (int) $query->found_posts : $found_posts;
+                $max_pages           = isset( $query->max_num_pages ) ? (int) $query->max_num_pages : $max_pages;
             }
 
-            return array(
-                'posts'         => array(),
-                'found_posts'   => isset( $query->found_posts ) ? (int) $query->found_posts : 0,
-                'max_num_pages' => isset( $query->max_num_pages ) ? (int) $query->max_num_pages : 0,
-                'query_args'    => $query_args,
-            );
+            $posts = array();
+            foreach ( $query->posts ?? array() as $post ) {
+                if ( $post instanceof \WP_Post ) {
+                    $posts[] = $post;
+                }
+            }
+
+            $all_ids = array();
+            if ( $found_posts > 0 ) {
+                if ( $found_posts === count( $posts ) && $current_page <= 1 ) {
+                    foreach ( $posts as $post ) {
+                        $all_ids[] = (int) $post->ID;
+                    }
+                } else {
+                    $ids_args                   = $this->build_query_args( $params );
+                    $ids_args['fields']         = 'ids';
+                    $ids_args['posts_per_page'] = -1;
+                    $ids_args['no_found_rows']  = true;
+                    unset( $ids_args['paged'] );
+
+                    $ids_query = new WP_Query( $ids_args );
+                    foreach ( $ids_query->posts ?? array() as $post_id ) {
+                        $all_ids[] = (int) $post_id;
+                    }
+                }
+            }
+
+            $result['posts']         = $posts;
+            $result['found_posts']   = $found_posts;
+            $result['max_num_pages'] = $max_pages;
+            $result['all_ids']       = array_values( array_unique( array_filter( $all_ids ) ) );
+            $result['page']          = $max_pages > 0 ? min( max( 1, $current_page ), $max_pages ) : max( 1, $current_page );
+
+            return $result;
         }
 
-        $store = array();
+        $registered = Helpers::get_registered_platform_labels();
+        $store      = array();
+
         foreach ( $GLOBALS['jlg_test_posts'] ?? array() as $post ) {
             if ( ! ( $post instanceof \WP_Post ) ) {
                 continue;
             }
 
-            if ( ! empty( $post__in ) && ! in_array( (int) $post->ID, $post__in, true ) ) {
+            if ( $params['post_id'] > 0 && (int) $post->ID !== $params['post_id'] ) {
                 continue;
             }
 
-            if ( ! empty( $statuses ) ) {
-                $post_status = isset( $post->post_status ) ? sanitize_key( (string) $post->post_status ) : '';
-                if ( $post_status === '' || ! in_array( $post_status, $statuses, true ) ) {
+            if ( $params['slug'] !== '' && sanitize_title( $post->post_name ?? '' ) !== $params['slug'] ) {
+                continue;
+            }
+
+            if ( ! empty( $params['statuses'] ) ) {
+                $status = isset( $post->post_status ) ? sanitize_key( (string) $post->post_status ) : '';
+                if ( $status === '' || ! in_array( $status, $params['statuses'], true ) ) {
                     continue;
                 }
             }
@@ -621,157 +694,123 @@ class RatingsController {
                 continue;
             }
 
+            $title = isset( $post->post_title ) ? wp_strip_all_tags( (string) $post->post_title ) : '';
+            $slug  = isset( $post->post_name ) ? (string) $post->post_name : '';
+
+            if ( $params['search'] !== '' && ! $this->matches_search_filter( $title, $slug, $params['search'] ) ) {
+                continue;
+            }
+
+            $platform_labels = $this->get_post_platform_labels( (int) $post->ID );
+            if ( $params['platform'] !== '' && ! $this->matches_platform_filter( $platform_labels, $params['platform'], $registered ) ) {
+                continue;
+            }
+
             $store[] = $post;
         }
 
-        if ( $params['platform'] !== '' ) {
-            $registered = Helpers::get_registered_platform_labels();
-            $store      = array_values(
-                array_filter(
-                    $store,
-                    function ( $post ) use ( $registered, $params ) {
-                        if ( ! ( $post instanceof \WP_Post ) ) {
-                            return false;
-                        }
-
-                        $labels = $this->get_post_platform_labels( (int) $post->ID );
-
-                        return $this->matches_platform_filter( $labels, $params['platform'], $registered );
-                    }
-                )
-            );
-        }
-
-        $store = $this->fallback_sort_posts( $store, $params );
+        $this->sort_posts_for_fallback( $store, $params );
 
         $total      = count( $store );
-        $per_page   = max( 1, (int) $params['per_page'] );
-        $total_page = $per_page > 0 ? (int) ceil( $total / $per_page ) : 0;
-        $page       = min( max( 1, (int) $params['page'] ), max( 1, $total_page ) );
+        $per_page   = $params['per_page'];
+        $max_pages  = $per_page > 0 ? (int) ceil( $total / $per_page ) : 0;
+        $page       = $max_pages > 0 ? min( max( 1, $params['page'] ), $max_pages ) : 1;
         $offset     = ( $page - 1 ) * $per_page;
+        $page_posts = array_slice( $store, $offset, $per_page );
 
-        return array(
-            'posts'         => array_slice( $store, $offset, $per_page ),
-            'found_posts'   => $total,
-            'max_num_pages' => $total_page,
-            'query_args'    => $query_args,
+        $result['posts']         = $page_posts;
+        $result['found_posts']   = $total;
+        $result['max_num_pages'] = $max_pages;
+        $result['all_ids']       = array_values(
+            array_unique(
+                array_map(
+                    function ( $post ) {
+                        return (int) $post->ID;
+                    },
+                    $store
+                )
+            )
         );
+        $result['page']          = $page;
+
+        return $result;
     }
 
-    private function resolve_query_orderby( array $params ) {
-        $orderby = $params['orderby'];
-
-        if ( ! empty( $params['post_id'] ) ) {
-            return array(
-                'orderby' => 'post__in',
-            );
-        }
-
-        switch ( $orderby ) {
-            case 'title':
-                return array(
-                    'orderby' => 'title',
-                );
-            case 'editorial':
-                return array(
-                    'orderby'  => 'meta_value_num',
-                    'meta_key' => '_jlg_average_score',
-                );
-            case 'reader':
-                return array(
-                    'orderby'  => 'meta_value_num',
-                    'meta_key' => '_jlg_user_rating_avg',
-                );
-            case 'user_votes':
-                return array(
-                    'orderby'  => 'meta_value_num',
-                    'meta_key' => '_jlg_user_rating_count',
-                );
-            case 'date':
-            default:
-                return array(
-                    'orderby' => 'date',
-                );
-        }
-    }
-
-    private function build_platform_meta_query( $platform_slug ) {
-        if ( ! is_string( $platform_slug ) || $platform_slug === '' ) {
-            return array();
-        }
-
-        $registered = Helpers::get_registered_platform_labels();
-        $normalized = sanitize_title( $platform_slug );
-
-        $lookup = array();
-        foreach ( $registered as $slug => $label ) {
-            $lookup[ sanitize_title( $slug ) ] = $label;
-            if ( is_string( $label ) ) {
-                $lookup[ sanitize_title( $label ) ] = $label;
-            }
-        }
-
-        $target_label = $lookup[ $normalized ] ?? $lookup[ sanitize_title( $platform_slug ) ] ?? '';
-
-        if ( $target_label === '' ) {
-            $target_label = $platform_slug;
-        }
-
-        return array(
-            'key'     => '_jlg_plateformes',
-            'value'   => $target_label,
-            'compare' => 'LIKE',
-        );
-    }
-
-    private function fallback_sort_posts( array $posts, array $params ) {
-        $order_args = $this->resolve_query_orderby( $params );
-        $order      = strtoupper( $params['order'] ) === 'ASC' ? 'ASC' : 'DESC';
-
+    private function sort_posts_for_fallback( array &$posts, array $params ) {
         if ( empty( $posts ) ) {
-            return $posts;
+            return;
         }
 
-        if ( isset( $order_args['orderby'] ) && $order_args['orderby'] === 'post__in' ) {
-            return $posts;
-        }
+        $orderby = $params['orderby'];
+        $order   = $params['order'] === 'asc' ? 'asc' : 'desc';
 
         usort(
             $posts,
-            function ( $a, $b ) use ( $order_args, $order ) {
-                if ( ! ( $a instanceof \WP_Post ) || ! ( $b instanceof \WP_Post ) ) {
-                    return 0;
-                }
+            function ( $a, $b ) use ( $orderby, $order ) {
+                $a_id = (int) ( $a->ID ?? 0 );
+                $b_id = (int) ( $b->ID ?? 0 );
 
-                switch ( $order_args['orderby'] ) {
+                switch ( $orderby ) {
+                    case 'editorial':
+                        $a_value    = get_post_meta( $a_id, '_jlg_average_score', true );
+                        $b_value    = get_post_meta( $b_id, '_jlg_average_score', true );
+                        $comparison = $this->compare_numeric_meta( $a_value, $b_value );
+                        break;
+                    case 'reader':
+                        $a_value    = get_post_meta( $a_id, '_jlg_user_rating_avg', true );
+                        $b_value    = get_post_meta( $b_id, '_jlg_user_rating_avg', true );
+                        $comparison = $this->compare_numeric_meta( $a_value, $b_value );
+                        break;
+                    case 'user_votes':
+                        $a_value    = get_post_meta( $a_id, '_jlg_user_rating_count', true );
+                        $b_value    = get_post_meta( $b_id, '_jlg_user_rating_count', true );
+                        $comparison = $this->compare_numeric_meta( $a_value, $b_value );
+                        break;
                     case 'title':
-                        $a_value = strtolower( $a->post_title ?? '' );
-                        $b_value = strtolower( $b->post_title ?? '' );
-                        $result  = $a_value <=> $b_value;
+                        $a_title    = strtolower( (string) ( $a->post_title ?? '' ) );
+                        $b_title    = strtolower( (string) ( $b->post_title ?? '' ) );
+                        $comparison = $a_title <=> $b_title;
                         break;
-                    case 'meta_value_num':
-                        $meta_key = $order_args['meta_key'] ?? '';
-                        $a_value  = (float) get_post_meta( (int) $a->ID, $meta_key, true );
-                        $b_value  = (float) get_post_meta( (int) $b->ID, $meta_key, true );
-                        $result   = $a_value <=> $b_value;
-                        break;
-                    case 'date':
                     default:
-                        $a_value = strtotime( $a->post_date_gmt ?? $a->post_date ?? 'now' );
-                        $b_value = strtotime( $b->post_date_gmt ?? $b->post_date ?? 'now' );
-                        $result  = $a_value <=> $b_value;
+                        $a_timestamp = $this->extract_post_timestamp( $a );
+                        $b_timestamp = $this->extract_post_timestamp( $b );
+                        $comparison  = $this->compare_numeric_meta( $a_timestamp, $b_timestamp );
                         break;
                 }
 
-                if ( 'DESC' === $order ) {
-                    $result = -$result;
+                if ( $comparison === 0 ) {
+                    $comparison = $a_id <=> $b_id;
                 }
 
-                return $result;
+                return 'asc' === $order ? $comparison : -$comparison;
             }
         );
+    }
 
-        return $posts;
+    private function compare_numeric_meta( $a_value, $b_value ) {
+        $a_is_numeric = is_numeric( $a_value );
+        $b_is_numeric = is_numeric( $b_value );
+
+        if ( ! $a_is_numeric && ! $b_is_numeric ) {
+            return 0;
+        }
+
+        if ( ! $a_is_numeric ) {
+            return 1;
+        }
+
+        if ( ! $b_is_numeric ) {
+            return -1;
+        }
+
+        $a = (float) $a_value;
+        $b = (float) $b_value;
+
+        if ( $a === $b ) {
+            return 0;
+        }
+
+        return $a <=> $b;
     }
 
     private function matches_platform_filter( array $labels, $platform_slug, array $registered ) {
