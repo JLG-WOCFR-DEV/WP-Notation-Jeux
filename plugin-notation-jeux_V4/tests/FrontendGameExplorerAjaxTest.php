@@ -1034,11 +1034,11 @@ class FrontendGameExplorerAjaxTest extends TestCase
         \JLG\Notation\Helpers::flush_plugin_options_cache();
     }
 
-    private function registerPost(int $post_id, string $title, string $content, string $post_date): void
+    private function registerPost(int $post_id, string $title, string $content, string $post_date, string $post_type = 'post'): void
     {
         $GLOBALS['jlg_test_posts'][$post_id] = new WP_Post([
             'ID'            => $post_id,
-            'post_type'     => 'post',
+            'post_type'     => $post_type,
             'post_status'   => 'publish',
             'post_title'    => $title,
             'post_content'  => $content,
@@ -1141,6 +1141,87 @@ class FrontendGameExplorerAjaxTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    public function test_build_filters_snapshot_primes_custom_post_type_term_cache_without_extra_calls(): void
+    {
+        $this->configureOptions();
+
+        $GLOBALS['jlg_test_options']['notation_jlg_settings']['allowed_post_types'] = ['post', 'jlg_review'];
+        \JLG\Notation\Helpers::flush_plugin_options_cache();
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for the first test post.', '2023-01-01 10:00:00', 'post');
+        $this->registerPost(303, 'Custom Saga', 'Custom content for the second test post.', '2024-03-15 09:30:00', 'jlg_review');
+
+        $bulk_post_ids = [];
+        for ($i = 0; $i < 100; $i++) {
+            $post_id = 400 + $i;
+            $bulk_post_ids[] = $post_id;
+            $this->registerPost($post_id, 'Bulk Post ' . $post_id, 'Bulk content ' . $post_id, '2024-01-01 08:00:00', 'post');
+        }
+
+        $this->setMeta(101, [
+            '_jlg_game_title'  => 'Alpha Quest',
+            '_jlg_developpeur' => 'Studio Alpha',
+            '_jlg_editeur'     => 'Publisher A',
+            '_jlg_date_sortie' => '2023-02-14',
+            '_jlg_plateformes' => ['PC', 'PlayStation 5'],
+        ]);
+
+        $this->setMeta(303, [
+            '_jlg_game_title'  => 'Custom Saga',
+            '_jlg_developpeur' => 'Studio Custom',
+            '_jlg_editeur'     => 'Publisher C',
+            '_jlg_date_sortie' => '2024-05-21',
+            '_jlg_plateformes' => ['Nintendo Switch'],
+        ]);
+
+        $GLOBALS['jlg_test_terms'] = [
+            101 => [
+                'category' => [
+                    ['term_id' => 11, 'name' => 'Action', 'slug' => 'action'],
+                ],
+            ],
+            303 => [
+                'category' => [
+                    ['term_id' => 12, 'name' => 'Adventure', 'slug' => 'adventure'],
+                ],
+            ],
+        ];
+
+        $GLOBALS['jlg_test_meta_cache_calls'] = [];
+        $GLOBALS['jlg_test_term_cache_calls'] = [];
+
+        $rated_post_ids = array_merge([101], $bulk_post_ids, [303]);
+        set_transient('jlg_rated_post_ids_v1', $rated_post_ids);
+
+        $reflection = new ReflectionMethod(\JLG\Notation\Shortcodes\GameExplorer::class, 'build_filters_snapshot');
+        $reflection->setAccessible(true);
+
+        $snapshot = $reflection->invoke(null);
+
+        $this->assertArrayHasKey('posts', $snapshot);
+        $this->assertArrayHasKey(101, $snapshot['posts']);
+        $this->assertArrayHasKey(303, $snapshot['posts']);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur with custom post types.');
+        $this->assertCount(2, $GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur exactly once per populated post type.');
+
+        $post_cache_call = $GLOBALS['jlg_test_term_cache_calls'][0];
+        $custom_cache_call = $GLOBALS['jlg_test_term_cache_calls'][1];
+
+        $this->assertSame('post', $post_cache_call[1]);
+        $this->assertSame(['category'], $post_cache_call[2]);
+
+        $expected_post_ids = array_merge([101], $bulk_post_ids);
+        sort($expected_post_ids);
+        $actual_post_ids = $post_cache_call[0];
+        sort($actual_post_ids);
+        $this->assertSame($expected_post_ids, $actual_post_ids);
+
+        $this->assertSame([303], $custom_cache_call[0]);
+        $this->assertSame('jlg_review', $custom_cache_call[1]);
+        $this->assertSame(['category'], $custom_cache_call[2]);
     }
 
     private function getDefaultFiltersString(): string

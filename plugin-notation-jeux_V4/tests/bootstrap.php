@@ -1045,6 +1045,62 @@ if (!function_exists('delete_transient')) {
     }
 }
 
+if (!function_exists('wp_cache_get')) {
+    function wp_cache_get($key, $group = '') {
+        $group = (string) $group;
+
+        if ($group === '') {
+            $group = 'default';
+        }
+
+        if (!isset($GLOBALS['jlg_test_object_cache'][$group])) {
+            return false;
+        }
+
+        return $GLOBALS['jlg_test_object_cache'][$group][$key] ?? false;
+    }
+}
+
+if (!function_exists('wp_cache_set')) {
+    function wp_cache_set($key, $value, $group = '', $expire = 0) {
+        $group = (string) $group;
+
+        if ($group === '') {
+            $group = 'default';
+        }
+
+        if (!isset($GLOBALS['jlg_test_object_cache'])) {
+            $GLOBALS['jlg_test_object_cache'] = [];
+        }
+
+        if (!isset($GLOBALS['jlg_test_object_cache'][$group])) {
+            $GLOBALS['jlg_test_object_cache'][$group] = [];
+        }
+
+        $GLOBALS['jlg_test_object_cache'][$group][$key] = $value;
+
+        unset($expire);
+
+        return true;
+    }
+}
+
+if (!function_exists('wp_cache_delete')) {
+    function wp_cache_delete($key, $group = '') {
+        $group = (string) $group;
+
+        if ($group === '') {
+            $group = 'default';
+        }
+
+        if (isset($GLOBALS['jlg_test_object_cache'][$group][$key])) {
+            unset($GLOBALS['jlg_test_object_cache'][$group][$key]);
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('rest_url')) {
     function rest_url($path = '', $scheme = 'rest') {
         unset($scheme);
@@ -2035,12 +2091,26 @@ if (!class_exists('WP_Query')) {
         {
             $this->args = is_array($args) ? $args : [];
 
+            if (!isset($GLOBALS['jlg_test_wp_query_log'])) {
+                $GLOBALS['jlg_test_wp_query_log'] = [];
+            }
+
+            $GLOBALS['jlg_test_wp_query_log'][] = $this->args;
+
             $posts_store = $GLOBALS['jlg_test_posts'] ?? [];
             $filtered    = [];
 
             $post_in = [];
             if (isset($this->args['post__in'])) {
                 $post_in = array_values(array_map('intval', (array) $this->args['post__in']));
+            }
+
+            if (isset($this->args['p'])) {
+                $post_in[] = (int) $this->args['p'];
+            }
+
+            if (!empty($post_in)) {
+                $post_in = array_values(array_unique($post_in));
             }
 
             foreach ($posts_store as $post) {
@@ -2087,6 +2157,23 @@ if (!class_exists('WP_Query')) {
 
             $this->posts      = array_slice($filtered, $offset, $per_page);
             $this->post_count = count($this->posts);
+
+            $fields = $this->args['fields'] ?? null;
+            if (is_string($fields)) {
+                $normalized_fields = strtolower($fields);
+                if ($normalized_fields === 'ids' || $normalized_fields === 'id') {
+                    $this->posts = array_map(
+                        function ($post) {
+                            if ($post instanceof WP_Post) {
+                                return (int) ($post->ID ?? 0);
+                            }
+
+                            return (int) $post;
+                        },
+                        $this->posts
+                    );
+                }
+            }
 
             if ($this->max_num_pages < 1 && $this->found_posts > 0) {
                 $this->max_num_pages = 1;
@@ -2140,6 +2227,10 @@ if (!class_exists('WP_Query')) {
                 return false;
             }
 
+            if (!$this->matches_date_query($post)) {
+                return false;
+            }
+
             $meta_query = $this->args['meta_query'] ?? [];
             if (!$this->matches_meta_query($post->ID ?? 0, $meta_query)) {
                 return false;
@@ -2147,6 +2238,14 @@ if (!class_exists('WP_Query')) {
 
             $tax_query = $this->args['tax_query'] ?? [];
             if (!$this->matches_tax_query($post->ID ?? 0, $tax_query)) {
+                return false;
+            }
+
+            if (!$this->matches_name_constraint($post)) {
+                return false;
+            }
+
+            if (!$this->matches_search_term($post)) {
                 return false;
             }
 
@@ -2172,6 +2271,138 @@ if (!class_exists('WP_Query')) {
             $post_type = (string) ($post->post_type ?? '');
 
             return in_array($post_type, $allowed, true);
+        }
+
+        private function matches_date_query(WP_Post $post): bool
+        {
+            $date_query = $this->args['date_query'] ?? [];
+            if (empty($date_query)) {
+                return true;
+            }
+
+            foreach ($date_query as $clause) {
+                if (!is_array($clause)) {
+                    continue;
+                }
+
+                $column = $clause['column'] ?? 'post_date';
+                $value  = (string) ($post->$column ?? '');
+
+                if ($value === '' && $column === 'post_date_gmt') {
+                    $value = (string) ($post->post_date ?? '');
+                }
+
+                if ($value === '') {
+                    return false;
+                }
+
+                $timestamp = $this->parse_timestamp($value, stripos($column, 'gmt') !== false);
+                if ($timestamp === null) {
+                    return false;
+                }
+
+                $inclusive = !empty($clause['inclusive']);
+
+                if (isset($clause['after'])) {
+                    $after = $this->parse_timestamp((string) $clause['after'], true);
+                    if ($after !== null) {
+                        if ($inclusive) {
+                            if ($timestamp < $after) {
+                                return false;
+                            }
+                        } elseif ($timestamp <= $after) {
+                            return false;
+                        }
+                    }
+                }
+
+                if (isset($clause['before'])) {
+                    $before = $this->parse_timestamp((string) $clause['before'], true);
+                    if ($before !== null) {
+                        if ($inclusive) {
+                            if ($timestamp > $before) {
+                                return false;
+                            }
+                        } elseif ($timestamp >= $before) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private function parse_timestamp(string $value, bool $treat_as_gmt = false): ?int
+        {
+            $timestamp = $treat_as_gmt ? strtotime($value . ' GMT') : false;
+            if ($timestamp === false) {
+                $timestamp = strtotime($value);
+            }
+
+            if ($timestamp === false) {
+                return null;
+            }
+
+            return (int) $timestamp;
+        }
+
+        private function matches_name_constraint(WP_Post $post): bool
+        {
+            $requested = isset($this->args['name']) ? (string) $this->args['name'] : '';
+            if ($requested === '') {
+                return true;
+            }
+
+            $post_slug = (string) ($post->post_name ?? '');
+            if (function_exists('sanitize_title')) {
+                $requested = sanitize_title($requested);
+                $post_slug = sanitize_title($post_slug);
+            }
+
+            return $post_slug === $requested;
+        }
+
+        private function matches_search_term(WP_Post $post): bool
+        {
+            $term = isset($this->args['s']) ? (string) $this->args['s'] : '';
+            if ($term === '') {
+                return true;
+            }
+
+            $columns = $this->args['search_columns'] ?? ['post_title'];
+            if (!is_array($columns) || empty($columns)) {
+                $columns = ['post_title'];
+            }
+
+            $normalized_term = $this->normalize_search_string($term);
+
+            foreach ($columns as $column) {
+                $value = isset($post->$column) ? (string) $post->$column : '';
+                if ($value === '') {
+                    continue;
+                }
+
+                $haystack = $this->normalize_search_string($value);
+                if (strpos($haystack, $normalized_term) !== false) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private function normalize_search_string(string $value): string
+        {
+            if (function_exists('remove_accents')) {
+                $value = remove_accents($value);
+            }
+
+            if (function_exists('mb_strtolower')) {
+                return mb_strtolower($value);
+            }
+
+            return strtolower($value);
         }
 
         private function matches_meta_query(int $post_id, $query): bool
@@ -2228,6 +2459,10 @@ if (!class_exists('WP_Query')) {
 
             if ($compare === 'NOT EXISTS') {
                 return $meta_value === null;
+            }
+
+            if ($compare === 'EXISTS') {
+                return $meta_value !== null;
             }
 
             if ($meta_value === null) {
@@ -2390,6 +2625,13 @@ if (!class_exists('WP_Query')) {
             usort($posts, function ($a, $b) use ($order) {
                 $a_date = strtotime($a->post_date ?? 'now');
                 $b_date = strtotime($b->post_date ?? 'now');
+
+                if ($a_date === $b_date) {
+                    $a_id = (int) ($a->ID ?? 0);
+                    $b_id = (int) ($b->ID ?? 0);
+
+                    return $order === 'ASC' ? $a_id <=> $b_id : $b_id <=> $a_id;
+                }
 
                 return $order === 'ASC' ? $a_date <=> $b_date : $b_date <=> $a_date;
             });
