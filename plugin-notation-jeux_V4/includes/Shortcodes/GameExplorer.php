@@ -1178,7 +1178,30 @@ class GameExplorer {
                     continue;
                 }
 
-                update_object_term_cache( $ids_for_type, $post_type, array( 'category' ) );
+                $ids_for_type = array_values(
+                    array_filter(
+                        array_unique(
+                            array_map( 'intval', $ids_for_type )
+                        ),
+                        static function ( $post_id ) {
+                            return $post_id > 0;
+                        }
+                    )
+                );
+
+                if ( empty( $ids_for_type ) ) {
+                    continue;
+                }
+
+                $type_chunks = count( $ids_for_type ) > 100 ? array_chunk( $ids_for_type, 100 ) : array( $ids_for_type );
+
+                foreach ( $type_chunks as $type_chunk ) {
+                    if ( empty( $type_chunk ) ) {
+                        continue;
+                    }
+
+                    update_object_term_cache( $type_chunk, $post_type, array( 'category' ) );
+                }
             }
         }
 

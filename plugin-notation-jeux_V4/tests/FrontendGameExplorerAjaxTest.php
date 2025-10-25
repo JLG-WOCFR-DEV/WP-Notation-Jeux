@@ -1205,23 +1205,42 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertArrayHasKey(303, $snapshot['posts']);
 
         $this->assertNotEmpty($GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur with custom post types.');
-        $this->assertCount(2, $GLOBALS['jlg_test_term_cache_calls'], 'Term cache priming should occur exactly once per populated post type.');
 
-        $post_cache_call = $GLOBALS['jlg_test_term_cache_calls'][0];
-        $custom_cache_call = $GLOBALS['jlg_test_term_cache_calls'][1];
+        $post_type_calls = array_values(array_filter(
+            $GLOBALS['jlg_test_term_cache_calls'],
+            static function (array $call): bool {
+                return $call[1] === 'post';
+            }
+        ));
 
-        $this->assertSame('post', $post_cache_call[1]);
-        $this->assertSame(['category'], $post_cache_call[2]);
+        $custom_type_calls = array_values(array_filter(
+            $GLOBALS['jlg_test_term_cache_calls'],
+            static function (array $call): bool {
+                return $call[1] === 'jlg_review';
+            }
+        ));
+
+        $this->assertNotEmpty($post_type_calls, 'At least one term cache priming call should occur for standard posts.');
+        $this->assertCount(1, $custom_type_calls, 'Custom post types should be primed exactly once.');
+
+        $combined_post_ids = [];
+
+        foreach ($post_type_calls as $post_cache_call) {
+            $this->assertSame(['category'], $post_cache_call[2], 'Post term cache priming should target the category taxonomy.');
+            $this->assertLessThanOrEqual(100, count($post_cache_call[0]), 'Post term cache priming should respect the batching size.');
+            $combined_post_ids = array_merge($combined_post_ids, $post_cache_call[0]);
+        }
+
+        $this->assertSame(['category'], $custom_type_calls[0][2], 'Custom post type priming should target the category taxonomy.');
+        $this->assertSame([303], $custom_type_calls[0][0], 'Custom post type priming should include the expected post IDs.');
 
         $expected_post_ids = array_merge([101], $bulk_post_ids);
         sort($expected_post_ids);
-        $actual_post_ids = $post_cache_call[0];
-        sort($actual_post_ids);
-        $this->assertSame($expected_post_ids, $actual_post_ids);
 
-        $this->assertSame([303], $custom_cache_call[0]);
-        $this->assertSame('jlg_review', $custom_cache_call[1]);
-        $this->assertSame(['category'], $custom_cache_call[2]);
+        $combined_post_ids = array_values(array_map('intval', $combined_post_ids));
+        sort($combined_post_ids);
+
+        $this->assertSame($expected_post_ids, $combined_post_ids, 'Post term cache priming should cover all rated post IDs.');
     }
 
     private function getDefaultFiltersString(): string
