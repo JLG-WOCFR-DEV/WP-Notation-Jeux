@@ -269,15 +269,16 @@ class RatingsController {
             );
         }
 
-        $summary_post_ids = array_map(
-            function ( $record ) {
-                return (int) $record['id'];
-            },
-            $records
-        );
+        $summary_post_ids = array();
 
-        if ( empty( $summary_post_ids ) && ! empty( $candidate_query['all_ids'] ) ) {
+        if ( ! empty( $candidate_query['all_ids'] ) && is_array( $candidate_query['all_ids'] ) ) {
             $summary_post_ids = array_map( 'intval', $candidate_query['all_ids'] );
+        }
+
+        foreach ( $records as $record ) {
+            if ( isset( $record['id'] ) ) {
+                $summary_post_ids[] = (int) $record['id'];
+            }
         }
 
         $page_items = isset( $candidate_query['page_items'] ) && is_array( $candidate_query['page_items'] )
