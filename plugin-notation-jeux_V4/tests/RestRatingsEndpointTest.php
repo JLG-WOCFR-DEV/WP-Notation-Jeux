@@ -352,6 +352,44 @@ class RestRatingsEndpointTest extends TestCase
         remove_all_filters('jlg_ratings_rest_summary_ttl');
     }
 
+    public function test_summary_cache_flushes_for_reader_rating_meta_changes(): void
+    {
+        $controller = new \JLG\Notation\Rest\RatingsController();
+
+        $reflection = new \ReflectionClass(\JLG\Notation\Rest\RatingsController::class);
+        $runtimeCache = $reflection->getProperty('summary_runtime_cache');
+        $runtimeCache->setAccessible(true);
+        $prefixProperty = $reflection->getProperty('summary_cache_prefix');
+        $prefixProperty->setAccessible(true);
+
+        $runtimeCache->setValue(null, ['seed' => 'value']);
+        $prefixProperty->setValue(null, 'v1_seedprefix');
+        update_option('jlg_ratings_rest_summary_prefix', 'seedprefix');
+
+        $controller->maybe_flush_rest_summary_cache_for_meta(0, 42, '_jlg_user_rating_avg', '8.4');
+
+        $this->assertSame([], $runtimeCache->getValue());
+        $this->assertMatchesRegularExpression('/^v1_[a-f0-9]+$/', $prefixProperty->getValue());
+        $firstStoredPrefix = get_option('jlg_ratings_rest_summary_prefix');
+        $this->assertIsString($firstStoredPrefix);
+        $this->assertNotSame('', $firstStoredPrefix);
+        $this->assertNotSame('seedprefix', $firstStoredPrefix);
+
+        $runtimeCache->setValue(null, ['another' => 'entry']);
+        $previousPrefix = $prefixProperty->getValue();
+        update_option('jlg_ratings_rest_summary_prefix', $firstStoredPrefix);
+
+        $controller->maybe_flush_rest_summary_cache_for_meta(0, 42, '_jlg_user_rating_count', '');
+
+        $this->assertSame([], $runtimeCache->getValue());
+        $this->assertMatchesRegularExpression('/^v1_[a-f0-9]+$/', $prefixProperty->getValue());
+        $this->assertNotSame($previousPrefix, $prefixProperty->getValue());
+        $secondStoredPrefix = get_option('jlg_ratings_rest_summary_prefix');
+        $this->assertIsString($secondStoredPrefix);
+        $this->assertNotSame('', $secondStoredPrefix);
+        $this->assertNotSame($firstStoredPrefix, $secondStoredPrefix);
+    }
+
     private function seedRatedPost(
         int $postId,
         string $title,

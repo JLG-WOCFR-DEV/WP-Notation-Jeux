@@ -34,6 +34,8 @@ class RatingsController {
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
         add_action( 'jlg_rated_post_ids_cache_cleared', array( $this, 'flush_rest_summary_cache' ), 10, 0 );
         add_action( 'updated_post_meta', array( $this, 'maybe_flush_rest_summary_cache_for_meta' ), 10, 4 );
+        add_action( 'added_post_meta', array( $this, 'maybe_flush_rest_summary_cache_for_meta' ), 10, 4 );
+        add_action( 'deleted_post_meta', array( $this, 'maybe_flush_rest_summary_cache_for_meta' ), 10, 4 );
     }
 
     public function register_routes() {
@@ -277,6 +279,7 @@ class RatingsController {
             );
         }
 
+        $page_items       = $items;
         $summary_post_ids = array();
 
         foreach ( $page_items as $record ) {
@@ -1126,8 +1129,8 @@ class RatingsController {
         update_option( self::SUMMARY_CACHE_PREFIX_OPTION, $new_prefix, false );
     }
 
-    public function maybe_flush_rest_summary_cache_for_meta( $meta_id, $object_id, $meta_key ) {
-        unset( $meta_id, $object_id );
+    public function maybe_flush_rest_summary_cache_for_meta( $meta_id, $object_id, $meta_key, $meta_value = null ) {
+        unset( $meta_id, $object_id, $meta_value );
 
         if ( ! is_string( $meta_key ) ) {
             return;
