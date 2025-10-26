@@ -1492,8 +1492,11 @@ class GameExplorer {
             'order'                  => $order,
             'orderby'                => 'date',
             'ignore_sticky_posts'    => true,
-            'no_found_rows'          => false,
+            'no_found_rows'          => true,
             'update_post_term_cache' => false,
+            'update_post_meta_cache' => false,
+            'lazy_load_term_meta'    => false,
+            'cache_results'          => false,
         );
 
         if ( ! empty( $meta_clauses ) ) {
