@@ -343,6 +343,71 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $this->assertSame('<p>' . esc_html__('Aucun jeu ne correspond à vos filtres actuels.', 'notation-jlg') . '</p>', $context['message']);
     }
 
+    public function test_list_query_disables_caches_and_retains_flags_when_adjusting_pagination(): void
+    {
+        $this->configureOptions();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $this->registerPost(101, 'Alpha Quest', 'Alpha content for cache flags.', '2023-01-01 10:00:00');
+        $this->registerPost(202, 'Beta Strike', 'Beta content for cache flags.', '2023-01-05 11:30:00');
+
+        $this->setMeta(101, [
+            '_jlg_average_score'   => 8.5,
+            '_jlg_cover_image_url' => 'https://example.com/alpha.jpg',
+        ]);
+        $this->setMeta(202, [
+            '_jlg_average_score'   => 7.2,
+            '_jlg_cover_image_url' => 'https://example.com/beta.jpg',
+        ]);
+
+        $GLOBALS['jlg_test_wp_query_log'] = [];
+
+        $response = $this->dispatchExplorerAjax([
+            'nonce'          => 'nonce-jlg_game_explorer',
+            'container_id'   => 'cache-flags',
+            'posts_per_page' => '2',
+            'columns'        => '3',
+            'filters'        => $this->getDefaultFiltersString(),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'paged'          => '5',
+        ]);
+
+        $this->assertSame(1, $response['state']['paged'] ?? 0, 'Paged state should adjust to the first page.');
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_wp_query_log'], 'WP_Query executions should be logged.');
+
+        $list_queries = array_values(array_filter(
+            $GLOBALS['jlg_test_wp_query_log'],
+            static function ($args) {
+                if (!is_array($args)) {
+                    return false;
+                }
+
+                if (!isset($args['post_type'], $args['posts_per_page'])) {
+                    return false;
+                }
+
+                return !isset($args['post__in']);
+            }
+        ));
+
+        $this->assertCount(2, $list_queries, 'Adjusted pagination should trigger a second WP_Query execution.');
+
+        foreach ($list_queries as $query_args) {
+            $this->assertArrayHasKey('no_found_rows', $query_args);
+            $this->assertTrue($query_args['no_found_rows']);
+            $this->assertArrayHasKey('update_post_meta_cache', $query_args);
+            $this->assertFalse($query_args['update_post_meta_cache']);
+            $this->assertArrayHasKey('update_post_term_cache', $query_args);
+            $this->assertFalse($query_args['update_post_term_cache']);
+            $this->assertArrayHasKey('lazy_load_term_meta', $query_args);
+            $this->assertFalse($query_args['lazy_load_term_meta']);
+            $this->assertArrayHasKey('cache_results', $query_args);
+            $this->assertFalse($query_args['cache_results']);
+        }
+    }
+
     public function test_namespaced_request_parameters_are_isolated_between_instances(): void
     {
         $this->configureOptions();
