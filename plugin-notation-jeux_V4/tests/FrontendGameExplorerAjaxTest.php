@@ -1065,6 +1065,10 @@ class FrontendGameExplorerAjaxTest extends TestCase
 
         $GLOBALS['jlg_test_meta_cache_calls'] = [];
         $GLOBALS['jlg_test_term_cache_calls'] = [];
+        $GLOBALS['jlg_test_wp_query_log'] = [];
+        $GLOBALS['jlg_test_post_cache_calls'] = [];
+
+        $this->assertTrue(function_exists('get_posts'), 'get_posts stub should be available.');
 
         set_transient('jlg_rated_post_ids_v1', [101, '202', 'not-a-number']);
 
@@ -1074,6 +1078,14 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $snapshot = $reflection->invoke(null);
 
         $this->assertSame($this->buildSnapshotWithPosts(), $snapshot, 'Primed snapshot should match expected output.');
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_wp_query_log'], 'Post preloading should be logged.');
+        $this->assertCount(1, $GLOBALS['jlg_test_wp_query_log'], 'Posts should be prefetched in a single batch.');
+        $this->assertSame([101, 202], $GLOBALS['jlg_test_wp_query_log'][0]['post__in']);
+        $this->assertSame(['post'], $GLOBALS['jlg_test_wp_query_log'][0]['post_type']);
+
+        $this->assertNotEmpty($GLOBALS['jlg_test_post_cache_calls'], 'Post cache priming should be executed.');
+        $this->assertSame([101, 202], $GLOBALS['jlg_test_post_cache_calls'][0]['ids']);
 
         $this->assertNotEmpty($GLOBALS['jlg_test_meta_cache_calls'], 'Meta cache priming should occur before building the snapshot.');
         $this->assertCount(1, $GLOBALS['jlg_test_meta_cache_calls'], 'Meta cache priming should occur in a single batched call for two posts.');
@@ -1304,6 +1316,8 @@ class FrontendGameExplorerAjaxTest extends TestCase
         $GLOBALS['jlg_test_current_post_id'] = 0;
         $GLOBALS['jlg_test_meta_cache_calls'] = [];
         $GLOBALS['jlg_test_term_cache_calls'] = [];
+        $GLOBALS['jlg_test_wp_query_log'] = [];
+        $GLOBALS['jlg_test_post_cache_calls'] = [];
         $_POST = [];
         $_REQUEST = [];
         $this->resetFrontendStatics();

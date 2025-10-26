@@ -41,9 +41,14 @@ class RatingsControllerPaginationTest extends TestCase
         $this->assertSame(3, $response['pagination']['total_pages']);
 
         $this->assertNotEmpty($GLOBALS['jlg_test_wp_query_log']);
-        foreach ($GLOBALS['jlg_test_wp_query_log'] as $args) {
-            if (!is_array($args)) {
+        foreach ($GLOBALS['jlg_test_wp_query_log'] as $entry) {
+            if (!is_array($entry)) {
                 continue;
+            }
+
+            $args = $entry;
+            if (array_key_exists('args', $entry) && is_array($entry['args'])) {
+                $args = $entry['args'];
             }
 
             $this->assertArrayHasKey('posts_per_page', $args);

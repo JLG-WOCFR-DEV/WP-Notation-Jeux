@@ -2071,6 +2071,10 @@ if (!function_exists('get_posts')) {
             $GLOBALS['jlg_test_get_posts_log'] = [];
         }
 
+        if (!isset($GLOBALS['jlg_test_wp_query_log'])) {
+            $GLOBALS['jlg_test_wp_query_log'] = [];
+        }
+
         $normalized_args = is_array($args) ? $args : [];
         $GLOBALS['jlg_test_get_posts_log'][] = $normalized_args;
 
@@ -2085,6 +2089,25 @@ if (!function_exists('get_posts')) {
         if (empty($ids) && isset($normalized_args['p']) && is_numeric($normalized_args['p'])) {
             $ids = [(int) $normalized_args['p']];
         }
+
+        $post_types = $normalized_args['post_type'] ?? ['post'];
+        if (!is_array($post_types)) {
+            $post_types = [$post_types];
+        }
+        $post_types = array_values(array_map('strval', $post_types));
+
+        $statuses = $normalized_args['post_status'] ?? ['publish'];
+        if (!is_array($statuses)) {
+            $statuses = [$statuses];
+        }
+        $statuses = array_values(array_map('strval', $statuses));
+
+        $GLOBALS['jlg_test_wp_query_log'][] = [
+            'args'      => $normalized_args,
+            'post__in'  => $ids,
+            'post_type' => $post_types,
+            'status'    => $statuses,
+        ];
 
         $posts_store = $GLOBALS['jlg_test_posts'] ?? [];
         $posts       = [];
@@ -2106,14 +2129,26 @@ if (!function_exists('update_post_caches')) {
             $GLOBALS['jlg_test_post_cache_updates'] = [];
         }
 
+        if (!isset($GLOBALS['jlg_test_post_cache_calls'])) {
+            $GLOBALS['jlg_test_post_cache_calls'] = [];
+        }
+
         $ids = [];
+        $detected_type = $post_type;
 
         if (is_array($posts)) {
             foreach ($posts as $post) {
                 if ($post instanceof WP_Post && isset($post->ID)) {
                     $ids[] = (int) $post->ID;
+                    if ($detected_type === null || $detected_type === '' || $detected_type === 'post') {
+                        $detected_type = $post->post_type ?? $detected_type;
+                    }
                 }
             }
+        }
+
+        if ($detected_type === null || $detected_type === '') {
+            $detected_type = 'post';
         }
 
         $GLOBALS['jlg_test_post_cache_updates'][] = [
@@ -2121,6 +2156,13 @@ if (!function_exists('update_post_caches')) {
             'post_type'   => $post_type,
             'update_meta' => (bool) $update_meta_cache,
             'update_term' => (bool) $update_term_cache,
+        ];
+
+        $GLOBALS['jlg_test_post_cache_calls'][] = [
+            'post_type'          => (string) $detected_type,
+            'ids'                => $ids,
+            'update_term_cache'  => (bool) $update_term_cache,
+            'update_meta_cache'  => (bool) $update_meta_cache,
         ];
 
         return true;
