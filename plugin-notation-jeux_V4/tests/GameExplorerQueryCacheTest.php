@@ -57,6 +57,57 @@ final class GameExplorerQueryCacheTest extends TestCase
         $this->assertSame($contextOne['games'], $contextTwo['games'], 'Cached games collection should match the initial render.');
     }
 
+    public function test_cached_query_uses_lightweight_wp_query(): void
+    {
+        \JLG\Notation\Shortcodes\GameExplorer::clear_filters_snapshot();
+        $this->primeSnapshot($this->buildSnapshotWithPosts());
+
+        $atts    = \JLG\Notation\Shortcodes\GameExplorer::get_default_atts();
+        $request = [
+            'orderby' => 'date',
+            'order'   => 'DESC',
+            'paged'   => 1,
+        ];
+
+        $GLOBALS['jlg_test_wp_query_log'] = [];
+
+        $missContext = \JLG\Notation\Shortcodes\GameExplorer::get_render_context($atts, $request);
+
+        $this->assertSame('miss', $missContext['cache_status']['query'] ?? null, 'Priming request should populate the cache.');
+
+        $GLOBALS['jlg_test_wp_query_log'] = [];
+
+        $hitContext = \JLG\Notation\Shortcodes\GameExplorer::get_render_context($atts, $request);
+
+        $this->assertSame('hit', $hitContext['cache_status']['query'] ?? null, 'Second request should hit the query cache.');
+        $this->assertSame($missContext['total_items'], $hitContext['total_items'], 'Cached totals should be reused as-is.');
+        $this->assertSame(
+            $missContext['pagination']['total'] ?? null,
+            $hitContext['pagination']['total'] ?? null,
+            'Cached pagination should be reused as-is.'
+        );
+
+        $this->assertCount(
+            1,
+            $GLOBALS['jlg_test_wp_query_log'],
+            'Cached branch should run a single lightweight WP_Query call.'
+        );
+
+        $queryArgs = $GLOBALS['jlg_test_wp_query_log'][0];
+
+        $this->assertSame('post__in', $queryArgs['orderby'] ?? null, 'Cached query should preserve the pre-sorted IDs.');
+        $this->assertSame(
+            count($hitContext['games']),
+            $queryArgs['posts_per_page'] ?? null,
+            'Cached query should only request the batched posts count.'
+        );
+        $this->assertTrue($queryArgs['no_found_rows'] ?? null, 'Cached query should skip total row calculations.');
+        $this->assertFalse($queryArgs['update_post_meta_cache'] ?? true, 'Cached query should not warm the post meta cache.');
+        $this->assertFalse($queryArgs['update_post_term_cache'] ?? true, 'Cached query should not warm the term cache.');
+        $this->assertFalse($queryArgs['lazy_load_term_meta'] ?? true, 'Cached query should not lazy-load term meta.');
+        $this->assertFalse($queryArgs['cache_results'] ?? true, 'Cached query should not populate WP_Query object cache.');
+    }
+
     public function test_cache_version_bumped_when_snapshot_cleared(): void
     {
         $initial_version = get_option('jlg_ge_query_cache_version', 1);
@@ -129,6 +180,7 @@ final class GameExplorerQueryCacheTest extends TestCase
         $GLOBALS['jlg_test_terms']       = [];
         $GLOBALS['jlg_test_options']     = [];
         $GLOBALS['jlg_test_transients']  = [];
+        $GLOBALS['jlg_test_wp_query_log'] = [];
         $GLOBALS['jlg_test_meta_cache_calls'] = [];
         $GLOBALS['jlg_test_term_cache_calls'] = [];
         $_POST    = [];

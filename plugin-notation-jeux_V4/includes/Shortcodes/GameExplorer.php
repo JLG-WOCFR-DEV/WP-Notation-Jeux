@@ -1935,13 +1935,20 @@ class GameExplorer {
             }
             $paged = $cached_paged;
 
+            $cached_batch_size = count( $cached_post_ids );
+
             $query_args = array(
-                'post_type'           => Helpers::get_allowed_post_types(),
-                'post__in'            => $cached_post_ids,
-                'orderby'             => 'post__in',
-                'posts_per_page'      => count( $cached_post_ids ),
-                'paged'               => 1,
-                'ignore_sticky_posts' => true,
+                'post_type'              => Helpers::get_allowed_post_types(),
+                'post__in'               => $cached_post_ids,
+                'orderby'                => 'post__in',
+                'posts_per_page'         => $cached_batch_size,
+                'paged'                  => 1,
+                'ignore_sticky_posts'    => true,
+                'no_found_rows'          => true,
+                'update_post_meta_cache' => false,
+                'update_post_term_cache' => false,
+                'lazy_load_term_meta'    => false,
+                'cache_results'          => false,
             );
 
             $query                = new \WP_Query( $query_args );
