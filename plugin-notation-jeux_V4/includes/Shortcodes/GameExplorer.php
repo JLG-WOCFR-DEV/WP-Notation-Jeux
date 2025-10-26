@@ -1134,7 +1134,48 @@ class GameExplorer {
             return $snapshot;
         }
 
-        $post_id_chunks = count( $rated_posts ) > 100 ? array_chunk( $rated_posts, 100 ) : array( $rated_posts );
+        $post_id_chunks   = count( $rated_posts ) > 100 ? array_chunk( $rated_posts, 100 ) : array( $rated_posts );
+        $post_cache_index = array();
+
+        foreach ( $post_id_chunks as $post_id_chunk ) {
+            if ( empty( $post_id_chunk ) ) {
+                continue;
+            }
+
+            $prefetched_posts = array();
+
+            if ( function_exists( '\\get_posts' ) || function_exists( 'get_posts' ) ) {
+                $get_posts_callback = function_exists( '\\get_posts' ) ? '\\get_posts' : 'get_posts';
+                $prefetched_posts   = $get_posts_callback(
+                    array(
+                        'post_type'              => $allowed_post_types,
+                        'post__in'               => $post_id_chunk,
+                        'posts_per_page'         => count( $post_id_chunk ),
+                        'orderby'                => 'post__in',
+                        'post_status'            => array( 'publish' ),
+                        'suppress_filters'       => true,
+                        'no_found_rows'          => true,
+                        'update_post_term_cache' => false,
+                        'update_post_meta_cache' => false,
+                    )
+                );
+            }
+
+            if ( empty( $prefetched_posts ) ) {
+                continue;
+            }
+
+            if ( function_exists( '\\update_post_caches' ) || function_exists( 'update_post_caches' ) ) {
+                $update_post_caches_callback = function_exists( '\\update_post_caches' ) ? '\\update_post_caches' : 'update_post_caches';
+                $update_post_caches_callback( $prefetched_posts );
+            }
+
+            foreach ( $prefetched_posts as $prefetched_post ) {
+                if ( $prefetched_post instanceof WP_Post ) {
+                    $post_cache_index[ $prefetched_post->ID ] = $prefetched_post;
+                }
+            }
+        }
 
         if ( function_exists( 'update_meta_cache' ) ) {
             foreach ( $post_id_chunks as $post_id_chunk ) {
@@ -1187,7 +1228,10 @@ class GameExplorer {
                 continue;
             }
 
-            $post = get_post( $post_id );
+            $post = $post_cache_index[ $post_id ] ?? null;
+            if ( ! $post instanceof WP_Post ) {
+                $post = get_post( $post_id );
+            }
             if ( ! $post || $post->post_status !== 'publish' ) {
                 continue;
             }
