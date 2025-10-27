@@ -376,6 +376,8 @@ body.is-dark-theme .jlg-settings-section {
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22);
     font-variant-numeric: tabular-nums;
     letter-spacing: normal;
+    max-width: 100%;
+    transition: gap 0.2s ease, padding 0.2s ease;
 }
 
 .jlg-score-ratio__current,
@@ -404,6 +406,30 @@ body.is-dark-theme .jlg-settings-section {
 
 .jlg-theme-preview__surface.no-text-glow .jlg-score-ratio__separator::before {
     box-shadow: none;
+}
+
+.jlg-score-ratio--stacked {
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 18px;
+}
+
+.jlg-score-ratio--stacked .jlg-score-ratio__current,
+.jlg-score-ratio--stacked .jlg-score-ratio__total {
+    font-size: clamp(1.7rem, 1.1rem + 1vw, 2.4rem);
+}
+
+.jlg-score-ratio--stacked .jlg-score-ratio__separator {
+    width: 60%;
+    min-width: 44px;
+    height: 2px;
+    flex: 0 0 auto;
+}
+
+.jlg-score-ratio--stacked .jlg-score-ratio__separator::before {
+    inset: 0;
+    transform: none;
+    border-radius: 999px;
 }
 
 .jlg-theme-preview__score-text[data-preview-text] .jlg-theme-preview__score-value {
