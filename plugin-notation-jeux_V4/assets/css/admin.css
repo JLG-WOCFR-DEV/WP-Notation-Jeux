@@ -35,22 +35,26 @@ body.is-dark-theme .jlg-admin-card {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-body.is-dark-theme .jlg-admin-card a {
+body.is-dark-theme .jlg-admin-card a:not(.button) {
     color: var(--wp-admin-theme-color, #72aee6);
 }
 
-body.is-dark-theme .jlg-admin-card a:hover,
-body.is-dark-theme .jlg-admin-card a:focus {
+body.is-dark-theme .jlg-admin-card a:not(.button):hover,
+body.is-dark-theme .jlg-admin-card a:not(.button):focus {
     color: var(--wp-admin-theme-color-darker-10, #1d8fd1);
 }
 
-body:not(.is-dark-theme) .jlg-admin-card a {
+body:not(.is-dark-theme) .jlg-admin-card a:not(.button) {
     color: var(--wp-admin-theme-color, #2271b1);
 }
 
-body:not(.is-dark-theme) .jlg-admin-card a:hover,
-body:not(.is-dark-theme) .jlg-admin-card a:focus {
+body:not(.is-dark-theme) .jlg-admin-card a:not(.button):hover,
+body:not(.is-dark-theme) .jlg-admin-card a:not(.button):focus {
     color: var(--wp-admin-theme-color-darker-10, #135e96);
+}
+
+body .jlg-admin-card .button.button-primary {
+    color: #fff;
 }
 
 .jlg-settings-layout {
