@@ -611,10 +611,33 @@
         var badge = surface.querySelector('[data-preview-theme-indicator]');
         var contrastNode = surface.querySelector('[data-preview-contrast]');
         var switches = Array.prototype.slice.call(previewRoot.querySelectorAll('.jlg-theme-preview__switch'));
+        var ratioNode = surface.querySelector('.jlg-score-ratio');
 
         var state = Object.assign({}, previewData);
         var initialTheme = state.visual_theme === 'light' ? 'light' : 'dark';
         var activeTheme = initialTheme;
+
+        function updateRatioLayout() {
+            if (!ratioNode) {
+                return;
+            }
+
+            ratioNode.classList.remove('jlg-score-ratio--stacked');
+
+            if (ratioNode.scrollWidth > ratioNode.clientWidth + 1) {
+                ratioNode.classList.add('jlg-score-ratio--stacked');
+            }
+        }
+
+        if (typeof ResizeObserver === 'function' && ratioNode && ratioNode.parentElement) {
+            var ratioObserver = new ResizeObserver(function () {
+                updateRatioLayout();
+            });
+
+            ratioObserver.observe(ratioNode.parentElement);
+        } else {
+            window.addEventListener('resize', updateRatioLayout);
+        }
 
         var watchedFields = [
             'visual_theme',
@@ -849,6 +872,7 @@
             });
 
             updateContrast();
+            requestAnimationFrame(updateRatioLayout);
         }
 
         switches.forEach(function (button) {
@@ -885,6 +909,7 @@
         });
 
         applyTheme();
+        requestAnimationFrame(updateRatioLayout);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
