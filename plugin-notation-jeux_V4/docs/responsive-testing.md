@@ -12,6 +12,13 @@ Pour valider l'affichage responsive du tableau récapitulatif :
 
 En cas d'ajustements ultérieurs, répétez ce scénario pour garantir que l'expérience mobile reste optimale.
 
+## Administration – Gestion des plateformes
+
+1. Ouvrez l'écran d'administration **Notation – JLG > Plateformes** avec une largeur de fenêtre ≥ 1200 px et vérifiez que la grille affiche bien deux colonnes (tableau des plateformes à gauche, formulaires à droite) avec un espacement régulier.
+2. Réduisez la fenêtre à 960 px puis à 782 px : la colonne de formulaires doit se placer sous la liste des plateformes sans chevauchement ni perte de contenu.
+3. Descendez jusqu'aux formulaires « Associer des tags », « Ajouter une plateforme » et « Actions » pour confirmer que chaque bouton reste accessible et qu'aucun défilement horizontal n'apparaît.
+4. Passez à 480 px (émulation mobile portrait) : vérifiez que les titres et descriptions conservent une marge intérieure suffisante et que les champs de formulaire utilisent toute la largeur disponible.
+
 ## Widget « Derniers Tests » en sidebar
 
 1. Placez le widget « Notation JLG : Derniers Tests » dans une sidebar active puis affichez une page contenant cette zone sur desktop (≥ 1280 px).

@@ -836,7 +836,7 @@ class Platforms {
         </p>
         <?php endif; ?>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+        <div class="jlg-platforms-layout">
 
             <!-- Liste des plateformes -->
             <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
