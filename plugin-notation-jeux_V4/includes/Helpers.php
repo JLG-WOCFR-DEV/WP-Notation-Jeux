@@ -22,7 +22,7 @@ class Helpers {
     public const REVIEW_STATUS_CRON_HOOK           = 'jlg_review_status_auto_finalize';
     public const REVIEW_STATUS_META_KEY            = '_jlg_review_status';
     public const REVIEW_STATUS_LAST_PATCH_META_KEY = '_jlg_last_patch_date';
-    public const SETTINGS_VIEW_MODE_META_KEY       = SettingsRepository::USER_META_KEY;
+    public const SETTINGS_VIEW_MODE_META_KEY       = '_jlg_settings_view_mode';
 
     private const GAME_EXPLORER_DEFAULT_SCORE_POSITION = 'bottom-right';
     private const GAME_EXPLORER_ALLOWED_FILTERS        = array( 'letter', 'category', 'platform', 'developer', 'publisher', 'availability', 'year', 'score', 'search' );
@@ -2030,7 +2030,13 @@ class Helpers {
             return false;
         }
 
-        $raw_value = get_user_meta( $user_id, SettingsRepository::USER_META_KEY, true );
+        if ( ! class_exists( SettingsRepository::class ) ) {
+            return false;
+        }
+
+        $meta_key = self::resolve_settings_view_mode_meta_key();
+
+        $raw_value = get_user_meta( $user_id, $meta_key, true );
 
         if ( ! is_scalar( $raw_value ) ) {
             $raw_value = '';
@@ -2043,13 +2049,13 @@ class Helpers {
         $normalized_meta = SettingsRepository::normalize_mode( $raw_value );
 
         if ( $raw_value === '' ) {
-            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $fallback_mode );
+            update_user_meta( $user_id, $meta_key, $fallback_mode );
 
             return true;
         }
 
         if ( $raw_value !== $normalized_meta ) {
-            update_user_meta( $user_id, SettingsRepository::USER_META_KEY, $normalized_meta );
+            update_user_meta( $user_id, $meta_key, $normalized_meta );
 
             return true;
         }
@@ -2059,6 +2065,10 @@ class Helpers {
 
     public static function seed_settings_view_mode( $mode = null ) {
         if ( ! function_exists( 'get_users' ) ) {
+            return 0;
+        }
+
+        if ( ! class_exists( SettingsRepository::class ) ) {
             return 0;
         }
 
@@ -2095,9 +2105,11 @@ class Helpers {
     }
 
     public static function rollback_settings_view_mode() {
+        $meta_key = self::resolve_settings_view_mode_meta_key();
+
         if ( ! function_exists( 'get_users' ) || ! function_exists( 'delete_user_meta' ) ) {
             if ( function_exists( 'delete_metadata' ) ) {
-                delete_metadata( 'user', 0, SettingsRepository::USER_META_KEY, '', true );
+                delete_metadata( 'user', 0, $meta_key, '', true );
             }
 
             return 0;
@@ -2125,11 +2137,19 @@ class Helpers {
                 continue;
             }
 
-            delete_user_meta( $user_id, SettingsRepository::USER_META_KEY );
+            delete_user_meta( $user_id, $meta_key );
             ++$removed;
         }
 
         return $removed;
+    }
+
+    private static function resolve_settings_view_mode_meta_key() {
+        if ( class_exists( SettingsRepository::class ) ) {
+            return SettingsRepository::USER_META_KEY;
+        }
+
+        return self::SETTINGS_VIEW_MODE_META_KEY;
     }
 
     public static function schedule_score_scale_migration( $old_max, $new_max ) {
