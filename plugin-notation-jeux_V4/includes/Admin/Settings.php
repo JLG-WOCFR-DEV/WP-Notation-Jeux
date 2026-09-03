@@ -865,7 +865,7 @@ class Settings {
 
         add_settings_field(
             'score_layout',
-            'Style d\'affichage',
+            __( 'Style d\'affichage', 'notation-jlg' ),
             array( $this, 'render_field' ),
             'notation_jlg_page',
             'jlg_layout',
@@ -873,8 +873,8 @@ class Settings {
 				'id'      => 'score_layout',
 				'type'    => 'select',
 				'options' => array(
-					'text'   => 'Texte simple',
-					'circle' => 'Dans un cercle',
+					'text'   => __( 'Texte simple', 'notation-jlg' ),
+					'circle' => __( 'Dans un cercle', 'notation-jlg' ),
 				),
 			)
         );
@@ -1618,7 +1618,7 @@ class Settings {
                 'id'                => 'table_zebra_bg_color',
                 'type'              => 'color',
                 'allow_transparent' => true,
-                'desc'              => 'Utilisez le sélecteur WordPress ou saisissez "transparent" pour désactiver la couleur alternée.',
+                'desc'              => __( 'Utilisez le sélecteur WordPress ou saisissez "transparent" pour désactiver la couleur alternée.', 'notation-jlg' ),
             )
         );
 
@@ -1631,7 +1631,7 @@ class Settings {
         );
         add_settings_field(
             'table_border_style',
-            'Style des bordures',
+            __( 'Style des bordures', 'notation-jlg' ),
             array( $this, 'render_field' ),
             'notation_jlg_page',
             'jlg_table',
@@ -1639,9 +1639,9 @@ class Settings {
 				'id'      => 'table_border_style',
 				'type'    => 'select',
 				'options' => array(
-					'none'       => 'Aucune',
-					'horizontal' => 'Horizontales',
-					'full'       => 'Grille complète',
+					'none'       => __( 'Aucune', 'notation-jlg' ),
+					'horizontal' => __( 'Horizontales', 'notation-jlg' ),
+					'full'       => __( 'Grille complète', 'notation-jlg' ),
 				),
 			)
         );

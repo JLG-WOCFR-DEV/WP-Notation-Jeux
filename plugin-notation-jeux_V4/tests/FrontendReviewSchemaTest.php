@@ -80,22 +80,22 @@ class FrontendReviewSchemaTest extends TestCase
         $data = json_decode($json, true);
 
         $this->assertIsArray($data, 'JSON-LD payload should decode to an array.');
-        $this->assertSame('Game', $data['@type'] ?? null, 'Schema should describe a Game review.');
-        $this->assertSame('Custom Review Schema', $data['name'] ?? null, 'Schema should use the post title for the game name.');
-        $this->assertSame(8.4, $data['review']['reviewRating']['ratingValue'] ?? null, 'Schema should expose the cached average score.');
-        $this->assertSame('Schema Tester', $data['review']['author']['name'] ?? null, 'Schema should include the author display name.');
-        $this->assertSame('2024-01-15T08:00:00+00:00', $data['review']['datePublished'] ?? null, 'Schema should include the publication date.');
+        $this->assertSame('Review', $data['@type'] ?? null, 'Schema should describe a Review.');
+        $this->assertSame('Custom Review Schema', $data['name'] ?? null, 'Schema should use the post title for the review name.');
+        $this->assertSame(8.4, $data['reviewRating']['ratingValue'] ?? null, 'Schema should expose the cached average score.');
+        $this->assertSame('Schema Tester', $data['author']['name'] ?? null, 'Schema should include the author display name.');
+        $this->assertSame('2024-01-15T08:00:00+00:00', $data['datePublished'] ?? null, 'Schema should include the publication date.');
         $this->assertSame('fr-FR', $data['inLanguage'] ?? null, 'Schema should expose the active locale.');
-        $this->assertSame('Résumé officiel de la rédaction', $data['review']['reviewBody'] ?? null, 'Schema should expose the localized tagline as reviewBody.');
-        $this->assertSame('Studio JLG', $data['publisher']['name'] ?? null, 'Schema should expose the publisher.');
-        $this->assertContains('PlayStation 5', $data['availableOnDevice'] ?? [], 'Schema should include platform availability.');
-        $this->assertContains('PC', $data['availableOnDevice'] ?? [], 'Schema should include all platforms.');
+        $this->assertSame('Résumé officiel de la rédaction', $data['reviewBody'] ?? null, 'Schema should expose the localized tagline as reviewBody.');
+        $this->assertSame('Studio JLG', $data['itemReviewed']['publisher']['name'] ?? null, 'Schema should expose the publisher on the reviewed game.');
+        $this->assertContains('PlayStation 5', $data['itemReviewed']['gamePlatform'] ?? [], 'Schema should include platform availability on the reviewed game.');
+        $this->assertContains('PC', $data['itemReviewed']['gamePlatform'] ?? [], 'Schema should include all platforms on the reviewed game.');
         $this->assertContains('https://example.com/covers/schema.jpg', (array) ($data['image'] ?? []), 'Schema should include review imagery.');
         $this->assertIsArray($data['video'] ?? null, 'Schema should embed the review video object.');
         $this->assertStringStartsWith('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', $data['video']['embedUrl'] ?? '', 'Schema should expose the privacy-friendly embed URL.');
         $this->assertSame('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $data['video']['contentUrl'] ?? null, 'Schema should expose the original video URL.');
-        $this->assertIsArray($data['aggregateRating'] ?? null, 'Schema should expose multiple aggregate rating scales.');
-        $aggregates = $data['aggregateRating'];
+        $this->assertIsArray($data['itemReviewed']['aggregateRating'] ?? null, 'Schema should expose multiple aggregate rating scales on the reviewed game.');
+        $aggregates = $data['itemReviewed']['aggregateRating'];
         if (isset($aggregates['@type'])) {
             $aggregates = [$aggregates];
         }
@@ -115,8 +115,8 @@ class FrontendReviewSchemaTest extends TestCase
         $this->assertContains('User Rating (review scale)', $aggregate_names, 'User aggregate translated to review scale should be present.');
         $this->assertContains('User Rating (100 scale)', $aggregate_names, 'User aggregate normalized on a 100 scale should be present.');
 
-        $this->assertIsArray($data['interactionStatistic'] ?? null, 'Schema should expose interaction statistics.');
-        $interaction_statistics = $data['interactionStatistic'];
+        $this->assertIsArray($data['itemReviewed']['interactionStatistic'] ?? null, 'Schema should expose interaction statistics on the reviewed game.');
+        $interaction_statistics = $data['itemReviewed']['interactionStatistic'];
         if (isset($interaction_statistics['@type'])) {
             $interaction_statistics = [$interaction_statistics];
         }
@@ -158,13 +158,13 @@ class FrontendReviewSchemaTest extends TestCase
         $this->assertSame(-4.2, $trend_properties['delta'] ?? null, 'Trend should expose the delta between user and editorial averages.');
         $this->assertSame('negative', $trend_properties['direction'] ?? null, 'Trend should expose the direction of the delta.');
 
-        $this->assertSame('VideoGame', $data['review']['itemReviewed']['@type'] ?? null, 'Item reviewed should describe the video game.');
-        $this->assertSame('Custom Review Schema', $data['review']['itemReviewed']['name'] ?? null, 'Item reviewed should reuse the game title.');
-        $this->assertSame('fr-FR', $data['review']['itemReviewed']['inLanguage'] ?? null, 'Item reviewed should inherit the schema locale.');
-        $this->assertSame('Studio JLG', $data['review']['itemReviewed']['publisher']['name'] ?? null, 'Item reviewed should include the game publisher.');
-        $this->assertContains('PlayStation 5', (array) ($data['review']['itemReviewed']['gamePlatform'] ?? []), 'Item reviewed should expose platform availability.');
-        $this->assertContains('https://example.com/covers/schema.jpg', (array) ($data['review']['itemReviewed']['image'] ?? []), 'Item reviewed should reuse review imagery.');
-        $this->assertSame('VideoObject', $data['review']['itemReviewed']['trailer']['@type'] ?? null, 'Item reviewed should reference the review video as a trailer.');
+        $this->assertSame('VideoGame', $data['itemReviewed']['@type'] ?? null, 'Item reviewed should describe the video game.');
+        $this->assertSame('Custom Review Schema', $data['itemReviewed']['name'] ?? null, 'Item reviewed should reuse the game title.');
+        $this->assertSame('fr-FR', $data['itemReviewed']['inLanguage'] ?? null, 'Item reviewed should inherit the schema locale.');
+        $this->assertSame('Studio JLG', $data['itemReviewed']['publisher']['name'] ?? null, 'Item reviewed should include the game publisher.');
+        $this->assertContains('PlayStation 5', (array) ($data['itemReviewed']['gamePlatform'] ?? []), 'Item reviewed should expose platform availability.');
+        $this->assertContains('https://example.com/covers/schema.jpg', (array) ($data['itemReviewed']['image'] ?? []), 'Item reviewed should reuse review imagery.');
+        $this->assertSame('VideoObject', $data['itemReviewed']['trailer']['@type'] ?? null, 'Item reviewed should reference the review video as a trailer.');
     }
 
     public function test_schema_falls_back_to_weighted_average_when_cache_missing(): void
@@ -218,7 +218,7 @@ class FrontendReviewSchemaTest extends TestCase
         $data = json_decode($json, true);
 
         $this->assertIsArray($data, 'JSON-LD payload should decode to an array.');
-        $this->assertSame(8.3, $data['review']['reviewRating']['ratingValue'] ?? null, 'Schema should expose the weighted average when cache is missing.');
+        $this->assertSame(8.3, $data['reviewRating']['ratingValue'] ?? null, 'Schema should expose the weighted average when cache is missing.');
     }
 
     public function test_schema_translates_review_body_for_active_locale(): void
@@ -277,7 +277,7 @@ class FrontendReviewSchemaTest extends TestCase
         $data = json_decode($matches[1] ?? '', true);
 
         $this->assertSame('en-US', $data['inLanguage'] ?? null, 'Schema should reflect the filtered locale.');
-        $this->assertSame('French review translated', $data['review']['reviewBody'] ?? null, 'Schema should expose the translated tagline.');
+        $this->assertSame('French review translated', $data['reviewBody'] ?? null, 'Schema should expose the translated tagline.');
     }
 
     private function configurePluginOptions(array $overrides = []): void

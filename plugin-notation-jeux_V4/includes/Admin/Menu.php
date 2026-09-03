@@ -62,7 +62,7 @@ class Menu {
         TemplateLoader::display_admin_template(
             'admin-page',
             array(
-				'page_title'     => __( '⭐ Notation JLG v5.0', 'notation-jlg' ),
+				'page_title'     => __( 'Notation JLG', 'notation-jlg' ),
 				'tab_navigation' => $tab_navigation,
 				'tab_content'    => $tab_content,
 			)

@@ -2815,26 +2815,22 @@ class Frontend {
         $review_body   = $this->resolve_review_body_for_schema( $post_id, $schema_locale );
 
         $schema = array(
-            '@context'   => 'https://schema.org',
-            '@type'      => 'Game',
-            'name'       => $game_title,
-            'inLanguage' => $schema_locale !== '' ? $schema_locale : null,
-            'review'     => array(
-                '@type'         => 'Review',
-                'reviewRating'  => array(
-                    '@type'       => 'Rating',
-                    'ratingValue' => $average_score,
-                    'bestRating'  => $review_best_rating,
-                    'worstRating' => $review_worst_rating,
-                ),
-                'author'        => array(
-                    '@type' => 'Person',
-                    'name'  => get_the_author_meta( 'display_name', get_post_field( 'post_author', $post_id ) ),
-                ),
-                'datePublished' => get_the_date( 'c', $post_id ),
-                'inLanguage'    => $schema_locale !== '' ? $schema_locale : null,
-                'reviewBody'    => $review_body !== '' ? $review_body : null,
+            '@context'      => 'https://schema.org',
+            '@type'         => 'Review',
+            'name'          => $game_title,
+            'inLanguage'    => $schema_locale !== '' ? $schema_locale : null,
+            'reviewRating'  => array(
+                '@type'       => 'Rating',
+                'ratingValue' => $average_score,
+                'bestRating'  => $review_best_rating,
+                'worstRating' => $review_worst_rating,
             ),
+            'author'        => array(
+                '@type' => 'Person',
+                'name'  => get_the_author_meta( 'display_name', get_post_field( 'post_author', $post_id ) ),
+            ),
+            'datePublished' => get_the_date( 'c', $post_id ),
+            'reviewBody'    => $review_body !== '' ? $review_body : null,
         );
 
         $item_reviewed = array(
@@ -2853,13 +2849,11 @@ class Frontend {
                 'name'  => $publisher_name,
             );
 
-            $schema['publisher']        = $publisher;
             $item_reviewed['publisher'] = $publisher;
         }
 
         $platforms = $this->collect_platforms_for_schema( $post_id, $schema_locale );
         if ( ! empty( $platforms ) ) {
-            $schema['availableOnDevice']   = $platforms;
             $item_reviewed['gamePlatform'] = $platforms;
         }
 
@@ -3026,29 +3020,25 @@ class Frontend {
         $aggregate_ratings = array_values( array_filter( $aggregate_ratings ) );
 
         if ( ! empty( $aggregate_ratings ) ) {
-            $schema['aggregateRating'] = count( $aggregate_ratings ) === 1 ? $aggregate_ratings[0] : $aggregate_ratings;
+            $item_reviewed['aggregateRating'] = count( $aggregate_ratings ) === 1 ? $aggregate_ratings[0] : $aggregate_ratings;
         }
 
         if ( ! empty( $interaction_statistics ) ) {
-            $schema['interactionStatistic'] = count( $interaction_statistics ) === 1
+            $item_reviewed['interactionStatistic'] = count( $interaction_statistics ) === 1
                 ? $interaction_statistics[0]
                 : $interaction_statistics;
         }
 
         if ( ! empty( $item_reviewed ) ) {
-            $schema['review']['itemReviewed'] = $item_reviewed;
+            $schema['itemReviewed'] = $item_reviewed;
         }
 
         if ( isset( $schema['inLanguage'] ) && $schema['inLanguage'] === null ) {
             unset( $schema['inLanguage'] );
         }
 
-        if ( isset( $schema['review']['inLanguage'] ) && $schema['review']['inLanguage'] === null ) {
-            unset( $schema['review']['inLanguage'] );
-        }
-
-        if ( isset( $schema['review']['reviewBody'] ) && $schema['review']['reviewBody'] === null ) {
-            unset( $schema['review']['reviewBody'] );
+        if ( isset( $schema['reviewBody'] ) && $schema['reviewBody'] === null ) {
+            unset( $schema['reviewBody'] );
         }
 
         echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>';
