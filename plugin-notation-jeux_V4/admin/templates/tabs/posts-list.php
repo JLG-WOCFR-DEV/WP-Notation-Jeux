@@ -12,7 +12,10 @@ $columns = isset($variables['columns']) && is_array($variables['columns']) ? $va
 $posts = isset($variables['posts']) && is_array($variables['posts']) ? $variables['posts'] : [];
 $pagination = $variables['pagination'] ?? '';
 $print_button_label = $variables['print_button_label'] ?? '';
-$column_count = count($columns) + 2;
+$column_count = count($columns) + 3;
+$editorial_queue = isset($variables['editorial_queue']) && is_array($variables['editorial_queue']) ? $variables['editorial_queue'] : [];
+$editorial_counts = isset($editorial_queue['counts']) && is_array($editorial_queue['counts']) ? $editorial_queue['counts'] : [];
+$editorial_attention = isset($editorial_queue['attention']) ? (int) $editorial_queue['attention'] : 0;
 ?>
 <h2>📊 Vos Articles avec Notation</h2>
 
@@ -30,6 +33,20 @@ $column_count = count($columns) + 2;
     $distribution = isset($insights['distribution']) && is_array($insights['distribution']) ? $insights['distribution'] : [];
     $platform_rankings = isset($insights['platform_rankings']) && is_array($insights['platform_rankings']) ? $insights['platform_rankings'] : [];
     ?>
+    <?php if (!empty($editorial_counts)) : ?>
+        <div class="notice <?php echo $editorial_attention > 0 ? 'notice-warning' : 'notice-success'; ?> inline">
+            <p>
+                <?php
+                printf(
+                    esc_html__('File éditoriale : %1$d brouillon(s), %2$d mise(s) à jour, %3$d version(s) finale(s).', 'notation-jlg'),
+                    isset($editorial_counts['draft']) ? (int) $editorial_counts['draft'] : 0,
+                    isset($editorial_counts['in_progress']) ? (int) $editorial_counts['in_progress'] : 0,
+                    isset($editorial_counts['final']) ? (int) $editorial_counts['final'] : 0
+                );
+                ?>
+            </p>
+        </div>
+    <?php endif; ?>
     <section class="jlg-admin-insights" role="region" aria-labelledby="jlg-admin-insights-title">
         <h3 id="jlg-admin-insights-title"><?php echo esc_html__('Synthèse des notes', 'notation-jlg'); ?></h3>
         <p class="jlg-admin-insights__description">
@@ -142,6 +159,7 @@ $column_count = count($columns) + 2;
                     </th>
                 <?php endforeach; ?>
                 <th><?php echo esc_html('Catégories'); ?></th>
+                <th><?php echo esc_html__('Statut', 'notation-jlg'); ?></th>
                 <th><?php echo esc_html('Actions'); ?></th>
             </tr>
         </thead>
@@ -155,6 +173,7 @@ $column_count = count($columns) + 2;
                         <td><?php echo esc_html($post['date'] ?? ''); ?></td>
                         <td><strong style="color:<?php echo esc_attr($post['score_color'] ?? '#0073aa'); ?>;"><?php echo esc_html($post['score_display'] ?? ''); ?></strong><?php printf( esc_html__( '/%s', 'notation-jlg' ), esc_html( $score_max_label ) ); ?></td>
                         <td><?php echo !empty($categories) ? esc_html(implode(', ', $categories)) : '-'; ?></td>
+                        <td><?php echo esc_html(!empty($post['review_status']) ? $post['review_status'] : '—'); ?></td>
                         <td>
                             <a href="<?php echo esc_url($post['view_link'] ?? '#'); ?>" target="_blank" rel="noopener noreferrer">👁 Voir</a>
                             |

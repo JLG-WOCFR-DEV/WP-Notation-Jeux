@@ -259,14 +259,18 @@ class Menu {
                     $categories
                 );
 
+                $review_status = Helpers::get_review_status_for_post( $post_id );
+
                 $posts[] = array(
-                    'title'         => Helpers::get_game_title( $post_id ),
-                    'edit_link'     => get_edit_post_link( $post_id ),
-                    'view_link'     => get_permalink( $post_id ),
-                    'date'          => get_the_date( 'd/m/Y', $post_id ),
-                    'score_display' => $score_data['formatted'] ?? __( 'N/A', 'notation-jlg' ),
-                    'score_color'   => $score_color,
-                    'categories'    => $cat_names,
+                    'title'               => Helpers::get_game_title( $post_id ),
+                    'edit_link'           => get_edit_post_link( $post_id ),
+                    'view_link'           => get_permalink( $post_id ),
+                    'date'                => get_the_date( 'd/m/Y', $post_id ),
+                    'score_display'       => $score_data['formatted'] ?? __( 'N/A', 'notation-jlg' ),
+                    'score_color'         => $score_color,
+                    'categories'          => $cat_names,
+                    'review_status'       => isset( $review_status['label'] ) ? (string) $review_status['label'] : '',
+                    'review_status_slug'  => isset( $review_status['slug'] ) ? (string) $review_status['slug'] : '',
                 );
             }
         }
@@ -318,7 +322,35 @@ class Menu {
                 'posts'              => $posts,
                 'pagination'         => $pagination,
                 'print_button_label' => __( '🖨️ Imprimer cette liste', 'notation-jlg' ),
+                'editorial_queue'    => $this->get_editorial_queue_summary( $rated_posts ),
             )
+        );
+    }
+
+    private function get_editorial_queue_summary( array $rated_posts ) {
+        $counts = array(
+            'draft'       => 0,
+            'in_progress' => 0,
+            'final'       => 0,
+            'other'       => 0,
+        );
+
+        foreach ( $rated_posts as $post_id ) {
+            $status = Helpers::get_review_status_for_post( (int) $post_id );
+            $slug   = isset( $status['slug'] ) ? (string) $status['slug'] : '';
+
+            if ( isset( $counts[ $slug ] ) ) {
+                $counts[ $slug ]++;
+            } else {
+                $counts['other']++;
+            }
+        }
+
+        $attention = $counts['draft'] + $counts['in_progress'];
+
+        return array(
+            'counts'    => $counts,
+            'attention' => $attention,
         );
     }
 
