@@ -499,6 +499,39 @@ if (!function_exists('remove_submenu_page')) {
     }
 }
 
+if (!function_exists('register_post_meta')) {
+    /**
+     * Capture Gutenberg REST meta registrations for unit tests.
+     */
+    function register_post_meta($post_type, $meta_key, $args = []) {
+        if (!isset($GLOBALS['jlg_test_registered_post_meta'])) {
+            $GLOBALS['jlg_test_registered_post_meta'] = [];
+        }
+
+        if (!isset($GLOBALS['jlg_test_registered_post_meta'][$post_type])) {
+            $GLOBALS['jlg_test_registered_post_meta'][$post_type] = [];
+        }
+
+        $GLOBALS['jlg_test_registered_post_meta'][$post_type][$meta_key] = is_array($args) ? $args : [];
+
+        return true;
+    }
+}
+
+if (!function_exists('selected')) {
+    function selected($selected, $current = true, $echo = true) {
+        $result = ((string) $selected === (string) $current) ? ' selected="selected"' : '';
+
+        if ($echo) {
+            echo $result;
+
+            return;
+        }
+
+        return $result;
+    }
+}
+
 if (!function_exists('add_meta_box')) {
     function add_meta_box($id, $title, $callback, $screen, $context = 'advanced', $priority = 'default', $callback_args = null) {
         if (!isset($GLOBALS['jlg_test_meta_boxes'])) {

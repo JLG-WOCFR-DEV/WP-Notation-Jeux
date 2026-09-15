@@ -201,6 +201,7 @@ Créez un compte gratuit sur [rawg.io/apidocs](https://rawg.io/apidocs) et copie
 
 ### 5.0
 - Compatibilité WordPress 7.1 : CSS d’aperçu Gutenberg chargé dans l’iframe (`enqueue_block_assets`), JS front ignoré en preview éditeur, blocs en `apiVersion` 3.
+- Le champ « Nom du jeu » est éditable dans le panneau Document Gutenberg (hors iframe) ; la metabox classique ne conserve plus `#jlg_game_title` sous le canvas iframé.
 - Administration alignée sur le chrome wp-admin (`wrap`, `h1`, `nav-tab`, Settings API, `postbox`, boutons et notices natifs).
 - Refactorisation complète du code
 - Architecture modulaire optimisée

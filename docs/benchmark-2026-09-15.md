@@ -16,3 +16,6 @@ Comparaison ciblée avant l’alignement Gutenberg iframe + chrome wp-admin de N
 ## Décision
 
 Priorité à la parité éditeur/front (CSS canvas + pas de JS votes/animations dans l’iframe) puis chrome admin natif. Pas de nouvelle brique métier type IGN/OpenCritic dans cette itération.
+
+Le champ « Nom du jeu » (`#jlg_game_title`) reste dans une metabox `normal` sous le canvas : en WP 7.1 iframé il est présent au DOM mais non cliquable. L’édition Gutenberg doit passer par le panneau Document (document parent), comme les métadonnées collées au chrome d’IGN, pas sous l’iframe.
+
