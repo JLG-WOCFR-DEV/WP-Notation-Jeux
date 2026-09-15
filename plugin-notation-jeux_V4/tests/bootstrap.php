@@ -143,6 +143,32 @@ if (!function_exists('is_admin')) {
     }
 }
 
+if (!function_exists('get_current_screen')) {
+    /**
+     * Expose the current admin screen for Gutenberg iframe tests.
+     */
+    function get_current_screen() {
+        return $GLOBALS['jlg_test_current_screen'] ?? null;
+    }
+}
+
+if (!function_exists('wp_is_block_editor')) {
+    /**
+     * Allow tests to emulate the block editor via $GLOBALS['jlg_test_is_block_editor'].
+     */
+    function wp_is_block_editor() {
+        return !empty($GLOBALS['jlg_test_is_block_editor']);
+    }
+}
+
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
+}
+
+if (!defined('MONTH_IN_SECONDS')) {
+    define('MONTH_IN_SECONDS', 30 * DAY_IN_SECONDS);
+}
+
 if (!function_exists('is_user_logged_in')) {
     /**
      * Simule l'état de connexion en fonction du drapeau global dédié aux tests.
@@ -470,6 +496,39 @@ if (!function_exists('remove_submenu_page')) {
         }
 
         return false;
+    }
+}
+
+if (!function_exists('register_post_meta')) {
+    /**
+     * Capture Gutenberg REST meta registrations for unit tests.
+     */
+    function register_post_meta($post_type, $meta_key, $args = []) {
+        if (!isset($GLOBALS['jlg_test_registered_post_meta'])) {
+            $GLOBALS['jlg_test_registered_post_meta'] = [];
+        }
+
+        if (!isset($GLOBALS['jlg_test_registered_post_meta'][$post_type])) {
+            $GLOBALS['jlg_test_registered_post_meta'][$post_type] = [];
+        }
+
+        $GLOBALS['jlg_test_registered_post_meta'][$post_type][$meta_key] = is_array($args) ? $args : [];
+
+        return true;
+    }
+}
+
+if (!function_exists('selected')) {
+    function selected($selected, $current = true, $echo = true) {
+        $result = ((string) $selected === (string) $current) ? ' selected="selected"' : '';
+
+        if ($echo) {
+            echo $result;
+
+            return;
+        }
+
+        return $result;
     }
 }
 

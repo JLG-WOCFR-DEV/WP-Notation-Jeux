@@ -114,6 +114,7 @@ class Blocks {
         add_action( 'init', array( $this, 'register_block_editor_assets' ) );
         add_action( 'init', array( $this, 'register_blocks' ) );
         add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+        add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_canvas_assets' ) );
     }
 
     public function register_block_editor_assets() {
@@ -205,13 +206,18 @@ class Blocks {
         }
     }
 
+    /**
+     * Parent editor chrome (inspector). Canvas CSS must not print here in WP 7.1.
+     */
     public function enqueue_block_editor_assets() {
-        if ( ! function_exists( 'get_current_screen' ) ) {
-            return;
-        }
+        // Intentionally empty: block editor scripts come from block.json editorScript.
+    }
 
-        $current_screen = get_current_screen();
-        if ( ! $current_screen || $current_screen->id !== 'post' ) {
+    /**
+     * Load preview CSS inside the iframed editor canvas (WP 7.1 copies this hook).
+     */
+    public function enqueue_block_canvas_assets() {
+        if ( ! is_admin() ) {
             return;
         }
 

@@ -4,7 +4,7 @@ Le dépôt regroupe la version 5.0 du plugin WordPress **Notation JLG**, un syst
 
 ## Présentation rapide
 - **Fonctionnalités clés :** 6 catégories de notes personnalisables avec badge « Coup de cœur » éditorial, notation lecteurs avec histogramme dynamique, remplissage RAWG, validation PEGI/date/nom du jeu, Game Explorer filtrable, Score Insights (moyenne, médiane, histogramme, top plateformes, tendance, consensus et indice de confiance) complété par une carte « Rédaction vs Lecteurs », une timeline sparkline et des badges de sentiments issus des points forts/faibles, tableau récapitulatif triable, widget des derniers tests, indicateur de statut éditorial (brouillon/mise à jour/final) avec automatisation configurable pour repasser les reviews en « Version finale » après X jours sans patch, guides associés configurables pour orienter les lecteurs vers des contenus complémentaires et une API REST `/jlg/v1/ratings` pour exposer notes éditoriales, votes lecteurs et comparatifs plateformes aux partenaires externes.
-- **Prérequis techniques :** WordPress 5.0 minimum et PHP 7.4 ou supérieur, vérifiés automatiquement à l’activation du plugin.
+- **Prérequis techniques :** WordPress 6.3 minimum et PHP 7.4 ou supérieur, vérifiés automatiquement à l’activation du plugin.
 - **Architecture :** le cœur du plugin charge dynamiquement les composants admin et front-office, inclut un widget et expose des fonctions helper globales (`jlg_notation()`, `jlg_get_post_rating()`, `jlg_display_post_rating()`).
 
 ## Installation et configuration initiale

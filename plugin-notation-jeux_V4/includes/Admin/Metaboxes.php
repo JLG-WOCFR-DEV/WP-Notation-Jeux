@@ -15,8 +15,123 @@ class Metaboxes {
 
     public function __construct() {
         add_action( 'add_meta_boxes', array( $this, 'register_metaboxes' ), 10, 2 );
+        add_action( 'init', array( $this, 'register_game_title_meta' ) );
+        add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_game_title_document_panel' ) );
         add_action( 'save_post', array( $this, 'save_meta_data' ) );
         add_action( 'admin_notices', array( $this, 'display_validation_errors' ) );
+    }
+
+    /**
+     * Expose the game title to the iframed block editor via REST + document sidebar.
+     */
+    public function register_game_title_meta() {
+        $args = array(
+            'type'              => 'string',
+            'single'            => true,
+            'show_in_rest'      => true,
+            'sanitize_callback' => array( $this, 'sanitize_game_title_meta' ),
+            'auth_callback'     => array( $this, 'can_edit_game_title_meta' ),
+        );
+
+        foreach ( $this->get_allowed_post_types() as $post_type ) {
+            register_post_meta( $post_type, '_jlg_game_title', $args );
+        }
+    }
+
+    /**
+     * Parent-document Gutenberg plugin: the iframed canvas must not host this field.
+     */
+    public function enqueue_game_title_document_panel() {
+        $script_relative = 'assets/js/admin/game-title-document-panel.js';
+        $script_path     = trailingslashit( JLG_NOTATION_PLUGIN_DIR ) . $script_relative;
+
+        if ( ! file_exists( $script_path ) ) {
+            return;
+        }
+
+        $post_type = '';
+        if ( function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+            if ( $screen && ! empty( $screen->post_type ) ) {
+                $post_type = sanitize_key( $screen->post_type );
+            }
+        }
+
+        if ( $post_type !== '' && ! in_array( $post_type, $this->get_allowed_post_types(), true ) ) {
+            return;
+        }
+
+        $handle = 'notation-jlg-game-title-document-panel';
+
+        wp_register_script(
+            $handle,
+            trailingslashit( JLG_NOTATION_PLUGIN_URL ) . $script_relative,
+            array(
+                'wp-plugins',
+                'wp-edit-post',
+                'wp-editor',
+                'wp-element',
+                'wp-components',
+                'wp-data',
+                'wp-i18n',
+            ),
+            (string) filemtime( $script_path ),
+            true
+        );
+
+        wp_enqueue_script( $handle );
+
+        if ( function_exists( 'wp_set_script_translations' ) ) {
+            $languages = trailingslashit( JLG_NOTATION_PLUGIN_DIR ) . 'languages';
+            if ( is_dir( $languages ) ) {
+                wp_set_script_translations( $handle, 'notation-jlg', $languages );
+            }
+        }
+    }
+
+    /**
+     * Keep #jlg_game_title for classic editor; avoid the covered metabox id in Gutenberg 7.1.
+     *
+     * @return string
+     */
+    public function get_game_title_input_id() {
+        if ( function_exists( 'wp_is_block_editor' ) && wp_is_block_editor() ) {
+            return 'jlg_game_title_metabox';
+        }
+
+        return 'jlg_game_title';
+    }
+
+    /**
+     * @param mixed $value Raw meta value.
+     * @return string
+     */
+    public function sanitize_game_title_meta( $value ) {
+        $value = sanitize_text_field( (string) $value );
+
+        if ( $value === '' ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            return mb_substr( $value, 0, 150 );
+        }
+
+        return substr( $value, 0, 150 );
+    }
+
+    /**
+     * @param bool   $allowed   Whether the user can edit the meta.
+     * @param string $meta_key  Meta key.
+     * @param int    $object_id Post ID.
+     * @return bool
+     */
+    public function can_edit_game_title_meta( $allowed, $meta_key, $object_id ) {
+        unset( $allowed, $meta_key );
+
+        $object_id = (int) $object_id;
+
+        return $object_id > 0 && current_user_can( 'edit_post', $object_id );
     }
 
     private function get_allowed_post_types() {
@@ -240,9 +355,14 @@ class Metaboxes {
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Utilisé par l’automatisation du statut pour revenir en « Version finale » après le délai configuré.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 
+        $game_title_input_id = $this->get_game_title_input_id();
+
         echo '<div style="margin-bottom:20px;">';
-        echo '<label for="jlg_game_title"><strong>' . esc_html__( 'Nom du jeu', 'notation-jlg' ) . ' :</strong></label><br>';
-        echo '<input type="text" id="jlg_game_title" name="jlg_game_title" value="' . esc_attr( $meta['game_title'] ?? '' ) . '" style="width:100%;">';
+        echo '<label for="' . esc_attr( $game_title_input_id ) . '"><strong>' . esc_html__( 'Nom du jeu', 'notation-jlg' ) . ' :</strong></label><br>';
+        echo '<input type="text" id="' . esc_attr( $game_title_input_id ) . '" name="jlg_game_title" value="' . esc_attr( $meta['game_title'] ?? '' ) . '" style="width:100%;">';
+        if ( $game_title_input_id !== 'jlg_game_title' ) {
+            echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Dans l’éditeur de blocs, utilisez le panneau Document (barre latérale) pour modifier ce champ hors de l’iframe.', 'notation-jlg' ) . '</p>';
+        }
         echo '<p class="description" style="margin:5px 0 0;">' . esc_html__( 'Cette valeur est utilisée dans les tableaux, widgets et données structurées lorsque renseignée.', 'notation-jlg' ) . '</p>';
         echo '</div>';
 

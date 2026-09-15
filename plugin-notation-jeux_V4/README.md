@@ -4,8 +4,8 @@
 
 **Contributors:** jeromelegousse  \
 **Tags:** rating, review, games, notation, gaming  \
-**Requires at least:** 5.0  \
-**Tested up to:** 6.4  \
+**Requires at least:** 6.3  \
+**Tested up to:** 7.1  \
 **Stable tag:** 5.0  \
 **Requires PHP:** 7.4  \
 **License:** GPLv2 or later  \
@@ -200,6 +200,9 @@ Créez un compte gratuit sur [rawg.io/apidocs](https://rawg.io/apidocs) et copie
 ## Changelog
 
 ### 5.0
+- Compatibilité WordPress 7.1 : CSS d’aperçu Gutenberg chargé dans l’iframe (`enqueue_block_assets`), JS front ignoré en preview éditeur, blocs en `apiVersion` 3.
+- Le champ « Nom du jeu » est éditable dans le panneau Document Gutenberg (hors iframe) ; la metabox classique ne conserve plus `#jlg_game_title` sous le canvas iframé.
+- Administration alignée sur le chrome wp-admin (`wrap`, `h1`, `nav-tab`, Settings API, `postbox`, boutons et notices natifs).
 - Refactorisation complète du code
 - Architecture modulaire optimisée
 - Performance améliorée
