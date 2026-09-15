@@ -7,8 +7,8 @@
  * Author: Jérôme Le Gousse
  * License: GPL v2 or later
  * Text Domain: notation-jlg
- * Requires at least: 5.0
- * Tested up to: 6.4
+ * Requires at least: 6.3
+ * Tested up to: 7.1
  * Requires PHP: 7.4
  */
 
@@ -85,11 +85,11 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
     return;
 }
 
-if ( version_compare( get_bloginfo( 'version' ), '5.0', '<' ) ) {
+if ( version_compare( get_bloginfo( 'version' ), '6.3', '<' ) ) {
     add_action(
         'admin_notices',
         function () {
-			echo '<div class="notice notice-error"><p><strong>JLG Notation:</strong> WordPress 5.0+ requis. Version actuelle: ' . esc_html( get_bloginfo( 'version' ) ) . '</p></div>';
+			echo '<div class="notice notice-error"><p><strong>JLG Notation:</strong> WordPress 6.3+ requis. Version actuelle: ' . esc_html( get_bloginfo( 'version' ) ) . '</p></div>';
 		}
     );
     return;

@@ -9,7 +9,7 @@
     }
 
     var __ = wp.i18n.__;
-    var blockEditor = wp.blockEditor || wp.editor || {};
+    var blockEditor = wp.blockEditor || {};
     var useBlockPropsHook = blockEditor.useBlockProps;
     var createElement = wp.element.createElement;
     var BlockPreview = blocksHelpers.BlockPreview;

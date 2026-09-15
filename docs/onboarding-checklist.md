@@ -4,7 +4,7 @@ Cette checklist décrit le déroulé de l’assistant multi-étapes introduit av
 
 ## Pré-requis
 
-- WordPress 5.0+ avec un compte administrateur.
+- WordPress 6.3+ avec un compte administrateur.
 - Plugin Notation JLG activé (l’assistant se déclenche automatiquement si l’option `jlg_onboarding_completed` est absente ou vaut `0`).
 - Navigateur moderne avec JavaScript activé.
 

@@ -15,8 +15,11 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
 <div class="jlg-settings-layout" data-jlg-settings-page="<?php echo esc_attr($settings_page); ?>">
     <aside class="jlg-settings-sidebar" aria-label="<?php esc_attr_e('Navigation des réglages', 'notation-jlg'); ?>">
         <?php if (! empty($sections_overview)) : ?>
-            <nav class="jlg-settings-card jlg-settings-card--sidebar" aria-label="<?php esc_attr_e('Sommaire des sections de réglages', 'notation-jlg'); ?>">
-                <h2 class="jlg-settings-card__title"><?php esc_html_e('Navigation rapide', 'notation-jlg'); ?></h2>
+            <nav class="postbox" aria-label="<?php esc_attr_e('Sommaire des sections de réglages', 'notation-jlg'); ?>">
+                <div class="postbox-header">
+                    <h2 class="hndle"><?php esc_html_e('Navigation rapide', 'notation-jlg'); ?></h2>
+                </div>
+                <div class="inside">
                 <ol class="jlg-settings-toc">
                     <?php foreach ($sections_overview as $section) :
                         $section_id = sanitize_key($section['id'] ?? '');
@@ -42,11 +45,15 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
                         </li>
                     <?php endforeach; ?>
                 </ol>
+                </div>
             </nav>
         <?php endif; ?>
 
-        <section class="jlg-settings-card jlg-settings-card--preview" aria-labelledby="jlg-theme-preview-title">
-            <h2 id="jlg-theme-preview-title" class="jlg-settings-card__title"><?php esc_html_e('Aperçu instantané', 'notation-jlg'); ?></h2>
+        <section class="postbox" aria-labelledby="jlg-theme-preview-title">
+            <div class="postbox-header">
+                <h2 id="jlg-theme-preview-title" class="hndle"><?php esc_html_e('Aperçu instantané', 'notation-jlg'); ?></h2>
+            </div>
+            <div class="inside">
             <p class="jlg-settings-card__intro"><?php esc_html_e('Visualisez les couleurs, contrastes et effets néon appliqués à la note globale.', 'notation-jlg'); ?></p>
             <div class="jlg-theme-preview" data-theme-preview data-label-dark="<?php esc_attr_e('Thème sombre actif', 'notation-jlg'); ?>" data-label-light="<?php esc_attr_e('Thème clair actif', 'notation-jlg'); ?>">
                 <div class="jlg-theme-preview__controls" role="group" aria-label="<?php esc_attr_e('Prévisualiser le thème', 'notation-jlg'); ?>">
@@ -81,6 +88,7 @@ $preview_snapshot  = isset($variables['preview_snapshot']) && is_array($variable
                     </footer>
                     <p class="jlg-theme-preview__contrast" data-preview-contrast aria-live="polite"></p>
                 </div>
+            </div>
             </div>
         </section>
     </aside>

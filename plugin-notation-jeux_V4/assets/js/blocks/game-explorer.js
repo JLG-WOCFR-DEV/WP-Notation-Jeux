@@ -9,7 +9,7 @@
     }
 
     var __ = wp.i18n.__;
-    var blockEditor = wp.blockEditor || wp.editor || {};
+    var blockEditor = wp.blockEditor || {};
     var InspectorControls = blockEditor.InspectorControls || function (props) {
         return wp.element.createElement(wp.element.Fragment, null, props.children);
     };

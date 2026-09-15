@@ -364,6 +364,56 @@ class Frontend {
     }
 
     /**
+     * Detect Gutenberg canvas / block-renderer requests where front JS must not run.
+     *
+     * @return bool
+     */
+    public static function is_block_editor_preview_request() {
+        if ( function_exists( 'wp_is_block_editor' ) && wp_is_block_editor() ) {
+            return true;
+        }
+
+        if ( function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+            if ( $screen && ! empty( $screen->is_block_editor ) ) {
+                return true;
+            }
+        }
+
+        if ( isset( $_GET['canvas'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $canvas = sanitize_key( wp_unslash( $_GET['canvas'] ) );
+            if ( $canvas === 'edit' ) {
+                return true;
+            }
+        }
+
+        $context = '';
+        if ( isset( $_REQUEST['context'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $context = sanitize_key( wp_unslash( $_REQUEST['context'] ) );
+        }
+
+        if ( $context === 'edit' ) {
+            return true;
+        }
+
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+            $route = '';
+
+            if ( isset( $GLOBALS['wp'] ) && is_object( $GLOBALS['wp'] ) && isset( $GLOBALS['wp']->query_vars['rest_route'] ) ) {
+                $route = (string) $GLOBALS['wp']->query_vars['rest_route'];
+            } elseif ( isset( $_SERVER['REQUEST_URI'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                $route = (string) $_SERVER['REQUEST_URI'];
+            }
+
+            if ( $route !== '' && strpos( $route, 'block-renderer' ) !== false ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Charge les scripts JavaScript nécessaires
      */
     public function enqueue_jlg_scripts( $force = false ) {
@@ -471,10 +521,11 @@ class Frontend {
             $platform_breakdown_meta_used = metadata_exists( 'post', $post_id, '_jlg_platform_breakdown_entries' );
         }
 
-        $should_enqueue_summary_script        = $summary_shortcode_used || $summary_ajax;
-        $should_enqueue_game_explorer_script  = $game_explorer_shortcode_used || $game_explorer_ajax;
-        $should_enqueue_game_explorer_assets  = $should_enqueue_game_explorer_script || $game_explorer_ajax;
-        $should_enqueue_score_insights_script = $score_insights_shortcode_used;
+        $skip_frontend_scripts                = self::is_block_editor_preview_request();
+        $should_enqueue_summary_script        = ! $skip_frontend_scripts && ( $summary_shortcode_used || $summary_ajax );
+        $should_enqueue_game_explorer_script  = ! $skip_frontend_scripts && ( $game_explorer_shortcode_used || $game_explorer_ajax );
+        $should_enqueue_game_explorer_assets  = $game_explorer_shortcode_used || $game_explorer_ajax;
+        $should_enqueue_score_insights_script = ! $skip_frontend_scripts && $score_insights_shortcode_used;
 
         if ( $should_enqueue_game_explorer_assets ) {
             wp_enqueue_style( self::GAME_EXPLORER_STYLE_HANDLE );
@@ -502,7 +553,7 @@ class Frontend {
         }
 
         // Script pour la notation utilisateur
-        if ( ! empty( $options['user_rating_enabled'] ) ) {
+        if ( ! $skip_frontend_scripts && ! empty( $options['user_rating_enabled'] ) ) {
             wp_enqueue_script(
                 'jlg-user-rating',
                 JLG_NOTATION_PLUGIN_URL . 'assets/js/user-rating.js',
@@ -552,7 +603,7 @@ class Frontend {
         }
 
         // Script pour le changement de langue des taglines
-        if ( ! empty( $options['tagline_enabled'] ) ) {
+        if ( ! $skip_frontend_scripts && ! empty( $options['tagline_enabled'] ) ) {
             wp_enqueue_script(
                 'jlg-tagline-switcher',
                 JLG_NOTATION_PLUGIN_URL . 'assets/js/tagline-switcher.js',
@@ -563,7 +614,7 @@ class Frontend {
         }
 
         // Script pour les animations
-        if ( ! empty( $options['enable_animations'] ) ) {
+        if ( ! $skip_frontend_scripts && ! empty( $options['enable_animations'] ) ) {
             wp_enqueue_script(
                 'jlg-animations',
                 JLG_NOTATION_PLUGIN_URL . 'assets/js/jlg-animations.js',
@@ -599,7 +650,7 @@ class Frontend {
             );
         }
 
-        if ( $platform_breakdown_shortcode_used || $platform_breakdown_meta_used ) {
+        if ( ! $skip_frontend_scripts && ( $platform_breakdown_shortcode_used || $platform_breakdown_meta_used ) ) {
             if ( ! wp_script_is( 'jlg-platform-breakdown', 'registered' ) ) {
                 wp_register_script(
                     'jlg-platform-breakdown',
