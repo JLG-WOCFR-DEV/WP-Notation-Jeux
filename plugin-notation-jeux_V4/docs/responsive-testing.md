@@ -12,6 +12,13 @@ Pour valider l'affichage responsive du tableau récapitulatif :
 
 En cas d'ajustements ultérieurs, répétez ce scénario pour garantir que l'expérience mobile reste optimale.
 
+## Administration – Libellés des catégories
+
+1. Ouvrez **Notation JLG > Réglages** (onglet Configuration) à une largeur ≥ 1200 px.
+2. Dans « Libellés des catégories », chaque carte doit afficher **Libellé**, **Identifiant** et **Pondération** en colonnes : le libellé au-dessus du champ, sans chevauchement du spinner 1.0 sur les en-têtes.
+3. Les champs texte doivent rester dans leur colonne (`max-width: 100%`), pas en largeur WordPress `regular-text` (25em).
+4. Réduisez à 782 px : la grille passe en une colonne, les boutons Monter / Descendre / Supprimer restent accessibles, aucun défilement horizontal.
+
 ## Administration – Gestion des plateformes
 
 1. Ouvrez l'écran d'administration **Notation – JLG > Plateformes** avec une largeur de fenêtre ≥ 1200 px et vérifiez que la grille affiche bien deux colonnes (tableau des plateformes à gauche, formulaires à droite) avec un espacement régulier.
