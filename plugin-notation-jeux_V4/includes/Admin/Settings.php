@@ -2129,21 +2129,6 @@ class Settings {
         $move_up_aria   = esc_attr__( 'Monter la catégorie', 'notation-jlg' );
         $move_down_aria = esc_attr__( 'Descendre la catégorie', 'notation-jlg' );
 
-        static $styles_printed = false;
-
-        if ( ! $styles_printed ) {
-            echo '<style>';
-            echo '.jlg-rating-categories__list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px;}';
-            echo '.jlg-rating-category{border:1px solid #dcdcde;background:#fff;padding:12px;border-radius:4px;}';
-            echo '.jlg-rating-category__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}';
-            echo '.jlg-rating-category__actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;grid-column:1/-1;}';
-            echo '.jlg-rating-category__actions .button{margin:0;}';
-            echo '.jlg-rating-category__remove{color:#a00;}';
-            echo '@media (max-width:782px){.jlg-rating-category__grid{grid-template-columns:1fr;}.jlg-rating-category__actions{justify-content:flex-start;}}';
-            echo '</style>';
-            $styles_printed = true;
-        }
-
         echo '<div id="' . esc_attr( $wrapper_id ) . '" class="jlg-rating-categories" data-next-index="' . esc_attr( $next_index ) . '">';
         echo '<div class="jlg-rating-categories__list">';
 
@@ -2163,18 +2148,18 @@ class Settings {
 
             echo '<div class="jlg-rating-category" data-index="' . esc_attr( $index ) . '">';
             echo '<div class="jlg-rating-category__grid">';
-            echo '<div>';
-            echo '<label for="' . esc_attr( $field_id . '_label_' . $index ) . '"><strong>' . esc_html__( 'Libellé', 'notation-jlg' ) . '</strong></label>';
-            echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_label_' . $index ) . '" name="' . esc_attr( $label_field ) . '" value="' . esc_attr( $label ) . '" />';
+            echo '<div class="jlg-rating-category__field">';
+            echo '<label class="jlg-rating-category__label" for="' . esc_attr( $field_id . '_label_' . $index ) . '"><strong>' . esc_html__( 'Libellé', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" class="jlg-rating-category__input" id="' . esc_attr( $field_id . '_label_' . $index ) . '" name="' . esc_attr( $label_field ) . '" value="' . esc_attr( $label ) . '" />';
             echo '</div>';
-            echo '<div>';
-            echo '<label for="' . esc_attr( $field_id . '_id_' . $index ) . '"><strong>' . esc_html__( 'Identifiant', 'notation-jlg' ) . '</strong></label>';
-            echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_id_' . $index ) . '" name="' . esc_attr( $id_field ) . '" value="' . esc_attr( $id ) . '" />';
+            echo '<div class="jlg-rating-category__field">';
+            echo '<label class="jlg-rating-category__label" for="' . esc_attr( $field_id . '_id_' . $index ) . '"><strong>' . esc_html__( 'Identifiant', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="text" class="jlg-rating-category__input" id="' . esc_attr( $field_id . '_id_' . $index ) . '" name="' . esc_attr( $id_field ) . '" value="' . esc_attr( $id ) . '" />';
             echo '<p class="description">' . esc_html__( 'Utilisé pour la clé méta (_note_identifiant). Lettres minuscules, chiffres, tirets et soulignés uniquement.', 'notation-jlg' ) . '</p>';
             echo '</div>';
-            echo '<div>';
-            echo '<label for="' . esc_attr( $field_id . '_weight_' . $index ) . '"><strong>' . esc_html__( 'Pondération', 'notation-jlg' ) . '</strong></label>';
-            echo '<input type="number" class="small-text jlg-rating-category__weight" id="' . esc_attr( $field_id . '_weight_' . $index ) . '" name="' . esc_attr( $weight_field ) . '" value="' . esc_attr( $weight_value ) . '" min="0" step="0.1" />';
+            echo '<div class="jlg-rating-category__field">';
+            echo '<label class="jlg-rating-category__label" for="' . esc_attr( $field_id . '_weight_' . $index ) . '"><strong>' . esc_html__( 'Pondération', 'notation-jlg' ) . '</strong></label>';
+            echo '<input type="number" class="jlg-rating-category__input jlg-rating-category__weight" id="' . esc_attr( $field_id . '_weight_' . $index ) . '" name="' . esc_attr( $weight_field ) . '" value="' . esc_attr( $weight_value ) . '" min="0" step="0.1" />';
             echo '<p class="description">' . esc_html__( 'Coefficient utilisé pour la moyenne pondérée.', 'notation-jlg' ) . '</p>';
             echo '</div>';
             echo '<div class="jlg-rating-category__actions">';
@@ -2213,18 +2198,18 @@ class Settings {
         echo '<template id="' . esc_attr( $wrapper_id ) . '_template">';
         echo '<div class="jlg-rating-category" data-index="__INDEX__">';
         echo '<div class="jlg-rating-category__grid">';
-        echo '<div>';
-        echo '<label for="' . esc_attr( $field_id . '_label___INDEX__' ) . '"><strong>' . esc_html( $template_label ) . '</strong></label>';
-        echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_label___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][label]', $option_name, $field_id ) ) . '" value="" />';
+        echo '<div class="jlg-rating-category__field">';
+        echo '<label class="jlg-rating-category__label" for="' . esc_attr( $field_id . '_label___INDEX__' ) . '"><strong>' . esc_html( $template_label ) . '</strong></label>';
+        echo '<input type="text" class="jlg-rating-category__input" id="' . esc_attr( $field_id . '_label___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][label]', $option_name, $field_id ) ) . '" value="" />';
         echo '</div>';
-        echo '<div>';
-        echo '<label for="' . esc_attr( $field_id . '_id___INDEX__' ) . '"><strong>' . esc_html( $template_id ) . '</strong></label>';
-        echo '<input type="text" class="regular-text" id="' . esc_attr( $field_id . '_id___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][id]', $option_name, $field_id ) ) . '" value="" />';
+        echo '<div class="jlg-rating-category__field">';
+        echo '<label class="jlg-rating-category__label" for="' . esc_attr( $field_id . '_id___INDEX__' ) . '"><strong>' . esc_html( $template_id ) . '</strong></label>';
+        echo '<input type="text" class="jlg-rating-category__input" id="' . esc_attr( $field_id . '_id___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][id]', $option_name, $field_id ) ) . '" value="" />';
         echo '<p class="description">' . esc_html( $template_desc ) . '</p>';
         echo '</div>';
-        echo '<div>';
-        echo '<label for="' . esc_attr( $field_id . '_weight___INDEX__' ) . '"><strong>' . esc_html__( 'Pondération', 'notation-jlg' ) . '</strong></label>';
-        echo '<input type="number" class="small-text jlg-rating-category__weight" id="' . esc_attr( $field_id . '_weight___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][weight]', $option_name, $field_id ) ) . '" value="1" min="0" step="0.1" />';
+        echo '<div class="jlg-rating-category__field">';
+        echo '<label class="jlg-rating-category__label" for="' . esc_attr( $field_id . '_weight___INDEX__' ) . '"><strong>' . esc_html__( 'Pondération', 'notation-jlg' ) . '</strong></label>';
+        echo '<input type="number" class="jlg-rating-category__input jlg-rating-category__weight" id="' . esc_attr( $field_id . '_weight___INDEX__' ) . '" name="' . esc_attr( sprintf( '%s[%s][__INDEX__][weight]', $option_name, $field_id ) ) . '" value="1" min="0" step="0.1" />';
         echo '<p class="description">' . esc_html__( 'Coefficient utilisé pour la moyenne pondérée.', 'notation-jlg' ) . '</p>';
         echo '</div>';
         echo '<div class="jlg-rating-category__actions">';
